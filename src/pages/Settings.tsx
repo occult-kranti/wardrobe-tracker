@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Download, Upload, Trash2, AlertTriangle } from 'lucide-react';
 import { useWardrobe } from '../context/WardrobeContext';
 import { showToast } from '../components/Toast';
+import { DecorativeDivider } from '../components/art';
 
 export default function Settings() {
   const { items, outfits, wearLogs } = useWardrobe();
@@ -13,30 +14,24 @@ export default function Settings() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `wardrobe-backup-${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `wardrobe-${new Date().toISOString().split('T')[0]}.json`;
     a.click();
     URL.revokeObjectURL(url);
-    showToast('Backup downloaded successfully', 'success');
+    showToast('Data exported successfully', 'success');
   };
 
   const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (ev) => {
+    reader.onload = (event) => {
       try {
-        const data = JSON.parse(ev.target?.result as string);
-        if (confirm(`Import ${data.items?.length || 0} items and ${data.outfits?.length || 0} outfits? This will replace current data.`)) {
-          localStorage.setItem('wardrobe-tracker', JSON.stringify({
-            items: data.items || [],
-            outfits: data.outfits || [],
-            wearLogs: data.wearLogs || [],
-          }));
-          showToast('Data imported successfully', 'success');
-          window.location.reload();
-        }
+        const data = JSON.parse(event.target?.result as string);
+        localStorage.setItem('wardrobe-tracker', JSON.stringify(data));
+        showToast('Data imported. Refresh to see changes.', 'success');
+        setTimeout(() => window.location.reload(), 1500);
       } catch {
-        showToast('Invalid backup file', 'error');
+        showToast('Invalid file format', 'error');
       }
     };
     reader.readAsText(file);
@@ -44,100 +39,81 @@ export default function Settings() {
 
   const handleReset = () => {
     localStorage.removeItem('wardrobe-tracker');
-    showToast('All data reset', 'info');
-    window.location.reload();
+    showToast('All data cleared. Refreshing...', 'info');
+    setTimeout(() => window.location.reload(), 1500);
   };
 
   return (
-    <div className="space-y-6 max-w-xl">
-      <h1 className="text-2xl font-semibold text-text font-[family-name:var(--font-heading)]">Settings</h1>
+    <div className="space-y-6">
+      <div>
+        <h1 className="heading-editorial text-2xl sm:text-3xl text-text">Settings</h1>
+        <p className="text-xs text-text-muted mt-1 uppercase tracking-wider">Manage your data</p>
+      </div>
+      <DecorativeDivider />
 
-      {/* Data Management */}
-      <div className="bg-cream border border-border rounded-xl p-5 space-y-4">
-        <h2 className="text-base font-semibold text-text">Data Management</h2>
-
-        <div className="flex items-center justify-between py-3 border-b border-border">
-          <div>
-            <p className="text-sm font-medium text-text">Export Data</p>
-            <p className="text-xs text-text-muted mt-0.5">Download a backup of your wardrobe</p>
+      <div className="bg-bg-card border border-border rounded-xl p-5">
+        <h2 className="text-sm font-semibold text-text uppercase tracking-wider mb-4">Collection Overview</h2>
+        <div className="grid grid-cols-3 gap-4">
+          <div className="text-center p-4 bg-bg-elevated rounded-lg">
+            <p className="text-2xl font-semibold text-text font-[family-name:var(--font-heading)]">{items.length}</p>
+            <p className="text-xs text-text-muted mt-1">Items</p>
           </div>
-          <button
-            onClick={handleExport}
-            className="px-3 py-2 bg-surface border border-border rounded-lg text-sm font-medium text-text-secondary hover:bg-surface-hover flex items-center gap-1.5 transition-all"
-          >
-            <Download size={14} />
-            Export
-          </button>
-        </div>
-
-        <div className="flex items-center justify-between py-3 border-b border-border">
-          <div>
-            <p className="text-sm font-medium text-text">Import Data</p>
-            <p className="text-xs text-text-muted mt-0.5">Restore from a previous backup</p>
+          <div className="text-center p-4 bg-bg-elevated rounded-lg">
+            <p className="text-2xl font-semibold text-text font-[family-name:var(--font-heading)]">{outfits.length}</p>
+            <p className="text-xs text-text-muted mt-1">Outfits</p>
           </div>
-          <label className="px-3 py-2 bg-surface border border-border rounded-lg text-sm font-medium text-text-secondary hover:bg-surface-hover flex items-center gap-1.5 transition-all cursor-pointer">
-            <Upload size={14} />
-            Import
-            <input type="file" accept=".json" className="hidden" onChange={handleImport} />
-          </label>
-        </div>
-
-        <div className="pt-1">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-error">Reset All Data</p>
-              <p className="text-xs text-text-muted mt-0.5">This will permanently delete everything</p>
-            </div>
-            <button
-              onClick={() => setShowReset(true)}
-              className="px-3 py-2 bg-error/10 text-error rounded-lg text-sm font-medium hover:bg-error/20 flex items-center gap-1.5 transition-all"
-            >
-              <Trash2 size={14} />
-              Reset
-            </button>
+          <div className="text-center p-4 bg-bg-elevated rounded-lg">
+            <p className="text-2xl font-semibold text-text font-[family-name:var(--font-heading)]">{wearLogs.length}</p>
+            <p className="text-xs text-text-muted mt-1">Wear Logs</p>
           </div>
-
-          {showReset && (
-            <div className="mt-3 p-4 bg-error/5 border border-error/20 rounded-lg">
-              <div className="flex items-start gap-3">
-                <AlertTriangle size={18} className="text-error flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium text-error">Are you sure?</p>
-                  <p className="text-xs text-text-secondary mt-1">
-                    This will delete all {items.length} items, {outfits.length} outfits, and {wearLogs.length} wear logs. This cannot be undone.
-                  </p>
-                  <div className="flex gap-2 mt-3">
-                    <button
-                      onClick={handleReset}
-                      className="px-3 py-1.5 bg-error text-white rounded-lg text-xs font-medium hover:bg-error/90 transition-all"
-                    >
-                      Yes, Delete Everything
-                    </button>
-                    <button
-                      onClick={() => setShowReset(false)}
-                      className="px-3 py-1.5 bg-surface text-text-secondary rounded-lg text-xs font-medium hover:bg-surface-hover transition-all"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
-      {/* About */}
-      <div className="bg-cream border border-border rounded-xl p-5">
-        <h2 className="text-base font-semibold text-text mb-3">About</h2>
-        <div className="space-y-2 text-sm text-text-secondary">
-          <p><strong className="text-text">Wardrobe Tracker</strong></p>
-          <p>Version 1.0.0</p>
-          <p>A digital closet companion built with care.</p>
-          <p className="text-xs text-text-muted mt-3">
-            All data is stored locally in your browser. No data is sent to any server.
-          </p>
+      <div className="bg-bg-card border border-border rounded-xl p-5 space-y-4">
+        <h2 className="text-sm font-semibold text-text uppercase tracking-wider">Data Management</h2>
+        <div className="grid sm:grid-cols-2 gap-3">
+          <button onClick={handleExport}
+            className="flex items-center justify-center gap-2 px-4 py-3 bg-bg-elevated border border-border rounded-lg text-sm font-medium text-text hover:border-border-light transition-all">
+            <Download size={16} /> Export Data
+          </button>
+          <label className="flex items-center justify-center gap-2 px-4 py-3 bg-bg-elevated border border-border rounded-lg text-sm font-medium text-text hover:border-border-light transition-all cursor-pointer">
+            <Upload size={16} /> Import Data
+            <input type="file" accept=".json" onChange={handleImport} className="hidden" />
+          </label>
         </div>
+      </div>
+
+      <div className="bg-bg-card border border-border rounded-xl p-5 space-y-4">
+        <h2 className="text-sm font-semibold text-text uppercase tracking-wider">Danger Zone</h2>
+        {!showReset ? (
+          <button onClick={() => setShowReset(true)}
+            className="flex items-center justify-center gap-2 px-4 py-3 bg-error/10 border border-error/30 rounded-lg text-sm font-medium text-error hover:bg-error/20 transition-all w-full sm:w-auto">
+            <Trash2 size={16} /> Reset All Data
+          </button>
+        ) : (
+          <div className="bg-error/5 border border-error/20 rounded-lg p-4 space-y-3">
+            <div className="flex items-center gap-2 text-error">
+              <AlertTriangle size={16} />
+              <span className="text-sm font-medium">This will permanently delete all your data</span>
+            </div>
+            <div className="flex gap-2">
+              <button onClick={handleReset}
+                className="px-4 py-2 bg-error text-white rounded-lg text-sm font-medium hover:bg-error/80 transition-all">
+                Confirm Delete
+              </button>
+              <button onClick={() => setShowReset(false)}
+                className="px-4 py-2 bg-bg-elevated border border-border rounded-lg text-sm font-medium text-text hover:border-border-light transition-all">
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="bg-bg-card border border-border rounded-xl p-5">
+        <h2 className="text-sm font-semibold text-text uppercase tracking-wider mb-2">About</h2>
+        <p className="text-sm text-text-secondary">Wardrobe Tracker v1.0</p>
+        <p className="text-xs text-text-muted mt-1">Built with care. Your data stays on your device.</p>
       </div>
     </div>
   );

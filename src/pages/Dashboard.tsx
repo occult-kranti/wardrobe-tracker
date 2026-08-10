@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Sparkles, Shirt, TrendingUp, Calendar, Heart, ArrowRight } from 'lucide-react';
 import { useWardrobe } from '../context/WardrobeContext';
 import { CATEGORY_LABELS } from '../types';
+import { DecorativeDivider } from '../components/art';
 
 export default function Dashboard() {
   const { items, outfits, wearLogs, getMostWorn, getUnwornItems, getOutfitSuggestions, logWear } = useWardrobe();
@@ -10,8 +11,6 @@ export default function Dashboard() {
 
   const today = new Date().toISOString().split('T')[0];
   const todayLog = wearLogs.find(l => l.date === today);
-  const totalItems = items.length;
-  const totalOutfits = outfits.length;
   const totalWears = wearLogs.length;
   const unwornCount = getUnwornItems().length;
   const mostWorn = getMostWorn(3);
@@ -21,187 +20,157 @@ export default function Dashboard() {
     return acc;
   }, {} as Record<string, number>);
 
-  const handleLogToday = (outfitId?: string, itemIds?: string[]) => {
-    if (outfitId) {
-      logWear([], outfitId);
-    } else if (itemIds) {
-      logWear(itemIds);
-    }
-  };
-
   return (
     <div className="space-y-8">
-      {/* Welcome */}
-      <div>
-        <h1 className="text-2xl font-semibold text-text font-[family-name:var(--font-heading)]">
+      {/* Hero */}
+      <div className="relative">
+        <h1 className="heading-editorial text-3xl sm:text-4xl text-text">
           Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening'}
         </h1>
-        <p className="text-text-secondary mt-1">
-          {totalItems === 0
-            ? 'Start by adding your first clothing item to your digital closet.'
-            : todayLog
-            ? "You've logged today's outfit. Great start!"
-            : 'What are you wearing today?'}
+        <p className="text-text-secondary mt-2 text-sm">
+          {items.length > 0
+            ? `You have ${items.length} pieces in your collection. ${unwornCount} haven't been worn yet.`
+            : 'Start building your wardrobe collection.'}
         </p>
+        <DecorativeDivider className="mt-4" />
       </div>
 
-      {/* Quick Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {[
-          { label: 'Items', value: totalItems, icon: Shirt, color: 'text-accent' },
-          { label: 'Outfits', value: totalOutfits, icon: Sparkles, color: 'text-rose' },
-          { label: 'Total Wears', value: totalWears, icon: TrendingUp, color: 'text-success' },
-          { label: 'Unworn', value: unwornCount, icon: Heart, color: 'text-warning' },
-        ].map(stat => (
-          <div key={stat.label} className="bg-cream border border-border rounded-xl p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <stat.icon size={16} className={stat.color} />
-              <span className="text-xs text-text-muted font-medium">{stat.label}</span>
-            </div>
-            <p className="text-2xl font-semibold text-text">{stat.value}</p>
-          </div>
-        ))}
+      {/* Stats Row */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <StatCard icon={Shirt} label="Total Items" value={items.length} accent="text-accent" />
+        <StatCard icon={Calendar} label="Wears Logged" value={totalWears} accent="text-sage" />
+        <StatCard icon={Sparkles} label="Outfits" value={outfits.length} accent="text-amber" />
+        <StatCard icon={Heart} label="Favorites" value={items.filter(i => i.favorite).length} accent="text-rose" />
       </div>
 
       {/* Today's Outfit Suggestion */}
-      {!todayLog && totalItems > 0 && (
-        <div className="bg-cream border border-border rounded-xl p-5">
+      {suggestions.length > 0 && (
+        <div className="bg-bg-card border border-border rounded-xl p-5 card-lift">
           <div className="flex items-center gap-2 mb-4">
-            <Sparkles size={18} className="text-accent" />
-            <h2 className="text-base font-semibold text-text">Today's Suggestions</h2>
+            <Sparkles size={16} className="text-accent" />
+            <h2 className="text-sm font-semibold text-text uppercase tracking-wider">Today's Suggestion</h2>
           </div>
-          {suggestions.length > 0 ? (
-            <div className="space-y-3">
-              {suggestions.map(outfit => (
-                <div key={outfit.id} className="flex items-center justify-between bg-surface rounded-lg p-3">
-                  <div className="flex items-center gap-3">
-                    <div className="flex -space-x-2">
-                      {outfit.itemIds.slice(0, 3).map(id => {
-                        const item = items.find(i => i.id === id);
-                        return item ? (
-                          <img
-                            key={id}
-                            src={item.imageUrl}
-                            alt={item.name}
-                            className="w-10 h-10 rounded-full object-cover border-2 border-cream"
-                          />
-                        ) : null;
-                      })}
-                    </div>
-                    <span className="text-sm font-medium text-text">{outfit.name}</span>
+          <div className="flex gap-3 overflow-x-auto pb-2">
+            {suggestions[0].itemIds.map(id => {
+              const item = items.find(i => i.id === id);
+              if (!item) return null;
+              return (
+                <div key={id} className="flex-shrink-0 w-20">
+                  <div className="aspect-[3/4] rounded-lg overflow-hidden border border-border">
+                    <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" loading="lazy" />
                   </div>
-                  <button
-                    onClick={() => handleLogToday(outfit.id)}
-                    className="px-3 py-1.5 bg-accent text-white rounded-lg text-xs font-medium hover:bg-accent-hover active:scale-95 transition-all"
-                  >
-                    Wear This
-                  </button>
+                  <p className="text-[10px] text-text-muted mt-1 truncate">{item.name}</p>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-6">
-              <p className="text-sm text-text-secondary">No saved outfits yet.</p>
-              <Link to="/outfits" className="inline-flex items-center gap-1 text-sm text-accent mt-2 hover:underline">
-                Create your first outfit <ArrowRight size={14} />
-              </Link>
-            </div>
+              );
+            })}
+          </div>
+          {!todayLog && (
+            <button
+              onClick={() => logWear(suggestions[0].itemIds)}
+              className="mt-3 px-4 py-2 bg-accent/10 text-accent border border-accent/30 rounded-lg text-xs font-medium hover:bg-accent/20 transition-all btn-shine"
+            >
+              I wore this today
+            </button>
           )}
         </div>
       )}
 
-      {/* Category Breakdown */}
-      {totalItems > 0 && (
-        <div className="bg-cream border border-border rounded-xl p-5">
-          <h2 className="text-base font-semibold text-text mb-4">Your Closet Breakdown</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-            {Object.entries(CATEGORY_LABELS).map(([key, label]) => {
-              const count = categoryBreakdown[key] || 0;
-              const pct = totalItems > 0 ? Math.round((count / totalItems) * 100) : 0;
-              return (
-                <Link
-                  key={key}
-                  to={`/closet?category=${key}`}
-                  className="bg-surface rounded-lg p-3 hover:bg-surface-hover transition-colors"
-                >
-                  <p className="text-lg font-semibold text-text">{count}</p>
-                  <p className="text-xs text-text-muted mt-0.5">{label}</p>
-                  {count > 0 && (
-                    <div className="mt-2 h-1 bg-border rounded-full overflow-hidden">
+      {/* Two Column Layout */}
+      <div className="grid lg:grid-cols-2 gap-6">
+        {/* Most Worn */}
+        <div className="bg-bg-card border border-border rounded-xl p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <TrendingUp size={16} className="text-accent" />
+              <h2 className="text-sm font-semibold text-text uppercase tracking-wider">Most Worn</h2>
+            </div>
+            <Link to="/closet" className="text-xs text-accent hover:text-accent-hover transition-colors flex items-center gap-1">
+              View all <ArrowRight size={12} />
+            </Link>
+          </div>
+          {mostWorn.length > 0 ? (
+            <div className="space-y-3">
+              {mostWorn.map(item => (
+                <div key={item.id} className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg overflow-hidden border border-border flex-shrink-0">
+                    <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-text truncate">{item.name}</p>
+                    <p className="text-xs text-text-muted">{CATEGORY_LABELS[item.category]} · {item.wearCount} wears</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-text-muted py-4">Start logging wears to see your favorites.</p>
+          )}
+        </div>
+
+        {/* Category Breakdown */}
+        <div className="bg-bg-card border border-border rounded-xl p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <Shirt size={16} className="text-accent" />
+            <h2 className="text-sm font-semibold text-text uppercase tracking-wider">Collection</h2>
+          </div>
+          {items.length > 0 ? (
+            <div className="space-y-3">
+              {Object.entries(categoryBreakdown).sort((a, b) => b[1] - a[1]).map(([cat, count]) => (
+                <div key={cat} className="flex items-center gap-3">
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm text-text">{CATEGORY_LABELS[cat as keyof typeof CATEGORY_LABELS]}</span>
+                      <span className="text-xs text-text-muted">{count}</span>
+                    </div>
+                    <div className="h-1.5 bg-bg-elevated rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-accent rounded-full"
-                        style={{ width: `${pct}%` }}
+                        className="h-full bg-accent rounded-full transition-all"
+                        style={{ width: `${(count / items.length) * 100}%` }}
                       />
                     </div>
-                  )}
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Most Worn */}
-      {mostWorn.length > 0 && (
-        <div className="bg-cream border border-border rounded-xl p-5">
-          <h2 className="text-base font-semibold text-text mb-4">Most Worn Items</h2>
-          <div className="flex gap-3 overflow-x-auto pb-2">
-            {mostWorn.map(item => (
-              <div key={item.id} className="flex-shrink-0 w-28">
-                <div className="aspect-[3/4] rounded-lg overflow-hidden bg-surface">
-                  <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
-                </div>
-                <p className="text-xs font-medium text-text mt-1.5 truncate">{item.name}</p>
-                <p className="text-xs text-text-muted">{item.wearCount} wears</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Recent Activity */}
-      {wearLogs.length > 0 && (
-        <div className="bg-cream border border-border rounded-xl p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <Calendar size={16} className="text-text-muted" />
-            <h2 className="text-base font-semibold text-text">Recent Activity</h2>
-          </div>
-          <div className="space-y-2">
-            {wearLogs.slice(-5).reverse().map(log => (
-              <div key={log.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-surface flex items-center justify-center text-xs">
-                    {new Date(log.date).getDate()}
-                  </div>
-                  <div>
-                    <p className="text-sm text-text">
-                      {log.outfitId
-                        ? outfits.find(o => o.id === log.outfitId)?.name || 'Outfit'
-                        : `${log.itemIds.length} item${log.itemIds.length > 1 ? 's' : ''}`}
-                    </p>
-                    <p className="text-xs text-text-muted">
-                      {new Date(log.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
-                    </p>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-text-muted py-4">Add items to see your collection breakdown.</p>
+          )}
         </div>
-      )}
+      </div>
 
-      {/* Empty State */}
-      {totalItems === 0 && (
-        <div className="text-center py-12">
-          <div className="w-16 h-16 rounded-full bg-surface mx-auto flex items-center justify-center mb-4">
-            <Shirt size={28} className="text-text-muted" />
-          </div>
-          <h2 className="text-lg font-semibold text-text">Your closet is empty</h2>
-          <p className="text-sm text-text-secondary mt-1 max-w-sm mx-auto">
-            Start building your digital wardrobe by adding your favorite pieces.
-          </p>
-        </div>
-      )}
+      {/* Quick Actions */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <QuickAction to="/closet" label="Browse Closet" icon={Shirt} />
+        <QuickAction to="/outfits" label="Build Outfit" icon={Sparkles} />
+        <QuickAction to="/calendar" label="View Calendar" icon={Calendar} />
+        <QuickAction to="/stats" label="Insights" icon={TrendingUp} />
+      </div>
     </div>
+  );
+}
+
+function StatCard({ icon: Icon, label, value, accent }: { icon: typeof Shirt; label: string; value: number; accent: string }) {
+  return (
+    <div className="bg-bg-card border border-border rounded-xl p-4 card-lift">
+      <div className="flex items-center gap-2 mb-2">
+        <Icon size={14} className={accent} />
+        <span className="text-[10px] text-text-muted uppercase tracking-wider">{label}</span>
+      </div>
+      <p className="text-2xl font-semibold text-text font-[family-name:var(--font-heading)]">{value}</p>
+    </div>
+  );
+}
+
+function QuickAction({ to, label, icon: Icon }: { to: string; label: string; icon: typeof Shirt }) {
+  return (
+    <Link
+      to={to}
+      className="flex flex-col items-center gap-2 p-4 bg-bg-card border border-border rounded-xl hover:border-border-light hover:bg-bg-card-hover transition-all group"
+    >
+      <div className="w-10 h-10 rounded-full bg-bg-elevated border border-border flex items-center justify-center group-hover:border-accent/30 transition-colors">
+        <Icon size={16} className="text-text-muted group-hover:text-accent transition-colors" />
+      </div>
+      <span className="text-xs text-text-secondary font-medium">{label}</span>
+    </Link>
   );
 }

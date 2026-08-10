@@ -1,12 +1,10 @@
 import { useState, useEffect } from 'react';
-import { CheckCircle, AlertCircle, Info } from 'lucide-react';
-
-export type ToastType = 'success' | 'error' | 'info';
+import { X, CheckCircle, AlertCircle, Info } from 'lucide-react';
 
 interface Toast {
   id: string;
   message: string;
-  type: ToastType;
+  type: 'success' | 'error' | 'info';
 }
 
 let toastListeners: ((toasts: Toast[]) => void)[] = [];
@@ -16,7 +14,7 @@ function notify() {
   toastListeners.forEach(l => l([...toasts]));
 }
 
-export function showToast(message: string, type: ToastType = 'info') {
+export function showToast(message: string, type: Toast['type'] = 'info') {
   const id = Math.random().toString(36).slice(2);
   toasts = [...toasts, { id, message, type }];
   notify();
@@ -27,44 +25,52 @@ export function showToast(message: string, type: ToastType = 'info') {
 }
 
 export function useToasts() {
-  const [state, setState] = useState<Toast[]>([]);
+  const [localToasts, setLocalToasts] = useState<Toast[]>([]);
   useEffect(() => {
-    toastListeners.push(setState);
+    const listener = (t: Toast[]) => setLocalToasts(t);
+    toastListeners.push(listener);
     return () => {
-      toastListeners = toastListeners.filter(l => l !== setState);
+      toastListeners = toastListeners.filter(l => l !== listener);
     };
   }, []);
-  return state;
+  return localToasts;
 }
 
-const iconMap = {
+const icons = {
   success: CheckCircle,
   error: AlertCircle,
   info: Info,
 };
 
-const colorMap = {
-  success: 'bg-success/10 text-success border-success/20',
-  error: 'bg-error/10 text-error border-error/20',
-  info: 'bg-accent/10 text-accent border-accent/20',
+const toastStyles = {
+  success: 'border-sage/30 bg-bg-card text-sage',
+  error: 'border-error/30 bg-bg-card text-error',
+  info: 'border-accent/30 bg-bg-card text-accent',
 };
 
 export function ToastContainer() {
   const toasts = useToasts();
-
   if (toasts.length === 0) return null;
 
   return (
-    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[200] flex flex-col gap-2 w-[90%] max-w-sm">
+    <div className="fixed bottom-4 right-4 z-[200] flex flex-col gap-2">
       {toasts.map(toast => {
-        const Icon = iconMap[toast.type];
+        const Icon = icons[toast.type];
         return (
           <div
             key={toast.id}
-            className={`flex items-center gap-3 px-4 py-3 rounded-xl border shadow-lg backdrop-blur-md animate-in slide-in-from-bottom-2 ${colorMap[toast.type]}`}
+            className={`flex items-center gap-2.5 px-4 py-3 rounded-lg border shadow-lg shadow-black/20 backdrop-blur-sm min-w-[280px] max-w-md ${toastStyles[toast.type]}`}
           >
-            <Icon size={18} />
+            <Icon size={16} className="flex-shrink-0" />
             <p className="text-sm font-medium flex-1">{toast.message}</p>
+            <button
+              onClick={() => {
+                /* dismiss handled by timeout */
+              }}
+              className="flex-shrink-0 opacity-50 hover:opacity-100 transition-opacity"
+            >
+              <X size={14} />
+            </button>
           </div>
         );
       })}

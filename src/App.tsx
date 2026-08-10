@@ -1,4 +1,3 @@
-import { HashRouter, Routes, Route } from 'react-router-dom';
 import { WardrobeProvider } from './context/WardrobeContext';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
@@ -8,6 +7,7 @@ import Calendar from './pages/Calendar';
 import Statistics from './pages/Statistics';
 import Wishlist from './pages/Wishlist';
 import Settings from './pages/Settings';
+import { HashRouter, Routes, Route } from 'react-router-dom';
 
 function App() {
   return (

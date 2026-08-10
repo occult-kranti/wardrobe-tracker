@@ -1,28 +1,57 @@
 @import "tailwindcss";
 
 @theme {
-  --color-bg: #FAF8F5;
-  --color-surface: #F5F0EB;
-  --color-surface-hover: #EDE8E2;
-  --color-text: #2D2A26;
-  --color-text-secondary: #6B6560;
-  --color-text-muted: #8A8580;
-  --color-border: #E8E4E0;
-  --color-accent: #C4705A;
-  --color-accent-hover: #B05D47;
-  --color-success: #7A9E7E;
-  --color-warning: #D4A03D;
+  /* ===== MIDNIGHT ATELIER - Dark Editorial Theme ===== */
+  
+  /* Backgrounds */
+  --color-bg: #0C0C0E;
+  --color-bg-elevated: #141416;
+  --color-bg-card: #1A1A1D;
+  --color-bg-card-hover: #222225;
+  
+  /* Text */
+  --color-text: #F0E6D8;
+  --color-text-secondary: #A89B8C;
+  --color-text-muted: #6B6156;
+  
+  /* Borders */
+  --color-border: #2A2825;
+  --color-border-light: #3A3632;
+  
+  /* Accents - Rich & Sophisticated */
+  --color-accent: #C9A86C;
+  --color-accent-hover: #D4B87D;
+  --color-accent-dim: #8B7347;
+  
+  --color-wine: #8B3A3A;
+  --color-wine-hover: #A04545;
+  --color-wine-dim: #5C2626;
+  
+  --color-sage: #6B8E6B;
+  --color-sage-hover: #7A9E7A;
+  --color-sage-dim: #4A6B4A;
+  
+  --color-amber: #C4956A;
+  --color-amber-hover: #D4A57A;
+  
+  --color-rose: #B06B7A;
+  --color-rose-hover: #C07A8A;
+  
+  /* Semantic */
+  --color-success: #6B8E6B;
+  --color-warning: #C4956A;
   --color-error: #C45B5A;
-  --color-rose: #C48B9E;
-  --color-cream: #FFFDF9;
-
-  --font-sans: 'General Sans', 'Outfit', system-ui, sans-serif;
-  --font-heading: 'General Sans', system-ui, sans-serif;
-
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
-  --radius-xl: 18px;
+  
+  /* Typography */
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-heading: 'Playfair Display', 'Georgia', serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  
+  /* Radii - Sharper, more editorial */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
 }
 
 @layer base {
@@ -44,10 +73,95 @@
     display: flex;
     flex-direction: column;
   }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--color-bg);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-border-light);
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-text-muted);
+  }
 }
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+  
+  /* Editorial heading style */
+  .heading-editorial {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+  }
+  
+  /* Gold gradient text */
+  .text-gold {
+    background: linear-gradient(135deg, #C9A86C 0%, #E8D5A3 50%, #C9A86C 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  /* Subtle noise texture overlay */
+  .noise-overlay {
+    position: relative;
+  }
+  .noise-overlay::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    opacity: 0.03;
+    pointer-events: none;
+    z-index: 1;
+  }
+  
+  /* Decorative line */
+  .deco-line {
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, var(--color-accent-dim) 50%, transparent 100%);
+  }
+  
+  /* Card hover lift */
+  .card-lift {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  .card-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  }
+  
+  /* Button shine effect */
+  .btn-shine {
+    position: relative;
+    overflow: hidden;
+  }
+  .btn-shine::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+      45deg,
+      transparent 30%,
+      rgba(255, 255, 255, 0.05) 50%,
+      transparent 70%
+    );
+    transform: translateX(-100%);
+    transition: transform 0.6s ease;
+  }
+  .btn-shine:hover::after {
+    transform: translateX(100%);
   }
 }

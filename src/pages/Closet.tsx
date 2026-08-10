@@ -4,11 +4,12 @@ import { Search, SlidersHorizontal, Heart, Trash2, X, Check } from 'lucide-react
 import { useWardrobe } from '../context/WardrobeContext';
 import { CATEGORY_LABELS, SEASON_LABELS, OCCASION_LABELS, LAUNDRY_LABELS, type Category, type Season, type Occasion, type LaundryStatus } from '../types';
 import { showToast } from '../components/Toast';
+import { EmptyClosetArt, DecorativeDivider } from '../components/art';
 import type { ClothingItem } from '../types';
 
 const laundryBadgeColors: Record<LaundryStatus, string> = {
-  clean: 'bg-success/80 text-white',
-  worn: 'bg-warning/80 text-white',
+  clean: 'bg-sage/80 text-white',
+  worn: 'bg-amber/80 text-white',
   washing: 'bg-accent/80 text-white',
 };
 
@@ -23,92 +24,57 @@ function ClosetItemCard({ item, onToggleFavorite, onDelete, onWear, onLaundryCha
   const [showLaundryMenu, setShowLaundryMenu] = useState(false);
 
   return (
-    <div className="group bg-cream border border-border rounded-xl overflow-hidden hover:shadow-md transition-all">
+    <div className="group bg-bg-card border border-border rounded-xl overflow-hidden hover:border-border-light card-lift">
       <div className="aspect-[3/4] relative">
-        <img
-          src={item.imageUrl}
-          alt={item.name}
-          className="w-full h-full object-cover"
-          loading="lazy"
-        />
-        {/* Action buttons - always visible on touch, hover on desktop */}
-        <div className="absolute top-2 right-2 flex flex-col gap-1.5 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
-          <button
-            onClick={onWear}
-            className="w-8 h-8 rounded-full bg-accent text-white flex items-center justify-center backdrop-blur-md hover:bg-accent-hover"
-            aria-label="Wear today"
-            title="Wear today"
-          >
+        <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" loading="lazy" />
+        {/* Overlay gradient */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+        {/* Action buttons */}
+        <div className="absolute top-2 right-2 flex flex-col gap-1.5 lg:opacity-0 lg:group-hover:opacity-100 transition-all">
+          <button onClick={onWear} className="w-8 h-8 rounded-full bg-accent/90 text-bg flex items-center justify-center backdrop-blur-md hover:bg-accent transition-colors" aria-label="Wear today" title="Wear today">
             <Check size={14} />
           </button>
-          <button
-            onClick={onToggleFavorite}
-            className={`w-8 h-8 rounded-full flex items-center justify-center backdrop-blur-md transition-colors ${
-              item.favorite ? 'bg-accent text-white' : 'bg-white/90 text-text hover:bg-white'
-            }`}
-            aria-label={item.favorite ? 'Remove from favorites' : 'Add to favorites'}
-          >
+          <button onClick={onToggleFavorite} className={`w-8 h-8 rounded-full flex items-center justify-center backdrop-blur-md transition-colors ${item.favorite ? 'bg-rose/90 text-white' : 'bg-bg-card/90 text-text hover:text-rose'}`} aria-label={item.favorite ? 'Remove from favorites' : 'Add to favorites'}>
             <Heart size={14} className={item.favorite ? 'fill-current' : ''} />
           </button>
           {!confirmDelete ? (
-            <button
-              onClick={() => setConfirmDelete(true)}
-              className="w-8 h-8 rounded-full bg-white/90 text-error flex items-center justify-center backdrop-blur-md hover:bg-white"
-              aria-label="Delete item"
-            >
+            <button onClick={() => setConfirmDelete(true)} className="w-8 h-8 rounded-full bg-bg-card/90 text-text-muted flex items-center justify-center backdrop-blur-md hover:text-error transition-colors" aria-label="Delete item">
               <Trash2 size={14} />
             </button>
           ) : (
-            <button
-              onClick={() => { onDelete(); setConfirmDelete(false); }}
-              className="w-8 h-8 rounded-full bg-error text-white flex items-center justify-center"
-              aria-label="Confirm delete"
-            >
+            <button onClick={() => { onDelete(); setConfirmDelete(false); }} className="w-8 h-8 rounded-full bg-error text-white flex items-center justify-center" aria-label="Confirm delete">
               <X size={14} />
             </button>
           )}
         </div>
-        {/* Wear count & laundry badge */}
-        <div className="absolute bottom-2 left-2 flex flex-col gap-1">
-          {item.wearCount > 0 && (
-            <div className="px-2 py-0.5 bg-black/50 text-white text-[10px] rounded-full backdrop-blur-sm">
-              {item.wearCount} wears
-            </div>
-          )}
-          <button
-            onClick={() => setShowLaundryMenu(!showLaundryMenu)}
-            className={`px-2 py-0.5 text-[10px] rounded-full backdrop-blur-sm transition-all ${laundryBadgeColors[item.laundryStatus]}`}
-          >
-            {LAUNDRY_LABELS[item.laundryStatus]}
-          </button>
-          {showLaundryMenu && (
-            <div className="bg-white rounded-lg shadow-lg border border-border overflow-hidden mt-1">
-              {(['clean', 'worn', 'washing'] as LaundryStatus[]).map(status => (
-                <button
-                  key={status}
-                  onClick={() => { onLaundryChange(status); setShowLaundryMenu(false); }}
-                  className={`block w-full px-3 py-1.5 text-[10px] text-left hover:bg-surface ${
-                    item.laundryStatus === status ? 'font-semibold bg-surface' : ''
-                  }`}
-                >
-                  {LAUNDRY_LABELS[status]}
-                </button>
-              ))}
-            </div>
-          )}
+        {/* Bottom info */}
+        <div className="absolute bottom-2 left-2 right-2 flex items-end justify-between">
+          <div className="flex flex-col gap-1">
+            {item.wearCount > 0 && (
+              <div className="px-2 py-0.5 bg-black/60 text-white/90 text-[10px] rounded-md backdrop-blur-sm">
+                {item.wearCount} wears
+              </div>
+            )}
+            <button onClick={() => setShowLaundryMenu(!showLaundryMenu)} className={`px-2 py-0.5 text-[10px] rounded-md backdrop-blur-sm transition-all ${laundryBadgeColors[item.laundryStatus]}`}>
+              {LAUNDRY_LABELS[item.laundryStatus]}
+            </button>
+            {showLaundryMenu && (
+              <div className="bg-bg-elevated rounded-lg shadow-xl border border-border overflow-hidden mt-1">
+                {(['clean', 'worn', 'washing'] as LaundryStatus[]).map(status => (
+                  <button key={status} onClick={() => { onLaundryChange(status); setShowLaundryMenu(false); }} className={`block w-full px-3 py-1.5 text-[10px] text-left hover:bg-bg-card transition-colors ${item.laundryStatus === status ? 'font-semibold text-accent' : 'text-text-secondary'}`}>
+                    {LAUNDRY_LABELS[status]}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
       <div className="p-3">
         <p className="text-sm font-medium text-text truncate">{item.name}</p>
         <div className="flex items-center gap-2 mt-1.5">
-          <span className="text-xs text-text-muted bg-surface px-2 py-0.5 rounded-full">
-            {CATEGORY_LABELS[item.category]}
-          </span>
-          <span
-            className="w-3 h-3 rounded-full border border-border"
-            style={{ backgroundColor: item.color }}
-            title={item.color}
-          />
+          <span className="text-[10px] text-text-muted uppercase tracking-wider bg-bg-elevated px-2 py-0.5 rounded">{CATEGORY_LABELS[item.category]}</span>
+          <span className="w-3 h-3 rounded-full border border-border" style={{ backgroundColor: item.color }} title={item.color} />
         </div>
       </div>
     </div>
@@ -141,14 +107,7 @@ export default function Closet() {
     });
   }, [items, search, activeCategory, filterSeason, filterOccasion, filterColor, showFavoritesOnly, filterLaundry]);
 
-  const activeFiltersCount = [
-    activeCategory,
-    filterSeason,
-    filterOccasion,
-    filterColor,
-    showFavoritesOnly,
-    filterLaundry,
-  ].filter(Boolean).length;
+  const activeFiltersCount = [activeCategory, filterSeason, filterOccasion, filterColor, showFavoritesOnly, filterLaundry].filter(Boolean).length;
 
   const clearFilters = () => {
     setSearchParams({});
@@ -160,7 +119,6 @@ export default function Closet() {
     setSearch('');
   };
 
-  // Laundry summary
   const laundryCounts = useMemo(() => ({
     clean: items.filter(i => i.laundryStatus === 'clean').length,
     worn: items.filter(i => i.laundryStatus === 'worn').length,
@@ -168,46 +126,30 @@ export default function Closet() {
   }), [items]);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-text font-[family-name:var(--font-heading)]">My Closet</h1>
-        <span className="text-sm text-text-muted">{filteredItems.length} items</span>
+        <div>
+          <h1 className="heading-editorial text-2xl sm:text-3xl text-text">My Closet</h1>
+          <p className="text-xs text-text-muted mt-1 uppercase tracking-wider">{filteredItems.length} pieces</p>
+        </div>
       </div>
+      <DecorativeDivider />
 
       {/* Laundry Status Bar */}
       {items.length > 0 && (
         <div className="flex gap-2 overflow-x-auto pb-1">
-          <button
-            onClick={() => setFilterLaundry('')}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
-              !filterLaundry ? 'bg-accent text-white' : 'bg-surface text-text-secondary hover:bg-surface-hover'
-            }`}
-          >
+          <button onClick={() => setFilterLaundry('')} className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all border ${!filterLaundry ? 'bg-accent/10 border-accent/30 text-accent' : 'bg-bg-card border-border text-text-muted hover:border-border-light'}`}>
             All ({items.length})
           </button>
-          <button
-            onClick={() => setFilterLaundry('clean')}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all flex items-center gap-1 ${
-              filterLaundry === 'clean' ? 'bg-success text-white' : 'bg-surface text-text-secondary hover:bg-surface-hover'
-            }`}
-          >
-            ✨ Clean ({laundryCounts.clean})
+          <button onClick={() => setFilterLaundry('clean')} className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all border flex items-center gap-1.5 ${filterLaundry === 'clean' ? 'bg-sage/10 border-sage/30 text-sage' : 'bg-bg-card border-border text-text-muted hover:border-border-light'}`}>
+            <span className="w-1.5 h-1.5 rounded-full bg-sage" /> Clean ({laundryCounts.clean})
           </button>
-          <button
-            onClick={() => setFilterLaundry('worn')}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all flex items-center gap-1 ${
-              filterLaundry === 'worn' ? 'bg-warning text-white' : 'bg-surface text-text-secondary hover:bg-surface-hover'
-            }`}
-          >
-            👕 Needs Wash ({laundryCounts.worn})
+          <button onClick={() => setFilterLaundry('worn')} className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all border flex items-center gap-1.5 ${filterLaundry === 'worn' ? 'bg-amber/10 border-amber/30 text-amber' : 'bg-bg-card border-border text-text-muted hover:border-border-light'}`}>
+            <span className="w-1.5 h-1.5 rounded-full bg-amber" /> Needs Wash ({laundryCounts.worn})
           </button>
-          <button
-            onClick={() => setFilterLaundry('washing')}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all flex items-center gap-1 ${
-              filterLaundry === 'washing' ? 'bg-accent text-white' : 'bg-surface text-text-secondary hover:bg-surface-hover'
-            }`}
-          >
-            🧺 In Laundry ({laundryCounts.washing})
+          <button onClick={() => setFilterLaundry('washing')} className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all border flex items-center gap-1.5 ${filterLaundry === 'washing' ? 'bg-accent/10 border-accent/30 text-accent' : 'bg-bg-card border-border text-text-muted hover:border-border-light'}`}>
+            <span className="w-1.5 h-1.5 rounded-full bg-accent" /> In Laundry ({laundryCounts.washing})
           </button>
         </div>
       )}
@@ -215,60 +157,31 @@ export default function Closet() {
       {/* Search & Filters */}
       <div className="flex gap-2">
         <div className="flex-1 relative">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" aria-hidden="true" />
-          <input
-            type="text"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Search items..."
-            className="w-full pl-9 pr-9 py-2.5 bg-cream border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent transition-all"
+          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" aria-hidden="true" />
+          <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search your collection..."
+            className="w-full pl-9 pr-9 py-2.5 bg-bg-card border border-border rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all"
             aria-label="Search clothing items"
           />
           {search && (
-            <button
-              onClick={() => setSearch('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text"
-              aria-label="Clear search"
-            >
+            <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text transition-colors" aria-label="Clear search">
               <X size={14} />
             </button>
           )}
         </div>
-        <button
-          onClick={() => setShowFilters(!showFilters)}
-          className={`relative px-3 py-2.5 rounded-lg border text-sm font-medium transition-all ${
-            showFilters || activeFiltersCount > 0
-              ? 'bg-accent/10 border-accent/30 text-accent'
-              : 'bg-cream border-border text-text-secondary hover:bg-surface'
-          }`}
-        >
+        <button onClick={() => setShowFilters(!showFilters)}
+          className={`relative px-3 py-2.5 rounded-lg border text-sm font-medium transition-all ${showFilters || activeFiltersCount > 0 ? 'bg-accent/10 border-accent/30 text-accent' : 'bg-bg-card border-border text-text-secondary hover:border-border-light'}`}>
           <SlidersHorizontal size={16} />
           {activeFiltersCount > 0 && (
-            <span className="absolute -top-1 -right-1 w-4 h-4 bg-accent text-white text-[10px] rounded-full flex items-center justify-center font-bold">
-              {activeFiltersCount}
-            </span>
+            <span className="absolute -top-1 -right-1 w-4 h-4 bg-accent text-bg text-[10px] rounded-full flex items-center justify-center font-bold">{activeFiltersCount}</span>
           )}
         </button>
       </div>
 
       {/* Category Chips */}
       <div className="flex gap-2 overflow-x-auto pb-1">
-        <button
-          onClick={() => setSearchParams({})}
-          className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
-            !activeCategory ? 'bg-accent text-white' : 'bg-surface text-text-secondary hover:bg-surface-hover'
-          }`}
-        >
-          All
-        </button>
+        <button onClick={() => setSearchParams({})} className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all border ${!activeCategory ? 'bg-accent/10 border-accent/30 text-accent' : 'bg-bg-card border-border text-text-muted hover:border-border-light'}`}>All</button>
         {(Object.keys(CATEGORY_LABELS) as Category[]).map(cat => (
-          <button
-            key={cat}
-            onClick={() => setSearchParams({ category: cat })}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
-              activeCategory === cat ? 'bg-accent text-white' : 'bg-surface text-text-secondary hover:bg-surface-hover'
-            }`}
-          >
+          <button key={cat} onClick={() => setSearchParams({ category: cat })} className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all border ${activeCategory === cat ? 'bg-accent/10 border-accent/30 text-accent' : 'bg-bg-card border-border text-text-muted hover:border-border-light'}`}>
             {CATEGORY_LABELS[cat]}
           </button>
         ))}
@@ -276,56 +189,33 @@ export default function Closet() {
 
       {/* Filter Panel */}
       {showFilters && (
-        <div className="bg-cream border border-border rounded-xl p-4 space-y-3">
+        <div className="bg-bg-card border border-border rounded-xl p-4 space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-medium text-text">Filters</h3>
-            <button onClick={clearFilters} className="text-xs text-accent hover:underline">Clear all</button>
+            <h3 className="text-xs font-medium text-text-muted uppercase tracking-wider">Filters</h3>
+            <button onClick={clearFilters} className="text-xs text-accent hover:text-accent-hover transition-colors">Clear all</button>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div>
-              <label className="text-xs text-text-muted mb-1 block">Season</label>
-              <select
-                value={filterSeason}
-                onChange={e => setFilterSeason(e.target.value as Season)}
-                className="w-full px-2.5 py-2 bg-surface border border-border rounded-lg text-xs focus:outline-none focus:border-accent"
-              >
+              <label className="text-[10px] text-text-muted uppercase tracking-wider mb-1.5 block">Season</label>
+              <select value={filterSeason} onChange={e => setFilterSeason(e.target.value as Season)} className="w-full px-2.5 py-2 bg-bg-elevated border border-border rounded-lg text-xs text-text focus:outline-none focus:border-accent">
                 <option value="">All</option>
-                {(Object.keys(SEASON_LABELS) as Season[]).map(s => (
-                  <option key={s} value={s}>{SEASON_LABELS[s]}</option>
-                ))}
+                {(Object.keys(SEASON_LABELS) as Season[]).map(s => <option key={s} value={s}>{SEASON_LABELS[s]}</option>)}
               </select>
             </div>
             <div>
-              <label className="text-xs text-text-muted mb-1 block">Occasion</label>
-              <select
-                value={filterOccasion}
-                onChange={e => setFilterOccasion(e.target.value as Occasion)}
-                className="w-full px-2.5 py-2 bg-surface border border-border rounded-lg text-xs focus:outline-none focus:border-accent"
-              >
+              <label className="text-[10px] text-text-muted uppercase tracking-wider mb-1.5 block">Occasion</label>
+              <select value={filterOccasion} onChange={e => setFilterOccasion(e.target.value as Occasion)} className="w-full px-2.5 py-2 bg-bg-elevated border border-border rounded-lg text-xs text-text focus:outline-none focus:border-accent">
                 <option value="">All</option>
-                {(Object.keys(OCCASION_LABELS) as Occasion[]).map(o => (
-                  <option key={o} value={o}>{OCCASION_LABELS[o]}</option>
-                ))}
+                {(Object.keys(OCCASION_LABELS) as Occasion[]).map(o => <option key={o} value={o}>{OCCASION_LABELS[o]}</option>)}
               </select>
             </div>
             <div>
-              <label className="text-xs text-text-muted mb-1 block">Color</label>
-              <input
-                type="color"
-                value={filterColor || '#000000'}
-                onChange={e => setFilterColor(e.target.value === '#000000' ? '' : e.target.value)}
-                className="w-full h-[34px] bg-surface border border-border rounded-lg cursor-pointer"
-              />
+              <label className="text-[10px] text-text-muted uppercase tracking-wider mb-1.5 block">Color</label>
+              <input type="color" value={filterColor || '#000000'} onChange={e => setFilterColor(e.target.value === '#000000' ? '' : e.target.value)} className="w-full h-[34px] bg-bg-elevated border border-border rounded-lg cursor-pointer" />
             </div>
             <div className="flex items-end">
-              <button
-                onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
-                className={`w-full px-3 py-2 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-1.5 ${
-                  showFavoritesOnly ? 'bg-accent/15 text-accent' : 'bg-surface text-text-secondary'
-                }`}
-              >
-                <Heart size={12} className={showFavoritesOnly ? 'fill-accent' : ''} />
-                Favorites Only
+              <button onClick={() => setShowFavoritesOnly(!showFavoritesOnly)} className={`w-full px-3 py-2 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-1.5 border ${showFavoritesOnly ? 'bg-rose/10 border-rose/30 text-rose' : 'bg-bg-elevated border-border text-text-muted hover:border-border-light'}`}>
+                <Heart size={12} className={showFavoritesOnly ? 'fill-rose' : ''} /> Favorites
               </button>
             </div>
           </div>
@@ -336,36 +226,19 @@ export default function Closet() {
       {filteredItems.length > 0 ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
           {filteredItems.map(item => (
-            <ClosetItemCard
-              key={item.id}
-              item={item}
-              onToggleFavorite={() => {
-                toggleFavoriteItem(item.id);
-                showToast(item.favorite ? 'Removed from favorites' : 'Added to favorites', 'success');
-              }}
-              onDelete={() => {
-                deleteItem(item.id);
-                showToast('Item deleted', 'info');
-              }}
-              onWear={() => {
-                logWear([item.id]);
-                showToast(`Logged wear for "${item.name}"`, 'success');
-              }}
-              onLaundryChange={(status) => {
-                setLaundryStatus(item.id, status);
-                showToast(`Marked as ${LAUNDRY_LABELS[status]}`, 'info');
-              }}
+            <ClosetItemCard key={item.id} item={item}
+              onToggleFavorite={() => { toggleFavoriteItem(item.id); showToast(item.favorite ? 'Removed from favorites' : 'Added to favorites', 'success'); }}
+              onDelete={() => { deleteItem(item.id); showToast('Item removed', 'info'); }}
+              onWear={() => { logWear([item.id]); showToast(`Logged wear for "${item.name}"`, 'success'); }}
+              onLaundryChange={(status) => { setLaundryStatus(item.id, status); showToast(`Marked as ${LAUNDRY_LABELS[status]}`, 'info'); }}
             />
           ))}
         </div>
       ) : (
-        <div className="text-center py-12">
-          <p className="text-sm text-text-secondary">No items match your filters.</p>
-          {activeFiltersCount > 0 && (
-            <button onClick={clearFilters} className="text-sm text-accent mt-2 hover:underline">
-              Clear filters
-            </button>
-          )}
+        <div className="text-center py-16">
+          <EmptyClosetArt className="w-40 h-40 mx-auto mb-4 opacity-60" />
+          <p className="text-sm text-text-secondary">{items.length === 0 ? 'Your closet is empty. Add your first piece.' : 'No items match your filters.'}</p>
+          {activeFiltersCount > 0 && <button onClick={clearFilters} className="text-sm text-accent mt-3 hover:text-accent-hover transition-colors">Clear filters</button>}
         </div>
       )}
     </div>

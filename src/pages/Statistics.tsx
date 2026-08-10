@@ -1,26 +1,19 @@
 import { TrendingUp, TrendingDown, Heart, Clock, DollarSign, Package } from 'lucide-react';
 import { useWardrobe } from '../context/WardrobeContext';
 import { CATEGORY_LABELS } from '../types';
+import { DecorativeDivider } from '../components/art';
 
 export default function Statistics() {
-  const { items, outfits, wearLogs, getMostWorn, getLeastWorn, getUnwornItems } = useWardrobe();
+  const { items, wearLogs, getMostWorn, getLeastWorn, getUnwornItems } = useWardrobe();
 
   const totalItems = items.length;
   const totalWears = wearLogs.length;
-  const totalOutfits = outfits.length;
   const unwornCount = getUnwornItems().length;
-  const wornCount = totalItems - unwornCount;
   const mostWorn = getMostWorn(5);
   const leastWorn = getLeastWorn(5);
 
   const totalCost = items.reduce((sum, i) => sum + (i.cost || 0), 0);
   const avgCostPerWear = totalWears > 0 ? totalCost / totalWears : 0;
-
-  const categoryData = Object.entries(CATEGORY_LABELS).map(([key, label]) => {
-    const catItems = items.filter(i => i.category === key);
-    const catWears = catItems.reduce((sum, i) => sum + i.wearCount, 0);
-    return { key, label, count: catItems.length, wears: catWears };
-  }).filter(d => d.count > 0);
 
   const monthlyWears = wearLogs.reduce((acc, log) => {
     const month = log.date.slice(0, 7);
@@ -28,106 +21,91 @@ export default function Statistics() {
     return acc;
   }, {} as Record<string, number>);
 
-  const sortedMonths = Object.entries(monthlyWears).sort().slice(-6);
-  const maxMonthly = Math.max(...Object.values(monthlyWears), 1);
+  const categoryData = items.reduce((acc, item) => {
+    acc[item.category] = (acc[item.category] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold text-text font-[family-name:var(--font-heading)]">Statistics</h1>
+      <div>
+        <h1 className="heading-editorial text-2xl sm:text-3xl text-text">Insights</h1>
+        <p className="text-xs text-text-muted mt-1 uppercase tracking-wider">Your wardrobe at a glance</p>
+      </div>
+      <DecorativeDivider />
 
-      {/* Overview Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {[
-          { label: 'Total Items', value: totalItems, icon: Package, color: 'bg-accent/10 text-accent' },
-          { label: 'Total Wears', value: totalWears, icon: TrendingUp, color: 'bg-success/10 text-success' },
-          { label: 'Outfits', value: totalOutfits, icon: Heart, color: 'bg-rose/10 text-rose' },
-          { label: 'Unworn Items', value: unwornCount, icon: TrendingDown, color: 'bg-warning/10 text-warning' },
-        ].map(stat => (
-          <div key={stat.label} className="bg-cream border border-border rounded-xl p-4">
-            <div className={`w-8 h-8 rounded-lg ${stat.color} flex items-center justify-center mb-3`}>
-              <stat.icon size={16} />
-            </div>
-            <p className="text-2xl font-semibold text-text">{stat.value}</p>
-            <p className="text-xs text-text-muted mt-0.5">{stat.label}</p>
-          </div>
-        ))}
+      {/* Top Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <StatCard icon={Package} label="Items" value={totalItems} color="text-accent" />
+        <StatCard icon={Clock} label="Wears" value={totalWears} color="text-sage" />
+        <StatCard icon={Heart} label="Favorites" value={items.filter(i => i.favorite).length} color="text-rose" />
+        <StatCard icon={DollarSign} label="Value" value={`$${totalCost.toFixed(0)}`} color="text-amber" />
       </div>
 
-      {/* Wardrobe Utilization */}
-      {totalItems > 0 && (
-        <div className="bg-cream border border-border rounded-xl p-5">
-          <h2 className="text-base font-semibold text-text mb-4">Wardrobe Utilization</h2>
-          <div className="flex items-center gap-4">
-            <div className="relative w-28 h-28">
-              <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
-                <circle cx="18" cy="18" r="15.9" fill="none" stroke="#E8E4E0" strokeWidth="3" />
-                <circle
-                  cx="18" cy="18" r="15.9" fill="none" stroke="#C4705A" strokeWidth="3"
-                  strokeDasharray={`${(wornCount / totalItems) * 100} 100`}
-                  strokeLinecap="round"
-                />
-              </svg>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-lg font-semibold text-text">
-                  {Math.round((wornCount / totalItems) * 100)}%
-                </span>
-              </div>
+      {/* Cost Analysis */}
+      {totalCost > 0 && (
+        <div className="bg-bg-card border border-border rounded-xl p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <DollarSign size={16} className="text-accent" />
+            <h2 className="text-sm font-semibold text-text uppercase tracking-wider">Cost Analysis</h2>
+          </div>
+          <div className="grid sm:grid-cols-3 gap-4">
+            <div className="text-center p-4 bg-bg-elevated rounded-lg">
+              <p className="text-2xl font-semibold text-text font-[family-name:var(--font-heading)]">${totalCost.toFixed(2)}</p>
+              <p className="text-xs text-text-muted mt-1">Total Value</p>
             </div>
-            <div className="flex-1">
-              <p className="text-sm text-text-secondary">
-                <span className="font-semibold text-text">{wornCount}</span> of{' '}
-                <span className="font-semibold text-text">{totalItems}</span> items have been worn
-              </p>
-              <p className="text-xs text-text-muted mt-1">
-                {unwornCount > 0
-                  ? `${unwornCount} items haven't been worn yet. Try styling them into new outfits!`
-                  : "Amazing! You've worn every item in your closet."}
-              </p>
+            <div className="text-center p-4 bg-bg-elevated rounded-lg">
+              <p className="text-2xl font-semibold text-text font-[family-name:var(--font-heading)]">${totalItems > 0 ? (totalCost / totalItems).toFixed(2) : '0.00'}</p>
+              <p className="text-xs text-text-muted mt-1">Avg per Item</p>
+            </div>
+            <div className="text-center p-4 bg-bg-elevated rounded-lg">
+              <p className="text-2xl font-semibold text-text font-[family-name:var(--font-heading)]">${avgCostPerWear.toFixed(2)}</p>
+              <p className="text-xs text-text-muted mt-1">Cost per Wear</p>
             </div>
           </div>
         </div>
       )}
 
       {/* Category Breakdown */}
-      {categoryData.length > 0 && (
-        <div className="bg-cream border border-border rounded-xl p-5">
-          <h2 className="text-base font-semibold text-text mb-4">By Category</h2>
+      {totalItems > 0 && (
+        <div className="bg-bg-card border border-border rounded-xl p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <Package size={16} className="text-accent" />
+            <h2 className="text-sm font-semibold text-text uppercase tracking-wider">Categories</h2>
+          </div>
           <div className="space-y-3">
-            {categoryData.map(cat => {
-              const pct = totalItems > 0 ? (cat.count / totalItems) * 100 : 0;
-              return (
-                <div key={cat.key}>
-                  <div className="flex items-center justify-between text-sm mb-1">
-                    <span className="text-text">{cat.label}</span>
-                    <span className="text-text-muted">{cat.count} items · {cat.wears} wears</span>
-                  </div>
-                  <div className="h-2 bg-surface rounded-full overflow-hidden">
-                    <div className="h-full bg-accent rounded-full transition-all" style={{ width: `${pct}%` }} />
-                  </div>
+            {Object.entries(categoryData).sort((a, b) => b[1] - a[1]).map(([cat, count]) => (
+              <div key={cat}>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-sm text-text">{CATEGORY_LABELS[cat as keyof typeof CATEGORY_LABELS]}</span>
+                  <span className="text-xs text-text-muted">{count} ({Math.round((count / totalItems) * 100)}%)</span>
                 </div>
-              );
-            })}
+                <div className="h-2 bg-bg-elevated rounded-full overflow-hidden">
+                  <div className="h-full bg-accent rounded-full transition-all" style={{ width: `${(count / totalItems) * 100}%` }} />
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}
 
       {/* Monthly Activity */}
-      {sortedMonths.length > 0 && (
-        <div className="bg-cream border border-border rounded-xl p-5">
-          <h2 className="text-base font-semibold text-text mb-4">Monthly Activity</h2>
-          <div className="flex items-end gap-3 h-32">
-            {sortedMonths.map(([month, count]) => {
-              const height = maxMonthly > 0 ? (count / maxMonthly) * 100 : 0;
+      {Object.keys(monthlyWears).length > 0 && (
+        <div className="bg-bg-card border border-border rounded-xl p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <TrendingUp size={16} className="text-accent" />
+            <h2 className="text-sm font-semibold text-text uppercase tracking-wider">Monthly Activity</h2>
+          </div>
+          <div className="flex items-end gap-2 h-32">
+            {Object.entries(monthlyWears).sort().map(([month, count]) => {
+              const maxCount = Math.max(...Object.values(monthlyWears));
+              const height = maxCount > 0 ? (count / maxCount) * 100 : 0;
               return (
-                <div key={month} className="flex-1 flex flex-col items-center gap-1.5">
-                  <div className="w-full flex-1 flex items-end">
-                    <div
-                      className="w-full bg-accent rounded-t-md transition-all"
-                      style={{ height: `${Math.max(height, 8)}%` }}
-                    />
+                <div key={month} className="flex-1 flex flex-col items-center gap-1">
+                  <div className="w-full bg-bg-elevated rounded-t-md relative overflow-hidden" style={{ height: `${height}%` }}>
+                    <div className="absolute inset-0 bg-accent/40 rounded-t-md" />
                   </div>
                   <span className="text-[10px] text-text-muted">{month.slice(5)}</span>
-                  <span className="text-[10px] font-medium text-text">{count}</span>
                 </div>
               );
             })}
@@ -135,73 +113,85 @@ export default function Statistics() {
         </div>
       )}
 
-      {/* Cost Analysis */}
-      {totalCost > 0 && (
-        <div className="bg-cream border border-border rounded-xl p-5">
+      {/* Most & Least Worn */}
+      <div className="grid lg:grid-cols-2 gap-4">
+        <div className="bg-bg-card border border-border rounded-xl p-5">
           <div className="flex items-center gap-2 mb-4">
-            <DollarSign size={16} className="text-success" />
-            <h2 className="text-base font-semibold text-text">Cost Analysis</h2>
+            <TrendingUp size={16} className="text-sage" />
+            <h2 className="text-sm font-semibold text-text uppercase tracking-wider">Most Worn</h2>
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-xs text-text-muted">Total Wardrobe Value</p>
-              <p className="text-xl font-semibold text-text">${totalCost.toFixed(2)}</p>
-            </div>
-            <div>
-              <p className="text-xs text-text-muted">Average Cost Per Wear</p>
-              <p className="text-xl font-semibold text-text">${avgCostPerWear.toFixed(2)}</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Most Worn */}
-      {mostWorn.length > 0 && (
-        <div className="bg-cream border border-border rounded-xl p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <TrendingUp size={16} className="text-success" />
-            <h2 className="text-base font-semibold text-text">Most Worn</h2>
-          </div>
-          <div className="flex gap-3 overflow-x-auto pb-2">
-            {mostWorn.map(item => (
-              <div key={item.id} className="flex-shrink-0 w-24">
-                <div className="aspect-[3/4] rounded-lg overflow-hidden bg-surface">
-                  <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
+          {mostWorn.length > 0 ? (
+            <div className="space-y-3">
+              {mostWorn.map(item => (
+                <div key={item.id} className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg overflow-hidden border border-border flex-shrink-0">
+                    <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-text truncate">{item.name}</p>
+                    <p className="text-xs text-text-muted">{item.wearCount} wears</p>
+                  </div>
+                  {item.cost && item.wearCount > 0 && (
+                    <span className="text-xs text-text-muted">${(item.cost / item.wearCount).toFixed(2)}/wear</span>
+                  )}
                 </div>
-                <p className="text-xs font-medium text-text mt-1 truncate">{item.name}</p>
-                <p className="text-xs text-success">{item.wearCount} wears</p>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-text-muted py-4">Start logging wears to see insights.</p>
+          )}
         </div>
-      )}
 
-      {/* Least Worn */}
-      {leastWorn.length > 0 && (
-        <div className="bg-cream border border-border rounded-xl p-5">
+        <div className="bg-bg-card border border-border rounded-xl p-5">
           <div className="flex items-center gap-2 mb-4">
-            <Clock size={16} className="text-warning" />
-            <h2 className="text-base font-semibold text-text">Needs More Love</h2>
+            <TrendingDown size={16} className="text-amber" />
+            <h2 className="text-sm font-semibold text-text uppercase tracking-wider">Least Worn</h2>
           </div>
-          <div className="flex gap-3 overflow-x-auto pb-2">
-            {leastWorn.filter(i => i.wearCount < 3).map(item => (
-              <div key={item.id} className="flex-shrink-0 w-24">
-                <div className="aspect-[3/4] rounded-lg overflow-hidden bg-surface">
-                  <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
+          {leastWorn.length > 0 ? (
+            <div className="space-y-3">
+              {leastWorn.map(item => (
+                <div key={item.id} className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg overflow-hidden border border-border flex-shrink-0">
+                    <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-text truncate">{item.name}</p>
+                    <p className="text-xs text-text-muted">{item.wearCount} wears</p>
+                  </div>
                 </div>
-                <p className="text-xs font-medium text-text mt-1 truncate">{item.name}</p>
-                <p className="text-xs text-warning">{item.wearCount} wears</p>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-text-muted py-4">Log more wears to see this data.</p>
+          )}
         </div>
-      )}
+      </div>
 
-      {totalItems === 0 && (
-        <div className="text-center py-12">
-          <p className="text-sm text-text-secondary">Add items to your closet to see statistics.</p>
+      {/* Unworn Items Alert */}
+      {unwornCount > 0 && (
+        <div className="bg-amber/5 border border-amber/20 rounded-xl p-5">
+          <div className="flex items-center gap-2 mb-2">
+            <Package size={16} className="text-amber" />
+            <h2 className="text-sm font-semibold text-text uppercase tracking-wider">Wardrobe Alert</h2>
+          </div>
+          <p className="text-sm text-text-secondary">
+            {unwornCount} of your {totalItems} items ({Math.round((unwornCount / totalItems) * 100)}%) haven't been worn yet.
+            Consider giving them a try this week.
+          </p>
         </div>
       )}
+    </div>
+  );
+}
+
+function StatCard({ icon: Icon, label, value, color }: { icon: typeof Package; label: string; value: string | number; color: string }) {
+  return (
+    <div className="bg-bg-card border border-border rounded-xl p-4 card-lift">
+      <div className="flex items-center gap-2 mb-2">
+        <Icon size={14} className={color} />
+        <span className="text-[10px] text-text-muted uppercase tracking-wider">{label}</span>
+      </div>
+      <p className="text-2xl font-semibold text-text font-[family-name:var(--font-heading)]">{value}</p>
     </div>
   );
 }
