@@ -1,22 +1,28 @@
 import { createContext, useContext, useCallback, type ReactNode } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
-import type { ClothingItem, Outfit, WearLog, AppState } from '../types';
+import type { ClothingItem, Outfit, WearLog, WishlistItem, AppState } from '../types';
 
 const initialState: AppState = {
   items: [],
   outfits: [],
   wearLogs: [],
+  wishlist: [],
 };
 
 interface WardrobeContextType extends AppState {
-  addItem: (item: Omit<ClothingItem, 'id' | 'dateAdded' | 'wearCount'>) => void;
+  addItem: (item: Omit<ClothingItem, 'id' | 'dateAdded' | 'wearCount' | 'laundryStatus'>) => void;
   updateItem: (id: string, updates: Partial<ClothingItem>) => void;
   deleteItem: (id: string) => void;
   toggleFavoriteItem: (id: string) => void;
+  setLaundryStatus: (id: string, status: ClothingItem['laundryStatus']) => void;
   addOutfit: (outfit: Omit<Outfit, 'id' | 'dateCreated' | 'wearCount'>) => void;
   deleteOutfit: (id: string) => void;
   toggleFavoriteOutfit: (id: string) => void;
   logWear: (itemIds: string[], outfitId?: string) => void;
+  addWishlistItem: (item: Omit<WishlistItem, 'id' | 'dateAdded'>) => void;
+  updateWishlistItem: (id: string, updates: Partial<WishlistItem>) => void;
+  deleteWishlistItem: (id: string) => void;
+  moveWishlistToCloset: (id: string) => void;
   getItem: (id: string) => ClothingItem | undefined;
   getOutfit: (id: string) => Outfit | undefined;
   getItemsByCategory: (category: ClothingItem['category']) => ClothingItem[];
@@ -32,12 +38,13 @@ const WardrobeContext = createContext<WardrobeContextType | null>(null);
 export function WardrobeProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useLocalStorage<AppState>('wardrobe-tracker', initialState);
 
-  const addItem = useCallback((item: Omit<ClothingItem, 'id' | 'dateAdded' | 'wearCount'>) => {
+  const addItem = useCallback((item: Omit<ClothingItem, 'id' | 'dateAdded' | 'wearCount' | 'laundryStatus'>) => {
     const newItem: ClothingItem = {
       ...item,
       id: crypto.randomUUID(),
       dateAdded: new Date().toISOString(),
       wearCount: 0,
+      laundryStatus: 'clean',
     };
     setState(prev => ({ ...prev, items: [...prev.items, newItem] }));
   }, [setState]);
@@ -62,6 +69,15 @@ export function WardrobeProvider({ children }: { children: ReactNode }) {
       ...prev,
       items: prev.items.map(item =>
         item.id === id ? { ...item, favorite: !item.favorite } : item
+      ),
+    }));
+  }, [setState]);
+
+  const setLaundryStatus = useCallback((id: string, status: ClothingItem['laundryStatus']) => {
+    setState(prev => ({
+      ...prev,
+      items: prev.items.map(item =>
+        item.id === id ? { ...item, laundryStatus: status } : item
       ),
     }));
   }, [setState]);
@@ -100,7 +116,7 @@ export function WardrobeProvider({ children }: { children: ReactNode }) {
       wearLogs: [...prev.wearLogs, newLog],
       items: prev.items.map(item =>
         itemIds.includes(item.id)
-          ? { ...item, wearCount: item.wearCount + 1, lastWorn: today }
+          ? { ...item, wearCount: item.wearCount + 1, lastWorn: today, laundryStatus: 'worn' as const }
           : item
       ),
       outfits: prev.outfits.map(o =>
@@ -109,6 +125,53 @@ export function WardrobeProvider({ children }: { children: ReactNode }) {
           : o
       ),
     }));
+  }, [setState]);
+
+  const addWishlistItem = useCallback((item: Omit<WishlistItem, 'id' | 'dateAdded'>) => {
+    const newItem: WishlistItem = {
+      ...item,
+      id: crypto.randomUUID(),
+      dateAdded: new Date().toISOString(),
+    };
+    setState(prev => ({ ...prev, wishlist: [...prev.wishlist, newItem] }));
+  }, [setState]);
+
+  const updateWishlistItem = useCallback((id: string, updates: Partial<WishlistItem>) => {
+    setState(prev => ({
+      ...prev,
+      wishlist: prev.wishlist.map(item => item.id === id ? { ...item, ...updates } : item),
+    }));
+  }, [setState]);
+
+  const deleteWishlistItem = useCallback((id: string) => {
+    setState(prev => ({ ...prev, wishlist: prev.wishlist.filter(item => item.id !== id) }));
+  }, [setState]);
+
+  const moveWishlistToCloset = useCallback((id: string) => {
+    setState(prev => {
+      const wishItem = prev.wishlist.find(w => w.id === id);
+      if (!wishItem) return prev;
+      const newItem: ClothingItem = {
+        id: crypto.randomUUID(),
+        name: wishItem.name,
+        category: wishItem.category,
+        color: wishItem.color,
+        imageUrl: wishItem.imageUrl || `https://placehold.co/300x400/${wishItem.color.replace('#', '')}/ffffff?text=${encodeURIComponent(wishItem.name)}`,
+        dateAdded: new Date().toISOString(),
+        wearCount: 0,
+        favorite: false,
+        season: ['spring', 'summer', 'fall', 'winter'],
+        occasion: ['casual'],
+        cost: wishItem.price,
+        notes: wishItem.notes,
+        laundryStatus: 'clean',
+      };
+      return {
+        ...prev,
+        items: [...prev.items, newItem],
+        wishlist: prev.wishlist.filter(w => w.id !== id),
+      };
+    });
   }, [setState]);
 
   const getItem = useCallback((id: string) => state.items.find(i => i.id === id), [state.items]);
@@ -133,8 +196,9 @@ export function WardrobeProvider({ children }: { children: ReactNode }) {
   return (
     <WardrobeContext.Provider value={{
       ...state,
-      addItem, updateItem, deleteItem, toggleFavoriteItem,
+      addItem, updateItem, deleteItem, toggleFavoriteItem, setLaundryStatus,
       addOutfit, deleteOutfit, toggleFavoriteOutfit, logWear,
+      addWishlistItem, updateWishlistItem, deleteWishlistItem, moveWishlistToCloset,
       getItem, getOutfit, getItemsByCategory,
       getMostWorn, getLeastWorn, getUnwornItems, getWearCount,
       getOutfitSuggestions,

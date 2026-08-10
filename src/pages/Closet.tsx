@@ -1,17 +1,26 @@
 import { useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Search, SlidersHorizontal, Heart, Trash2, X } from 'lucide-react';
+import { Search, SlidersHorizontal, Heart, Trash2, X, Check } from 'lucide-react';
 import { useWardrobe } from '../context/WardrobeContext';
-import { CATEGORY_LABELS, SEASON_LABELS, OCCASION_LABELS, type Category, type Season, type Occasion } from '../types';
+import { CATEGORY_LABELS, SEASON_LABELS, OCCASION_LABELS, LAUNDRY_LABELS, type Category, type Season, type Occasion, type LaundryStatus } from '../types';
 import { showToast } from '../components/Toast';
 import type { ClothingItem } from '../types';
 
-function ClosetItemCard({ item, onToggleFavorite, onDelete }: {
+const laundryBadgeColors: Record<LaundryStatus, string> = {
+  clean: 'bg-success/80 text-white',
+  worn: 'bg-warning/80 text-white',
+  washing: 'bg-accent/80 text-white',
+};
+
+function ClosetItemCard({ item, onToggleFavorite, onDelete, onWear, onLaundryChange }: {
   item: ClothingItem;
   onToggleFavorite: () => void;
   onDelete: () => void;
+  onWear: () => void;
+  onLaundryChange: (status: LaundryStatus) => void;
 }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [showLaundryMenu, setShowLaundryMenu] = useState(false);
 
   return (
     <div className="group bg-cream border border-border rounded-xl overflow-hidden hover:shadow-md transition-all">
@@ -22,7 +31,16 @@ function ClosetItemCard({ item, onToggleFavorite, onDelete }: {
           className="w-full h-full object-cover"
           loading="lazy"
         />
-        <div className="absolute top-2 right-2 flex gap-1.5 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
+        {/* Action buttons - always visible on touch, hover on desktop */}
+        <div className="absolute top-2 right-2 flex flex-col gap-1.5 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
+          <button
+            onClick={onWear}
+            className="w-8 h-8 rounded-full bg-accent text-white flex items-center justify-center backdrop-blur-md hover:bg-accent-hover"
+            aria-label="Wear today"
+            title="Wear today"
+          >
+            <Check size={14} />
+          </button>
           <button
             onClick={onToggleFavorite}
             className={`w-8 h-8 rounded-full flex items-center justify-center backdrop-blur-md transition-colors ${
@@ -50,11 +68,35 @@ function ClosetItemCard({ item, onToggleFavorite, onDelete }: {
             </button>
           )}
         </div>
-        {item.wearCount > 0 && (
-          <div className="absolute bottom-2 left-2 px-2 py-0.5 bg-black/50 text-white text-[10px] rounded-full backdrop-blur-sm">
-            {item.wearCount} wears
-          </div>
-        )}
+        {/* Wear count & laundry badge */}
+        <div className="absolute bottom-2 left-2 flex flex-col gap-1">
+          {item.wearCount > 0 && (
+            <div className="px-2 py-0.5 bg-black/50 text-white text-[10px] rounded-full backdrop-blur-sm">
+              {item.wearCount} wears
+            </div>
+          )}
+          <button
+            onClick={() => setShowLaundryMenu(!showLaundryMenu)}
+            className={`px-2 py-0.5 text-[10px] rounded-full backdrop-blur-sm transition-all ${laundryBadgeColors[item.laundryStatus]}`}
+          >
+            {LAUNDRY_LABELS[item.laundryStatus]}
+          </button>
+          {showLaundryMenu && (
+            <div className="bg-white rounded-lg shadow-lg border border-border overflow-hidden mt-1">
+              {(['clean', 'worn', 'washing'] as LaundryStatus[]).map(status => (
+                <button
+                  key={status}
+                  onClick={() => { onLaundryChange(status); setShowLaundryMenu(false); }}
+                  className={`block w-full px-3 py-1.5 text-[10px] text-left hover:bg-surface ${
+                    item.laundryStatus === status ? 'font-semibold bg-surface' : ''
+                  }`}
+                >
+                  {LAUNDRY_LABELS[status]}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
       <div className="p-3">
         <p className="text-sm font-medium text-text truncate">{item.name}</p>
@@ -74,7 +116,7 @@ function ClosetItemCard({ item, onToggleFavorite, onDelete }: {
 }
 
 export default function Closet() {
-  const { items, toggleFavoriteItem, deleteItem } = useWardrobe();
+  const { items, toggleFavoriteItem, deleteItem, logWear, setLaundryStatus } = useWardrobe();
   const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = useState('');
   const [showFilters, setShowFilters] = useState(false);
@@ -84,6 +126,7 @@ export default function Closet() {
   const [filterOccasion, setFilterOccasion] = useState<Occasion | ''>('');
   const [filterColor, setFilterColor] = useState('');
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+  const [filterLaundry, setFilterLaundry] = useState<LaundryStatus | ''>('');
 
   const filteredItems = useMemo(() => {
     return items.filter(item => {
@@ -93,9 +136,10 @@ export default function Closet() {
       if (filterOccasion && !item.occasion.includes(filterOccasion)) return false;
       if (filterColor && item.color !== filterColor) return false;
       if (showFavoritesOnly && !item.favorite) return false;
+      if (filterLaundry && item.laundryStatus !== filterLaundry) return false;
       return true;
     });
-  }, [items, search, activeCategory, filterSeason, filterOccasion, filterColor, showFavoritesOnly]);
+  }, [items, search, activeCategory, filterSeason, filterOccasion, filterColor, showFavoritesOnly, filterLaundry]);
 
   const activeFiltersCount = [
     activeCategory,
@@ -103,6 +147,7 @@ export default function Closet() {
     filterOccasion,
     filterColor,
     showFavoritesOnly,
+    filterLaundry,
   ].filter(Boolean).length;
 
   const clearFilters = () => {
@@ -111,8 +156,16 @@ export default function Closet() {
     setFilterOccasion('');
     setFilterColor('');
     setShowFavoritesOnly(false);
+    setFilterLaundry('');
     setSearch('');
   };
+
+  // Laundry summary
+  const laundryCounts = useMemo(() => ({
+    clean: items.filter(i => i.laundryStatus === 'clean').length,
+    worn: items.filter(i => i.laundryStatus === 'worn').length,
+    washing: items.filter(i => i.laundryStatus === 'washing').length,
+  }), [items]);
 
   return (
     <div className="space-y-5">
@@ -120,6 +173,44 @@ export default function Closet() {
         <h1 className="text-2xl font-semibold text-text font-[family-name:var(--font-heading)]">My Closet</h1>
         <span className="text-sm text-text-muted">{filteredItems.length} items</span>
       </div>
+
+      {/* Laundry Status Bar */}
+      {items.length > 0 && (
+        <div className="flex gap-2 overflow-x-auto pb-1">
+          <button
+            onClick={() => setFilterLaundry('')}
+            className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
+              !filterLaundry ? 'bg-accent text-white' : 'bg-surface text-text-secondary hover:bg-surface-hover'
+            }`}
+          >
+            All ({items.length})
+          </button>
+          <button
+            onClick={() => setFilterLaundry('clean')}
+            className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all flex items-center gap-1 ${
+              filterLaundry === 'clean' ? 'bg-success text-white' : 'bg-surface text-text-secondary hover:bg-surface-hover'
+            }`}
+          >
+            ✨ Clean ({laundryCounts.clean})
+          </button>
+          <button
+            onClick={() => setFilterLaundry('worn')}
+            className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all flex items-center gap-1 ${
+              filterLaundry === 'worn' ? 'bg-warning text-white' : 'bg-surface text-text-secondary hover:bg-surface-hover'
+            }`}
+          >
+            👕 Needs Wash ({laundryCounts.worn})
+          </button>
+          <button
+            onClick={() => setFilterLaundry('washing')}
+            className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all flex items-center gap-1 ${
+              filterLaundry === 'washing' ? 'bg-accent text-white' : 'bg-surface text-text-secondary hover:bg-surface-hover'
+            }`}
+          >
+            🧺 In Laundry ({laundryCounts.washing})
+          </button>
+        </div>
+      )}
 
       {/* Search & Filters */}
       <div className="flex gap-2">
@@ -255,6 +346,14 @@ export default function Closet() {
               onDelete={() => {
                 deleteItem(item.id);
                 showToast('Item deleted', 'info');
+              }}
+              onWear={() => {
+                logWear([item.id]);
+                showToast(`Logged wear for "${item.name}"`, 'success');
+              }}
+              onLaundryChange={(status) => {
+                setLaundryStatus(item.id, status);
+                showToast(`Marked as ${LAUNDRY_LABELS[status]}`, 'info');
               }}
             />
           ))}

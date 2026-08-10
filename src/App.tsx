@@ -6,6 +6,7 @@ import Closet from './pages/Closet';
 import Outfits from './pages/Outfits';
 import Calendar from './pages/Calendar';
 import Statistics from './pages/Statistics';
+import Wishlist from './pages/Wishlist';
 import Settings from './pages/Settings';
 
 function App() {
@@ -19,6 +20,7 @@ function App() {
             <Route path="/outfits" element={<Outfits />} />
             <Route path="/calendar" element={<Calendar />} />
             <Route path="/stats" element={<Statistics />} />
+            <Route path="/wishlist" element={<Wishlist />} />
             <Route path="/settings" element={<Settings />} />
           </Route>
         </Routes>

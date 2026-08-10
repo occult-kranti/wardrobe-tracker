@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation, Outlet } from 'react-router-dom';
-import { LayoutDashboard, Shirt, Sparkles, CalendarDays, BarChart3, Settings, Menu, X, Plus } from 'lucide-react';
+import { LayoutDashboard, Shirt, Sparkles, CalendarDays, BarChart3, ShoppingBag, Settings, Menu, X, Plus } from 'lucide-react';
 import { useWardrobe } from '../context/WardrobeContext';
 import AddItemModal from './AddItemModal';
 import { ToastContainer } from './Toast';
@@ -11,6 +11,7 @@ const navItems = [
   { path: '/outfits', label: 'Outfits', icon: Sparkles },
   { path: '/calendar', label: 'Calendar', icon: CalendarDays },
   { path: '/stats', label: 'Statistics', icon: BarChart3 },
+  { path: '/wishlist', label: 'Wishlist', icon: ShoppingBag },
   { path: '/settings', label: 'Settings', icon: Settings },
 ];
 
