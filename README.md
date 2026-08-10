@@ -1,32 +1,76 @@
-# React + TypeScript + Vite
+# 👕 Wardrobe Tracker
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+A digital closet companion — track, organize, and style your wardrobe.
 
-Currently, two official plugins are available:
+**Live Site:** [https://occult-kranti.github.io/wardrobe-tracker/](https://occult-kranti.github.io/wardrobe-tracker/)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+---
 
-## React Compiler
+## Features
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **Digital Closet** — Upload photos, categorize by type, color, season, and occasion
+- **Outfit Builder** — Create outfits from your items with a visual builder
+- **Wear Tracking** — Log what you wear each day and track usage
+- **Smart Suggestions** — Get outfit ideas from your saved favorites
+- **Statistics** — Visual insights into your wardrobe utilization, cost-per-wear, and more
+- **Data Export/Import** — Full backup and restore capability
+- **Offline First** — All data stored locally in your browser
 
-## Expanding the Oxlint configuration
+---
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+## Tech Stack
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+- **React 18** + TypeScript
+- **Vite** for build tooling
+- **Tailwind CSS v4** for styling
+- **React Router** for navigation
+- **Lucide React** for icons
+- **LocalStorage** for data persistence
+
+---
+
+## Design Philosophy
+
+Built with **warm minimalism** in mind:
+- Terracotta accent color for warmth and action
+- Sage green for positive feedback
+- Cream backgrounds that let clothing images shine
+- 44px minimum touch targets
+- Card-based layout with generous whitespace
+
+---
+
+## Market Research
+
+See [`docs/01-market-research.md`](docs/01-market-research.md) for competitive analysis of Stylebook, Cladwell, Whering, Acloset, and others.
+
+## Design System
+
+See [`docs/02-design-psychology.md`](docs/02-design-psychology.md) for color psychology, typography, and interaction design principles.
+
+## Feature Specification
+
+See [`docs/03-feature-spec.md`](docs/03-feature-spec.md) for detailed feature roadmap.
+
+---
+
+## Development
+
+```bash
+npm install
+npm run dev
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+```bash
+npm run build
+```
+
+---
+
+## Privacy
+
+All data is stored **locally in your browser** via LocalStorage. Nothing is sent to any server. Export your data anytime from Settings.
+
+---
+
+Built with care ❤️‍🔥
