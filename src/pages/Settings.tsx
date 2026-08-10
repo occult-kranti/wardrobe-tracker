@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Download, Upload, Trash2, AlertTriangle } from 'lucide-react';
 import { useWardrobe } from '../context/WardrobeContext';
+import { showToast } from '../components/Toast';
 
 export default function Settings() {
   const { items, outfits, wearLogs } = useWardrobe();
@@ -15,6 +16,7 @@ export default function Settings() {
     a.download = `wardrobe-backup-${new Date().toISOString().split('T')[0]}.json`;
     a.click();
     URL.revokeObjectURL(url);
+    showToast('Backup downloaded successfully', 'success');
   };
 
   const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -30,10 +32,11 @@ export default function Settings() {
             outfits: data.outfits || [],
             wearLogs: data.wearLogs || [],
           }));
+          showToast('Data imported successfully', 'success');
           window.location.reload();
         }
       } catch {
-        alert('Invalid backup file');
+        showToast('Invalid backup file', 'error');
       }
     };
     reader.readAsText(file);
@@ -41,6 +44,7 @@ export default function Settings() {
 
   const handleReset = () => {
     localStorage.removeItem('wardrobe-tracker');
+    showToast('All data reset', 'info');
     window.location.reload();
   };
 

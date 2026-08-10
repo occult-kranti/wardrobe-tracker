@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { X, Camera } from 'lucide-react';
 import { useWardrobe } from '../context/WardrobeContext';
 import { CATEGORY_LABELS, SEASON_LABELS, OCCASION_LABELS, PRESET_COLORS, type Category, type Season, type Occasion } from '../types';
+import { showToast } from './Toast';
 
 interface Props {
   open: boolean;
@@ -41,6 +42,7 @@ export default function AddItemModal({ open, onClose }: Props) {
       favorite: false,
       notes: notes.trim() || undefined,
     });
+    showToast(`"${name.trim()}" added to your closet`, 'success');
     setName('');
     setImageUrl('');
     setCost('');

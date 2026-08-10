@@ -2,6 +2,76 @@ import { useState } from 'react';
 import { Sparkles, Heart, Trash2, Shuffle, Plus, X, Check } from 'lucide-react';
 import { useWardrobe } from '../context/WardrobeContext';
 import { CATEGORY_LABELS, type ClothingItem } from '../types';
+import { showToast } from '../components/Toast';
+import type { Outfit } from '../types';
+
+function OutfitCard({ outfit, items, onToggleFavorite, onDelete, onWear }: {
+  outfit: Outfit;
+  items: ClothingItem[];
+  onToggleFavorite: () => void;
+  onDelete: () => void;
+  onWear: () => void;
+}) {
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
+  return (
+    <div className="bg-cream border border-border rounded-xl p-4 hover:shadow-md transition-all">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="font-medium text-text">{outfit.name}</h3>
+        <div className="flex gap-1.5">
+          <button
+            onClick={onToggleFavorite}
+            className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+              outfit.favorite ? 'text-accent' : 'text-text-muted hover:text-text'
+            }`}
+            aria-label={outfit.favorite ? 'Remove from favorites' : 'Add to favorites'}
+          >
+            <Heart size={14} className={outfit.favorite ? 'fill-current' : ''} />
+          </button>
+          {!confirmDelete ? (
+            <button
+              onClick={() => setConfirmDelete(true)}
+              className="w-8 h-8 rounded-full text-text-muted hover:text-error flex items-center justify-center"
+              aria-label="Delete outfit"
+            >
+              <Trash2 size={14} />
+            </button>
+          ) : (
+            <button
+              onClick={() => { onDelete(); setConfirmDelete(false); }}
+              className="w-8 h-8 rounded-full bg-error text-white flex items-center justify-center"
+              aria-label="Confirm delete"
+            >
+              <X size={14} />
+            </button>
+          )}
+        </div>
+      </div>
+      <div className="flex gap-2 mb-3">
+        {outfit.itemIds.map(id => {
+          const item = items.find(i => i.id === id);
+          return item ? (
+            <div key={id} className="w-16 flex-shrink-0">
+              <div className="aspect-[3/4] rounded-lg overflow-hidden bg-surface">
+                <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" loading="lazy" />
+              </div>
+              <p className="text-[10px] text-text-muted mt-1 truncate">{item.name}</p>
+            </div>
+          ) : null;
+        })}
+      </div>
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-text-muted">{outfit.wearCount} wears</span>
+        <button
+          onClick={onWear}
+          className="px-3 py-1.5 bg-accent text-white rounded-lg text-xs font-medium hover:bg-accent-hover active:scale-95 transition-all"
+        >
+          Wear Today
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export default function Outfits() {
   const { items, outfits, addOutfit, deleteOutfit, toggleFavoriteOutfit, logWear } = useWardrobe();
@@ -22,6 +92,7 @@ export default function Outfits() {
       itemIds: selectedItems,
       favorite: false,
     });
+    showToast(`Outfit "${outfitName.trim()}" saved`, 'success');
     setBuilding(false);
     setSelectedItems([]);
     setOutfitName('');
@@ -134,51 +205,23 @@ export default function Outfits() {
       {outfits.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {outfits.map(outfit => (
-            <div key={outfit.id} className="bg-cream border border-border rounded-xl p-4 hover:shadow-md transition-all">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="font-medium text-text">{outfit.name}</h3>
-                <div className="flex gap-1.5">
-                  <button
-                    onClick={() => toggleFavoriteOutfit(outfit.id)}
-                    className={`w-7 h-7 rounded-full flex items-center justify-center ${
-                      outfit.favorite ? 'text-accent' : 'text-text-muted hover:text-text'
-                    }`}
-                  >
-                    <Heart size={14} className={outfit.favorite ? 'fill-current' : ''} />
-                  </button>
-                  <button
-                    onClick={() => {
-                      if (confirm('Delete this outfit?')) deleteOutfit(outfit.id);
-                    }}
-                    className="w-7 h-7 rounded-full text-text-muted hover:text-error flex items-center justify-center"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              </div>
-              <div className="flex gap-2 mb-3">
-                {outfit.itemIds.map(id => {
-                  const item = items.find(i => i.id === id);
-                  return item ? (
-                    <div key={id} className="w-16 flex-shrink-0">
-                      <div className="aspect-[3/4] rounded-lg overflow-hidden bg-surface">
-                        <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
-                      </div>
-                      <p className="text-[10px] text-text-muted mt-1 truncate">{item.name}</p>
-                    </div>
-                  ) : null;
-                })}
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-text-muted">{outfit.wearCount} wears</span>
-                <button
-                  onClick={() => logWear(outfit.itemIds, outfit.id)}
-                  className="px-3 py-1.5 bg-accent text-white rounded-lg text-xs font-medium hover:bg-accent-hover active:scale-95 transition-all"
-                >
-                  Wear Today
-                </button>
-              </div>
-            </div>
+            <OutfitCard
+              key={outfit.id}
+              outfit={outfit}
+              items={items}
+              onToggleFavorite={() => {
+                toggleFavoriteOutfit(outfit.id);
+                showToast(outfit.favorite ? 'Removed from favorites' : 'Added to favorites', 'success');
+              }}
+              onDelete={() => {
+                deleteOutfit(outfit.id);
+                showToast('Outfit deleted', 'info');
+              }}
+              onWear={() => {
+                logWear(outfit.itemIds, outfit.id);
+                showToast(`Logged wear for "${outfit.name}"`, 'success');
+              }}
+            />
           ))}
         </div>
       ) : (

@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import { Link, useLocation, Outlet } from 'react-router-dom';
-import { LayoutDashboard, Shirt, Sparkles, BarChart3, Settings, Menu, X, Plus } from 'lucide-react';
+import { LayoutDashboard, Shirt, Sparkles, CalendarDays, BarChart3, Settings, Menu, X, Plus } from 'lucide-react';
 import { useWardrobe } from '../context/WardrobeContext';
 import AddItemModal from './AddItemModal';
+import { ToastContainer } from './Toast';
 
 const navItems = [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/closet', label: 'My Closet', icon: Shirt },
   { path: '/outfits', label: 'Outfits', icon: Sparkles },
+  { path: '/calendar', label: 'Calendar', icon: CalendarDays },
   { path: '/stats', label: 'Statistics', icon: BarChart3 },
   { path: '/settings', label: 'Settings', icon: Settings },
 ];
@@ -24,19 +26,22 @@ export default function Layout() {
       <header className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-cream/90 backdrop-blur-md border-b border-border">
         <div className="flex items-center justify-between px-4 h-14">
           <Link to="/" className="flex items-center gap-2 font-semibold text-text">
-            <span className="text-xl">👕</span>
+            <span className="text-xl" aria-hidden="true">👕</span>
             <span className="font-[family-name:var(--font-heading)]">Wardrobe</span>
           </Link>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setAddOpen(true)}
-              className="w-9 h-9 rounded-full bg-accent text-white flex items-center justify-center active:scale-95 transition-transform"
+              className="w-11 h-11 rounded-full bg-accent text-white flex items-center justify-center active:scale-95 transition-transform"
+              aria-label="Add clothing item"
             >
               <Plus size={18} />
             </button>
             <button
               onClick={() => setMobileOpen(!mobileOpen)}
-              className="w-9 h-9 rounded-lg bg-surface flex items-center justify-center"
+              className="w-11 h-11 rounded-lg bg-surface flex items-center justify-center"
+              aria-label={mobileOpen ? 'Close navigation menu' : 'Open navigation menu'}
+              aria-expanded={mobileOpen}
             >
               {mobileOpen ? <X size={18} /> : <Menu size={18} />}
             </button>
@@ -57,8 +62,9 @@ export default function Layout() {
                       ? 'bg-accent/10 text-accent'
                       : 'text-text-secondary hover:text-text hover:bg-surface'
                   }`}
+                  aria-current={active ? 'page' : undefined}
                 >
-                  <Icon size={18} />
+                  <Icon size={18} aria-hidden="true" />
                   {item.label}
                 </Link>
               );
@@ -71,11 +77,11 @@ export default function Layout() {
       <aside className="hidden lg:flex flex-col w-64 bg-cream border-r border-border sticky top-0 h-screen">
         <div className="p-6">
           <Link to="/" className="flex items-center gap-2.5 font-semibold text-text">
-            <span className="text-2xl">👕</span>
+            <span className="text-2xl" aria-hidden="true">👕</span>
             <span className="text-lg font-[family-name:var(--font-heading)]">Wardrobe Tracker</span>
           </Link>
         </div>
-        <nav className="flex-1 px-4 space-y-1">
+        <nav className="flex-1 px-4 space-y-1" aria-label="Main navigation">
           {navItems.map(item => {
             const Icon = item.icon;
             const active = location.pathname === item.path;
@@ -88,8 +94,9 @@ export default function Layout() {
                     ? 'bg-accent/10 text-accent'
                     : 'text-text-secondary hover:text-text hover:bg-surface'
                 }`}
+                aria-current={active ? 'page' : undefined}
               >
-                <Icon size={18} />
+                <Icon size={18} aria-hidden="true" />
                 {item.label}
               </Link>
             );
@@ -99,8 +106,9 @@ export default function Layout() {
           <button
             onClick={() => setAddOpen(true)}
             className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-accent text-white rounded-lg text-sm font-medium hover:bg-accent-hover active:scale-[0.98] transition-all"
+            aria-label="Add clothing item"
           >
-            <Plus size={16} />
+            <Plus size={16} aria-hidden="true" />
             Add Item
           </button>
           <div className="mt-4 px-3 py-3 bg-surface rounded-lg">
@@ -118,6 +126,7 @@ export default function Layout() {
       </main>
 
       <AddItemModal open={addOpen} onClose={() => setAddOpen(false)} />
+      <ToastContainer />
     </div>
   );
 }
