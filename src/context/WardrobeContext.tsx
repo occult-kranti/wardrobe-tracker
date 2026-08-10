@@ -1,5 +1,6 @@
 import { createContext, useContext, useCallback, type ReactNode } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
+import { todayLocal, isFutureDate } from '../lib/dates';
 import type { ClothingItem, Outfit, WearLog, WishlistItem, AppState } from '../types';
 
 const initialState: AppState = {
@@ -18,7 +19,8 @@ interface WardrobeContextType extends AppState {
   addOutfit: (outfit: Omit<Outfit, 'id' | 'dateCreated' | 'wearCount'>) => void;
   deleteOutfit: (id: string) => void;
   toggleFavoriteOutfit: (id: string) => void;
-  logWear: (itemIds: string[], outfitId?: string) => void;
+  logWear: (itemIds: string[], outfitId?: string, date?: string) => void;
+  removeWearLog: (id: string) => void;
   addWishlistItem: (item: Omit<WishlistItem, 'id' | 'dateAdded'>) => void;
   updateWishlistItem: (id: string, updates: Partial<WishlistItem>) => void;
   deleteWishlistItem: (id: string) => void;
@@ -103,28 +105,66 @@ export function WardrobeProvider({ children }: { children: ReactNode }) {
     }));
   }, [setState]);
 
-  const logWear = useCallback((itemIds: string[], outfitId?: string) => {
-    const today = new Date().toISOString().split('T')[0];
+  const logWear = useCallback((itemIds: string[], outfitId?: string, date?: string) => {
+    const logDate = date ?? todayLocal();
+    const planned = isFutureDate(logDate);
     const newLog: WearLog = {
       id: crypto.randomUUID(),
-      date: today,
+      date: logDate,
       itemIds,
       outfitId,
     };
-    setState(prev => ({
-      ...prev,
-      wearLogs: [...prev.wearLogs, newLog],
-      items: prev.items.map(item =>
-        itemIds.includes(item.id)
-          ? { ...item, wearCount: item.wearCount + 1, lastWorn: today, laundryStatus: 'worn' as const }
-          : item
-      ),
-      outfits: prev.outfits.map(o =>
-        o.id === outfitId
-          ? { ...o, wearCount: o.wearCount + 1, lastWorn: today }
-          : o
-      ),
-    }));
+    setState(prev => {
+      // Wearing an outfit always credits every item in it.
+      const creditedIds = outfitId
+        ? Array.from(new Set([...itemIds, ...(prev.outfits.find(o => o.id === outfitId)?.itemIds ?? [])]))
+        : itemIds;
+      // Future dates are plans: record the log, but don't touch wear
+      // counts or laundry until the day actually happens.
+      if (planned) {
+        return { ...prev, wearLogs: [...prev.wearLogs, { ...newLog, itemIds: creditedIds }] };
+      }
+      return {
+        ...prev,
+        wearLogs: [...prev.wearLogs, { ...newLog, itemIds: creditedIds }],
+        items: prev.items.map(item =>
+          creditedIds.includes(item.id)
+            ? {
+                ...item,
+                wearCount: item.wearCount + 1,
+                lastWorn: !item.lastWorn || logDate > item.lastWorn ? logDate : item.lastWorn,
+                laundryStatus: 'worn' as const,
+              }
+            : item
+        ),
+        outfits: prev.outfits.map(o =>
+          o.id === outfitId
+            ? { ...o, wearCount: o.wearCount + 1, lastWorn: !o.lastWorn || logDate > o.lastWorn ? logDate : o.lastWorn }
+            : o
+        ),
+      };
+    });
+  }, [setState]);
+
+  const removeWearLog = useCallback((id: string) => {
+    setState(prev => {
+      const log = prev.wearLogs.find(l => l.id === id);
+      if (!log) return prev;
+      const wasPlanned = isFutureDate(log.date);
+      return {
+        ...prev,
+        wearLogs: prev.wearLogs.filter(l => l.id !== id),
+        // Un-count real (non-planned) wears so stats stay honest.
+        items: wasPlanned ? prev.items : prev.items.map(item =>
+          log.itemIds.includes(item.id)
+            ? { ...item, wearCount: Math.max(0, item.wearCount - 1) }
+            : item
+        ),
+        outfits: wasPlanned || !log.outfitId ? prev.outfits : prev.outfits.map(o =>
+          o.id === log.outfitId ? { ...o, wearCount: Math.max(0, o.wearCount - 1) } : o
+        ),
+      };
+    });
   }, [setState]);
 
   const addWishlistItem = useCallback((item: Omit<WishlistItem, 'id' | 'dateAdded'>) => {
@@ -187,7 +227,7 @@ export function WardrobeProvider({ children }: { children: ReactNode }) {
   const getWearCount = useCallback((id: string) =>
     state.items.find(i => i.id === id)?.wearCount ?? 0, [state.items]);
   const getOutfitSuggestions = useCallback(() => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = todayLocal();
     const todayLog = state.wearLogs.find(l => l.date === today);
     if (todayLog) return [];
     return state.outfits.filter(o => o.favorite).sort(() => Math.random() - 0.5).slice(0, 3);
@@ -197,7 +237,7 @@ export function WardrobeProvider({ children }: { children: ReactNode }) {
     <WardrobeContext.Provider value={{
       ...state,
       addItem, updateItem, deleteItem, toggleFavoriteItem, setLaundryStatus,
-      addOutfit, deleteOutfit, toggleFavoriteOutfit, logWear,
+      addOutfit, deleteOutfit, toggleFavoriteOutfit, logWear, removeWearLog,
       addWishlistItem, updateWishlistItem, deleteWishlistItem, moveWishlistToCloset,
       getItem, getOutfit, getItemsByCategory,
       getMostWorn, getLeastWorn, getUnwornItems, getWearCount,
