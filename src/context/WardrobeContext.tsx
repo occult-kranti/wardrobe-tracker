@@ -196,6 +196,7 @@ export function WardrobeProvider({ children }: { children: ReactNode }) {
         name: wishItem.name,
         category: wishItem.category,
         color: wishItem.color,
+        brand: wishItem.brand,
         imageUrl: wishItem.imageUrl || `https://placehold.co/300x400/${wishItem.color.replace('#', '')}/ffffff?text=${encodeURIComponent(wishItem.name)}`,
         dateAdded: new Date().toISOString(),
         wearCount: 0,

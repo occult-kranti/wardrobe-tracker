@@ -8,6 +8,7 @@ export interface ClothingItem {
   name: string;
   category: Category;
   color: string;
+  brand?: string;
   pattern?: string;
   material?: string;
   season: Season[];
