@@ -55,7 +55,7 @@ export default function Layout() {
       {/* Mobile masthead */}
       <header className="lg:hidden fixed top-0 inset-x-0 z-50 bg-bg/95 backdrop-blur-sm border-b border-border">
         <div className="flex items-center justify-between h-14 px-4">
-          <Link to="/" className="flex items-center gap-2 text-text" aria-label="Toile — home">
+          <Link to="/" className="flex items-center gap-2 text-text min-h-11 py-1" aria-label="Toile — home">
             <TagMark size={22} />
             <Wordmark className="w-[64px]" />
           </Link>
@@ -73,7 +73,7 @@ export default function Layout() {
       {/* Desktop rail */}
       <aside className="hidden lg:flex flex-col w-[220px] shrink-0 border-r border-border bg-bg sticky top-0 h-screen">
         <div className="px-6 pt-7 pb-6">
-          <Link to="/" className="flex items-center gap-2.5 text-text" aria-label="Toile — home">
+          <Link to="/" className="flex items-center gap-2.5 text-text min-h-11 py-1" aria-label="Toile — home">
             <TagMark size={34} />
             <Wordmark className="w-[76px]" />
           </Link>
@@ -105,7 +105,7 @@ export default function Layout() {
         <div className="p-4 space-y-4">
           <button
             onClick={() => setAddOpen(true)}
-            className="w-full h-10 type-label inline-flex items-center justify-center gap-2 bg-ink text-on-ink rounded-[2px] hover:opacity-90 active:translate-y-px transition-[opacity] duration-150"
+            className="w-full h-11 type-label inline-flex items-center justify-center gap-2 bg-ink text-on-ink rounded-[2px] hover:opacity-90 active:translate-y-px transition-[opacity] duration-150"
           >
             <IconPlus size={16} />
             Add a piece

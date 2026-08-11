@@ -25,8 +25,11 @@ const toneClasses: Record<ButtonTone, string> = {
 };
 
 export function Button({ tone = 'secondary', compact, icon, children, className = '', ...rest }: ButtonProps) {
-  const height = compact ? 'h-8 px-3' : 'h-10 px-5';
-  const base = tone === 'tertiary' ? 'h-auto py-1' : height;
+  // 44px is the floor, not 40 — the accessibility directive outranks the
+  // original 40px figure in the component law, so "compact" only narrows the
+  // padding, never the hit area.
+  const height = compact ? 'h-11 px-3' : 'h-11 px-5';
+  const base = tone === 'tertiary' ? 'min-h-11 py-1' : height;
   return (
     <button
       className={`type-label inline-flex items-center justify-center gap-2 rounded-[2px] transition-[opacity,filter,background-color] duration-150 active:translate-y-px disabled:opacity-40 disabled:pointer-events-none ${base} ${toneClasses[tone]} ${className}`}
@@ -74,7 +77,11 @@ export function Chip({
   as?: 'button' | 'span';
   title?: string;
 }) {
-  const cls = `type-ledger inline-flex items-center gap-1.5 h-8 pl-2 pr-3 text-[11px] rounded-[2px] border transition-colors duration-150 whitespace-nowrap ${
+  // Display tags keep the compact 32px tag look; anything tappable is held to
+  // the 44px floor, because the accessibility directive governs interactive
+  // elements and a filter row is the most-tapped surface in the app.
+  const height = as === 'span' ? 'h-8' : 'h-11';
+  const cls = `type-ledger inline-flex items-center gap-1.5 ${height} pl-2 pr-3 text-[11px] rounded-[2px] border transition-colors duration-150 whitespace-nowrap ${
     selected
       ? 'bg-ink text-on-ink border-transparent'
       : 'bg-sunken text-text-2 border-border hover:text-text'

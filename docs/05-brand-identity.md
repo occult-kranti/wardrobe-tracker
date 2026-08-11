@@ -138,7 +138,9 @@ worn), and chip punch-hole.
 - **Geometry:** radius 2 globally (only eyelets/seals are circles). **No drop
   shadows** — depth via hairlines, manila layering, and a 1px-offset plate edge.
   8px spacing grid.
-- **Buttons:** 40px tall (compact 32), radius 2, 13px Switzer 600 caps. Primary =
+- **Buttons:** 44px tall (compact narrows padding only, never the hit area —
+  the 44px accessibility floor outranks the original 40px figure), radius 2,
+  13px Switzer 600 caps. Primary =
   ink fill/cream label (dark: chalk fill/ink label); hover slides a 2px carmine
   underline under the label. **Hero action only** ("LOG TODAY'S WEAR") = carmine
   fill. Secondary = 1px ink border, hover gains corner crosses. Tertiary = carmine
