@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useSession } from '../context/SessionContext';
 import { useWardrobe } from '../context/WardrobeContext';
-import { Button, Card, EmptyState, Masthead, Modal, SectionTitle, inputClass } from '../components/ui';
+import { Button, Card, EmptyState, Field, Masthead, Modal, SectionTitle, inputClass } from '../components/ui';
 import { Basting, PlateEmptyWishlist } from '../components/art';
 import { IconChevronLeft } from '../components/icons';
 import { AccountMark, LookCard, PieceCard, shortDate } from '../components/social';
@@ -27,8 +27,48 @@ const STATUS_LABELS: Record<BorrowStatus, string> = {
 };
 
 export default function Chats() {
-  const { accounts, community, activeId } = useSession();
+  const { accounts, community, setCommunity, activeId } = useSession();
+  const navigate = useNavigate();
   const byId = useMemo(() => new Map(accounts.map(a => [a.id, a])), [accounts]);
+  const [starting, setStarting] = useState(false);
+  const [picked, setPicked] = useState<string[]>([]);
+  const [groupName, setGroupName] = useState('');
+
+  const others = accounts.filter(a => a.id !== activeId);
+
+  /** One person selected makes a direct thread; two or more makes a group. */
+  const startConversation = () => {
+    if (!activeId || picked.length === 0) return;
+    const memberIds = [activeId, ...picked];
+    const isGroup = picked.length > 1;
+    // A pair already talking should not end up with two threads.
+    const existing = community.conversations.find(
+      c => !c.isGroup && c.memberIds.length === memberIds.length &&
+        memberIds.every(m => c.memberIds.includes(m))
+    );
+    if (existing && !isGroup) {
+      setStarting(false);
+      navigate(`/chats/${existing.id}`);
+      return;
+    }
+    const id = `c-${crypto.randomUUID().slice(0, 8)}`;
+    setCommunity(prev => ({
+      ...prev,
+      conversations: [
+        ...prev.conversations,
+        {
+          id,
+          memberIds,
+          isGroup,
+          name: isGroup ? (groupName.trim() || picked.map(p => byId.get(p)?.name).filter(Boolean).join(', ')) : undefined,
+        },
+      ],
+    }));
+    setStarting(false);
+    setPicked([]);
+    setGroupName('');
+    navigate(`/chats/${id}`);
+  };
 
   const threads = useMemo(() => {
     return community.conversations
@@ -59,7 +99,13 @@ export default function Chats() {
 
   return (
     <div className="space-y-6">
-      <Masthead title="Conversations" meta={`${threads.length} open`} />
+      <Masthead
+        title="Conversations"
+        meta={`${threads.length} open`}
+        action={others.length > 0 ? (
+          <Button compact onClick={() => setStarting(true)}>New</Button>
+        ) : undefined}
+      />
       <Card>
         <SectionTitle aside="most recent first">Threads</SectionTitle>
         <ul>
@@ -91,6 +137,49 @@ export default function Chats() {
           })}
         </ul>
       </Card>
+
+      <Modal open={starting} onClose={() => setStarting(false)} title="New conversation">
+        <p className="text-[13px] text-text-2 leading-relaxed">
+          Pick one wardrobe for a direct thread, or several for a group.
+        </p>
+        <ul className="mt-4">
+          {others.map(account => {
+            const on = picked.includes(account.id);
+            return (
+              <li key={account.id}>
+                <button
+                  type="button"
+                  onClick={() => setPicked(p => on ? p.filter(x => x !== account.id) : [...p, account.id])}
+                  aria-pressed={on}
+                  className={`w-full flex items-center gap-3 min-h-[56px] px-2 text-left rounded-[2px] border ${
+                    on ? 'border-text bg-sunken' : 'border-transparent'
+                  }`}
+                >
+                  <AccountMark account={account} size={28} />
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-[15px] text-text truncate">{account.name}</span>
+                    <span className="type-ledger text-[11px] text-text-2">{account.handle}</span>
+                  </span>
+                  {on ? <span className="type-ledger text-[11px] text-text-2">in</span> : null}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+        {picked.length > 1 ? (
+          <div className="mt-4">
+            <Field label="Name this group" hint="Optional. Their names are used otherwise.">
+              <input className={inputClass} value={groupName} onChange={e => setGroupName(e.target.value)} placeholder="The Rail" />
+            </Field>
+          </div>
+        ) : null}
+        <div className="flex items-center gap-3 mt-6">
+          <Button tone="primary" disabled={picked.length === 0} onClick={startConversation}>
+            {picked.length > 1 ? 'Start the group' : 'Start it'}
+          </Button>
+          <Button tone="tertiary" onClick={() => setStarting(false)}>Not now</Button>
+        </div>
+      </Modal>
     </div>
   );
 }
@@ -102,6 +191,10 @@ export function ChatThread() {
   const [draft, setDraft] = useState('');
   const [attaching, setAttaching] = useState<null | 'look' | 'piece'>(null);
   const [attached, setAttached] = useState<{ look?: SharedLook; piece?: SharedPiece }>({});
+  const [asking, setAsking] = useState(false);
+  const [askPiece, setAskPiece] = useState('');
+  const [askOwner, setAskOwner] = useState('');
+  const [askNote, setAskNote] = useState('');
 
   const byId = useMemo(() => new Map(accounts.map(a => [a.id, a])), [accounts]);
   const conversation = community.conversations.find(c => c.id === id);
@@ -147,6 +240,33 @@ export function ChatThread() {
     setAttached({});
   };
 
+  /**
+   * A request is always between two wardrobes — the asker and the owner — even
+   * when it is written in a group, which is why the owner has to be named. A
+   * question to the room ("has anyone got a black coat") is just a message.
+   */
+  const ask = () => {
+    if (!activeId || !askPiece.trim() || !askOwner) return;
+    const owner = byId.get(askOwner);
+    setCommunity(prev => ({
+      ...prev,
+      messages: [
+        ...prev.messages,
+        {
+          id: crypto.randomUUID(),
+          conversationId: conversation.id,
+          authorId: activeId,
+          date: todayLocal(),
+          text: askNote.trim() || `Asking after the ${askPiece.trim()}${owner ? `, ${owner.name}` : ''}.`,
+          request: { pieceName: askPiece.trim(), status: 'asked' as const, ownerId: askOwner },
+        },
+      ],
+    }));
+    setAsking(false);
+    setAskPiece('');
+    setAskNote('');
+  };
+
   const advance = (messageId: string, status: BorrowStatus) => {
     setCommunity(prev => ({
       ...prev,
@@ -170,7 +290,6 @@ export function ChatThread() {
         <ul className="space-y-5">
           {messages.map(message => {
             const author = byId.get(message.authorId);
-            const mine = message.authorId === activeId;
             return (
               <li key={message.id} className="flex gap-3">
                 {author ? <AccountMark account={author} size={26} /> : null}
@@ -193,13 +312,13 @@ export function ChatThread() {
                       <span className="type-ledger text-[11px] text-text-2">
                         {STATUS_LABELS[message.request.status]}
                       </span>
-                      {!mine && message.request.status === 'asked' ? (
+                      {message.request.ownerId === activeId && message.request.status === 'asked' ? (
                         <span className="flex items-center gap-2 ml-auto">
                           <Button compact onClick={() => advance(message.id, 'lent')}>Lend it</Button>
                           <Button compact onClick={() => advance(message.id, 'declined')}>It stays home</Button>
                         </span>
                       ) : null}
-                      {!mine && message.request.status === 'lent' ? (
+                      {message.request.ownerId === activeId && message.request.status === 'lent' ? (
                         <span className="ml-auto">
                           <Button compact onClick={() => advance(message.id, 'returned')}>Mark returned</Button>
                         </span>
@@ -240,6 +359,9 @@ export function ChatThread() {
             value={draft}
             onChange={e => setDraft(e.target.value)}
           />
+          <Button type="button" compact onClick={() => { setAskOwner(others[0]?.id ?? ''); setAsking(true); }}>
+            Ask after a piece
+          </Button>
           <Button type="button" compact onClick={() => setAttaching('look')}>Attach a look</Button>
           <Button type="button" compact onClick={() => setAttaching('piece')}>Attach a piece</Button>
           <Button tone="primary" type="submit" disabled={!draft.trim() && !attached.look && !attached.piece}>
@@ -247,6 +369,30 @@ export function ChatThread() {
           </Button>
         </form>
       </Card>
+
+      <Modal open={asking} onClose={() => setAsking(false)} title="Ask after a piece">
+        <p className="text-[13px] text-text-2 leading-relaxed">
+          A request goes to one person, so their wardrobe is the one that can answer it. To ask the
+          room in general, just write a message.
+        </p>
+        <div className="space-y-5 mt-5">
+          <Field label="Whose piece" htmlFor="ask-owner">
+            <select id="ask-owner" className={inputClass} value={askOwner} onChange={e => setAskOwner(e.target.value)}>
+              {others.map(a => a ? <option key={a.id} value={a.id}>{a.name}</option> : null)}
+            </select>
+          </Field>
+          <Field label="Which piece" htmlFor="ask-piece" hint="As they would call it.">
+            <input id="ask-piece" className={inputClass} value={askPiece} onChange={e => setAskPiece(e.target.value)} placeholder="The ivory bandhgala" />
+          </Field>
+          <Field label="A line with it" htmlFor="ask-note" hint="Optional. What it is for, and when it comes back.">
+            <input id="ask-note" className={inputClass} value={askNote} onChange={e => setAskNote(e.target.value)} placeholder="Wedding on the 30th, home by the 2nd" />
+          </Field>
+        </div>
+        <div className="flex items-center gap-3 mt-6">
+          <Button tone="primary" disabled={!askPiece.trim() || !askOwner} onClick={ask}>Ask</Button>
+          <Button tone="tertiary" onClick={() => setAsking(false)}>Not now</Button>
+        </div>
+      </Modal>
 
       <Modal open={attaching === 'look'} onClose={() => setAttaching(null)} title="Send a look" wide>
         <ul className="grid grid-cols-2 sm:grid-cols-3 gap-3">

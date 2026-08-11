@@ -13,6 +13,7 @@ import {
 } from '../types';
 import { todayLocal, addDays } from './dates';
 import { PERSONAS, BRAND_SHOTS, type PersonaSeed } from './personaData';
+import { GARMENT_PHOTOS } from './garmentPhotos';
 
 /**
  * Builds a complete wardrobe from a persona seed.
@@ -73,34 +74,102 @@ function occasionsFor(persona: PersonaSeed): string[] {
 }
 
 /**
- * A product photograph for the pieces one exists for, matched on garment type.
- * There are only two dozen shots against ~175 pieces, so most of the closet
- * keeps its drawn flat — which is the point: the no-photo state is first-class,
- * and a wardrobe where every third tile is a photograph and the rest are
- * technical flats is exactly what a real half-catalogued closet looks like.
+ * A photograph of the real garment for each piece in the closet.
+ *
+ * Matched on what the piece actually is, most specific pattern first — "silk
+ * camisole" must not be caught by the generic shirt rule. Each rule offers
+ * SEVERAL photographs and the piece picks one by hash, so a closet with three
+ * camisoles does not show the same picture three times; with 40 photographs
+ * across 174 pieces some repetition is unavoidable, but it should not cluster.
+ *
+ * Sources: the Indian outfit pack (`in-*`, photorealistic, no real person or
+ * brand depicted), openly-licensed Wikimedia photographs, and the brand
+ * reference shots that shipped with the source pack. Credits live in
+ * src/lib/garmentPhotos.ts.
  */
-const SHOT_KEYWORDS: Array<[RegExp, string]> = [
-  [/\bhoodie\b/i, 'hoodie'],
-  [/\bjogger/i, 'joggers'],
-  [/\blegging/i, 'leggings'],
-  [/\btrack ?jacket\b/i, 'track-jacket'],
-  [/\btrucker\b/i, 'trucker-jacket'],
-  [/\bblouse\b/i, 'blouse'],
-  [/\bdress\b/i, 'dress'],
-  [/\bjeans?\b/i, 'jeans'],
-  [/\btrouser/i, 'trousers'],
-  [/\btee\b|\bt-shirt\b/i, 't-shirt'],
-  [/\bshirt\b/i, 'shirt'],
+const PHOTO_RULES: Array<[RegExp, string[]]> = [
+  // ---- Indian garments first: the most specific names in these closets
+  [/saree|sari/i, ['in-banarasi-silk-saree', 'in-mekhela-chador']],
+  [/mekhela/i, ['in-mekhela-chador']],
+  [/lehenga|ghagra/i, ['in-lehenga-choli', 'in-ghagra-choli']],
+  [/sharara/i, ['in-sharara-set']],
+  [/churidar/i, ['in-churidar-kurta']],
+  [/patiala/i, ['in-patiala-suit']],
+  [/salwar|kameez/i, ['in-salwar-kameez']],
+  [/anarkali|kaftan/i, ['in-anarkali-gown']],
+  [/bandhgala/i, ['in-bandhgala-suit', 'in-sherwani']],
+  [/nehru/i, ['in-nehru-jacket-set', 'in-indo-western-jacket-set']],
+  [/sherwani/i, ['in-sherwani']],
+  [/dhoti|mundu|lungi/i, ['in-dhoti-kurta', 'in-mundu-lungi-outfit']],
+  [/pathani/i, ['in-pathani-suit']],
+  [/palazzo/i, ['in-kurti-palazzo-set']],
+  [/kurta|kurti/i, ['in-kurta-pajama', 'in-churidar-kurta', 'in-pathani-suit', 'in-kurti-palazzo-set']],
+  [/kantha|organza|handloom|ajrakh|block-print/i, ['in-indo-western-jacket-set', 'in-ghagra-choli']],
+  [/dupatta|pashmina|shawl|stole/i, ['pashmina-shawl']],
+
+  // ---- shoes
+  [/jutti|mojari|kolhapuri/i, ['slip-on-suede', 'sandal-leather']],
+  [/chelsea|ankle.*boot|rain boot/i, ['boot-chelsea']],
+  [/loafer/i, ['loafer-penny', 'slip-on-suede']],
+  [/oxford(?!.*shirt)|cap-toe/i, ['oxford-captoe', 'derby-plain']],
+  [/derb(y|ies)|plain-toe/i, ['derby-plain', 'oxford-captoe']],
+  [/slip-on|espadrille|suede/i, ['slip-on-suede']],
+  [/trail|trek|hiking|running|runner/i, ['trail-runner']],
+  [/sneaker|trainer/i, ['sneaker-white', 'trail-runner']],
+  [/pump|mule|heel|sandal|flats\b/i, ['boot-chelsea', 'slip-on-suede']],
+
+  // ---- jewellery
+  [/watch/i, ['watch-dress-steel']],
+  [/jhumka|choker|chain|necklace|hoop|stud|pearl|bangle|anklet|cufflink|ring/i, ['necklace-chain']],
+
+  // ---- accessories
+  [/daypack|backpack|rucksack/i, ['backpack-daypack']],
+  [/duffle|duffel|weekender|briefcase|camera bag|sling|potli|shoulder bag|clutch|tote|raffia/i, ['duffle-weekender', 'backpack-daypack']],
+  [/belt|brace(s)?/i, ['belt-leather']],
+  [/scarf|bandana/i, ['pashmina-shawl']],
+  [/sunglass|wayfarer|cat-eye/i, ['sunglasses-wayfarer']],
+  [/beanie|hat|cap\b/i, ['beanie-rib']],
+  [/sock/i, ['socks-crew']],
+  [/\btie\b|bow tie|pocket square|scrunchie|umbrella/i, ['suit-jacket']],
+
+  // ---- tailoring and layers
+  [/dinner jacket|tuxedo|marcella|suit jacket|flannel suit|two-piece|blazer/i, ['suit-jacket', 'waistcoat']],
+  [/waistcoat|bandi|gilet|quilted|liner|field jacket|waxed|rain shell|shell|ripstop/i, ['gilet-quilted', 'waistcoat']],
+  [/trench|overcoat|wool coat|longline/i, ['suit-jacket', 'gilet-quilted']],
+  [/hoodie|sweatshirt|quarter-zip/i, ['hoodie-oversized']],
+  [/denim jacket|trucker/i, ['trucker-jacket']],
+  [/cable|cricket|cashmere|merino|crew(neck)?|v-neck|knit|thermal|henley/i, ['sweater', 'hoodie-oversized']],
+  [/cape/i, ['pashmina-shawl']],
+
+  // ---- tops and one-pieces
+  [/camisole|tank|turtleneck|sleep|pyjama/i, ['camisole-silk', 'blouse', 'sweater']],
+  [/blouse/i, ['blouse', 'camisole-silk']],
+  [/polo|tee|t-shirt/i, ['t-shirt']],
+  [/dress|gown/i, ['dress', 'in-anarkali-gown']],
+  [/shirt/i, ['shirt', 'blouse']],
+
+  // ---- bottoms
+  [/selvedge|jeans/i, ['denim-jeans', 'jeans']],
+  [/legging/i, ['leggings-yoga', 'leggings']],
+  [/cargo|track pants|loopback|lounge|shorts|swim|joggers/i, ['joggers']],
+  [/chino/i, ['chinos']],
+  [/trouser|pants/i, ['trousers', 'chinos']],
 ];
 
 function photoFor(itemName: string, personaId: string, itemId: string): string {
-  for (const [pattern, category] of SHOT_KEYWORDS) {
+  for (const [pattern, slugs] of PHOTO_RULES) {
     if (!pattern.test(itemName)) continue;
-    const matches = BRAND_SHOTS.filter(s => s.category === category);
-    if (matches.length === 0) continue;
+    // Gather every photograph this rule can offer, from both sources.
+    const options: string[] = [];
+    for (const slug of slugs) {
+      const photo = GARMENT_PHOTOS.find(p => p.slug === slug);
+      if (photo) options.push(photo.path);
+      // The brand pack indexes by garment type rather than by slug.
+      for (const shot of BRAND_SHOTS.filter(s => s.category === slug)) options.push(shot.path);
+    }
+    if (options.length === 0) continue; // rule matched but nothing to show; try the next
     // Stable pick, so a piece keeps the same photograph across reloads.
-    const pick = matches[Math.floor(rand(personaId, itemId, 'shot') * matches.length)];
-    return pick.path;
+    return options[Math.floor(rand(personaId, itemId, 'shot') * options.length)];
   }
   return '';
 }

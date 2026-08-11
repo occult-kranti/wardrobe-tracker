@@ -53,17 +53,19 @@ const SHARED: Record<string, Array<{ outfit: string; day: number; caption?: stri
 
 /** The group thread. Written to cover talk, a shared look, and a borrow. */
 const GROUP_THREAD: Array<{
-  by: string; day: number; text: string;
-  look?: string; request?: { pieceName: string; status: ChatMessage['request'] extends undefined ? never : 'asked' | 'lent' | 'declined' | 'returned' };
+  by: string; day: number; text: string; look?: string;
+  request?: NonNullable<ChatMessage['request']>;
 }> = [
   { by: 'meher', day: -12, text: 'Three weddings in Delhi next month and I am short one evening look. Opening the floor.' },
-  { by: 'vikram', day: -12, text: 'The bandhgala is yours if the shoulders work. It has done four weddings and wants a fifth.', request: { pieceName: 'Bandhgala, ivory raw silk', status: 'lent' } },
+  // The asker writes the request; the owner is who can answer it.
+  { by: 'meher', day: -12, text: 'Vikram — could I ask after the ivory bandhgala for the second one?', request: { pieceName: 'Bandhgala, ivory raw silk', status: 'lent', ownerId: 'vikram' } },
+  { by: 'vikram', day: -12, text: 'Yours if the shoulders work. It has done four weddings and wants a fifth.' },
   { by: 'aarav', day: -11, text: 'Take the pocket square with it. They were made from the same bolt.' },
   { by: 'meher', day: -10, text: 'Wearing it to the sangeet. Photographs going straight to this thread.', look: 'MK-19' },
-  { by: 'aarav', day: -6, text: 'Goa in a fortnight. Anyone got a linen shirt that survives a plane in a duffel?' },
-  { by: 'vikram', day: -5, text: 'Two. Both come back pressed or not at all.', request: { pieceName: 'Linen shirt, sand', status: 'asked' } },
-  { by: 'meher', day: -4, text: 'Not lending the marigold kurta this month, it is in three shoots. Everything else is open.', request: { pieceName: 'Marigold kurta', status: 'declined' } },
-  { by: 'vikram', day: -2, text: 'The bandhgala came home, pressed, with the pocket square folded inside it.', request: { pieceName: 'Bandhgala, ivory raw silk', status: 'returned' } },
+  { by: 'aarav', day: -6, text: 'Goa in a fortnight — Vikram, is one of the linen shirts free?', request: { pieceName: 'Linen shirt, sand', status: 'asked', ownerId: 'vikram' } },
+  { by: 'aarav', day: -5, text: 'Meher, and the marigold kurta for the Sunday, if it is not out?', request: { pieceName: 'Marigold kurta', status: 'declined', ownerId: 'meher' } },
+  { by: 'meher', day: -4, text: 'That one is in three shoots this month. Everything else is open.' },
+  { by: 'meher', day: -2, text: 'The bandhgala is home, pressed, with the pocket square folded inside it.', request: { pieceName: 'Bandhgala, ivory raw silk', status: 'returned', ownerId: 'vikram' } },
 ];
 
 /** One direct thread per pair, so the conversation list has real weight. */
@@ -111,7 +113,7 @@ export function seedCommunity(prev: CommunityState, personas: PersonaSeed[]): Co
         authorId: personaId,
         date: D(entry.day),
         caption: entry.caption,
-        audience: 'everyone',
+        scope: { kind: 'everyone' },
         look,
       });
     }

@@ -243,7 +243,29 @@ export interface SharedPiece {
   color?: string;
 }
 
-export type PostAudience = 'everyone' | 'group' | 'nobody';
+/**
+ * Who a shared look is meant for.
+ *
+ * `self` is genuinely distinct from not sharing at all: unshared means no record
+ * exists, `self` means the record exists and appears on your own profile and
+ * nowhere else. Both are reachable, and taking a look off removes the record.
+ *
+ * These are labels on a shared shelf, not locks. Everything on this device sits
+ * in one file that every wardrobe here can read, and the UI says so rather than
+ * implying an enforcement it cannot perform.
+ */
+export type ShareScope =
+  | { kind: 'everyone' }
+  | { kind: 'conversation'; conversationId: string }
+  | { kind: 'person'; accountId: string }
+  | { kind: 'self' };
+
+export const SCOPE_LABELS: Record<ShareScope['kind'], string> = {
+  everyone: 'Everyone here',
+  conversation: 'One conversation',
+  person: 'One person',
+  self: 'Only this wardrobe',
+};
 
 export interface FeedPost {
   id: string;
@@ -251,9 +273,32 @@ export interface FeedPost {
   date: string;
   /** The wearer's own words. Optional — a look can speak for itself. */
   caption?: string;
-  audience: PostAudience;
+  scope: ShareScope;
   look?: SharedLook;
   piece?: SharedPiece;
+}
+
+/** Can `viewerId` see this post? Authors always see their own. */
+export function postVisibleTo(
+  post: FeedPost,
+  viewerId: string | null,
+  conversations: Conversation[]
+): boolean {
+  if (post.authorId === viewerId) return true;
+  const scope = post.scope;
+  switch (scope.kind) {
+    case 'everyone':
+      return true;
+    case 'person':
+      return scope.accountId === viewerId;
+    case 'conversation': {
+      if (!viewerId) return false;
+      const target = conversations.find(c => c.id === scope.conversationId);
+      return target !== undefined && target.memberIds.includes(viewerId);
+    }
+    case 'self':
+      return false;
+  }
 }
 
 /** A one-to-one thread or the group. Same shape; `memberIds.length` decides. */
@@ -273,8 +318,12 @@ export interface ChatMessage {
   text: string;
   look?: SharedLook;
   piece?: SharedPiece;
-  /** Borrow requests ride in the same thread; see CircleMessage for the states. */
-  request?: { pieceName: string; status: BorrowStatus };
+  /**
+   * Borrow requests ride in the same thread. `ownerId` is whose piece it is —
+   * a request is always between two wardrobes even when written in a group, and
+   * only the owner may advance it.
+   */
+  request?: { pieceName: string; status: BorrowStatus; ownerId?: string };
 }
 
 export interface CommunityState {

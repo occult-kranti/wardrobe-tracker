@@ -183,6 +183,12 @@ for (const persona of PERSONAS) {
     // Not "has a custom category" — Aarav's closet legitimately uses only the
     // defaults. What must hold is that no piece references a category the
     // wardrobe's own taxonomy does not define, which is what would orphan it.
+    // Every tile should be a photograph of the actual garment. A rule that
+    // references a slug no source provides fails silently as a blank tile, and
+    // a stray escape once turned /\btie\b/ into a regex containing a literal
+    // backspace, which could never match anything.
+    [`${persona.id}: every piece has a photograph`, st.items.every(i => i.imageUrl), st.items.filter(i => !i.imageUrl).map(i => i.name).slice(0, 3).join(', ')],
+    [`${persona.id}: photographs resolve to files`, st.items.every(i => !i.imageUrl || /^wardrobe\//.test(i.imageUrl)), ''],
     [`${persona.id}: every piece has a category`, st.items.every(i => st.settings.categories.some(c => c.id === i.category)), st.settings.categories.length],
   ];
   for (const [n, ok, d] of checks) { console.log(ok ? 'PASS' : 'FAIL', '-', n, d !== '' ? `(${d})` : ''); if (!ok) pfail++; }

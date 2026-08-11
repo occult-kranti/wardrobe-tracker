@@ -5,6 +5,7 @@ import { useWardrobe } from '../context/WardrobeContext';
 import { Button, Card, EmptyState, Masthead, SectionTitle, Stat } from '../components/ui';
 import { Basting, PlateEmptyCloset } from '../components/art';
 import { AccountMark, LookCard, shortDate } from '../components/social';
+import { postVisibleTo } from '../types';
 import { personaById } from '../lib/personaWardrobe';
 import { formatMoney } from '../lib/cost';
 
@@ -30,9 +31,9 @@ export default function Profile() {
 
   const shared = useMemo(
     () => community.posts
-      .filter(p => p.authorId === targetId && p.audience !== 'nobody')
+      .filter(p => p.authorId === targetId && postVisibleTo(p, activeId, community.conversations))
       .sort((a, b) => b.date.localeCompare(a.date)),
-    [community.posts, targetId]
+    [community.posts, community.conversations, targetId, activeId]
   );
 
   if (!account) {

@@ -5,6 +5,7 @@ import { useWardrobe } from '../context/WardrobeContext';
 import { Card, EmptyState, Masthead, SectionTitle } from '../components/ui';
 import { Basting, PlateEmptyOutfits } from '../components/art';
 import { AccountLine, LookCard, PieceCard, shortDate } from '../components/social';
+import { SCOPE_LABELS, postVisibleTo } from '../types';
 import { Button } from '../components/ui';
 
 /**
@@ -24,10 +25,10 @@ export default function Feed() {
   const byId = useMemo(() => new Map(accounts.map(a => [a.id, a])), [accounts]);
   const posts = useMemo(
     () => community.posts
-      .filter(p => p.audience !== 'nobody')
+      .filter(p => postVisibleTo(p, activeId, community.conversations))
       .slice()
       .sort((a, b) => b.date.localeCompare(a.date) || a.id.localeCompare(b.id)),
-    [community.posts]
+    [community.posts, community.conversations, activeId]
   );
 
   const mine = posts.filter(p => p.authorId === activeId).length;
@@ -69,8 +70,10 @@ export default function Feed() {
               <Card>
                 <div className="flex items-start justify-between gap-4">
                   <AccountLine account={author} meta={shortDate(post.date)} />
-                  {post.audience === 'group' ? (
-                    <span className="type-ledger text-[11px] text-text-2 pt-2">the group</span>
+                  {post.authorId === activeId && post.scope.kind !== 'everyone' ? (
+                    <span className="type-ledger text-[11px] text-text-2 pt-2">
+                      {SCOPE_LABELS[post.scope.kind].toLowerCase()}
+                    </span>
                   ) : null}
                 </div>
 

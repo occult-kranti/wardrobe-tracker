@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useWardrobe } from '../context/WardrobeContext';
 import { useSession } from '../context/SessionContext';
 import { todayLocal } from '../lib/dates';
-import { categoryLabel, displayTag, type ClothingItem, type Outfit } from '../types';
+import { ShareSheet } from '../components/ShareSheet';
+import { categoryLabel, displayTag, type ClothingItem, type Outfit, type ShareScope } from '../types';
 import {
   Button, Card, Chip, EmptyState, Field, IconButton, Masthead, SectionTitle, inputClass,
 } from '../components/ui';
@@ -207,7 +208,7 @@ function OutfitCard({
 /* ---------- the page ---------- */
 
 export default function Outfits() {
-  const { activeId, community, setCommunity } = useSession();
+  const { activeId, accounts, community, setCommunity } = useSession();
   const {
     items, activeItems, outfits, settings,
     addOutfit, deleteOutfit, toggleFavoriteOutfit, logWear, getWearablePool, getItem,
@@ -227,14 +228,31 @@ export default function Outfits() {
     [community.posts, activeId]
   );
 
-  const toggleShare = useCallback((outfit: Outfit) => {
+  /** The look being shared, while the sheet is open. */
+  const [sharing, setSharing] = useState<Outfit | null>(null);
+
+  const lookOf = useCallback((outfit: Outfit) => ({
+    outfitId: outfit.id,
+    name: outfit.name,
+    imageUrl: outfit.imageUrl,
+    occasion: outfit.occasion,
+    pieces: outfit.itemIds.map(id => getItem(id)?.name).filter((n): n is string => Boolean(n)),
+  }), [getItem]);
+
+  const openShare = useCallback((outfit: Outfit) => {
     if (!activeId) return;
     const existing = community.posts.find(p => p.authorId === activeId && p.look?.outfitId === outfit.id);
     if (existing) {
+      // Already out: taking it off destroys nothing, so it needs no confirmation.
       setCommunity(prev => ({ ...prev, posts: prev.posts.filter(p => p.id !== existing.id) }));
       showToast('Taken off the feed. The look stays in your outfits.', 'info');
       return;
     }
+    setSharing(outfit);
+  }, [activeId, community.posts, setCommunity]);
+
+  const share = useCallback((scope: ShareScope, caption: string) => {
+    if (!activeId || !sharing) return;
     setCommunity(prev => ({
       ...prev,
       posts: [
@@ -243,21 +261,20 @@ export default function Outfits() {
           id: crypto.randomUUID(),
           authorId: activeId,
           date: todayLocal(),
-          audience: 'everyone' as const,
-          look: {
-            outfitId: outfit.id,
-            name: outfit.name,
-            imageUrl: outfit.imageUrl,
-            occasion: outfit.occasion,
-            pieces: outfit.itemIds
-              .map(id => getItem(id)?.name)
-              .filter((n): n is string => Boolean(n)),
-          },
+          caption: caption || undefined,
+          scope,
+          look: lookOf(sharing),
         },
       ],
     }));
-    showToast('On the feed. Every wardrobe here can see it.', 'seal');
-  }, [activeId, community.posts, setCommunity, getItem]);
+    const who =
+      scope.kind === 'everyone' ? 'Every wardrobe here can see it.'
+      : scope.kind === 'self' ? 'It stays on your own profile.'
+      : scope.kind === 'person' ? `Only ${accounts.find(a => a.id === scope.accountId)?.name ?? 'they'} can see it.`
+      : 'The people in that thread can see it.';
+    showToast(`On the feed. ${who}`, 'seal');
+    setSharing(null);
+  }, [activeId, sharing, setCommunity, lookOf, accounts]);
 
   const [building, setBuilding] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
@@ -604,7 +621,7 @@ export default function Outfits() {
                   showToast('Deleted. The pieces stay in the closet.', 'info');
                 }}
                 shared={sharedIds.has(outfit.id)}
-                onShare={() => toggleShare(outfit)}
+                onShare={() => openShare(outfit)}
                 onWear={() => {
                   logWear(outfit.itemIds, outfit.id);
                   showToast(`Logged. "${outfit.name}" ${wearsPhrase(outfit.wearCount + 1)}.`, 'seal');
@@ -629,6 +646,13 @@ export default function Outfits() {
           />
         </Card>
       )}
+
+      <ShareSheet
+        open={sharing !== null}
+        look={sharing ? lookOf(sharing) : null}
+        onClose={() => setSharing(null)}
+        onShare={share}
+      />
     </div>
   );
 }
