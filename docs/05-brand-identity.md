@@ -43,8 +43,10 @@ Every text pair verified WCAG AA by an independent judge pass.
 | `--color-text` | `#201D18` | Iron-gall ink (14.6:1 on bg). |
 | `--color-text-2` | `#5C554A` | Faded ink. Captions, metadata (6.5:1 on bg). |
 | `--color-border` | `#D8CFBA` | Chalk hairline. |
-| `--color-accent` | `#BE1231` | Sealing-wax carmine. **The single saturated color.** |
-| `--color-accent-hover` | `#97102A` | Carmine pressed harder. |
+| `--color-accent` | `#105F7D` | Washing blue. **The interface accent** — amended 2026-08-11, see below. |
+| `--color-accent-hover` | `#0D4F68` | The blue pressed harder. |
+| `--color-accent-on-ink` | `#7CBEDC` | The accent stated on the ink FILL, not on paper. |
+| `--color-seal` | `#BE1231` | Sealing-wax carmine. The mark: seal, wordmark rule, favicon, recap card. |
 | `--color-success` | `#2E6B4F` | Bottle green. Money-not-spent, confirmations. |
 | `--color-warning` | `#7D5813` | Chalk ochre — darkened from concept's `#8A6116`, which measured 4.25:1 on manila; this hex passes 4.5:1 everywhere. |
 | `--color-danger` | `#771324` | Oxblood. Graver than the house red. |
@@ -63,17 +65,45 @@ Every text pair verified WCAG AA by an independent judge pass.
 | `--color-text` | `#EFE9D9` | Chalk. |
 | `--color-text-2` | `#A89F8D` | Dusty chalk. |
 | `--color-border` | `#383226` | Seam shadow. |
-| `--color-accent` (text/icons) | `#E85C70` | Chalk red — text-safe on bg. |
-| `--color-accent-hover` | `#F0798A` | |
-| `--color-accent-fill` | `#BE1231` | Button fills keep carmine with chalk label (5.2:1). Light mode maps this to `accent`. |
+| `--color-accent` (text/icons) | `#6FB6D6` | Washing blue lifted for ink cloth (8.17:1 on bg). |
+| `--color-accent-hover` | `#8CC6E0` | |
+| `--color-accent-fill` | `#105F7D` | Button fills, chalk label at 6.98:1. Light mode maps this to `accent`. |
+| `--color-seal` | `#CE1837` | The wax stated for a dark ground; carmine itself measures 2.90:1 here. |
 | `--color-success` | `#58A97F` | |
 | `--color-warning` | `#D9A93F` | |
 | `--color-danger` | `#F297A4` | Danger text. Fills use `#8C1B32` + chalk label. |
 | `--color-gold` | `#D9B44A` | Decorative only. |
 
-**Rule of scarcity:** one carmine element per view region. The eye trusts a page
+**Rule of scarcity:** one accent element per view region. The eye trusts a page
 that highlights almost nothing. **Exactly one primary button per view** (written
 law, grafted from Loden).
+
+> **Amended 2026-08-11** by a three-judge pass, 2 of 3 (`docs/14-the-brand-colour.md`).
+> **The brand colour splits in two.** `--color-seal` is sealing-wax carmine
+> `#BE1231` — the hex `docs/06` §4 names, unchanged, on exactly four surfaces:
+> the wax seal, the wordmark underline, the favicon, and the recap card.
+> `--color-accent` becomes **washing blue** and carries the whole interface.
+>
+> The house had been spending a wax colour on seven things that are not wax, and
+> it cost three measured defects. Carmine's chroma is 0.198 — and so is the most
+> saturated garment in the seeds, *because it is this same hex*: a silk scarf and
+> a set of glass bangles ship in the brand colour, so the interface was not
+> louder than cloth, it was indistinguishable from it. Accent and danger sat 2.6°
+> apart in hue, which simulates to **0.2–0.3°** in all three dichromacies — "log
+> a wear" and "delete forever" were one colour to every dichromat. And §6.5 had
+> already barred red from every chart, closing a whole surface class to the brand.
+>
+> Washing blue holds 157–171° of hue opposition to danger under every deficiency,
+> and at chroma 0.085 it loses to real cloth, which this contract requires and
+> carmine never did. In the pattern room exactly one object is red, and it is the
+> wax: a 2px nav rule is not wax, an eyelet is a brass grommet, a focus ring is
+> not wax.
+>
+> This is the only verdict on the ballot that overrides nothing. §4 of the
+> focus-group document names `#BE1231` by hex; that hex still ships, at that
+> chroma, on the proof-gesture surfaces. Full dissent — including the argument
+> that blue was never given the cultural test that disqualified saffron, and the
+> single measurement that would reverse the ruling — is recorded in `docs/14`.
 
 ## 4. Typography
 
@@ -104,7 +134,7 @@ duplicated.
 
 States: muted = basting dash (`stroke-dasharray 2 2`); active = ink fill with
 interior details redrawn in surface color. Never emoji. Never accent-tinted —
-except the single "log wear" action, which may fill carmine.
+except the single "log wear" action, which may fill with the accent.
 
 ## 6. Art direction (all hand-coded SVG/CSS, zero rasters)
 
@@ -112,16 +142,19 @@ except the single "log wear" action, which may fill carmine.
    0.75px stroke, ink at 6% (dark: chalk at 5%). Sparse seam arcs (1px,
    dasharray 6 4, ink 3%) on empty/marketing surfaces only.
    **NEVER any ornament behind the photo grid** — closet tiles sit on flat muslin.
-2. **Empty-state plates:** 1.5px ink contour drawings (~200×160), one carmine
+2. **Empty-state plates:** 1.5px ink contour drawings (~200×160), one accent
    detail each, caption in Bodoni Italic. No items → wire hanger + measuring tape.
    No outfits → dress form with chalk marks. No log → open ledger + garment tag.
    Empty wishlist → suitcase with string tags.
 3. **Logo:** wordmark TOILE, Bodoni 700 caps tracked +0.18em, over a hand-wavered
-   2-segment carmine chalk underline. Monogram: a vertical garment tag (clipped
-   top corners, 6px eyelet, S-curve string) bearing a Bodoni "T". Favicon: eyelet
-   + T on carmine.
-4. **Wax seal:** flat carmine circle, chalk T, rotated **−3°** (hand-pressed graft),
-   used on the exported recap card and seal-press confirmations.
+   2-segment chalk underline in `--color-seal`. Monogram: a vertical garment tag
+   (clipped top corners, 6px eyelet, S-curve string) bearing a Bodoni "T".
+   Favicon: eyelet + T on the seal colour.
+4. **Wax seal:** flat `--color-seal` circle, chalk T, rotated **−3°** (hand-pressed
+   graft), used on the exported recap card and seal-press confirmations.
+   `src/components/art.tsx` contains no hex at all — it paints in tokens — so
+   these two names are load-bearing: drawn in `--color-accent` they would have
+   turned blue with the interface, silently, with nothing in the build to say so.
 5. **Charts as art:** hairline axes, ink bars, basting-dash projection lines,
    display numerals, on muslin plates in double-rule frames.
 
@@ -142,8 +175,8 @@ except the single "log wear" action, which may fill carmine.
 tag-shaped chips with a left eyelet · basting-stitch dividers (1px dash 4 3 with
 bar-tack ends) · the double rule (2px + 0.5px, 3px apart) under mastheads ·
 chalk registration crosses at card corners on hover · the pattern notch as
-selected-tab marker · the eyelet as bullet, calendar wear-dot (filled carmine when
-worn), and chip punch-hole.
+selected-tab marker · the eyelet as bullet, calendar wear-dot (filled with the accent
+when worn), and chip punch-hole.
 
 ## 7. Component law
 
@@ -153,19 +186,21 @@ worn), and chip punch-hole.
 - **Buttons:** 44px tall (compact narrows padding only, never the hit area —
   the 44px accessibility floor outranks the original 40px figure), radius 2,
   13px Switzer 600 caps. Primary =
-  ink fill/cream label (dark: chalk fill/ink label); hover slides a 2px carmine
-  underline under the label. **Hero action only** ("LOG TODAY'S WEAR") = carmine
-  fill. Secondary = 1px ink border, hover gains corner crosses. Tertiary = carmine
-  underlined text. Destructive = oxblood.
+  ink fill/cream label (dark: chalk fill/ink label); hover slides a 2px rule in
+  under the label, drawn in `--color-accent-on-ink` — the accent stated against
+  that FILL, since the fill is ink in the light rooms and chalk in the dark one
+  and no single hex is legible on both. **Hero action only** ("LOG TODAY'S WEAR")
+  = accent fill. Secondary = 1px ink border, hover gains corner crosses
+  (`.registered`). Tertiary = accent underlined text. Destructive = oxblood.
 - **Inputs:** ledger style — no boxes; 1px bottom rule, label above in 11px mono
-  caps; focus thickens rule to 2px carmine. Search is the one boxed input,
+  caps; focus thickens rule to 2px accent. Search is the one boxed input,
   tag-shaped with eyelet.
 - **Garment cards:** borderless muslin/mat tiles, 4:5, nothing competes with the
   photo. Below: name 13px Switzer 500 + **specimen caption** (grafted from Loden)
   in Plex Mono: `№ 041 · ZARA · 14 WEARS`. Hover: 1px ink border + corner crosses.
   No scale transforms.
-- **Nav:** desktop 220px rail, active = 2px carmine left rule + filled icon.
-  Mobile = 56px bottom tag-bar, 5 slots, active icon gets a carmine eyelet dot.
+- **Nav:** desktop 220px rail, active = 2px accent left rule + filled icon.
+  Mobile = 56px bottom tag-bar, 5 slots, active icon gets an accent eyelet dot.
 - **Mastheads:** Bodoni 28–40px over a double rule; date/count in mono at right.
 - **Modals:** centered paper sheet ≤480px, 1px ink border + plate edge, Bodoni
   22px title over double rule, ink backdrop at 40%.
@@ -207,4 +242,6 @@ worn), and chip punch-hole.
 
 ---
 
-*Contract ratified 2026-08-11. Amend only with a documented judge pass.*
+*Contract ratified 2026-08-11. Amended the same day by a documented judge pass:
+the display face (Fraunces), the streak ban, the carmine hero bar's withdrawal,
+and the brand-colour split. Amend only with a documented judge pass.*

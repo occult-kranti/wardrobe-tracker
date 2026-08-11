@@ -109,7 +109,7 @@ function Thumb({
 
 /** Tertiary link — the Button primitive's tertiary tone, on an <a>. */
 const tertiaryLink =
-  'type-label inline-flex items-center gap-2 text-accent underline underline-offset-[3px] decoration-1 hover:decoration-2 py-2';
+  'type-label inline-flex items-center gap-2 text-accent underline underline-offset-[3px] decoration-1 hover:decoration-2 min-h-11 py-2';
 
 /* ---------- what the closet already holds ---------- */
 

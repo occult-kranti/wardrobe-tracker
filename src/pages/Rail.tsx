@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useWardrobe } from '../context/WardrobeContext';
 import { categoryLabel, type BorrowStatus, type CircleMessage, type CircleProfile } from '../types';
-import { Button, Card, Chip, EmptyState, Masthead, SectionTitle, inputClass } from '../components/ui';
+import { Button, Card, Chip, EmptyState, LinkButton, Masthead, SectionTitle, inputClass } from '../components/ui';
 import { Basting, GarmentPlate, PlateEmptyWishlist } from '../components/art';
 import { IconChevronLeft } from '../components/icons';
 
@@ -120,9 +120,7 @@ export function Rail() {
             title="The rail is empty."
             body="Borrowing between closets that trust each other — who has what, and when it came home. Profiles here are records you keep on this device, like a contact book. The sample wardrobe includes a working rail."
             action={
-              <Link to="/settings">
-                <Button tone="primary">Load the sample</Button>
-              </Link>
+              <LinkButton to="/settings" tone="primary">Load the sample</LinkButton>
             }
           />
         </Card>
@@ -284,11 +282,9 @@ export function RailProfile() {
             title="No record of this closet."
             body="The profile may have been removed, or never existed here."
             action={
-              <Link to="/rail">
-                <Button tone="primary" icon={<IconChevronLeft size={16} />}>
-                  Back to the rail
-                </Button>
-              </Link>
+              <LinkButton to="/rail" tone="primary" icon={<IconChevronLeft size={16} />}>
+                Back to the rail
+              </LinkButton>
             }
           />
         </Card>

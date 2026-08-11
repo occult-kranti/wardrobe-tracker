@@ -2,6 +2,12 @@
  * TOILE artwork — all hand-coded SVG, no rasters, no external assets.
  * Art direction: docs/05-brand-identity.md §6 and docs/06-focus-group-requirements.md §2.
  * Never draw a body. Garments are technical flats.
+ *
+ * This file contains no hex at all — it paints in tokens, which is why the
+ * 2026-08-11 brand split had to be made explicitly here. The seal and the
+ * wordmark underline were drawn in `--color-accent`, so moving the interface to
+ * washing blue would have turned the wax seal blue SILENTLY, with nothing in the
+ * build to say so. They now name `--color-seal`, which is what they always meant.
  */
 
 /* ---------------- logo & seal ---------------- */
@@ -20,7 +26,7 @@ export function Wordmark({ className = '' }: { className?: string }) {
         <path
           d="M1 3.2C10 1.6 20 3.8 32 2.6s22 1.4 31-.4"
           fill="none"
-          stroke="var(--color-accent)"
+          stroke="var(--color-seal)"
           strokeWidth="1.6"
           strokeLinecap="butt"
         />
@@ -55,7 +61,7 @@ export function TagMark({ size = 28 }: { size?: number }) {
   );
 }
 
-/** Wax seal, pressed slightly crooked on purpose. */
+/** Wax seal, pressed slightly crooked on purpose. Wax, therefore `--color-seal`. */
 export function WaxSeal({ size = 44, label = 'T' }: { size?: number; label?: string }) {
   return (
     <svg
@@ -66,13 +72,13 @@ export function WaxSeal({ size = 44, label = 'T' }: { size?: number; label?: str
       aria-hidden="true"
       style={{ transform: 'rotate(-3deg)' }}
     >
-      <circle cx="22" cy="22" r="20" fill="var(--color-accent-fill)" />
-      <circle cx="22" cy="22" r="16.5" stroke="var(--color-on-accent)" strokeWidth="0.75" opacity="0.6" />
+      <circle cx="22" cy="22" r="20" fill="var(--color-seal)" />
+      <circle cx="22" cy="22" r="16.5" stroke="var(--color-chalk)" strokeWidth="0.75" opacity="0.6" />
       <text
         x="22"
         y="30"
         textAnchor="middle"
-        fill="var(--color-on-accent)"
+        fill="var(--color-chalk)"
         style={{ font: '700 20px var(--font-display)', letterSpacing: '0.05em' }}
       >
         {label}

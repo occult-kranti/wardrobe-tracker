@@ -32,6 +32,7 @@ for (const theme of ['light','dark','salon']) {
       text:g('--color-text'), text2:g('--color-text-2'), accent:g('--color-accent'),
       accentFill:g('--color-accent-fill'), onAccent:g('--color-on-accent'),
       accentOnInk:g('--color-accent-on-ink'),
+      seal:g('--color-seal'),
       dangerFill:g('--color-danger-fill'), chalk:g('--color-chalk'),
       inkFill:g('--color-ink-fill'), onInk:g('--color-on-ink'),
       border:g('--color-border'),
@@ -48,11 +49,17 @@ for (const theme of ['light','dark','salon']) {
     ['text-2/sunken', t.text2, t.sunken, 4.5], ['text/mat', t.text, t.mat, 4.5],
     ['accent/bg', t.accent, t.bg, 4.5], ['accent/sunken', t.accent, t.sunken, 4.5],
     ['accent/surface', t.accent, t.surface, 4.5],
+    // The mat pair was never gated, and the dark room's accent had been sitting
+    // on it at 4.37:1 — under AA, in the shipped default, on the tile every
+    // garment photograph lands on.
+    ['accent/mat', t.accent, t.mat, 4.5],
     ['on-accent/accent-fill', t.onAccent, t.accentFill, 4.5],
     ['chalk/danger-fill', t.chalk, t.dangerFill, 4.5],
     ['on-ink/ink-fill', t.onInk, t.inkFill, 4.5],
+    ['chalk/seal', t.chalk, t.seal, 4.5],
     // non-text
     ['accent-on-ink/ink-fill *', t.accentOnInk, t.inkFill, 3],
+    ['seal/bg *', t.seal, t.bg, 3],
     // Measured but never a gate: a chalk hairline is decorative, always paired
     // with layering or a label, and no WCAG clause governs it. It is printed so
     // a theme author can see how faint their border really is — the light room's

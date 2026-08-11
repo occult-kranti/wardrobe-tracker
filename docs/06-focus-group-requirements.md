@@ -89,6 +89,14 @@ telemetry.
 | Matching scope: same-category (simple) vs cross-category (correct) | Cross-category. Category becomes a scored signal, not a gate — the feature fails exactly when it matters otherwise. |
 | Brand stats: fit memory vs "don't make it a collection to complete" | One plain ranked text table. No logos, no imagery, no completion mechanics. |
 
+> **Note added 2026-08-11, §4 unamended.** A later judge pass
+> (`docs/14-the-brand-colour.md`) moved the *interface* accent to washing blue
+> `#105F7D` and gave carmine its own token, `--color-seal`. The row above is
+> untouched and still binding: `#BE1231` ships, at that chroma, on the seal, the
+> wordmark rule, the favicon and the recap card — the proof-gesture surfaces. It
+> is simply scarcer now, which is what "used scarcely" asked for. The pass chose
+> that arrangement over full replacement *because* it overrides nothing here.
+
 ---
 
 *Panel convened 2026-08-11. These requirements and `docs/05-brand-identity.md`

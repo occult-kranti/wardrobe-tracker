@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useSession } from '../context/SessionContext';
 import { useWardrobe } from '../context/WardrobeContext';
-import { Button, Card, EmptyState, Field, Masthead, Modal, SectionTitle, inputClass } from '../components/ui';
+import { Button, Card, EmptyState, Field, LinkButton, Masthead, Modal, SectionTitle, inputClass } from '../components/ui';
 import { Basting, PlateEmptyWishlist } from '../components/art';
 import { IconChevronLeft } from '../components/icons';
 import { AccountMark, LookCard, PieceCard, shortDate } from '../components/social';
@@ -25,6 +25,9 @@ const STATUS_LABELS: Record<BorrowStatus, string> = {
   declined: 'Staying home',
   returned: 'Home again',
 };
+
+/** How many closet pieces the send-a-piece grid shows before it says so. */
+const PIECE_PICKER_LIMIT = 60;
 
 export default function Chats() {
   const { accounts, community, setCommunity, activeId } = useSession();
@@ -214,7 +217,7 @@ export function ChatThread() {
             plate={<PlateEmptyWishlist />}
             title="No record of this thread."
             body="It may have been removed, or it never existed on this device."
-            action={<Link to="/chats"><Button tone="primary" icon={<IconChevronLeft size={16} />}>Back to conversations</Button></Link>}
+            action={<LinkButton to="/chats" tone="primary" icon={<IconChevronLeft size={16} />}>Back to conversations</LinkButton>}
           />
         </Card>
       </>
@@ -395,6 +398,11 @@ export function ChatThread() {
       </Modal>
 
       <Modal open={attaching === 'look'} onClose={() => setAttaching(null)} title="Send a look" wide>
+        {outfits.length === 0 ? (
+          <p className="text-[14px] text-text-2 leading-snug">
+            No looks saved yet. Put one together in Outfits and it will be here to send.
+          </p>
+        ) : null}
         <ul className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {outfits.map(outfit => (
             <li key={outfit.id}>
@@ -422,8 +430,13 @@ export function ChatThread() {
       </Modal>
 
       <Modal open={attaching === 'piece'} onClose={() => setAttaching(null)} title="Send a piece" wide>
+        {activeItems.length === 0 ? (
+          <p className="text-[14px] text-text-2 leading-snug">
+            The closet is empty. Add a piece and it will be here to send.
+          </p>
+        ) : null}
         <ul className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          {activeItems.slice(0, 60).map(item => (
+          {activeItems.slice(0, PIECE_PICKER_LIMIT).map(item => (
             <li key={item.id}>
               <button
                 type="button"
@@ -440,6 +453,13 @@ export function ChatThread() {
             </li>
           ))}
         </ul>
+        {/* No silent caps: a closet larger than the picker should say so rather
+            than quietly present the first sixty as if they were all of it. */}
+        {activeItems.length > PIECE_PICKER_LIMIT ? (
+          <p className="type-ledger text-[11px] text-text-2 mt-4">
+            Showing {PIECE_PICKER_LIMIT} of {activeItems.length}. Search the closet for the rest.
+          </p>
+        ) : null}
       </Modal>
 
       <p>

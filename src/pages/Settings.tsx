@@ -93,7 +93,8 @@ function Toggle({
       } ${className}`}
       {...rest}
     >
-      <span className={active ? 'text-accent' : 'opacity-60'}>
+      {/* Stated against the ink fill, not against paper — see the Chip in ui.tsx. */}
+      <span className={active ? 'text-accent-on-ink' : 'opacity-60'}>
         {active ? <IconEyeletFilled size={10} /> : <IconEyelet size={10} />}
       </span>
       {children}
@@ -111,13 +112,17 @@ function Row({
   body: string;
   control: ReactNode;
 }) {
+  // Stacks below `sm`. `shrink-0` on the control was unconditional, so the
+  // widest control in the app — the theme row, 513px of chips that do not
+  // wrap — pushed the DOCUMENT 206px wider than a 360px screen, and every card
+  // on the page rendered 566px wide to match.
   return (
-    <div className="flex items-start justify-between gap-4 py-1">
+    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-4 py-1">
       <div className="min-w-0">
         <p className="text-[15px] text-text leading-tight">{title}</p>
         <p className="text-[13px] text-text-2 leading-snug mt-1">{body}</p>
       </div>
-      <div className="shrink-0">{control}</div>
+      <div className="sm:shrink-0">{control}</div>
     </div>
   );
 }

@@ -436,7 +436,7 @@ export default function Dashboard() {
         <Card>
           <SectionTitle
             aside={
-              <Link to="/calendar" className="hover:text-text transition-colors duration-150">
+              <Link to="/calendar" className="inline-flex items-center min-h-11 hover:text-text transition-colors duration-150">
                 Calendar
               </Link>
             }
@@ -551,7 +551,7 @@ export default function Dashboard() {
               </p>
             ) : (
               <>
-                <div className="max-h-[46vh] overflow-y-auto -mx-1 px-1">
+                <div className="max-h-[46vh] pane -mx-1 px-1">
                   <ul className="grid grid-cols-3 gap-2">
                     {pickable.map(item => {
                       const selected = picked.includes(item.id);

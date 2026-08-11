@@ -47,7 +47,7 @@ export function ToastContainer() {
 
   return (
     <div
-      className="fixed bottom-4 left-4 right-4 sm:right-auto z-[200] flex flex-col gap-2 sm:max-w-sm"
+      className="fixed bottom-[72px] lg:bottom-4 left-4 right-4 sm:right-auto z-[200] flex flex-col gap-2 sm:max-w-sm"
       role="status"
       aria-live="polite"
     >

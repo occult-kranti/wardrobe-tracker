@@ -4,7 +4,7 @@ import { useWardrobe } from '../context/WardrobeContext';
 import { categoryLabel, SOURCE_LABELS, type ClothingItem, type ItemSource } from '../types';
 import { isFutureDate, todayLocal } from '../lib/dates';
 import { aggregateCostPerWear, costPerWear, formatMoney, formatPerWear } from '../lib/cost';
-import { Card, EmptyState, Masthead, SectionTitle, Stat } from '../components/ui';
+import { Card, EmptyState, Masthead, SectionTitle, Stat, TableRail } from '../components/ui';
 import { Basting, GarmentPlate, LeaderLine, PlateEmptyLedger } from '../components/art';
 
 /**
@@ -293,8 +293,8 @@ export default function Statistics() {
   /* ---------- brands: a plain ranked table, never a collection ---------- */
 
   const brands = useMemo(() => {
-    const SELF_MADE = ' self-made';
-    const NO_LABEL = ' no-label';
+    const SELF_MADE = '\u0000self-made';
+    const NO_LABEL = '\u0000no-label';
     const groups = new Map<
       string,
       { casings: Map<string, number>; pieces: number; wears: number; cost: number; costedWears: number }
@@ -671,7 +671,7 @@ export default function Statistics() {
           <SectionTitle aside={`${brands.length} ${brands.length === 1 ? 'maker' : 'makers'}`}>
             By maker
           </SectionTitle>
-          <div className="overflow-x-auto -mx-1 px-1">
+          <TableRail label="Wear and cost by maker">
             <table className="w-full text-left tabular">
               <thead>
                 <tr>
@@ -708,7 +708,7 @@ export default function Statistics() {
                 ))}
               </tbody>
             </table>
-          </div>
+          </TableRail>
         </Card>
       ) : null}
 

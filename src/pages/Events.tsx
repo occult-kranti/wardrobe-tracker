@@ -5,12 +5,17 @@ import {
   EVENT_LABELS,
   categoryLabel,
   type ClothingItem,
+  type EventKind,
   type EventReservation,
   type WardrobeEvent,
 } from '../types';
-import { daysSince, todayLocal } from '../lib/dates';
-import { Button, Card, EmptyState, Masthead, Modal, SectionTitle } from '../components/ui';
+import { addDays, daysSince, todayLocal } from '../lib/dates';
+import {
+  Button, Card, Chip, EmptyState, Field, Masthead, Modal, SectionTitle, inputClass,
+} from '../components/ui';
 import { Basting, GarmentPlate, PlateEmptyOutfits } from '../components/art';
+import { IconPlus } from '../components/icons';
+import { showToast } from '../components/Toast';
 import { shortDate } from '../components/social';
 
 /**
@@ -32,6 +37,134 @@ const EXPECTED: Array<{ category: string; label: string; unless?: string[] }> = 
   { category: 'bottoms', label: 'something on the bottom', unless: ['dresses', 'drapes', 'suits'] },
   { category: 'shoes', label: 'shoes' },
 ];
+
+/**
+ * The composer. One task per screen (§8.7): what it is, when it is, where.
+ *
+ * A single day is the common case, so the end date is optional and an event
+ * with no end date is a one-day event — not an error to correct. The days
+ * inside the span become reservations up front, so the page opens on something
+ * to dress rather than on another empty state.
+ */
+function EventComposer({
+  open,
+  onClose,
+  onCreate,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onCreate: (event: Omit<WardrobeEvent, 'id'>) => void;
+}) {
+  const [name, setName] = useState('');
+  const [kind, setKind] = useState<EventKind>('trip');
+  const [startDate, setStartDate] = useState(todayLocal());
+  const [endDate, setEndDate] = useState('');
+  const [place, setPlace] = useState('');
+
+  const reset = () => {
+    setName('');
+    setKind('trip');
+    setStartDate(todayLocal());
+    setEndDate('');
+    setPlace('');
+  };
+
+  // An end date before the start is a typo, not an event. Held rather than
+  // shouted about: the button simply will not fire until the dates agree.
+  const endsBeforeItStarts = Boolean(endDate) && endDate < startDate;
+  const ready = name.trim().length > 0 && Boolean(startDate) && !endsBeforeItStarts;
+
+  const submit = () => {
+    if (!ready) return;
+    const last = endDate && endDate > startDate ? endDate : startDate;
+    const reservations: EventReservation[] = [];
+    for (let day = startDate; day <= last; day = addDays(day, 1)) {
+      reservations.push({ id: `res-${day}-${reservations.length}`, date: day, itemIds: [] });
+      if (reservations.length >= 30) break; // a wardrobe event, not a sabbatical
+    }
+    onCreate({
+      name: name.trim(),
+      kind,
+      startDate,
+      endDate: endDate && endDate > startDate ? endDate : undefined,
+      place: place.trim() || undefined,
+      reservations,
+    });
+    reset();
+    onClose();
+  };
+
+  return (
+    <Modal open={open} onClose={onClose} title="Add an event">
+      <div className="space-y-5">
+        <Field label="What is it" htmlFor="event-name">
+          <input
+            id="event-name"
+            className={inputClass}
+            value={name}
+            onChange={e => setName(e.target.value)}
+            placeholder="Rohit and Anjali's wedding"
+          />
+        </Field>
+
+        <Field label="Kind">
+          <div className="flex flex-wrap gap-2 pt-1">
+            {(Object.keys(EVENT_LABELS) as EventKind[]).map(k => (
+              <Chip key={k} selected={kind === k} onClick={() => setKind(k)}>
+                {EVENT_LABELS[k]}
+              </Chip>
+            ))}
+          </div>
+        </Field>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Field label="First day" htmlFor="event-start">
+            <input
+              id="event-start"
+              type="date"
+              className={inputClass}
+              value={startDate}
+              onChange={e => setStartDate(e.target.value)}
+            />
+          </Field>
+          <Field
+            label="Last day"
+            htmlFor="event-end"
+            hint={endsBeforeItStarts ? 'That is before the first day.' : 'Leave blank for one day.'}
+          >
+            <input
+              id="event-end"
+              type="date"
+              className={inputClass}
+              value={endDate}
+              min={startDate}
+              onChange={e => setEndDate(e.target.value)}
+            />
+          </Field>
+        </div>
+
+        <Field label="Where" htmlFor="event-place" hint="Optional.">
+          <input
+            id="event-place"
+            className={inputClass}
+            value={place}
+            onChange={e => setPlace(e.target.value)}
+            placeholder="Udaipur"
+          />
+        </Field>
+
+        <Basting />
+
+        <div className="flex items-center gap-3">
+          <Button tone="primary" onClick={submit} disabled={!ready}>
+            Hold these days
+          </Button>
+          <Button tone="tertiary" onClick={onClose}>Cancel</Button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
 
 function Thumb({ item, className = '' }: { item?: ClothingItem; className?: string }) {
   return (
@@ -65,8 +198,9 @@ function whenLine(event: WardrobeEvent): string {
 }
 
 export default function Events() {
-  const { events, outfits, activeItems, getItem, getOutfit, settings, updateEvent } = useWardrobe();
+  const { events, outfits, activeItems, getItem, getOutfit, settings, updateEvent, addEvent } = useWardrobe();
   const [completing, setCompleting] = useState<{ event: WardrobeEvent; reservation: EventReservation } | null>(null);
+  const [adding, setAdding] = useState(false);
 
   const today = todayLocal();
   const { upcoming, past } = useMemo(() => {
@@ -95,6 +229,11 @@ export default function Events() {
       }));
   };
 
+  const create = (event: Omit<WardrobeEvent, 'id'>) => {
+    addEvent(event);
+    showToast(`Held. ${event.name} is on the page.`, 'info');
+  };
+
   const addPiece = (event: WardrobeEvent, reservation: EventReservation, itemId: string) => {
     updateEvent(event.id, {
       reservations: event.reservations.map(r =>
@@ -108,12 +247,22 @@ export default function Events() {
       <>
         <Masthead title="Events" />
         <Card>
+          {/* §8.4: exactly one CTA on an empty screen — and it must exist.
+              This state used to offer none, and nothing anywhere in the app
+              called addEvent, so a wardrobe that had never been seeded with
+              sample events could not reach this feature at all. */}
           <EmptyState
             plate={<PlateEmptyOutfits />}
             title="Nothing on the calendar to dress for yet."
             body="A trip, a wedding week, an offsite: hold a look against each day so the packing is decided before the morning it matters. Reserving is not wearing — the day still gets logged when it comes."
+            action={
+              <Button tone="primary" icon={<IconPlus size={16} />} onClick={() => setAdding(true)}>
+                Add an event
+              </Button>
+            }
           />
         </Card>
+        <EventComposer open={adding} onClose={() => setAdding(false)} onCreate={create} />
       </>
     );
   }
@@ -179,7 +328,16 @@ export default function Events() {
 
   return (
     <div className="space-y-6">
-      <Masthead title="Events" meta={`${upcoming.length} coming up`} />
+      <Masthead
+        title="Events"
+        meta={`${upcoming.length} coming up`}
+        action={
+          <Button tone="primary" compact icon={<IconPlus size={16} />} onClick={() => setAdding(true)}>
+            Add
+          </Button>
+        }
+      />
+      <EventComposer open={adding} onClose={() => setAdding(false)} onCreate={create} />
 
       {upcoming.length > 0 ? upcoming.map(e => renderEvent(e, false)) : (
         <Card>

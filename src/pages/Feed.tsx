@@ -6,7 +6,7 @@ import { Card, EmptyState, Masthead, SectionTitle } from '../components/ui';
 import { Basting, PlateEmptyOutfits } from '../components/art';
 import { AccountLine, LookCard, PieceCard, shortDate } from '../components/social';
 import { SCOPE_LABELS, postVisibleTo } from '../types';
-import { Button } from '../components/ui';
+import { LinkButton } from '../components/ui';
 
 /**
  * THE FEED — what the wardrobes on this device have put on show.
@@ -44,7 +44,7 @@ export default function Feed() {
             body="Looks you choose to share appear here, alongside those from the other wardrobes on this device. Sharing is per look, and you can stop at any time."
             action={
               outfits.length > 0 ? (
-                <Link to="/outfits"><Button tone="primary">Choose a look to share</Button></Link>
+                <LinkButton to="/outfits" tone="primary">Choose a look to share</LinkButton>
               ) : undefined
             }
           />

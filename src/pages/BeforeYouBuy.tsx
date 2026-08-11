@@ -138,12 +138,16 @@ export default function BeforeYouBuy() {
     showToast('Noted. The closet stays as it is.', 'info');
   };
 
+  // `flex-1` in a COLUMN sets flex-basis on the block axis, and basis beats the
+  // button's own h-11: on mobile both of these exits measured 22.8px tall — half
+  // the 44px floor, on the two most consequential buttons in the app. Full width
+  // when stacked, equal share only once the row is horizontal.
   const exits = (
     <div className="flex flex-col sm:flex-row gap-3">
-      <Button onClick={addToWishlist} className="flex-1">
+      <Button onClick={addToWishlist} className="w-full sm:flex-1">
         Add it to the wishlist
       </Button>
-      <Button onClick={ownEnough} className="flex-1">
+      <Button onClick={ownEnough} className="w-full sm:flex-1">
         I already own enough
       </Button>
     </div>

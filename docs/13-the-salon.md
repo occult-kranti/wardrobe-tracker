@@ -16,6 +16,15 @@ everyone**, as a third theme beside the pattern room and the atelier at night.
 It is named for a room, never for a person. No token, settings string, doc line
 or commit message references gender.
 
+> **Amended 2026-08-11.** This room no longer owns a damson accent. The brand
+> colour split (`docs/14-the-brand-colour.md`) gave the interface to washing
+> blue in every room, on the grounds that a brand colour which changes per theme
+> is not a brand colour. The salon's character was never carried by its accent
+> anyway — it is the greige carpet, the rose spent in the neutral at chroma
+> 0.019, and the brass. Those are unchanged. Everything below about hue-only
+> warmth and rose-in-the-neutral still holds; the accent measurements have moved
+> to `docs/14`.
+
 ## Name
 
 `the salon` — the couture term for the room where a collection is shown. The

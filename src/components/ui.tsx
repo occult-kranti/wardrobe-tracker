@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ButtonHTMLAttributes, type ReactNode } from 'react';
+import { Link } from 'react-router-dom';
 import { IconClose, IconEyelet, IconEyeletFilled } from './icons';
 
 /**
@@ -31,20 +32,52 @@ const toneClasses: Record<ButtonTone, string> = {
   destructive: 'bg-danger-fill text-chalk hover:opacity-90',
 };
 
-export function Button({ tone = 'secondary', compact, icon, children, className = '', ...rest }: ButtonProps) {
+/** The button's whole appearance, so an anchor can wear it without being one. */
+export function buttonClass(tone: ButtonTone = 'secondary', compact = false, extra = ''): string {
   // 44px is the floor, not 40 — the accessibility directive outranks the
   // original 40px figure in the component law, so "compact" only narrows the
   // padding, never the hit area.
   const height = compact ? 'h-11 px-3' : 'h-11 px-5';
   const base = tone === 'tertiary' ? 'min-h-11 py-1' : height;
+  return `type-label inline-flex items-center justify-center gap-2 rounded-[2px] transition-[opacity,filter,background-color] duration-150 active:translate-y-px disabled:opacity-40 disabled:pointer-events-none ${base} ${toneClasses[tone]} ${extra}`;
+}
+
+export function Button({ tone = 'secondary', compact, icon, children, className = '', ...rest }: ButtonProps) {
   return (
-    <button
-      className={`type-label inline-flex items-center justify-center gap-2 rounded-[2px] transition-[opacity,filter,background-color] duration-150 active:translate-y-px disabled:opacity-40 disabled:pointer-events-none ${base} ${toneClasses[tone]} ${className}`}
-      {...rest}
-    >
+    <button className={buttonClass(tone, compact, className)} {...rest}>
       {icon}
       {children}
     </button>
+  );
+}
+
+/**
+ * A link that looks like a button.
+ *
+ * Five places wrote `<Link><Button/></Link>`, which nests interactive content
+ * inside interactive content: invalid HTML, two tab stops for one action, and
+ * assistive technology left to guess which of the two it should announce.
+ */
+export function LinkButton({
+  to,
+  tone = 'secondary',
+  compact,
+  icon,
+  children,
+  className = '',
+}: {
+  to: string;
+  tone?: ButtonTone;
+  compact?: boolean;
+  icon?: ReactNode;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <Link to={to} className={buttonClass(tone, compact, `no-underline ${className}`)}>
+      {icon}
+      {children}
+    </Link>
   );
 }
 
@@ -93,9 +126,14 @@ export function Chip({
       ? 'bg-ink text-on-ink border-transparent'
       : 'bg-sunken text-text-2 border-border hover:text-text'
   }`;
+  // The selected chip fills with ink, so its eyelet must be stated against ink.
+  // It was set to `text-accent` — the accent as read on PAPER — which measured
+  // 2.66:1 in the pattern room, 2.72:1 in the atelier and 2.11:1 in the salon,
+  // all under the 3:1 that WCAG 1.4.11 asks of a graphic. On the atom this app
+  // repeats more than any other.
   const inner = (
     <>
-      <span className={selected ? 'text-accent' : 'opacity-60'}>
+      <span className={selected ? 'text-accent-on-ink' : 'opacity-60'}>
         {selected ? <IconEyeletFilled size={10} /> : <IconEyelet size={10} />}
       </span>
       {children}
@@ -128,15 +166,7 @@ export function Chip({
  * A rail with more to show fades at that edge instead of guillotining a chip
  * mid-word, which is the honest signal that the row continues.
  */
-export function TagRail({
-  children,
-  label,
-  className = '',
-}: {
-  children: ReactNode;
-  label: string;
-  className?: string;
-}) {
+function useRailEdges() {
   const ref = useRef<HTMLDivElement>(null);
   const [edge, setEdge] = useState<'none' | 'start' | 'end' | 'both'>('none');
 
@@ -150,21 +180,77 @@ export function TagRail({
       const atEnd = el.scrollLeft >= slack - 1;
       setEdge(atStart ? 'end' : atEnd ? 'start' : 'both');
     };
-    read();
-    el.addEventListener('scroll', read, { passive: true });
-    // The chips arrive with the data, and the rail is inside a resizable column,
-    // so neither the content width nor the container width is known at mount.
+    // The chips arrive with the data, the rail sits in a resizable column, and
+    // the display face loads after first paint — so neither the content width
+    // nor the container width is settled at mount. Watch the rail and each chip
+    // for resize, and re-attach when the set of chips changes.
+    //
+    // Keyed on nothing: `children` is a fresh object on every render, so a
+    // dependency on it would tear this whole apparatus down and rebuild it on
+    // each keystroke typed into the search field above.
     const ro = new ResizeObserver(read);
-    ro.observe(el);
-    for (const child of Array.from(el.children)) ro.observe(child);
+    const attach = () => {
+      ro.disconnect();
+      ro.observe(el);
+      for (const child of Array.from(el.children)) ro.observe(child);
+      read();
+    };
+    attach();
+    el.addEventListener('scroll', read, { passive: true });
+    const mo = new MutationObserver(attach);
+    mo.observe(el, { childList: true, subtree: true, characterData: true });
     return () => {
       el.removeEventListener('scroll', read);
       ro.disconnect();
+      mo.disconnect();
     };
-  }, [children]);
+  }, []);
 
+  return { ref, edge } as const;
+}
+
+export function TagRail({
+  children,
+  label,
+  className = '',
+}: {
+  children: ReactNode;
+  label: string;
+  className?: string;
+}) {
+  const { ref, edge } = useRailEdges();
   return (
-    <div ref={ref} data-edge={edge} role="group" aria-label={label} className={`tag-rail ${className}`}>
+    <div ref={ref} data-edge={edge} role="group" aria-label={label} className={`rail tag-rail ${className}`}>
+      {children}
+    </div>
+  );
+}
+
+/**
+ * The same rail, around something that is not a row of chips — a ledger table
+ * too wide for a phone. Scrollable regions containing focusable content need to
+ * be reachable by keyboard, hence `tabIndex={0}` and the region role; a table
+ * you can only pan with a finger is a table half the app cannot read.
+ */
+export function TableRail({
+  children,
+  label,
+  className = '',
+}: {
+  children: ReactNode;
+  label: string;
+  className?: string;
+}) {
+  const { ref, edge } = useRailEdges();
+  return (
+    <div
+      ref={ref}
+      data-edge={edge}
+      role="region"
+      aria-label={label}
+      tabIndex={0}
+      className={`rail ${className}`}
+    >
       {children}
     </div>
   );
@@ -244,7 +330,7 @@ export function Field({
 }
 
 export const inputClass =
-  'w-full bg-transparent border-0 border-b border-border rounded-none px-0 py-2 text-[15px] text-text placeholder:text-text-2/70 focus:outline-none focus:border-b-2 focus:border-accent transition-[border] duration-150';
+  'w-full min-h-11 bg-transparent border-0 border-b border-border rounded-none px-0 py-2 text-[15px] text-text placeholder:text-text-2/70 focus:outline-none focus:border-b-2 focus:border-accent transition-[border] duration-150';
 
 export const selectClass = `${inputClass} appearance-none cursor-pointer`;
 

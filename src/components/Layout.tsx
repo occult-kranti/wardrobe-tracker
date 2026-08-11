@@ -3,7 +3,7 @@ import { Link, useLocation, Outlet } from 'react-router-dom';
 import {
   IconToday, IconCloset, IconOutfits, IconCalendar, IconLedger,
   IconWishlist, IconCompare, IconRail, IconSettings, IconPlus, IconTheme, IconMenu, IconClose,
-  IconOutfits as IconFeed, IconWishlist as IconChat, IconCalendar as IconEvents,
+  IconEvents, IconFeed, IconChats, IconProfile,
 } from './icons';
 import { Wordmark, TagMark } from './art';
 import { useWardrobe } from '../context/WardrobeContext';
@@ -32,8 +32,8 @@ const navItems: NavItem[] = [
   { path: '/compare', label: 'Before you buy', shortLabel: 'Compare', icon: IconCompare },
   { path: '/events', label: 'Events', icon: IconEvents },
   { path: '/feed', label: 'Feed', icon: IconFeed },
-  { path: '/chats', label: 'Conversations', shortLabel: 'Chats', icon: IconChat },
-  { path: '/profile', label: 'Profile', icon: IconRail },
+  { path: '/chats', label: 'Conversations', shortLabel: 'Chats', icon: IconChats },
+  { path: '/profile', label: 'Profile', icon: IconProfile },
   { path: '/rail', label: 'Shared rail', shortLabel: 'Rail', icon: IconRail },
   { path: '/settings', label: 'Settings', icon: IconSettings },
 ];
@@ -196,7 +196,7 @@ export default function Layout() {
       </nav>
 
       {moreOpen && (
-        <div className="lg:hidden fixed bottom-14 inset-x-0 z-50 bg-surface border-t border-border animate-slip">
+        <div className="lg:hidden fixed bottom-14 inset-x-0 z-50 bg-surface border-t border-border animate-slip max-h-[60vh] pane">
           {secondaryNav.map(item => {
             const Icon = item.icon;
             const active = location.pathname === item.path;

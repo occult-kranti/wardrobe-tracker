@@ -430,6 +430,7 @@ export default function Closet() {
               type="button"
               onClick={() => setShowFilters(v => !v)}
               aria-expanded={showFilters}
+              aria-controls="closet-filters"
               className={`h-11 px-4 inline-flex items-center gap-2 rounded-[2px] border type-label transition-colors ${
                 showFilters || activeFiltersCount > 0
                   ? 'border-text text-text bg-sunken'
@@ -490,7 +491,7 @@ export default function Closet() {
           </div>
 
           {showFilters && (
-            <div className="bg-surface plate rounded-[2px] p-4 sm:p-5 space-y-4 animate-slip">
+            <div id="closet-filters" className="bg-surface plate rounded-[2px] p-4 sm:p-5 space-y-4 animate-slip">
               <div className="flex items-center justify-between gap-3">
                 <h2 className="type-label text-text">Filters</h2>
                 <div className="flex items-center gap-3">

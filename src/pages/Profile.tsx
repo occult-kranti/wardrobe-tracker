@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useSession } from '../context/SessionContext';
 import { useWardrobe } from '../context/WardrobeContext';
-import { Button, Card, EmptyState, Masthead, SectionTitle, Stat } from '../components/ui';
+import { Card, EmptyState, LinkButton, Masthead, SectionTitle, Stat } from '../components/ui';
 import { Basting, PlateEmptyCloset } from '../components/art';
 import { AccountMark, LookCard, shortDate } from '../components/social';
 import { postVisibleTo } from '../types';
@@ -45,7 +45,7 @@ export default function Profile() {
             plate={<PlateEmptyCloset />}
             title="No record of this wardrobe."
             body="It may have been removed from this device."
-            action={<Link to="/feed"><Button tone="primary">Back to the feed</Button></Link>}
+            action={<LinkButton to="/feed" tone="primary">Back to the feed</LinkButton>}
           />
         </Card>
       </>

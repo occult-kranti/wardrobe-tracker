@@ -73,3 +73,50 @@ The first implementation of Before You Buy gated matches to the same category.
 The designers argued the feature fails precisely when it matters — a jumpsuit
 competes with a shirt-and-trousers pairing you already own. Category became one
 scored signal among several. Retired pieces are excluded from comparison.
+
+## 2026-08-11 — The brand colour splits: carmine keeps the mark, washing blue takes the interface
+
+A three-judge pass (consumer psychologist / principal designer / staff
+engineer-illustrator, each ruling unseen by the others) voted **2 of 3 for
+SPLIT**. Full reasoning, the measured palette, and the dissent are in
+`docs/14-the-brand-colour.md`.
+
+The decisive fact was not aesthetic. Carmine `#BE1231` sits at chroma 0.198 —
+and so does the most saturated garment across both seed files, *because it is
+the same hex*: a silk scarf and a set of glass bangles ship in the brand colour.
+The contract requires the interface to lose to a photograph of cloth, and it was
+not merely failing that, it was wearing the cloth. Second: accent and danger sat
+2.6° apart in hue, which simulates to 0.2–0.3° under all three dichromacies, so
+"log a wear" and "delete forever" were one colour separated by lightness alone —
+against §8.7's ADHD floor. Third: §6.5 had already barred red from every chart,
+closing a whole surface class to the brand colour.
+
+SPLIT won over full replacement on a procedural point as much as a design one.
+`docs/06` §4 names `#BE1231` **by hex** and is binding; SPLIT still ships that
+hex, at that chroma, on the seal, the wordmark rule, the favicon and the recap
+card. It was the only verdict on the ballot that overrides nothing.
+
+The dissenting judge ruled for madder lake and made an argument worth keeping:
+blue was never given the cultural test that disqualified saffron, and in Indian
+visual culture *nīl* carries meanings — including Ujala bluing, the whitening
+aisle — that a house banning body-verdict vocabulary should have weighed. Madder
+was not adopted because it measures worse than the incumbent on the exact defect
+the pass was convened over. The engineering seat recorded the one measurement
+that would reverse the ruling: tritan-line deficiency prevalence exceeding
+deuteranopia prevalence in this user base.
+
+The salon gave up its private damson accent in the same pass. A brand colour
+that changes per theme is not a brand colour; that room keeps its character in
+the ground, the rose spent in the neutral, and the brass.
+
+## 2026-08-11 — Two findings from the same pass, both shipping bugs
+
+**The accent was failing non-text contrast on the app's most-repeated atom.** A
+selected chip fills with ink and drew its eyelet in `text-accent` — the accent as
+read on paper — measuring 2.66:1 / 2.72:1 / 2.11:1 across the three rooms
+against a 3:1 floor. Two judges found it independently. `--color-accent-on-ink`
+existed and had never been pointed at.
+
+**The dark room's accent was under AA on the photo mat**, at 4.37:1, in the
+shipped default theme, on the tile every garment photograph lands on.
+`test-contrast.mjs` gated `text/mat` and had no `accent/mat` pair. It does now.

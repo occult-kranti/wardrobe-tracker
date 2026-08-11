@@ -400,7 +400,7 @@ export default function Calendar() {
 
             <Basting className="my-5" />
 
-            <ul className="space-y-1 -mx-2 max-h-[46vh] overflow-y-auto">
+            <ul className="space-y-1 -mx-2 max-h-[46vh] pane">
               {scheduleOrder.map(outfit => {
                 const members = outfit.itemIds
                   .map(id => byId.get(id))

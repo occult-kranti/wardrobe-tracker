@@ -4,6 +4,36 @@
    TOILE — design tokens
    Contract: docs/05-brand-identity.md. Never hardcode a hex in
    a component; every color resolves through these variables.
+
+   TWO REDS AND A BLUE — the split ruled by the judge pass of
+   2026-08-11 (docs/14-the-brand-colour.md, 2 of 3 judges).
+
+   `--color-seal` is sealing wax. It is carmine #BE1231, the hex
+   docs/06 §4 names, and it appears on exactly four surfaces: the
+   wax seal, the wordmark underline, the favicon, and the recap
+   card. It is the mark the house makes.
+
+   `--color-accent` is washing blue — the ultramarine cube that
+   stops white linen reading yellow, the one historic pigment
+   whose job is correcting the colour of cloth. It carries the
+   interface: the nav rule, the eyelet, the wear dot, the focus
+   ring, links, the hero fill.
+
+   The house had been spending a wax colour on seven things that
+   are not wax, and it cost:
+     · carmine's chroma is 0.198. The most saturated GARMENT in
+       the seeds is also 0.198 — because it IS this hex: a silk
+       scarf and a set of glass bangles ship in the brand colour.
+       The interface was not merely louder than cloth, it was
+       indistinguishable from it.
+     · accent and danger sat 2.6° apart in hue. Simulated, that
+       gap is 0.2–0.3°: to every dichromat, "log a wear" and
+       "delete forever" were one colour separated by lightness.
+     · §6.5 had already evicted red from every chart, so a whole
+       surface class was permanently closed to the brand colour.
+   Washing blue holds 157–171° of hue opposition to danger under
+   all three dichromacies, and at chroma 0.085 it loses to real
+   cloth, which the contract requires and carmine never did.
    ============================================================ */
 
 :root {
@@ -15,11 +45,12 @@
   --color-text: #201D18;
   --color-text-2: #5C554A;
   --color-border: #D8CFBA;
-  --color-accent: #BE1231;       /* sealing-wax carmine — the only saturated color */
-  --color-accent-hover: #97102A;
-  --color-accent-fill: #BE1231;
-  --color-on-accent: #FFFDF6;
-  --color-accent-on-ink: #E96070; /* the accent stated on the ink fill (5.5:1) */
+  --color-accent: #105F7D;       /* washing blue — the interface accent (6.19:1 on bg) */
+  --color-accent-hover: #0D4F68; /* 7.83:1 */
+  --color-accent-fill: #105F7D;
+  --color-on-accent: #FFFDF6;    /* 6.98:1 on the fill */
+  --color-accent-on-ink: #7CBEDC; /* the accent stated on the ink fill (8.20:1) */
+  --color-seal: #BE1231;         /* sealing wax — the mark, never the interface */
   --color-success: #2E6B4F;
   --color-warning: #7D5813;
   --color-danger: #771324;       /* oxblood — DANGER TEXT ONLY */
@@ -51,11 +82,14 @@
     --color-text: #EFE9D9;
     --color-text-2: #A89F8D;
     --color-border: #383226;
-    --color-accent: #E96070;     /* chalk red — text-safe on ink cloth */
-    --color-accent-hover: #F0798A;
-    --color-accent-fill: #BE1231;
-    --color-on-accent: #FFFDF6;
-    --color-accent-on-ink: #BE1231; /* the fill inverts to chalk, so this darkens (5.5:1) */
+    --color-accent: #6FB6D6;     /* washing blue lifted for ink cloth (8.17:1 on bg) */
+    --color-accent-hover: #8CC6E0;
+    --color-accent-fill: #105F7D;
+    --color-on-accent: #FFFDF6;  /* 6.98:1 on the fill */
+    --color-accent-on-ink: #105F7D; /* the fill inverts to chalk, so this darkens (5.86:1) */
+    --color-seal: #CE1837;       /* the wax, stated for a dark ground: 3.33:1 on bg,
+                                    chalk T at 4.55:1. Carmine itself measures 2.90
+                                    here, under the 3:1 WCAG asks of a graphic. */
     --color-success: #58A97F;
     --color-warning: #D9A93F;
     --color-danger: #F297A4;     /* danger TEXT only — far too light to fill */
@@ -79,11 +113,12 @@
   --color-text: #EFE9D9;
   --color-text-2: #A89F8D;
   --color-border: #383226;
-  --color-accent: #E96070;
-  --color-accent-hover: #F0798A;
-  --color-accent-fill: #BE1231;
+  --color-accent: #6FB6D6;
+  --color-accent-hover: #8CC6E0;
+  --color-accent-fill: #105F7D;
   --color-on-accent: #FFFDF6;
-  --color-accent-on-ink: #BE1231;
+  --color-accent-on-ink: #105F7D;
+  --color-seal: #CE1837;
   --color-success: #58A97F;
   --color-warning: #D9A93F;
   --color-danger: #F297A4;
@@ -101,11 +136,15 @@
 /* ============================================================
    the salon — the third room, where a collection is shown.
 
-   A warmer, deeper register than the pattern room: greige carpet, tissue
-   surfaces, damson instead of sealing-wax. Available to everyone, like both
-   other themes. It is named for a room, never for a person — §2.7 rules that
-   identity-keyed skins are the prohibited pattern class, and a gender-keyed
-   palette is that same operation.
+   A warmer, deeper register than the pattern room: greige carpet and tissue
+   surfaces. Available to everyone, like both other themes. It is named for a
+   room, never for a person — §2.7 rules that identity-keyed skins are the
+   prohibited pattern class, and a gender-keyed palette is that same operation.
+
+   Amended 2026-08-11: this room used to own a damson accent of its own. It no
+   longer does. A brand colour that changes per theme is not a brand colour, and
+   the salon keeps its character where it always actually lived — in the ground,
+   the rose in the neutral, and the brass — rather than in a private accent.
 
    Two choices carry the whole thing, and both are about photographs of clothes:
 
@@ -119,10 +158,11 @@
       palette read as a gendered skin. Spent at chroma 0.019 in the carpet it is
       an undertone; it cannot become a signal.
 
-   The accent is deliberately weaker than cloth: damson at chroma 0.140 against
-   carmine's 0.198, so it stays legible as interface and loses to any actual red
-   garment. Tightest text pair in the app under this theme is accent on sunken at
-   5.14:1 — 14% over AA. Full measurements in docs/13-the-salon.md.
+   The accent is deliberately weaker than cloth: washing blue at chroma 0.085,
+   against a garment maximum of 0.198, so it stays legible as interface and loses
+   to any actual coloured garment. Tightest text pair in the app under this theme
+   is accent on sunken at 5.26:1 — 17% over AA. Full measurements in
+   docs/13-the-salon.md and docs/14-the-brand-colour.md.
    ============================================================ */
 :root[data-theme="salon"] {
   --color-bg: #E9DBD3;           /* salon carpet */
@@ -132,15 +172,12 @@
   --color-text: #241A19;         /* ink, warmed to plum-black (12.56:1 on bg) */
   --color-text-2: #5C4C48;       /* 6.02:1 on bg */
   --color-border: #C9B8AE;
-  --color-accent: #8E2A55;       /* damson — 5.95:1 as text on bg */
-  --color-accent-hover: #6F1F42;
-  --color-accent-fill: #8E2A55;
-  --color-on-accent: #FFF7F4;    /* 7.75:1 on the fill */
-  /* Brass, not a lightened damson: a damson tinted light enough to read on the
-     plum-black fill is by definition a pink, and docs/13-the-salon.md rules that
-     in this room the rose lives in the neutral and never in the accent. Gold is
-     decorative-only by §2 of the contract, and a 2px rule is decoration. */
-  --color-accent-on-ink: #D9A75C;
+  --color-accent: #0F5570;       /* washing blue, stated for the carpet (6.08:1) */
+  --color-accent-hover: #0B4257; /* 8.05:1 */
+  --color-accent-fill: #0F5570;
+  --color-on-accent: #FFF7F4;    /* 7.78:1 on the fill */
+  --color-accent-on-ink: #7CBEDC; /* 8.29:1 on the plum-black fill */
+  --color-seal: #BE1231;         /* 4.68:1 on the carpet, chalk T at 6.10:1 */
   --color-danger: #6E1C22;
   --color-danger-fill: #6E1C22;  /* chalk label measures 10.93:1 */
   --color-success: #2C6250;
@@ -168,6 +205,7 @@
   --color-accent-fill: var(--color-accent-fill);
   --color-on-accent: var(--color-on-accent);
   --color-accent-on-ink: var(--color-accent-on-ink);
+  --color-seal: var(--color-seal);
   --color-success: var(--color-success);
   --color-warning: var(--color-warning);
   --color-danger: var(--color-danger);
@@ -194,6 +232,11 @@
     font-family: var(--font-ui);
     background-color: var(--color-bg);
     color: var(--color-text);
+    /* Opening any modal sets body{overflow:hidden} to stop the page behind it
+       scrolling. Without a reserved gutter the page's own scrollbar vanishes at
+       that moment and the entire layout jumps 15px sideways on every platform
+       with classic scrollbars — measured, on every route. */
+    scrollbar-gutter: stable;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -258,38 +301,59 @@
     background: color-mix(in srgb, var(--color-text) 55%, transparent);
   }
 
-  /* A rail of tags. Geometry notes live on the TagRail component in ui.tsx.
-     The scrollbar is suppressed rather than styled: the house has no grey OS
-     widget with arrow buttons in it, and on classic-scrollbar platforms that
-     widget was landing on the row beneath. The block padding is symmetric and
-     positive — a rail never pulls a neighbour up with a negative margin, which
-     is the trick that caused the overlap in the first place. */
-  .tag-rail {
-    display: flex;
-    gap: 8px;
+  /* A rail: anything wider than its column, running off the edge of the page.
+     Geometry notes live on TagRail in ui.tsx.
+
+     The scrollbar is suppressed rather than styled — the house contains no grey
+     OS widget with arrow buttons, and on classic-scrollbar platforms that widget
+     was being drawn on top of the row beneath. The block padding is symmetric
+     and positive: a rail never pulls a neighbour up with a negative margin,
+     which is precisely the trick that caused the overlap this replaced. */
+  .rail {
     overflow-x: auto;
     overscroll-behavior-x: contain;
-    scroll-snap-type: x proximity;
-    padding: 3px;                  /* room for the 2px focus ring at 2px offset */
-    margin-inline: -3px;           /* paid back inline only; block margins stay honest */
-    scroll-padding-inline: 3px;
+    /* The focus ring is a 2px outline at 2px offset, so it reaches 4px past the
+       chip — 3px here clipped the last pixel of it on every chip in the row. */
+    padding: 4px;
+    margin-inline: -4px;           /* paid back inline only; block margins stay honest */
+    scroll-padding-inline: 4px;
     scrollbar-width: none;
     -ms-overflow-style: none;
   }
-  .tag-rail::-webkit-scrollbar { width: 0; height: 0; }
-  .tag-rail > * { flex: none; scroll-snap-align: start; }
-  .tag-rail[data-edge='start'] {
+  .rail::-webkit-scrollbar { width: 0; height: 0; }
+  .rail[data-edge='start'] {
     -webkit-mask-image: linear-gradient(to right, transparent 0, #000 32px);
     mask-image: linear-gradient(to right, transparent 0, #000 32px);
   }
-  .tag-rail[data-edge='end'] {
+  .rail[data-edge='end'] {
     -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent 100%);
     mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent 100%);
   }
-  .tag-rail[data-edge='both'] {
+  .rail[data-edge='both'] {
     -webkit-mask-image: linear-gradient(to right, transparent 0, #000 32px, #000 calc(100% - 32px), transparent 100%);
     mask-image: linear-gradient(to right, transparent 0, #000 32px, #000 calc(100% - 32px), transparent 100%);
   }
+
+  /* A pane: a list inside a card or a sheet that is taller than the room it has.
+     Unlike a rail this KEEPS its scrollbar — a rail runs off the side of the
+     page and its fade says so, but a vertical list gives no such hint, and a
+     hidden bar on a list of sixty pieces hides the fact that there are sixty.
+     The gutter is reserved so the list does not jump sideways the moment it
+     becomes long enough to scroll, and chaining is contained so flicking to the
+     end of the list does not then start scrolling the page behind the sheet. */
+  .pane {
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+    overscroll-behavior-y: contain;
+  }
+
+  /* The chip variant. */
+  .tag-rail {
+    display: flex;
+    gap: 8px;
+    scroll-snap-type: x proximity;
+  }
+  .tag-rail > * { flex: none; scroll-snap-align: start; }
 
   /* Basting stitch divider with bar-tack ends. */
   .basting {

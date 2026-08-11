@@ -166,12 +166,14 @@ function OutfitCard({
           <p className="text-[13px] text-text-2 leading-snug">
             Delete this outfit? The pieces stay in the closet.
           </p>
+          {/* Destructive on the left, escape on the right — the order Settings,
+              Closet and ItemDetail all use. This dialog was the only one in the
+              app reversed, so muscle memory trained on the other three landed
+              on Delete. */}
           <div className="flex items-center gap-1 shrink-0">
-            <Button tone="tertiary" onClick={() => setConfirming(false)}>
-              Keep
-            </Button>
             <Button
               tone="destructive"
+              compact
               onClick={() => {
                 setConfirming(false);
                 onDelete();
@@ -179,13 +181,21 @@ function OutfitCard({
             >
               Delete
             </Button>
+            <Button tone="tertiary" onClick={() => setConfirming(false)}>
+              Keep
+            </Button>
           </div>
         </div>
       ) : (
         <div className="mt-4 space-y-3">
           <div className="flex items-center justify-between gap-3">
             <p className="type-ledger text-[11px] text-text-2 tabular leading-snug">{ledger}</p>
-            <Button tone="hero" onClick={onWear} icon={<IconEyeletFilled size={10} />} className="shrink-0">
+            {/* Not the hero fill. §3 is a rule of scarcity — "one carmine
+                element per view region", and this button is inside a card that
+                repeats, so a browse page of twenty outfits was rendering twenty
+                carmine fills and the accent stopped meaning anything. The hero
+                treatment belongs to the single thumb-zone log action on Today. */}
+            <Button tone="secondary" onClick={onWear} icon={<IconEyeletFilled size={10} />} className="shrink-0">
               Wear today
             </Button>
           </div>

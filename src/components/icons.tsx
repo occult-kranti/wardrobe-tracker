@@ -196,6 +196,71 @@ export const IconCompare = (p: IconProps) => (
   </Icon>
 );
 
+export const IconEvents = (p: IconProps) => (
+  <Icon {...p}>
+    {/* A garment carrier waiting on the rail, zipped, with the docket band
+        where the date is written. Not a calendar grid — IconCalendar owns
+        that, and an event here is not a square on a month: it is the outfit
+        already reserved for a dated occasion. The carrier is the one object
+        in a wardrobe that only exists because of a date you have to travel
+        to, and it narrows at the throat where nothing else in the set does,
+        so it reads as its own silhouette at 18px. */}
+    <path d="M9.5 3.5h5" />
+    <path d="M12 3.5v14" />
+    <path d="M10 6.5h4l3.5 4v10h-11v-10z" />
+    <path d="M6.5 17.5h11" />
+    <Notch x={15} y={9} />
+  </Icon>
+);
+
+export const IconFeed = (p: IconProps) => (
+  <Icon {...p}>
+    {/* Three plates staggered as if laid out on the table for viewing, the
+        two behind drawn only where the front one does not cover them — the
+        way a draughtsman shows a stack. The front plate carries its specimen
+        caption rule, which is the anatomy of every card in the feed and what
+        keeps this from being a generic layers glyph. Deliberately not the
+        outfit mark: those are pattern pieces being cut, these are finished
+        prints being shown. */}
+    <path d="M8.5 6V3.5h10v12h-2.5" />
+    <path d="M6 8.5V6h10v12h-2.5" />
+    <path d="M3.5 8.5h10v12h-10z" />
+    <path d="M5.5 17.5h6" />
+    <Notch x={17.5} y={8} />
+  </Icon>
+);
+
+export const IconChats = (p: IconProps) => (
+  <Icon {...p}>
+    {/* Two paper slips overlapping on the table, each with its one written
+        line — a note sent and a note back. No bubble: this house writes
+        things down. The slip underneath is interrupted where the reply
+        covers it, so the overlap reads as sequence rather than a grid, and
+        the two ruled lines sit at opposite offsets the way a transcript
+        alternates. */}
+    <path d="M8.5 12.5h-5v-8h12v6" />
+    <path d="M6 8.5h7" />
+    <path d="M8.5 10.5h12v8h-12z" />
+    <path d="M11 14.5h7" />
+    <Notch x={14.5} y={8} />
+  </Icon>
+);
+
+export const IconProfile = (p: IconProps) => (
+  <Icon {...p}>
+    {/* The open wardrobe's own hanger, with its name ruled across the bar.
+        Never a person, a head, or a bust — docs/06 §2.4 forbids drawing
+        bodies, and a hanger is what stands in for one here as it does in the
+        empty-state plates. Distinct from the tag (IconWishlist) and from the
+        shared rail: this is a single hanger, hooked and named, which is the
+        wardrobe you currently have open. */}
+    <path d="M12 11.5V7.5a2 2 0 014 0" />
+    <path d="M12 11.5L3.5 19.5h17z" />
+    <path d="M8 17h8" />
+    <Notch x={14.5} y={7} />
+  </Icon>
+);
+
 export const IconSettings = (p: IconProps) => (
   <Icon {...p}>
     {/* spool of thread */}
