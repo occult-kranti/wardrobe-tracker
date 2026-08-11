@@ -2,6 +2,7 @@ import { createContext, useContext, useCallback, useMemo, type ReactNode } from 
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { todayLocal, isFutureDate, addDays } from '../lib/dates';
 import { migrate } from '../lib/migrate';
+import { wardrobeKey } from '../lib/accounts';
 import {
   initialState,
   isActive,
@@ -14,6 +15,7 @@ import {
   type CircleMessage,
   type ClothingItem,
   type Outfit,
+  type WardrobeEvent,
   type WearLog,
   type WishlistItem,
 } from '../types';
@@ -40,6 +42,9 @@ interface WardrobeContextType extends AppState {
   releaseWishlistItem: (id: string) => void;
   keepWishlistItem: (id: string) => void;
   updateSettings: (updates: Partial<AppSettings>) => void;
+  addEvent: (event: Omit<WardrobeEvent, 'id'>) => void;
+  updateEvent: (id: string, updates: Partial<WardrobeEvent>) => void;
+  removeEvent: (id: string) => void;
   sendRailMessage: (groupId: string, text: string, request?: CircleMessage['request']) => void;
   setRequestStatus: (messageId: string, status: BorrowStatus) => void;
   returnLoan: (loanId: string) => void;
@@ -63,8 +68,12 @@ interface WardrobeContextType extends AppState {
 
 const WardrobeContext = createContext<WardrobeContextType | null>(null);
 
-export function WardrobeProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useLocalStorage<AppState>('wardrobe-tracker', initialState, migrate);
+export function WardrobeProvider({ accountId, children }: { accountId: string; children: ReactNode }) {
+  // One store per wardrobe. App keys this provider by accountId so switching
+  // wardrobes remounts it — useLocalStorage reads storage only in its useState
+  // initializer, so without the remount the next write would put one closet's
+  // contents under another's key.
+  const [state, setState] = useLocalStorage<AppState>(wardrobeKey(accountId), initialState, migrate);
 
   const activeItems = useMemo(() => state.items.filter(isActive), [state.items]);
 
@@ -280,6 +289,23 @@ export function WardrobeProvider({ children }: { children: ReactNode }) {
     });
   }, [setState]);
 
+  /* ---------- events ---------- */
+
+  const addEvent = useCallback((event: Omit<WardrobeEvent, 'id'>) => {
+    setState(prev => ({ ...prev, events: [...prev.events, { ...event, id: crypto.randomUUID() }] }));
+  }, [setState]);
+
+  const updateEvent = useCallback((id: string, updates: Partial<WardrobeEvent>) => {
+    setState(prev => ({
+      ...prev,
+      events: prev.events.map(e => (e.id === id ? { ...e, ...updates } : e)),
+    }));
+  }, [setState]);
+
+  const removeEvent = useCallback((id: string) => {
+    setState(prev => ({ ...prev, events: prev.events.filter(e => e.id !== id) }));
+  }, [setState]);
+
   const updateSettings = useCallback((updates: Partial<AppSettings>) => {
     setState(prev => ({ ...prev, settings: { ...prev.settings, ...updates } }));
   }, [setState]);
@@ -466,6 +492,7 @@ export function WardrobeProvider({ children }: { children: ReactNode }) {
       addOutfit, deleteOutfit, toggleFavoriteOutfit, logWear, removeWearLog,
       addWishlistItem, updateWishlistItem, deleteWishlistItem, moveWishlistToCloset,
       releaseWishlistItem, keepWishlistItem,
+      addEvent, updateEvent, removeEvent,
       updateSettings, addCategory, renameCategory, setCategoryQuiet, moveCategory, addOccasion,
       sendRailMessage, setRequestStatus, returnLoan, setLendable,
       replaceState, markExported,

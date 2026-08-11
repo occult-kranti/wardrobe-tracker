@@ -100,6 +100,12 @@ export function migrate(raw: unknown): AppState {
     loans: Array.isArray(rawCircle.loans) ? (rawCircle.loans as AppState['circle']['loans']) : [],
   };
 
+  // v4: events. Anything that is not a well-formed list is dropped rather than
+  // handed to the page — a string here used to be a crash waiting to happen.
+  const events = (Array.isArray(state.events) ? state.events : [])
+    .filter((e): e is AppState['events'][number] => !!e && typeof e === 'object')
+    .map(e => ({ ...e, reservations: Array.isArray(e.reservations) ? e.reservations : [] }));
+
   return {
     ...state,
     schemaVersion: SCHEMA_VERSION,
@@ -108,6 +114,7 @@ export function migrate(raw: unknown): AppState {
     wearLogs,
     wishlist,
     circle,
+    events,
     settings: {
       ...storedSettings,
       categories: adopted,

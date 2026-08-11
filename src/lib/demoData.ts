@@ -772,6 +772,7 @@ export function buildDemoState(): AppState {
     wearLogs,
     wishlist: buildWishlist(),
     circle: buildCircle(),
+    events: [],
     settings: {
       // 'drapes' is a custom category this closet added — taxonomy is user-owned
       // data, and the demo exercises that rather than just claiming it.

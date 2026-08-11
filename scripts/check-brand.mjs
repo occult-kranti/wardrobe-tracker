@@ -35,6 +35,7 @@ const COLOR_ALLOWED = new Set([
   'src/types.ts',        // PRESET_COLORS is the user-facing swatch palette
   'src/lib/similarity.ts',
   'src/lib/garmentArt.ts', // generated garment plates; artwork, like art.tsx
+  'src/lib/personaData.ts', // generated closets; the hexes are garment colours
 ]);
 
 const EMOJI = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}]/u;

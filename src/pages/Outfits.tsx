@@ -1,6 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useWardrobe } from '../context/WardrobeContext';
+import { useSession } from '../context/SessionContext';
+import { todayLocal } from '../lib/dates';
 import { categoryLabel, displayTag, type ClothingItem, type Outfit } from '../types';
 import {
   Button, Card, Chip, EmptyState, Field, IconButton, Masthead, SectionTitle, inputClass,
@@ -81,12 +83,16 @@ function OutfitCard({
   onToggleFavorite,
   onDelete,
   onWear,
+  shared,
+  onShare,
 }: {
   outfit: Outfit;
   members: ClothingItem[];
   onToggleFavorite: () => void;
   onDelete: () => void;
   onWear: () => void;
+  shared: boolean;
+  onShare: () => void;
 }) {
   const [confirming, setConfirming] = useState(false);
   const retired = members.filter(m => m.retired);
@@ -175,11 +181,23 @@ function OutfitCard({
           </div>
         </div>
       ) : (
-        <div className="flex items-center justify-between gap-3 mt-4">
-          <p className="type-ledger text-[11px] text-text-2 tabular leading-snug">{ledger}</p>
-          <Button tone="hero" onClick={onWear} icon={<IconEyeletFilled size={10} />} className="shrink-0">
-            Wear today
-          </Button>
+        <div className="mt-4 space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <p className="type-ledger text-[11px] text-text-2 tabular leading-snug">{ledger}</p>
+            <Button tone="hero" onClick={onWear} icon={<IconEyeletFilled size={10} />} className="shrink-0">
+              Wear today
+            </Button>
+          </div>
+          {/* Sharing is a deliberate act, so it lives where the look is the
+              subject — not as a glyph on a browse tile competing with the photo. */}
+          <div className="flex items-center justify-between gap-3">
+            <p className="type-ledger text-[11px] text-text-2">
+              {shared ? 'On the feed' : 'Not shared'}
+            </p>
+            <Button compact onClick={onShare}>
+              {shared ? 'Take it off the feed' : 'Share this look'}
+            </Button>
+          </div>
         </div>
       )}
     </Card>
@@ -189,11 +207,57 @@ function OutfitCard({
 /* ---------- the page ---------- */
 
 export default function Outfits() {
+  const { activeId, community, setCommunity } = useSession();
   const {
     items, activeItems, outfits, settings,
-    addOutfit, deleteOutfit, toggleFavoriteOutfit, logWear, getWearablePool,
+    addOutfit, deleteOutfit, toggleFavoriteOutfit, logWear, getWearablePool, getItem,
   } = useWardrobe();
   const navigate = useNavigate();
+
+  /* ---------- what this wardrobe has put on the feed ----------
+     Answered from the shared store rather than a flag on the outfit: a
+     duplicated index is one desync away from telling someone something false
+     about what of theirs is visible. */
+  const sharedIds = useMemo(
+    () => new Set(
+      community.posts
+        .filter(p => p.authorId === activeId && p.look)
+        .map(p => p.look?.outfitId as string)
+    ),
+    [community.posts, activeId]
+  );
+
+  const toggleShare = useCallback((outfit: Outfit) => {
+    if (!activeId) return;
+    const existing = community.posts.find(p => p.authorId === activeId && p.look?.outfitId === outfit.id);
+    if (existing) {
+      setCommunity(prev => ({ ...prev, posts: prev.posts.filter(p => p.id !== existing.id) }));
+      showToast('Taken off the feed. The look stays in your outfits.', 'info');
+      return;
+    }
+    setCommunity(prev => ({
+      ...prev,
+      posts: [
+        ...prev.posts,
+        {
+          id: crypto.randomUUID(),
+          authorId: activeId,
+          date: todayLocal(),
+          audience: 'everyone' as const,
+          look: {
+            outfitId: outfit.id,
+            name: outfit.name,
+            imageUrl: outfit.imageUrl,
+            occasion: outfit.occasion,
+            pieces: outfit.itemIds
+              .map(id => getItem(id)?.name)
+              .filter((n): n is string => Boolean(n)),
+          },
+        },
+      ],
+    }));
+    showToast('On the feed. Every wardrobe here can see it.', 'seal');
+  }, [activeId, community.posts, setCommunity, getItem]);
 
   const [building, setBuilding] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
@@ -539,6 +603,8 @@ export default function Outfits() {
                   deleteOutfit(outfit.id);
                   showToast('Deleted. The pieces stay in the closet.', 'info');
                 }}
+                shared={sharedIds.has(outfit.id)}
+                onShare={() => toggleShare(outfit)}
                 onWear={() => {
                   logWear(outfit.itemIds, outfit.id);
                   showToast(`Logged. "${outfit.name}" ${wearsPhrase(outfit.wearCount + 1)}.`, 'seal');

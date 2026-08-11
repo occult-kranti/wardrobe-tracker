@@ -3,9 +3,11 @@ import { Link, useLocation, Outlet } from 'react-router-dom';
 import {
   IconToday, IconCloset, IconOutfits, IconCalendar, IconLedger,
   IconWishlist, IconCompare, IconRail, IconSettings, IconPlus, IconTheme, IconMenu, IconClose,
+  IconOutfits as IconFeed, IconWishlist as IconChat, IconCalendar as IconEvents,
 } from './icons';
 import { Wordmark, TagMark } from './art';
 import { useWardrobe } from '../context/WardrobeContext';
+import { useSession } from '../context/SessionContext';
 import AddItemModal from './AddItemModal';
 import { ToastContainer } from './Toast';
 import { IconButton } from './ui';
@@ -28,18 +30,23 @@ const navItems: NavItem[] = [
   // shortLabel is for the mobile rail only, where "Before you buy" wrapped to two
   // lines and shoved its icon out of the icon column.
   { path: '/compare', label: 'Before you buy', shortLabel: 'Compare', icon: IconCompare },
+  { path: '/events', label: 'Events', icon: IconEvents },
+  { path: '/feed', label: 'Feed', icon: IconFeed },
+  { path: '/chats', label: 'Conversations', shortLabel: 'Chats', icon: IconChat },
+  { path: '/profile', label: 'Profile', icon: IconRail },
   { path: '/rail', label: 'Shared rail', shortLabel: 'Rail', icon: IconRail },
   { path: '/settings', label: 'Settings', icon: IconSettings },
 ];
 
 // Five slots in the thumb zone; the rest live behind "More".
-const mobilePrimary = ['/', '/closet', '/outfits', '/compare'];
+const mobilePrimary = ['/', '/closet', '/outfits', '/feed'];
 
 export default function Layout() {
   const [addOpen, setAddOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const location = useLocation();
   const { activeItems, settings, updateSettings } = useWardrobe();
+  const { active } = useSession();
 
   const theme = settings.theme ?? 'system';
 
@@ -114,6 +121,15 @@ export default function Layout() {
         </nav>
 
         <div className="p-4 space-y-4">
+          {/* Which wardrobe is open, and the way to another. Reachable from
+              every page, because switching is the point of having more than one. */}
+          <Link
+            to="/open"
+            className="w-full h-11 px-3 flex items-center gap-2.5 border border-border rounded-[2px] text-text-2 hover:text-text hover:bg-surface/60 transition-colors duration-150"
+          >
+            <span className="type-ledger text-[10px] shrink-0">OPEN</span>
+            <span className="text-[13px] truncate flex-1 text-left">{active?.name ?? 'A wardrobe'}</span>
+          </Link>
           <button
             onClick={() => setAddOpen(true)}
             className="w-full h-11 type-label inline-flex items-center justify-center gap-2 bg-ink text-on-ink rounded-[2px] hover:opacity-90 active:translate-y-px transition-[opacity] duration-150"

@@ -137,4 +137,55 @@ const cost = active.reduce((a,i)=>a+(i.cost||0),0);
 const wears = active.reduce((a,i)=>a+i.wearCount,0);
 console.log(`\nWardrobe: ${active.length} active pieces, $${cost} invested, ${wears} wears recorded, avg $${(cost/wears).toFixed(2)}/wear`);
 console.log(fail===0?'ALL DEMO CHECKS PASSED':`${fail} FAILED`);
-process.exit(fail?1:0);
+
+/* ---------- the three persona wardrobes ----------
+   They ship as seeds rather than as state, so they get their own pass: the same
+   log-consistency invariant, no gendered address anywhere in what reaches a
+   screen, and no measurement taxonomy in the data at all. */
+const pw = join(mkdtempSync(join(tmpdir(),'pw-')),'p.mjs');
+await build({ entryPoints:[new URL('../src/lib/personaWardrobe.ts', import.meta.url).pathname], bundle:true, format:'esm', outfile:pw, logLevel:'error' });
+const { PERSONAS, buildPersonaState } = await import(pw);
+
+let pfail = 0;
+console.log('');
+for (const persona of PERSONAS) {
+  const st = buildPersonaState(persona);
+  const past = st.wearLogs.filter(l => l.date <= today);
+  const wears = new Map(), last = new Map();
+  for (const l of past) for (const id of l.itemIds) {
+    wears.set(id, (wears.get(id) ?? 0) + 1);
+    if (!last.has(id) || l.date > last.get(id)) last.set(id, l.date);
+  }
+  const badCount = st.items.filter(i => i.wearCount !== (wears.get(i.id) ?? 0)).length;
+  const badLast = st.items.filter(i => (i.lastWorn ?? null) !== (last.get(i.id) ?? null)).length;
+  const ids = new Set(st.items.map(i => i.id));
+  const dangling = st.outfits.flatMap(o => o.itemIds.filter(x => !ids.has(x)))
+    .concat(st.wearLogs.flatMap(l => l.itemIds.filter(x => !ids.has(x))))
+    .concat(st.events.flatMap(e => e.reservations.flatMap(r => r.itemIds.filter(x => !ids.has(x)))));
+  const outfitIds = new Set(st.outfits.map(o => o.id));
+  const badRes = st.events.flatMap(e => e.reservations.filter(r => r.outfitId && !outfitIds.has(r.outfitId)));
+  const planned = st.wearLogs.filter(l => l.date > today).length;
+  const withPhoto = st.outfits.filter(o => o.imageUrl).length;
+  // Photographs are files, not data-URIs: paths only, and no remote origin.
+  const remote = /https?:\/\//.test(JSON.stringify(st));
+  const seedBlob = JSON.stringify(persona);
+  const checks = [
+    [`${persona.id}: wearCount matches the log`, badCount === 0, badCount],
+    [`${persona.id}: lastWorn matches the log`, badLast === 0, badLast],
+    [`${persona.id}: no dangling item refs`, dangling.length === 0, dangling.length],
+    [`${persona.id}: event reservations resolve`, badRes.length === 0, badRes.length],
+    [`${persona.id}: three events seeded`, st.events.length === 3, st.events.length],
+    [`${persona.id}: calendar leaves planned days`, planned >= 1, planned],
+    [`${persona.id}: every outfit photographed`, withPhoto === st.outfits.length, `${withPhoto}/${st.outfits.length}`],
+    [`${persona.id}: offline-safe image paths`, !remote, ''],
+    [`${persona.id}: no measurements in the seed`, !('body' in persona), ''],
+    [`${persona.id}: palette carries no verdict`, !/\b(wash(es)? \w+ out|drains?|flatter)/i.test(JSON.stringify(persona.palette)), ''],
+    // Not "has a custom category" — Aarav's closet legitimately uses only the
+    // defaults. What must hold is that no piece references a category the
+    // wardrobe's own taxonomy does not define, which is what would orphan it.
+    [`${persona.id}: every piece has a category`, st.items.every(i => st.settings.categories.some(c => c.id === i.category)), st.settings.categories.length],
+  ];
+  for (const [n, ok, d] of checks) { console.log(ok ? 'PASS' : 'FAIL', '-', n, d !== '' ? `(${d})` : ''); if (!ok) pfail++; }
+}
+console.log(pfail === 0 ? 'ALL PERSONA CHECKS PASSED' : `${pfail} PERSONA CHECKS FAILED`);
+process.exit(fail || pfail ? 1 : 0);

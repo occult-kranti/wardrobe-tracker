@@ -25,3 +25,6 @@ dist-ssr
 
 # Screenshot output (regenerate with npm run shots)
 shots/
+
+# Source packs (large, and the generated output is committed)
+*.zip

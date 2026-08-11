@@ -67,6 +67,11 @@ export interface Outfit {
   dateCreated: string;
   wearCount: number;
   lastWorn?: string;
+  /** A photograph of the whole look, when one exists. Optional forever. */
+  imageUrl?: string;
+  /** How the look was built, and the one thing not to do with it. */
+  notes?: string;
+  stylingNote?: string;
 }
 
 export interface WearLog {
@@ -154,6 +159,136 @@ export const EMPTY_CIRCLE: CircleState = {
   loans: [],
 };
 
+/* ---------- events ----------
+   A trip, a festival, a wedding week, an offsite: a dated occasion you dress
+   for more than once, with outfits reserved against its days. Reserving is not
+   wearing — an event day only becomes a wear when it is logged, exactly like a
+   planned calendar day. */
+
+export type EventKind = 'trip' | 'festival' | 'celebration' | 'work' | 'other';
+
+export interface EventReservation {
+  id: string;
+  /** The day within the event this look is held for. */
+  date: string;
+  /** What the day is: "Sangeet", "Board offsite", "Flight home". */
+  label?: string;
+  outfitId?: string;
+  /** Loose pieces held alongside or instead of a saved outfit. */
+  itemIds: string[];
+  notes?: string;
+}
+
+export interface WardrobeEvent {
+  id: string;
+  name: string;
+  kind: EventKind;
+  startDate: string;
+  endDate?: string;
+  place?: string;
+  notes?: string;
+  reservations: EventReservation[];
+}
+
+export const EVENT_LABELS: Record<EventKind, string> = {
+  trip: 'Trip',
+  festival: 'Festival',
+  celebration: 'Celebration',
+  work: 'Work',
+  other: 'Occasion',
+};
+
+/* ---------- accounts and the community layer ----------
+
+   These live OUTSIDE AppState, in their own localStorage keys, because they are
+   the only data shared between wardrobes. Each account's clothes stay in its own
+   store; the registry below is just the list of wardrobes on this device, and
+   the community state is the small amount every wardrobe can see.
+
+   There is no server. "Signing in" picks which local wardrobe to open, and the
+   UI says exactly that — see docs/12-accounts-and-feed.md. */
+
+export interface Account {
+  id: string;
+  name: string;
+  handle: string;
+  city?: string;
+  /** One line, about the clothes and the craft. Never about a body. */
+  tagline?: string;
+  /** A relative path under public/, or a data-URI for a wardrobe you made. */
+  portrait?: string;
+  /** Two letters on the tag avatar when there is no portrait. */
+  monogram: string;
+  color: string;
+  createdAt: string;
+  /** Seeded demo wardrobes, as opposed to one started on this device. */
+  isSample?: boolean;
+}
+
+/** What a post carries, captured when it is shared. */
+export interface SharedLook {
+  outfitId: string;
+  name: string;
+  imageUrl?: string;
+  occasion?: string;
+  /** Names only — a viewer cannot open someone else's pieces. */
+  pieces: string[];
+}
+
+export interface SharedPiece {
+  itemId: string;
+  name: string;
+  imageUrl?: string;
+  category?: string;
+  color?: string;
+}
+
+export type PostAudience = 'everyone' | 'group' | 'nobody';
+
+export interface FeedPost {
+  id: string;
+  authorId: string;
+  date: string;
+  /** The wearer's own words. Optional — a look can speak for itself. */
+  caption?: string;
+  audience: PostAudience;
+  look?: SharedLook;
+  piece?: SharedPiece;
+}
+
+/** A one-to-one thread or the group. Same shape; `memberIds.length` decides. */
+export interface Conversation {
+  id: string;
+  name?: string;
+  memberIds: string[];
+  isGroup: boolean;
+  about?: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  conversationId: string;
+  authorId: string;
+  date: string;
+  text: string;
+  look?: SharedLook;
+  piece?: SharedPiece;
+  /** Borrow requests ride in the same thread; see CircleMessage for the states. */
+  request?: { pieceName: string; status: BorrowStatus };
+}
+
+export interface CommunityState {
+  posts: FeedPost[];
+  conversations: Conversation[];
+  messages: ChatMessage[];
+}
+
+export const EMPTY_COMMUNITY: CommunityState = {
+  posts: [],
+  conversations: [],
+  messages: [],
+};
+
 export interface AppSettings {
   categories: UserCategory[];
   occasions: Occasion[];
@@ -168,12 +303,14 @@ export interface AppState {
   wearLogs: WearLog[];
   wishlist: WishlistItem[];
   circle: CircleState;
+  events: WardrobeEvent[];
   settings: AppSettings;
 }
 
-// v3: the Shared Rail (circle). Migration seeds an empty circle on older
-// exports — scripts/test-migrate.mjs holds the case.
-export const SCHEMA_VERSION = 3;
+// v3: the Shared Rail (circle). v4: events, for outfits reserved against a trip
+// or a festival. Migration seeds both on older exports — scripts/test-migrate.mjs
+// holds a case for each.
+export const SCHEMA_VERSION = 4;
 
 export const DEFAULT_CATEGORIES: UserCategory[] = [
   { id: 'tops', label: 'Tops' },
@@ -198,6 +335,7 @@ export const initialState: AppState = {
   wearLogs: [],
   wishlist: [],
   circle: EMPTY_CIRCLE,
+  events: [],
   settings: {
     categories: DEFAULT_CATEGORIES,
     occasions: DEFAULT_OCCASIONS,

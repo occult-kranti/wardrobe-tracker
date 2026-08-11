@@ -46,7 +46,11 @@ const v1 = {
       wearCount: 9, cost: 0, favorite: false, laundryStatus: 'clean',
     },
   ],
-  outfits: [{ id: 'o1', name: 'Monday', itemIds: ['a'], favorite: true, dateCreated: '2026-03-01', wearCount: 3 }],
+  outfits: [
+    { id: 'o1', name: 'Monday', itemIds: ['a'], favorite: true, dateCreated: '2026-03-01', wearCount: 3 },
+    // An outfit saved before outfits could carry a photograph, and one saved after.
+    { id: 'o2', name: 'Gallery', itemIds: ['a'], favorite: false, dateCreated: '2026-04-01', wearCount: 1, imageUrl: 'wardrobe/meher/MK-01.webp' },
+  ],
   wearLogs: [{ id: 'l1', date: '2026-08-01', itemIds: ['a'] }],
   wishlist: [{ id: 'w1', name: 'Cardigan', category: 'tops', color: '#d4a574', priority: 'high', dateAdded: '2026-07-01', purchased: false, price: 88 }],
   someFutureKey: { keep: 'me' },
@@ -54,7 +58,21 @@ const v1 = {
 
 const m = migrate(v1);
 const checks = [
-  ['schemaVersion set', m.schemaVersion === 3],
+  ['schemaVersion set', m.schemaVersion === 4],
+  // v4 adds events. A pre-v4 export must gain an empty, valid list rather than
+  // an undefined the Events page would crash on, and an export that already
+  // carries events must round-trip with its reservations intact.
+  ['events seeded on old exports', Array.isArray(m.events) && m.events.length === 0],
+  ['existing events preserved', (() => {
+    const withEvents = migrate({ ...v1, events: [{ id: 'e1', name: 'Udaipur wedding', kind: 'celebration', startDate: '2026-11-20', endDate: '2026-11-23', reservations: [{ id: 'r1', date: '2026-11-21', label: 'Mehndi', itemIds: ['a'], outfitId: 'o1' }] }] });
+    return withEvents.events.length === 1
+      && withEvents.events[0].reservations.length === 1
+      && withEvents.events[0].reservations[0].label === 'Mehndi';
+  })()],
+  ['malformed events dropped, not crashed', (() => {
+    const bad = migrate({ ...v1, events: 'not an array' });
+    return Array.isArray(bad.events) && bad.events.length === 0;
+  })()],
   // v3 adds the Shared Rail. An export from before it must gain an empty, valid
   // circle rather than an undefined that crashes the /rail page, and an export
   // that already carries one must round-trip untouched.
@@ -69,7 +87,9 @@ const checks = [
   ['numeric string cost coerced', m.items[2].cost === 420],
   ['unparseable cost dropped', m.items[3].cost === undefined],
   ['recorded zero cost preserved', m.items[4].cost === 0],
-  ['outfits preserved', m.outfits.length === 1],
+  ['outfits preserved', m.outfits.length === 2],
+  ['outfit without a photo survives', m.outfits[0].imageUrl === undefined && m.outfits[0].wearCount === 3],
+  ['outfit photo round-trips', m.outfits[1].imageUrl === 'wardrobe/meher/MK-01.webp'],
   ['wearLogs preserved', m.wearLogs.length === 1],
   ['wishlist preserved', m.wishlist.length === 1],
   ['purchased -> status', m.wishlist[0].status === 'waiting' && !('purchased' in m.wishlist[0])],

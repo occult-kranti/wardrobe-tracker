@@ -245,18 +245,26 @@ export function GarmentPlate({ categoryId, color }: { categoryId: string; color?
   };
   const flat = flats[categoryId] ?? flats.accessories;
   return (
-    <div className="w-full h-full flex items-center justify-center bg-sunken">
+    <div className="w-full h-full flex items-center justify-center bg-sunken text-text-2">
       <svg viewBox="0 0 80 100" className="w-3/5 h-3/5" aria-hidden="true">
+        {/* The line is ALWAYS currentColor. Stroking it in the garment's own
+            colour drew a near-black piece in near-black on a dark ground, so
+            every dark item rendered as an empty tile — the no-photo state is
+            meant to be first-class, not invisible. The colour still gets said,
+            as a small chip below, where it cannot swallow the drawing. */}
         <g
           fill="none"
-          stroke={color ?? 'currentColor'}
+          stroke="currentColor"
           strokeWidth="1.5"
           strokeLinejoin="miter"
           strokeLinecap="butt"
-          opacity={color ? 0.9 : 0.45}
+          opacity={0.75}
         >
           {flat}
         </g>
+        {color ? (
+          <rect x="34" y="92" width="12" height="4" rx="1" fill={color} stroke="currentColor" strokeWidth="0.5" opacity="0.9" />
+        ) : null}
       </svg>
     </div>
   );
