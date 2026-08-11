@@ -16,11 +16,11 @@ npm run shots         # screenshots of every route, mobile + desktop
 | `npm run build` | Typecheck + production bundle | — |
 | `npm run lint` | oxlint **and** the brand contract | — |
 | `npm run lint:brand` | The Toile design contract, mechanically | — |
-| `npm run test:migrate` | Nobody's closet is ever lost to a schema change | 22 |
-| `npm run test:demo` | The sample wardrobe stays complete, consistent, and offline-safe | 43 |
+| `npm run test:migrate` | Nobody's closet is ever lost to a schema change | 25 |
+| `npm run test:demo` | The sample wardrobes stay complete, consistent, and offline-safe | 76 |
 | `npm run test:art` | Every baked garment plate actually renders in Chromium | 1/plate |
 | `npm run test:contrast` | Every text pair in every theme clears WCAG AA | 11/theme |
-| `npm run test:smoke` | The real app in a real browser | 36 |
+| `npm run test:smoke` | The real app in a real browser | 50 |
 
 ### `lint:brand` — the design contract, enforced
 
@@ -55,6 +55,15 @@ and the seasonal swing is actually visible. The Shared Rail demo is pinned by
 twelve more: three profiles, one group, all four request states, resolving
 references, and no gendered address anywhere in the circle copy.
 
+### `test:contrast` — every theme, measured
+
+`scripts/test-contrast.mjs` reads the **real computed tokens** out of a browser
+for each theme and measures every text/background pair the app actually renders.
+It exists because a table in a document cannot fail a build: themes get added by
+humans with a colour picker, and the first run of this check found the shipped
+*dark* theme — the default — missing AA on `accent` over `sunken` by 0.01. See
+`docs/13-the-salon.md`.
+
 ### `test:art` — the drawn plates
 
 `scripts/test-art.mjs` loads every baked garment plate from
@@ -66,7 +75,7 @@ shipped broken while every other suite stayed green. Regenerate plates with
 
 ### `test:smoke` — the app in a browser
 
-`scripts/smoke.mjs` drives Chromium over a **v1-seeded** closet: all 8 routes
+`scripts/smoke.mjs` drives Chromium over a **v1-seeded** closet: all 13 routes
 render with no console errors, legacy data migrates and displays, no emoji leak
 into the UI, every image has alt text, every button has an accessible name, every
 interactive target is ≥44px, dark tokens apply, the compare page carries no
@@ -91,7 +100,7 @@ Two traps this harness has already fallen into — don't reintroduce them:
 
 ### `shots` — screenshots
 
-`scripts/screenshot.mjs` seeds the real demo wardrobe and captures all 8 routes at
+`scripts/screenshot.mjs` seeds the real demo wardrobe and captures every route at
 390×844 and 1440×900, plus empty states. Use these for design review — several
 real defects (garments dissolving into the mat, sub-44px targets) were only
 visible in pixels, not in code.
@@ -108,3 +117,7 @@ are:
 - Buttons at 40px and filter chips at 32px, under the 44px floor
 - Near-black garments rendering *darker than the mat*, losing their silhouette
 - The smoke suite itself passing against an empty closet
+- The sample wardrobe asserting 639 wears while its own logs implied 133
+- Five garment plates baked into malformed SVG, rendering as broken-image glyphs
+- The default dark theme failing WCAG AA on one pair by 0.01
+- Persona costs generated at rupee magnitudes and printed with a dollar sign
