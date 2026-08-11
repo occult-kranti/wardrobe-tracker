@@ -52,7 +52,8 @@
   --color-on-accent: #FFFDF6;    /* 6.98:1 on the fill */
   --color-accent-on-ink: #7CBEDC; /* the accent stated on the ink fill (8.20:1) */
   --color-seal: #BE1231;         /* sealing wax — the mark, never the interface */
-  --color-artline: #C9A227;      /* the frieze's thread: gold ochre in this room */
+  --color-artline: #C9A227;      /* the frieze's first metal: gold ochre */
+  --color-artline-2: #98A0A6;    /* paired with pewter */
   --color-success: #2E6B4F;
   --color-warning: #7D5813;
   --color-danger: #771324;       /* oxblood — DANGER TEXT ONLY */
@@ -93,7 +94,8 @@
     --color-seal: #CE1837;       /* the wax, stated for a dark ground: 3.33:1 on bg,
                                     chalk T at 4.55:1. Carmine itself measures 2.90
                                     here, under the 3:1 WCAG asks of a graphic. */
-    --color-artline: #B4BEC3;    /* the frieze in SILVER — the Rinpa screen at night */
+    --color-artline: #B4BEC3;    /* the frieze's first metal: SILVER, the Rinpa screen */
+    --color-artline-2: #D9B44A;  /* paired with gold — the two-leaf screen */
     --color-success: #58A97F;
     --color-warning: #D9A93F;
     --color-danger: #F297A4;     /* danger TEXT only — far too light to fill */
@@ -125,6 +127,7 @@
   --color-accent-on-ink: #105F7D;
   --color-seal: #CE1837;
   --color-artline: #B4BEC3;
+  --color-artline-2: #D9B44A;
   --color-success: #58A97F;
   --color-warning: #D9A93F;
   --color-danger: #F297A4;
@@ -185,7 +188,8 @@
   --color-on-accent: #FFF7F4;    /* 7.78:1 on the fill */
   --color-accent-on-ink: #7CBEDC; /* 8.29:1 on the plum-black fill */
   --color-seal: #BE1231;         /* 4.68:1 on the carpet, chalk T at 6.10:1 */
-  --color-artline: #A9762F;      /* the frieze in antique brass */
+  --color-artline: #A9762F;      /* the frieze's first metal: antique brass */
+  --color-artline-2: #9FA8AE;    /* paired with silver */
   --color-danger: #6E1C22;
   --color-danger-fill: #6E1C22;  /* chalk label measures 10.93:1 */
   --color-success: #2C6250;
@@ -259,7 +263,8 @@
   --color-on-accent: #FFFDF6;    /* 6.98:1 on the fill */
   --color-accent-on-ink: #0E566E; /* stated on the rose-chalk ink fill (6.62:1) */
   --color-seal: #CE1837;         /* the wax, dark-stated: 3.21:1 on bg, chalk T 5.17:1 */
-  --color-artline: #C98A4B;      /* the frieze in bronze, brass darkened by vat steam */
+  --color-artline: #C98A4B;      /* the frieze's first metal: bronze */
+  --color-artline-2: #DCA75F;    /* paired with bright brass */
   --color-success: #66B18C;
   --color-warning: #DCA94B;
   --color-danger: #F2A3AC;       /* danger TEXT only */
@@ -289,7 +294,8 @@
   --color-on-accent: #FFF8F2;    /* 7.75:1 on the fill */
   --color-accent-on-ink: #7CBEDC; /* 7.52:1 on the plum ink fill */
   --color-seal: #BE1231;         /* 4.82:1 on the silk, chalk T at 6.01:1 */
-  --color-artline: #A2751F;      /* the frieze in the leaf itself */
+  --color-artline: #A2751F;      /* the frieze's first metal: the leaf itself */
+  --color-artline-2: #8F979D;    /* paired with silver — Klimt kept both leafs */
   --color-danger: #701A1E;
   --color-danger-fill: #701A1E;  /* chalk label 10.76:1 */
   --color-success: #2E6247;

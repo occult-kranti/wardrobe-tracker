@@ -90,3 +90,25 @@ the kakemono mounting and Mughal corners in the rooms that carry them; and the
 primary and hero buttons carry a **zari weave** — a diaper of thread-dots in the
 fill's own label colour at 12%, drawn with token-following gradients so it holds
 in all five rooms and shifts no measured ratio.
+
+## Remade the same evening: the hang
+
+The first frieze read as a lineup — every piece the same size on the same
+baseline — and the owner said so. The remake:
+
+- **Each page hangs its own arrangement**: three to five pieces from a set of
+  NINE (the seven closets, plus a standing coat pole — L'appendiabiti — and a
+  German Kommode chest of drawers), at staggered scales, on alternating sides
+  of the page, chosen deterministically per route so the hang never reshuffles.
+- **Mughal buta and a Rajput bird** sit between the furniture: the single
+  flowering sprig of Mughal border painting, and a perched bulbul in profile.
+- **The metals come in pairs.** Every room now declares `--color-artline` AND
+  `--color-artline-2` — gold with pewter in the pattern room, brass with silver
+  in the salon, the leaf with silver in the gilding room, SILVER with gold in
+  the atelier (the two-leaf screen), bronze with bright brass in the dye house —
+  and the pieces alternate between them.
+- **The rail hangs at the top.** A clothes rod on two drops with three hangers,
+  two of them dressed, drawn in the second metal, on the opposite side from the
+  ground frieze below it. The composition finally has a top and a bottom.
+- Captions are rationed to two per page, so the names read as labels on an
+  arrangement rather than a caption per exhibit.

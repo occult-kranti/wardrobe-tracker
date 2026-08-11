@@ -90,31 +90,66 @@ export function WaxSeal({ size = 44, label = 'T' }: { size?: number; label?: str
 
 /* ---------------- the ground frieze ---------------- */
 
-import { FRIEZE_PIECES } from '../lib/friezeArt';
+import { FRIEZE_PIECES, FRIEZE_RAIL } from '../lib/friezeArt';
 
 /**
- * Seven cultures of keeping clothes, standing in a row behind the page — and
- * over each piece, the open wardrobe's own name written in that culture's
- * language: Meher's wardrobe, L'armoire de Meher, Meher की अलमारी, Meherの箪笥,
- * صندوق Meher, Meher的衣柜, Meher의 반닫이.
+ * The closets of the house, standing behind the paper — remade after the first
+ * hanging read as a lineup: every piece the same size on the same baseline.
  *
- * A live component rather than CSS background, because the NAME is in the art.
- * Stroked entirely in var(--color-artline), so each room recolours the whole
- * frieze through one token: gold ochre in the pattern room, antique brass in
- * the salon, the leaf in the gilding room, SILVER in the atelier at night,
- * bronze in the dye house. Fixed to the viewport bottom, aria-hidden, behind
- * the content (which sits at z-10); desktop only — at phone widths the frieze
- * would be all overlap and no room.
+ * Now each PAGE hangs its own arrangement: three to five pieces from a set of
+ * nine (seven cultures of furniture, a standing coat pole, a chest of drawers),
+ * at staggered scales, with Mughal buta flower-sprigs and a Rajput bird
+ * perched between them. The metals come in PAIRS — every room declares
+ * --color-artline and --color-artline-2 (gold with pewter, silver with gold,
+ * bronze with brass...) and the pieces alternate between them. Over the larger
+ * furniture, the open wardrobe's name in that culture's language. And the
+ * composition's counterweight hangs at the TOP of the page: a clothes rail
+ * with three hangers, drawn in the second metal.
+ *
+ * Live components rather than CSS because the NAME is in the art; aria-hidden,
+ * z-0 behind the content column, desktop only.
  */
-const FRIEZE_ORDER: Array<{ piece: string; native: (n: string) => string; roman: string | null }> = [
-  { piece: 'tansu', native: n => `${n}の箪笥`, roman: 'TANSU' },
-  { piece: 'armoire', native: n => `L'armoire de ${n}`, roman: null },
-  { piece: 'sandook', native: n => `صندوق ${n}`, roman: 'SANDOOK' },
-  { piece: 'almirah', native: n => `${n} की अलमारी`, roman: 'ALMIRAH' },
-  { piece: 'wardrobe', native: n => `${n}'s wardrobe`, roman: null },
-  { piece: 'yigui', native: n => `${n}的衣柜`, roman: 'YIGUI' },
-  { piece: 'bandaji', native: n => `${n}의 반닫이`, roman: 'BANDAJI' },
-];
+const FRIEZE_CAPTIONS: Record<string, { native: (n: string) => string; roman: string | null }> = {
+  tansu: { native: n => `${n}の箪笥`, roman: 'TANSU' },
+  armoire: { native: n => `L'armoire de ${n}`, roman: null },
+  sandook: { native: n => `صندوق ${n}`, roman: 'SANDOOK' },
+  almirah: { native: n => `${n} की अलमारी`, roman: 'ALMIRAH' },
+  wardrobe: { native: n => `${n}'s wardrobe`, roman: null },
+  yigui: { native: n => `${n}的衣柜`, roman: 'YIGUI' },
+  bandaji: { native: n => `${n}의 반닫이`, roman: 'BANDAJI' },
+  coatstand: { native: n => `L'appendiabiti di ${n}`, roman: null },
+  dresser: { native: n => `${n}s Kommode`, roman: null },
+};
+
+/** Which pieces each page hangs, in order. Small motifs sit between furniture. */
+const PAGE_SETS: Record<string, string[]> = {
+  '/': ['coatstand', 'flower', 'almirah', 'bird', 'wardrobe'],
+  '/closet': ['almirah', 'flower', 'yigui', 'coatstand'],
+  '/outfits': ['armoire', 'bird', 'tansu', 'flower'],
+  '/calendar': ['flower', 'sandook', 'bird', 'coatstand'],
+  '/ledger': ['dresser', 'flower', 'yigui'],
+  '/wishlist': ['sandook', 'bird', 'wardrobe', 'flower'],
+  '/compare': ['bandaji', 'flower', 'armoire'],
+  '/events': ['coatstand', 'bird', 'sandook', 'flower'],
+  '/feed': ['tansu', 'flower', 'bandaji', 'bird'],
+  '/chats': ['dresser', 'bird', 'armoire'],
+  '/profile': ['wardrobe', 'flower', 'tansu'],
+  '/settings': ['yigui', 'bird', 'dresser', 'flower'],
+};
+const DEFAULT_SET = ['almirah', 'flower', 'bandaji', 'bird'];
+
+const SMALL = new Set(['flower', 'bird']);
+
+/** Deterministic 0..1 per (page, slot) — the hang must not reshuffle per render. */
+function jitter(...parts: Array<string | number>): number {
+  let h = 2166136261;
+  const str = parts.join('|');
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return ((h >>> 0) % 1000) / 1000;
+}
 
 function escapeXml(value: string): string {
   return value
@@ -125,36 +160,71 @@ function escapeXml(value: string): string {
     .replace(/'/g, '&#39;');
 }
 
-export function GroundFrieze({ name }: { name?: string }) {
+export function GroundFrieze({ name, page = '/' }: { name?: string; page?: string }) {
   const first = escapeXml((name ?? 'Toile').trim().split(/\s+/)[0] || 'Toile');
+  const key = '/' + (page.split('/')[1] ?? '');
+  const set = PAGE_SETS[key] ?? DEFAULT_SET;
   const parts: string[] = [];
-  FRIEZE_ORDER.forEach((entry, i) => {
-    const x = i * 208;
-    const cx = x + 143;
-    parts.push(`<g transform='translate(${x} 122) scale(0.62)'>${FRIEZE_PIECES[entry.piece]}</g>`);
-    parts.push(
-      `<text x='${cx}' y='158' text-anchor='middle' font-family='serif' font-size='24' ` +
-        `fill='var(--color-artline)' fill-opacity='0.30'>${entry.native(first)}</text>`
-    );
-    if (entry.roman) {
+  let x = 30 + Math.round(jitter(key, 'start') * 120);
+  let captioned = 0;
+  set.forEach((piece, i) => {
+    const small = SMALL.has(piece);
+    // Furniture staggers between 0.52 and 0.72; motifs sit small and high.
+    const scale = small ? 0.34 + jitter(key, i) * 0.1 : 0.52 + jitter(key, i) * 0.2;
+    const w = 460 * scale;
+    const ty = 470 - 560 * scale - (small ? 26 + jitter(key, i, 'y') * 40 : 0);
+    const metal = i % 2 === 1 ? " style='--color-artline: var(--color-artline-2)'" : '';
+    parts.push(`<g transform='translate(${Math.round(x)} ${Math.round(ty)}) scale(${scale.toFixed(2)})'${metal}>${FRIEZE_PIECES[piece]}</g>`);
+    const caption = FRIEZE_CAPTIONS[piece];
+    if (caption && !small && captioned < 2) {
+      captioned += 1;
+      const cx = Math.round(x + w / 2);
+      const cy = Math.round(470 - 560 * scale - 18);
       parts.push(
-        `<text x='${cx}' y='186' text-anchor='middle' font-family='Georgia, serif' font-size='17' ` +
-          `letter-spacing='4' fill='var(--color-artline)' fill-opacity='0.22'>${entry.roman}</text>`
+        `<text x='${cx}' y='${cy}' text-anchor='middle' font-family='serif' font-size='23'` +
+          `${metal} fill='var(--color-artline)' fill-opacity='0.30'>${caption.native(first)}</text>`
       );
+      if (caption.roman) {
+        parts.push(
+          `<text x='${cx}' y='${cy + 26}' text-anchor='middle' font-family='Georgia, serif' font-size='16' ` +
+            `letter-spacing='4'${metal} fill='var(--color-artline)' fill-opacity='0.22'>${caption.roman}</text>`
+        );
+      }
     }
+    x += w - 30 - jitter(key, i, 'gap') * 40;
   });
+  const width = Math.max(900, Math.round(x + 60));
   const svg =
-    `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1534 470' width='1534' height='470' ` +
+    `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 ${width} 470' width='${width}' height='470' ` +
     `style='display:block'>${parts.join('')}</svg>`;
+  // Alternate the frieze's side per page, so the house does not hang every
+  // picture on the same wall.
+  const side = jitter(key, 'side') < 0.5 ? 'justify-end' : 'justify-start';
   return (
     <div
       aria-hidden="true"
-      className="hidden lg:flex fixed bottom-0 inset-x-0 z-0 pointer-events-none overflow-hidden justify-end"
+      className={`hidden lg:flex fixed bottom-0 inset-x-0 z-0 pointer-events-none overflow-hidden ${side}`}
       dangerouslySetInnerHTML={{ __html: svg }}
     />
   );
 }
 
+/** The rail at the top — the frieze flipped to the other edge of the paper. */
+export function HangingRail({ page = '/' }: { page?: string }) {
+  const key = '/' + (page.split('/')[1] ?? '');
+  // Opposite side from the ground frieze below it.
+  const side = jitter(key, 'side') < 0.5 ? 'justify-start' : 'justify-end';
+  const svg =
+    `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 720 190' width='720' height='190' ` +
+    `style='display:block; --color-artline: var(--color-artline-2)'>${FRIEZE_RAIL}</svg>`;
+  return (
+    <div
+      aria-hidden="true"
+      className={`hidden lg:flex fixed top-0 inset-x-0 z-0 pointer-events-none overflow-hidden ${side}`}
+      dangerouslySetInnerHTML={{ __html: svg }}
+    />
+  );
+}
 
 /* ---------------- empty-state plates ---------------- */
 

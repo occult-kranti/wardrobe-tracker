@@ -5,7 +5,7 @@ import {
   IconWishlist, IconCompare, IconRail, IconSettings, IconPlus, IconTheme, IconMenu, IconClose,
   IconEvents, IconFeed, IconChats, IconProfile,
 } from './icons';
-import { GroundFrieze, Wordmark, TagMark } from './art';
+import { GroundFrieze, HangingRail, Wordmark, TagMark } from './art';
 import { useWardrobe } from '../context/WardrobeContext';
 import { useSession } from '../context/SessionContext';
 import AddItemModal from './AddItemModal';
@@ -69,10 +69,12 @@ export default function Layout() {
 
   return (
     <div className="flex min-h-screen bg-bg pattern-paper">
-      {/* The seven closets, standing behind the paper with the owner's name
-          over each in its own language. First in the DOM and z-0; the content
-          column sits at z-10 and scrolls past. */}
-      <GroundFrieze name={active?.name} />
+      {/* Each page hangs its own arrangement of the house's closets, with the
+          owner's name over the larger pieces in that culture's language, and
+          the rail with its hangers at the top edge. z-0 behind the content
+          column, which sits at z-10 and scrolls past. */}
+      <GroundFrieze name={active?.name} page={location.pathname} />
+      <HangingRail page={location.pathname} />
       {/* Mobile masthead */}
       <header className="lg:hidden fixed top-0 inset-x-0 z-50 bg-bg/95 backdrop-blur-sm border-b border-border">
         <div className="flex items-center justify-between h-14 px-4">
