@@ -16,9 +16,10 @@ npm run shots         # screenshots of every route, mobile + desktop
 | `npm run build` | Typecheck + production bundle | — |
 | `npm run lint` | oxlint **and** the brand contract | — |
 | `npm run lint:brand` | The Toile design contract, mechanically | — |
-| `npm run test:migrate` | Nobody's closet is ever lost to a schema change | 17 |
-| `npm run test:demo` | The sample wardrobe stays complete and offline-safe | 22 |
-| `npm run test:smoke` | The real app in a real browser | 35 |
+| `npm run test:migrate` | Nobody's closet is ever lost to a schema change | 22 |
+| `npm run test:demo` | The sample wardrobe stays complete, consistent, and offline-safe | 43 |
+| `npm run test:art` | Every baked garment plate actually renders in Chromium | 1/plate |
+| `npm run test:smoke` | The real app in a real browser | 36 |
 
 ### `lint:brand` — the design contract, enforced
 
@@ -45,7 +46,22 @@ is a promise to users, and this file is where it is kept.
 
 `scripts/test-demo.mjs` asserts the demo exercises every feature at once and
 never reaches the network (all imagery is inline SVG data-URIs, so the demo
-honours the offline-first promise too).
+honours the offline-first promise too). Since the history became simulated, it
+also asserts the fixture obeys `logWear`'s own invariant — every `wearCount`
+and `lastWorn` equals what the logs imply, outfit totals match, nothing is worn
+before it was added or after it retired, the charted year has no empty months,
+and the seasonal swing is actually visible. The Shared Rail demo is pinned by
+twelve more: three profiles, one group, all four request states, resolving
+references, and no gendered address anywhere in the circle copy.
+
+### `test:art` — the drawn plates
+
+`scripts/test-art.mjs` loads every baked garment plate from
+`src/lib/garmentArt.ts` into a real Chromium `<img>` and asserts it renders.
+A malformed SVG in a data-URI throws nowhere — it just draws the broken-image
+glyph in the middle of the closet — which is exactly how five plates once
+shipped broken while every other suite stayed green. Regenerate plates with
+`node scripts/build-garment-art.mjs <dir>`.
 
 ### `test:smoke` — the app in a browser
 

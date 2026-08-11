@@ -1,7 +1,23 @@
 # Roadmap — what to build next
 
-Written 2026-08-11, after the Ledger analytics pass. Ordered by leverage, not by
-effort. Everything here is checked against the two binding contracts
+Written 2026-08-11, after the Ledger analytics pass; updated the same day after
+the expansion pass (Shared Rail, ceremony/festival wardrobe, drawn plates).
+Ordered by leverage, not by effort.
+
+## Shipped since first writing
+
+- **The Shared Rail** (`/rail`) — borrowing among known people as a local-first
+  preview: profiles, one group, one thread, all four request states, loan
+  ledger. Decision record: `docs/11-shared-rail.md`. Schema v3.
+- **Ceremony, festival, and heritage wardrobe** — 12 pieces (sari, lehenga,
+  kurta, kaftan, haori, obi, juttis, jhumkas, bangles, sequins, metallic boots,
+  piano shawl), a custom `drapes` demo category, `festival`/`wedding`/`ceremony`
+  occasions, and 7 occasion outfits + 8 daily-register outfits.
+- **Drawn garment plates** — 49 hand-drawn technical flats replace the caption
+  swatches, validated by the new `test:art` suite (which caught five broken).
+- **`loading="lazy"` removed from every data-URI image** — the direct cause of
+  the below-the-fold void wall (finding 9's trigger). The structural fix (plate
+  under photo, one Thumb) is still open below. Everything here is checked against the two binding contracts
 (`docs/05-brand-identity.md`, `docs/06-focus-group-requirements.md`); anything
 that could not be made to pass them is in *Rejected* at the bottom, with the rule
 it broke, so it does not get proposed again.

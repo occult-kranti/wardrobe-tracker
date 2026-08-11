@@ -67,7 +67,7 @@ const goRoute = async (r) => {
   await page.reload({ waitUntil: 'domcontentloaded' });
 };
 
-const routes = ['/', '/closet', '/outfits', '/calendar', '/ledger', '/wishlist', '/compare', '/settings'];
+const routes = ['/', '/closet', '/outfits', '/calendar', '/ledger', '/wishlist', '/compare', '/rail', '/settings'];
 for (const r of routes) {
   consoleErrors.length = 0;
   await goRoute(r);

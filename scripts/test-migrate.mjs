@@ -54,7 +54,15 @@ const v1 = {
 
 const m = migrate(v1);
 const checks = [
-  ['schemaVersion set', m.schemaVersion === 2],
+  ['schemaVersion set', m.schemaVersion === 3],
+  // v3 adds the Shared Rail. An export from before it must gain an empty, valid
+  // circle rather than an undefined that crashes the /rail page, and an export
+  // that already carries one must round-trip untouched.
+  ['circle seeded on old exports', m.circle && Array.isArray(m.circle.profiles) && Array.isArray(m.circle.groups) && Array.isArray(m.circle.messages) && Array.isArray(m.circle.loans)],
+  ['existing circle preserved', (() => {
+    const withCircle = migrate({ ...v1, circle: { profiles: [{ id: 'p1', handle: '@needle', name: 'Needle', monogram: 'N', color: '#5A7A6E', lendable: [], showcase: [] }], groups: [], messages: [], loans: [] } });
+    return withCircle.circle.profiles.length === 1 && withCircle.circle.profiles[0].handle === '@needle';
+  })()],
   ['items preserved', m.items.length === 5],
   ['wear counts intact', m.items[0].wearCount === 14],
   // Losslessness is read strictly: a numeric string is parsed, not thrown away.

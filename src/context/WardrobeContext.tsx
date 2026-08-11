@@ -9,7 +9,9 @@ import {
   isQuietCategory,
   type AppState,
   type AppSettings,
+  type BorrowStatus,
   type CategoryId,
+  type CircleMessage,
   type ClothingItem,
   type Outfit,
   type WearLog,
@@ -38,6 +40,10 @@ interface WardrobeContextType extends AppState {
   releaseWishlistItem: (id: string) => void;
   keepWishlistItem: (id: string) => void;
   updateSettings: (updates: Partial<AppSettings>) => void;
+  sendRailMessage: (groupId: string, text: string, request?: CircleMessage['request']) => void;
+  setRequestStatus: (messageId: string, status: BorrowStatus) => void;
+  returnLoan: (loanId: string) => void;
+  setLendable: (itemId: string, lendable: boolean) => void;
   addCategory: (label: string) => void;
   renameCategory: (id: CategoryId, label: string) => void;
   setCategoryQuiet: (id: CategoryId, quiet: boolean) => void;
@@ -278,6 +284,90 @@ export function WardrobeProvider({ children }: { children: ReactNode }) {
     setState(prev => ({ ...prev, settings: { ...prev.settings, ...updates } }));
   }, [setState]);
 
+  /* ---------- the Shared Rail ----------
+     Local records only: profiles, one thread, loans. Nothing here syncs. */
+
+  const sendRailMessage = useCallback((groupId: string, text: string, request?: CircleMessage['request']) => {
+    const trimmed = text.trim();
+    if (!trimmed && !request) return;
+    setState(prev => {
+      const me = prev.circle.profiles.find(p => p.isMe);
+      if (!me) return prev;
+      const message: CircleMessage = {
+        id: crypto.randomUUID(),
+        groupId,
+        authorId: me.id,
+        date: todayLocal(),
+        text: trimmed,
+        request,
+      };
+      return { ...prev, circle: { ...prev.circle, messages: [...prev.circle.messages, message] } };
+    });
+  }, [setState]);
+
+  /** Advance a borrow request; lending opens a loan, returning closes it. */
+  const setRequestStatus = useCallback((messageId: string, status: BorrowStatus) => {
+    setState(prev => {
+      const message = prev.circle.messages.find(m => m.id === messageId);
+      if (!message?.request || message.request.status === status) return prev;
+      const me = prev.circle.profiles.find(p => p.isMe);
+      const messages = prev.circle.messages.map(m =>
+        m.id === messageId ? { ...m, request: { ...m.request as NonNullable<CircleMessage['request']>, status } } : m
+      );
+      let loans = prev.circle.loans;
+      if (status === 'lent') {
+        const lendable = me?.lendable.find(l => l.name === message.request?.pieceName);
+        loans = [...loans, {
+          id: crypto.randomUUID(),
+          pieceName: message.request.pieceName,
+          itemId: lendable?.itemId,
+          withId: message.authorId === me?.id
+            ? prev.circle.groups.find(g => g.id === message.groupId)?.memberIds.find(id => id !== me?.id) ?? message.authorId
+            : message.authorId,
+          direction: message.authorId === me?.id ? 'from' : 'to',
+          since: todayLocal(),
+        }];
+      }
+      if (status === 'returned') {
+        loans = loans.map(l =>
+          l.pieceName === message.request?.pieceName && !l.returned ? { ...l, returned: todayLocal() } : l
+        );
+      }
+      return { ...prev, circle: { ...prev.circle, messages, loans } };
+    });
+  }, [setState]);
+
+  const returnLoan = useCallback((loanId: string) => {
+    setState(prev => ({
+      ...prev,
+      circle: {
+        ...prev.circle,
+        loans: prev.circle.loans.map(l => l.id === loanId && !l.returned ? { ...l, returned: todayLocal() } : l),
+      },
+    }));
+  }, [setState]);
+
+  /** Put a piece of this closet on, or take it off, my open-to-borrow list. */
+  const setLendable = useCallback((itemId: string, lendable: boolean) => {
+    setState(prev => {
+      const me = prev.circle.profiles.find(p => p.isMe);
+      const item = prev.items.find(i => i.id === itemId);
+      if (!me || !item) return prev;
+      const has = me.lendable.some(l => l.itemId === itemId);
+      if (has === lendable) return prev;
+      const nextLendable = lendable
+        ? [...me.lendable, { itemId, name: item.name, category: item.category }]
+        : me.lendable.filter(l => l.itemId !== itemId);
+      return {
+        ...prev,
+        circle: {
+          ...prev.circle,
+          profiles: prev.circle.profiles.map(p => p.isMe ? { ...p, lendable: nextLendable } : p),
+        },
+      };
+    });
+  }, [setState]);
+
   const addCategory = useCallback((label: string) => {
     const trimmed = label.trim();
     if (!trimmed) return;
@@ -377,6 +467,7 @@ export function WardrobeProvider({ children }: { children: ReactNode }) {
       addWishlistItem, updateWishlistItem, deleteWishlistItem, moveWishlistToCloset,
       releaseWishlistItem, keepWishlistItem,
       updateSettings, addCategory, renameCategory, setCategoryQuiet, moveCategory, addOccasion,
+      sendRailMessage, setRequestStatus, returnLoan, setLendable,
       replaceState, markExported,
       getItem, getOutfit,
       getMostWorn, getLeastWorn, getUnwornItems, getWearablePool,

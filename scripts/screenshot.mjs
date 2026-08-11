@@ -15,7 +15,7 @@ await build({ entryPoints: [new URL('../src/lib/demoData.ts', import.meta.url).p
 const { buildDemoState } = await import(bundled);
 const state = buildDemoState();
 
-const routes = ['/', '/closet', '/outfits', '/calendar', '/ledger', '/wishlist', '/compare', '/settings'];
+const routes = ['/', '/closet', '/outfits', '/calendar', '/ledger', '/wishlist', '/compare', '/rail', '/rail/c-priya', '/settings'];
 const viewports = [
   { name: 'mobile', width: 390, height: 844 },
   { name: 'desktop', width: 1440, height: 900 },
@@ -35,7 +35,7 @@ for (const vp of viewports) {
     await page.goto(`${baseUrl}#${route}`, { waitUntil: 'domcontentloaded' });
     await page.reload({ waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(900);
-    const slug = route === '/' ? 'dashboard' : route.slice(1);
+    const slug = route === '/' ? 'dashboard' : route.slice(1).replace(/\//g, '-');
     await page.screenshot({ path: `${outDir}/${slug}-${vp.name}.png`, fullPage: true });
   }
   // Empty state pass on dashboard + closet

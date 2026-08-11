@@ -99,6 +99,36 @@ function consistency() {
     ['at least 12 months of history', monthsSet.length >= 12, monthsSet.length],
     ['no empty month in the charted window', holes === 0, holes],
     ['seasonal swing is visible', swing >= 1.5, swing.toFixed(2)+'x'],
+    ...railChecks(),
+  ];
+}
+
+/** The Shared Rail demo: 3 profiles, 1 group, every request state, sound refs. */
+function railChecks() {
+  const c = s.circle;
+  const profileIds = new Set(c.profiles.map(p => p.id));
+  const itemIds = new Set(s.items.map(i => i.id));
+  const outfitIds = new Set(s.outfits.map(o => o.id));
+  const statuses = new Set(c.messages.filter(m => m.request).map(m => m.request.status));
+  const me = c.profiles.filter(p => p.isMe);
+  const badMembers = c.groups.flatMap(g => g.memberIds.filter(id => !profileIds.has(id)));
+  const badAuthors = c.messages.filter(m => !profileIds.has(m.authorId));
+  const badLoans = c.loans.filter(l => !profileIds.has(l.withId) || (l.itemId && !itemIds.has(l.itemId)));
+  const badLendable = c.profiles.flatMap(p => p.lendable.filter(l => l.itemId && !itemIds.has(l.itemId)));
+  const badShowcase = c.profiles.flatMap(p => p.showcase.filter(id => !outfitIds.has(id)));
+  return [
+    ['rail: three profiles', c.profiles.length === 3, c.profiles.length],
+    ['rail: exactly one is me', me.length === 1, me.length],
+    ['rail: one group, members resolve', c.groups.length === 1 && badMembers.length === 0, badMembers.join(',')],
+    ['rail: all four request states shown', ['asked','lent','declined','returned'].every(x => statuses.has(x)), [...statuses].join('/')],
+    ['rail: message authors resolve', badAuthors.length === 0, badAuthors.length],
+    ['rail: loans reference real people and pieces', badLoans.length === 0, badLoans.length],
+    ['rail: lendable item refs resolve', badLendable.length === 0, badLendable.length],
+    ['rail: showcase outfits resolve', badShowcase.length === 0, badShowcase.join(',')],
+    ['rail: an active loan is out', c.loans.some(l => !l.returned), ''],
+    ['rail: festival and wedding occasions seeded', ['festival','wedding','ceremony'].every(o => s.settings.occasions.includes(o)), ''],
+    ['rail: custom drapes category in taxonomy', s.settings.categories.some(cat => cat.id === 'drapes'), ''],
+    ['rail: no gendered address in circle copy', !/\b(ladies|girls?|women|men|his & hers)\b/i.test(JSON.stringify(c)), ''],
   ];
 }
 let fail=0;

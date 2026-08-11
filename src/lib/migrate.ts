@@ -90,6 +90,16 @@ export function migrate(raw: unknown): AppState {
     for (const tag of item.occasion) occasionSet.add(tag);
   }
 
+  // v3: the Shared Rail. Exports from before it gain an empty, valid circle;
+  // one that already carries records keeps them untouched.
+  const rawCircle = (state.circle ?? {}) as Loose;
+  const circle: AppState['circle'] = {
+    profiles: Array.isArray(rawCircle.profiles) ? (rawCircle.profiles as AppState['circle']['profiles']) : [],
+    groups: Array.isArray(rawCircle.groups) ? (rawCircle.groups as AppState['circle']['groups']) : [],
+    messages: Array.isArray(rawCircle.messages) ? (rawCircle.messages as AppState['circle']['messages']) : [],
+    loans: Array.isArray(rawCircle.loans) ? (rawCircle.loans as AppState['circle']['loans']) : [],
+  };
+
   return {
     ...state,
     schemaVersion: SCHEMA_VERSION,
@@ -97,6 +107,7 @@ export function migrate(raw: unknown): AppState {
     outfits,
     wearLogs,
     wishlist,
+    circle,
     settings: {
       ...storedSettings,
       categories: adopted,

@@ -77,6 +77,83 @@ export interface WearLog {
   notes?: string;
 }
 
+/* ---------- the Shared Rail ----------
+   Borrowing between people who already know each other. Everything below is
+   LOCAL data — records the user keeps, like a contact book. There is no server,
+   no account, and nothing syncs; the owner chose to ship the full flow as a
+   working local preview, recorded in docs/11-shared-rail.md. The panel's "no
+   social graph" rejection was about feeds and followers; a named friend you
+   hand a dress to is neither. */
+
+export interface LendablePiece {
+  /** Set when the piece is in this closet; friends' pieces are name-only records. */
+  itemId?: string;
+  name: string;
+  category?: CategoryId;
+  note?: string;
+}
+
+export interface CircleProfile {
+  id: string;
+  /** '@needle' — typed by the user, unique only by convention. */
+  handle: string;
+  name: string;
+  /** About the clothes and the craft, never a gender or a body. */
+  bio?: string;
+  /** 1–2 letters on the tag-shaped avatar. Never a face. */
+  monogram: string;
+  color: string;
+  lendable: LendablePiece[];
+  /** Curated outfit ids shown on the profile. */
+  showcase: string[];
+  isMe?: boolean;
+}
+
+export type BorrowStatus = 'asked' | 'lent' | 'declined' | 'returned';
+
+export interface CircleMessage {
+  id: string;
+  groupId: string;
+  authorId: string;
+  date: string;
+  text: string;
+  /** Present when the message is a borrow request rather than plain talk. */
+  request?: { pieceName: string; status: BorrowStatus };
+}
+
+export interface CircleGroup {
+  id: string;
+  name: string;
+  about?: string;
+  memberIds: string[];
+}
+
+export interface Loan {
+  id: string;
+  pieceName: string;
+  itemId?: string;
+  /** The other person's profile id. */
+  withId: string;
+  /** 'to' — lent out of this closet; 'from' — borrowed into it. */
+  direction: 'to' | 'from';
+  since: string;
+  returned?: string;
+}
+
+export interface CircleState {
+  profiles: CircleProfile[];
+  groups: CircleGroup[];
+  messages: CircleMessage[];
+  loans: Loan[];
+}
+
+export const EMPTY_CIRCLE: CircleState = {
+  profiles: [],
+  groups: [],
+  messages: [],
+  loans: [],
+};
+
 export interface AppSettings {
   categories: UserCategory[];
   occasions: Occasion[];
@@ -90,10 +167,13 @@ export interface AppState {
   outfits: Outfit[];
   wearLogs: WearLog[];
   wishlist: WishlistItem[];
+  circle: CircleState;
   settings: AppSettings;
 }
 
-export const SCHEMA_VERSION = 2;
+// v3: the Shared Rail (circle). Migration seeds an empty circle on older
+// exports — scripts/test-migrate.mjs holds the case.
+export const SCHEMA_VERSION = 3;
 
 export const DEFAULT_CATEGORIES: UserCategory[] = [
   { id: 'tops', label: 'Tops' },
@@ -117,6 +197,7 @@ export const initialState: AppState = {
   outfits: [],
   wearLogs: [],
   wishlist: [],
+  circle: EMPTY_CIRCLE,
   settings: {
     categories: DEFAULT_CATEGORIES,
     occasions: DEFAULT_OCCASIONS,

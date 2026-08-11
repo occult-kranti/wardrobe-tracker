@@ -171,7 +171,7 @@ export default function AddItemModal({ open, onClose }: Props) {
                   <img
                     src={imageUrl}
                     alt="The photo you chose for this piece"
-                    loading="lazy"
+                   
                     className="w-full h-full object-cover"
                   />
                 </div>

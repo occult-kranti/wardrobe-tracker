@@ -99,7 +99,7 @@ function Thumb({
   return (
     <span className={`block bg-mat overflow-hidden rounded-[2px] ${className}`}>
       {item.imageUrl ? (
-        <img src={item.imageUrl} alt="" loading="lazy" className="w-full h-full object-cover" />
+        <img src={item.imageUrl} alt="" className="w-full h-full object-cover" />
       ) : (
         <GarmentPlate categoryId={item.category} color={item.color} />
       )}

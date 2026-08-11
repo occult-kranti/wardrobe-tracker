@@ -124,6 +124,25 @@ const SEEDS: Seed[] = [
   // the charted year, and it steps the cost-per-wear curve not at all.
   { id: 'd-jew-completedworks', name: 'Ceramic Drop Earrings', category: 'jewellery', color: '#F0EBE0', brand: 'Completedworks', source: 'gifted', fitsLike: 'light, long enough to swing', cost: 0, wearCount: 11, season: ['spring', 'summer', 'fall', 'winter'], occasion: ['party', 'formal', 'performance'], addedDaysAgo: 70, lastWorn: -8, swatch: ['#2A251C', '#F0EBE0', 'Ceramic'] },
 
+  // ---- ceremony, festival, and heritage pieces
+  // A wardrobe holds every occasion its owner dresses for — the festival kit and
+  // the wedding silks are as daily-real as the oxford. 'drapes' is a CUSTOM
+  // category, added in this demo's settings, exercising the rule that taxonomy
+  // is user-owned data (focus-group §1.1). Nothing here is gendered; a sari is a
+  // garment, and the app asks what you own, never who you are.
+  { id: 'd-dra-sari', name: 'Banarasi Silk Sari', category: 'drapes', color: '#771324', source: 'inherited', fitsLike: 'six yards; drapes to any height', cost: 0, wearCount: 6, favorite: true, season: ['fall', 'winter', 'spring'], occasion: ['wedding', 'festival', 'ceremony'], addedDaysAgo: 900, lastWorn: -63, notes: 'My grandmother’s wedding sari. The zari is real gold thread; it goes to the dry cleaner once a decade and to weddings the rest of the time.', swatch: ['#771324', '#C9A227', 'Sari'] },
+  { id: 'd-dra-lehenga', name: 'Embroidered Lehenga Set', category: 'drapes', color: '#2E6B4F', brand: 'Sabyasachi', source: 'secondhand', fitsLike: 'skirt drawstring adjusts; choli runs small', cost: 380, wearCount: 4, season: ['fall', 'winter'], occasion: ['wedding', 'festival'], addedDaysAgo: 420, lastWorn: -110, notes: 'Found at a wedding-wear resale. Three kilos of skirt.', swatch: ['#2E6B4F', '#C9A227', 'Lehenga'] },
+  { id: 'd-dra-obi', name: 'Vintage Obi Sash', category: 'drapes', color: '#C9A227', source: 'secondhand', fitsLike: 'wraps twice, ties flat', cost: 55, wearCount: 3, season: ['fall', 'winter'], occasion: ['ceremony', 'party'], addedDaysAgo: 300, lastWorn: -95, notes: 'Kyoto flea market. Worn as a belt over the column dress.', swatch: ['#C9A227', '#F0EBE0', 'Obi'] },
+  { id: 'd-top-kurta', name: 'Chikankari Kurta', category: 'tops', color: '#FBF8F0', source: 'gifted', fitsLike: 'straight cut, generous side slits', cost: 0, wearCount: 18, favorite: true, season: ['spring', 'summer'], occasion: ['casual', 'festival', 'ceremony'], addedDaysAgo: 560, lastWorn: -9, notes: 'White-on-white shadow work from Lucknow. From my aunt, who insisted it be worn, not kept.', swatch: ['#FBF8F0', '#A89B8C', 'Kurta'] },
+  { id: 'd-one-kaftan', name: 'Embroidered Kaftan', category: 'dresses', color: '#31415E', source: 'secondhand', fitsLike: 'one size drapes over everything', cost: 60, wearCount: 9, season: ['summer'], occasion: ['casual', 'festival'], addedDaysAgo: 380, lastWorn: -32, swatch: ['#31415E', '#C9A227', 'Kaftan'] },
+  { id: 'd-lay-haori', name: 'Silk Haori Jacket', category: 'layers', color: '#201D18', source: 'secondhand', fitsLike: 'square cut, sits open', cost: 90, wearCount: 12, favorite: true, season: ['fall', 'winter', 'spring'], occasion: ['party', 'formal', 'ceremony'], addedDaysAgo: 340, lastWorn: -16, notes: 'The lining is the whole point. Worn open, indoors, at exactly the right moment.', swatch: ['#201D18', '#BE1231', 'Haori'] },
+  { id: 'd-one-sequin', name: 'Sequin Slip Dress', category: 'dresses', color: '#6B6560', brand: 'Rixo', source: 'secondhand', fitsLike: 'bias cut, heavier than it looks', cost: 85, wearCount: 8, favorite: true, season: ['spring', 'summer', 'fall'], occasion: ['festival', 'party'], addedDaysAgo: 310, lastWorn: -25, swatch: ['#6B6560', '#C9C4BC', 'Sequin'] },
+  { id: 'd-shoe-jutti', name: 'Zardozi Juttis', category: 'shoes', color: '#771324', source: 'new', fitsLike: 'stiff for the first wedding, moulded by the second', cost: 48, wearCount: 7, season: ['fall', 'winter', 'spring'], occasion: ['wedding', 'festival', 'ceremony'], addedDaysAgo: 400, lastWorn: -63, swatch: ['#771324', '#C9A227', 'Jutti'] },
+  { id: 'd-shoe-metallic', name: 'Metallic Ankle Boots', category: 'shoes', color: '#A8A39E', brand: 'Vagabond', source: 'new', fitsLike: 'true to size, walkable heel', cost: 160, wearCount: 10, season: ['spring', 'summer', 'fall'], occasion: ['festival', 'party'], addedDaysAgo: 280, lastWorn: -25, swatch: ['#A8A39E', '#E8E2D4', 'Metallic'] },
+  { id: 'd-acc-shawl', name: 'Embroidered Piano Shawl', category: 'accessories', color: '#201D18', source: 'inherited', fitsLike: 'covers everything, catches on nothing', cost: 0, wearCount: 5, season: ['fall', 'winter'], occasion: ['party', 'ceremony', 'festival'], addedDaysAgo: 700, lastWorn: -40, notes: 'The fringe takes ten minutes to untangle and is worth every one of them.', swatch: ['#201D18', '#BE1231', 'Shawl'] },
+  { id: 'd-jew-jhumka', name: 'Silver Jhumka Earrings', category: 'jewellery', color: '#A8A39E', source: 'gifted', fitsLike: 'heavier than hoops; fine for an evening', cost: 0, wearCount: 9, favorite: true, season: ['spring', 'summer', 'fall', 'winter'], occasion: ['wedding', 'festival', 'ceremony', 'party'], addedDaysAgo: 520, lastWorn: -63, swatch: ['#A8A39E', '#4A4438', 'Jhumka'] },
+  { id: 'd-jew-bangles', name: 'Glass Bangle Set', category: 'jewellery', color: '#BE1231', source: 'new', fitsLike: 'a dozen; wear as many as the day deserves', cost: 24, wearCount: 8, season: ['spring', 'summer', 'fall', 'winter'], occasion: ['festival', 'wedding', 'casual'], addedDaysAgo: 450, lastWorn: -25, swatch: ['#BE1231', '#C9A227', 'Bangles'] },
+
   // ---- retired (history kept)
   { id: 'd-ret-jacket', name: 'Cropped Denim Jacket', category: 'outerwear', color: '#6B8FA3', brand: 'Zara', source: 'new', cost: 60, wearCount: 3, season: ['spring'], occasion: ['casual'], addedDaysAgo: 800, lastWorn: -300, retiredDaysAgo: 60, retiredReason: 'Not me anymore', swatch: ['#6B8FA3', '#DCE6EC', 'Denim Jkt'] },
   { id: 'd-ret-heels', name: 'Red Patent Heels', category: 'shoes', color: '#A03D3D', brand: 'Zara', source: 'new', cost: 75, wearCount: 1, season: ['summer'], occasion: ['party'], addedDaysAgo: 760, lastWorn: -400, retiredDaysAgo: 120, retiredReason: 'Swapped on', swatch: ['#A03D3D', '#F0D0D0', 'Patent'] },
@@ -245,6 +264,142 @@ const OUTFITS: Array<Omit<Outfit, 'dateCreated' | 'lastWorn'> & { createdDaysAgo
     createdDaysAgo: 100,
     lastWornDaysAgo: 14,
   },
+
+  // ---- festival
+  {
+    id: 'd-fit-festival',
+    name: 'Festival Rig',
+    itemIds: ['d-one-sequin', 'd-shoe-metallic', 'd-jew-hoops', 'd-acc-shawl'],
+    favorite: true,
+    wearCount: 5,
+    occasion: 'festival',
+    createdDaysAgo: 290,
+  },
+  {
+    id: 'd-fit-monsoon',
+    name: 'Monsoon Market',
+    itemIds: ['d-top-kurta', 'd-bot-toogood', 'd-shoe-jutti', 'd-jew-bangles'],
+    favorite: false,
+    wearCount: 4,
+    occasion: 'festival',
+    createdDaysAgo: 260,
+  },
+  {
+    id: 'd-fit-midnight',
+    name: 'Midnight Sequins',
+    itemIds: ['d-one-sequin', 'd-out-coat', 'd-shoe-heel', 'd-jew-jhumka'],
+    favorite: false,
+    wearCount: 3,
+    occasion: 'party',
+    createdDaysAgo: 240,
+  },
+
+  // ---- weddings and ceremony
+  {
+    id: 'd-fit-wedding',
+    name: 'Wedding Guest',
+    itemIds: ['d-dra-sari', 'd-shoe-jutti', 'd-jew-jhumka', 'd-jew-pearls'],
+    favorite: true,
+    wearCount: 4,
+    occasion: 'wedding',
+    createdDaysAgo: 420,
+  },
+  {
+    id: 'd-fit-mehndi',
+    name: 'Mehndi Morning',
+    itemIds: ['d-dra-lehenga', 'd-jew-bangles', 'd-shoe-jutti', 'd-jew-hoops'],
+    favorite: false,
+    wearCount: 3,
+    occasion: 'wedding',
+    createdDaysAgo: 400,
+  },
+  {
+    id: 'd-fit-ceremony',
+    name: 'Quiet Ceremony',
+    itemIds: ['d-top-kurta', 'd-bot-trouser', 'd-jew-pearls', 'd-dra-obi'],
+    favorite: false,
+    wearCount: 3,
+    occasion: 'ceremony',
+    createdDaysAgo: 300,
+  },
+
+  // ---- evening
+  {
+    id: 'd-fit-velvet',
+    name: 'Velvet Hour',
+    itemIds: ['d-one-column', 'd-lay-haori', 'd-shoe-heel', 'd-jew-pendant'],
+    favorite: true,
+    wearCount: 6,
+    occasion: 'party',
+    createdDaysAgo: 330,
+  },
+
+  // ---- the working week, at its different registers
+  {
+    id: 'd-fit-studio',
+    name: 'Studio Rotation',
+    itemIds: ['d-top-marimekko', 'd-bot-toogood', 'd-shoe-sneaker', 'd-jew-cuff'],
+    favorite: true,
+    wearCount: 8,
+    occasion: 'studio',
+    createdDaysAgo: 110,
+  },
+  {
+    id: 'd-fit-market',
+    name: 'Market Basket',
+    itemIds: ['d-top-breton', 'd-bot-denim', 'd-shoe-sneaker', 'd-acc-telfar', 'd-jew-hoops'],
+    favorite: false,
+    wearCount: 6,
+    occasion: 'market day',
+    createdDaysAgo: 150,
+  },
+  {
+    id: 'd-fit-patchwork',
+    name: 'Patchwork Evening',
+    itemIds: ['d-one-bode', 'd-shoe-heel', 'd-jew-completedworks', 'd-acc-telfar'],
+    favorite: true,
+    wearCount: 4,
+    occasion: 'party',
+    createdDaysAgo: 55,
+  },
+  // Contains the never-worn studs on purpose: a saved outfit that has not had
+  // its first outing yet is a real state, and the studs stay never-worn.
+  {
+    id: 'd-fit-october',
+    name: 'October Office',
+    itemIds: ['d-lay-nicholson', 'd-bot-trouser', 'd-shoe-nomasei', 'd-jew-studs', 'd-acc-telfar'],
+    favorite: false,
+    wearCount: 0,
+    occasion: 'work',
+    createdDaysAgo: 15,
+  },
+  {
+    id: 'd-fit-quarterend',
+    name: 'Quarter-End Review',
+    itemIds: ['d-top-oxford', 'd-bot-trouser', 'd-acc-scarf', 'd-jew-pearls', 'd-shoe-nomasei'],
+    favorite: true,
+    wearCount: 5,
+    occasion: 'formal',
+    createdDaysAgo: 170,
+  },
+  {
+    id: 'd-fit-puffer',
+    name: 'Puffer Weather',
+    itemIds: ['d-out-ganni', 'd-bot-denim', 'd-top-navy', 'd-shoe-chelsea', 'd-jew-cuff'],
+    favorite: false,
+    wearCount: 7,
+    occasion: 'casual',
+    createdDaysAgo: 100,
+  },
+  {
+    id: 'd-fit-rehearsal',
+    name: 'Cold Rehearsal',
+    itemIds: ['d-bot-kilt', 'd-lay-nicholson', 'd-shoe-chelsea', 'd-jew-cuff'],
+    favorite: false,
+    wearCount: 5,
+    occasion: 'performance',
+    createdDaysAgo: 95,
+  },
 ];
 
 /* ============================================================
@@ -353,7 +508,18 @@ function buildWearLogs(): WearLog[] {
         }) && outfitSeasonFit(o.itemIds, season) >= 0.5
     );
     if (wearable.length > 0 && rand('mode', day) < 0.42) {
-      const chosen = wearable[Math.floor(rand('whichfit', day) * wearable.length)];
+      // Weighted by the appetite of what's inside, so the work uniform recurs
+      // weekly while the wedding silks surface a handful of times a year.
+      const weights = wearable.map(o =>
+        o.itemIds.reduce((sum, id) => sum + appetite(seedById.get(id) as Seed, day, season), 0)
+      );
+      const total = weights.reduce((a, b) => a + b, 0);
+      let r = rand('whichfit', day) * total;
+      let chosen = wearable[wearable.length - 1];
+      for (let i = 0; i < wearable.length; i++) {
+        r -= weights[i];
+        if (r <= 0) { chosen = wearable[i]; break; }
+      }
       logs.push({ id: `d-log-${n++}`, date, itemIds: [...chosen.itemIds], outfitId: chosen.id });
       continue;
     }
@@ -371,7 +537,9 @@ function buildWearLogs(): WearLog[] {
     };
 
     if (rand('shape', day) < 0.3) {
-      take(inCategory('dresses'), 'onepiece');
+      // Drapes compete in the one-piece slot; their low weights keep the wedding
+      // silks to a handful of appearances a year.
+      take([...inCategory('dresses'), ...inCategory('drapes')], 'onepiece');
     } else {
       take(inCategory('tops'), 'top');
       take(inCategory('bottoms'), 'bottom');
@@ -491,6 +659,90 @@ function buildWishlist(): WishlistItem[] {
   ];
 }
 
+/* ============================================================
+   The Shared Rail — three closets that lend to each other.
+
+   All local data, like everything else here: profiles are records this closet
+   keeps, the way a contact book is. The conversation covers every request
+   state — asked, lent, declined, returned — and the declined one reads as a
+   neutral fact, because a piece staying home is not a verdict on anyone.
+   ============================================================ */
+
+function buildCircle(): AppState['circle'] {
+  return {
+    profiles: [
+      {
+        id: 'c-me',
+        handle: '@toile',
+        name: 'This closet',
+        bio: 'The ledger you are reading. Mends before replacing; drafts patterns on the kitchen table; believes the best piece is the one already hanging up.',
+        monogram: 'T',
+        color: '#BE1231',
+        isMe: true,
+        lendable: [
+          { itemId: 'd-one-bode', name: 'Quilted Patchwork Dress', category: 'dresses' },
+          { itemId: 'd-lay-haori', name: 'Silk Haori Jacket', category: 'layers' },
+          { itemId: 'd-acc-shawl', name: 'Embroidered Piano Shawl', category: 'accessories' },
+          { itemId: 'd-jew-hoops', name: 'Brass Hoop Earrings', category: 'jewellery' },
+        ],
+        showcase: ['d-fit-wedding', 'd-fit-velvet', 'd-fit-festival', 'd-fit-monday'],
+      },
+      {
+        id: 'c-priya',
+        handle: '@priya',
+        name: 'Priya',
+        bio: 'Keeps heritage silks and knows a real zari border on sight. Lends nearly anything, and asks after it exactly once.',
+        monogram: 'P',
+        color: '#2E6B4F',
+        lendable: [
+          { name: 'Kanjeevaram Sari, temple border', category: 'drapes', note: 'the blue one' },
+          { name: 'Velvet Opera Coat', category: 'outerwear' },
+          { name: 'Gold Kada Bangle', category: 'jewellery' },
+        ],
+        showcase: [],
+      },
+      {
+        id: 'c-mo',
+        handle: '@mo',
+        name: 'Mo',
+        bio: 'Festival kit shared freely; returns everything mended better than it left. Sews sequins back on as a form of meditation.',
+        monogram: 'M',
+        color: '#31415E',
+        lendable: [
+          { name: 'Fringed Suede Jacket', category: 'outerwear' },
+          { name: 'Brocade Clutch', category: 'accessories' },
+          { name: 'Platform Boots, silver', category: 'shoes', note: 'run half a size small' },
+        ],
+        showcase: [],
+      },
+    ],
+    groups: [
+      {
+        id: 'g-rail',
+        name: 'The Rail',
+        about: 'Three closets within cycling distance. What leaves a closet comes back mended.',
+        memberIds: ['c-me', 'c-priya', 'c-mo'],
+      },
+    ],
+    messages: [
+      { id: 'm-0', groupId: 'g-rail', authorId: 'c-priya', date: D(-21), text: 'Wedding on the 30th. May I ask after the quilted Bode dress? It photographs like a stained-glass window.', request: { pieceName: 'Quilted Patchwork Dress', status: 'lent' } },
+      { id: 'm-1', groupId: 'g-rail', authorId: 'c-me', date: D(-21), text: 'It would be honoured. The third block is already mended — someone before us did it properly.' },
+      { id: 'm-2', groupId: 'g-rail', authorId: 'c-mo', date: D(-14), text: 'Field festival Friday. Any chance of the sequin slip?', request: { pieceName: 'Sequin Slip Dress', status: 'declined' } },
+      { id: 'm-3', groupId: 'g-rail', authorId: 'c-me', date: D(-14), text: 'It is promised to a stage that night — Stage Night claims it first. The metallic boots are free, though.' },
+      { id: 'm-4', groupId: 'g-rail', authorId: 'c-mo', date: D(-13), text: 'Boots it is. They will come back polished.' },
+      { id: 'm-5', groupId: 'g-rail', authorId: 'c-me', date: D(-10), text: 'Priya — the jhumkas came home. They carried the whole ceremony; thank you.', request: { pieceName: 'Gold Jhumka Earrings', status: 'returned' } },
+      { id: 'm-6', groupId: 'g-rail', authorId: 'c-priya', date: D(-10), text: 'They like being out. The sari blouse you asked about is with the tailor until the 15th.' },
+      { id: 'm-7', groupId: 'g-rail', authorId: 'c-me', date: D(-4), text: 'Mo — is the brocade clutch spoken for on the 20th?', request: { pieceName: 'Brocade Clutch', status: 'asked' } },
+      { id: 'm-8', groupId: 'g-rail', authorId: 'c-mo', date: D(-2), text: 'Checking whether it is back from its last outing. Word tomorrow.' },
+    ],
+    loans: [
+      { id: 'l-0', pieceName: 'Quilted Patchwork Dress', itemId: 'd-one-bode', withId: 'c-priya', direction: 'to', since: D(-19) },
+      { id: 'l-1', pieceName: 'Metallic Ankle Boots', itemId: 'd-shoe-metallic', withId: 'c-mo', direction: 'to', since: D(-13), returned: D(-6) },
+      { id: 'l-2', pieceName: 'Gold Jhumka Earrings', withId: 'c-priya', direction: 'from', since: D(-30), returned: D(-10) },
+    ],
+  };
+}
+
 export function buildDemoState(): AppState {
   const wearLogs = buildWearLogs();
   const items = buildItems(wearLogs);
@@ -519,9 +771,12 @@ export function buildDemoState(): AppState {
     outfits,
     wearLogs,
     wishlist: buildWishlist(),
+    circle: buildCircle(),
     settings: {
-      categories: DEFAULT_CATEGORIES,
-      occasions: [...DEFAULT_OCCASIONS, 'studio', 'market day'],
+      // 'drapes' is a custom category this closet added — taxonomy is user-owned
+      // data, and the demo exercises that rather than just claiming it.
+      categories: [...DEFAULT_CATEGORIES, { id: 'drapes', label: 'Drapes & sets' }],
+      occasions: [...DEFAULT_OCCASIONS, 'festival', 'wedding', 'ceremony', 'studio', 'market day'],
       theme: 'dark',
     },
   };

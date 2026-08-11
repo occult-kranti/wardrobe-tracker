@@ -379,6 +379,19 @@ export const IconEyeletFilled = ({ size = 12, ...rest }: IconProps) => (
   </svg>
 );
 
+export const IconRail = (p: IconProps) => (
+  <Icon {...p}>
+    {/* a garment rail with two hung tags — the shared rail */}
+    <path d="M2.5 5.5h19" />
+    <path d="M7 5.5v2M17 5.5v2" />
+    <path d="M4.5 7.5h5v10.5l-2.5 2-2.5-2z" />
+    <path d="M14.5 7.5h5v10.5l-2.5 2-2.5-2z" />
+    <circle cx="7" cy="10" r="1" />
+    <circle cx="17" cy="10" r="1" />
+    <Notch x={19} y={3.5} />
+  </Icon>
+);
+
 /** Category id → flat. Unknown (user-made) categories fall back to the tag. */
 export const CATEGORY_ICONS: Record<string, (p: IconProps) => React.ReactElement> = {
   tops: IconTop,

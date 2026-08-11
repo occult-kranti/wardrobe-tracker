@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useLocation, Outlet } from 'react-router-dom';
 import {
   IconToday, IconCloset, IconOutfits, IconCalendar, IconLedger,
-  IconWishlist, IconCompare, IconSettings, IconPlus, IconTheme, IconMenu, IconClose,
+  IconWishlist, IconCompare, IconRail, IconSettings, IconPlus, IconTheme, IconMenu, IconClose,
 } from './icons';
 import { Wordmark, TagMark } from './art';
 import { useWardrobe } from '../context/WardrobeContext';
@@ -28,6 +28,7 @@ const navItems: NavItem[] = [
   // shortLabel is for the mobile rail only, where "Before you buy" wrapped to two
   // lines and shoved its icon out of the icon column.
   { path: '/compare', label: 'Before you buy', shortLabel: 'Compare', icon: IconCompare },
+  { path: '/rail', label: 'Shared rail', shortLabel: 'Rail', icon: IconRail },
   { path: '/settings', label: 'Settings', icon: IconSettings },
 ];
 

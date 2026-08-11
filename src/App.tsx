@@ -8,6 +8,7 @@ import Calendar from './pages/Calendar';
 import Statistics from './pages/Statistics';
 import Wishlist from './pages/Wishlist';
 import BeforeYouBuy from './pages/BeforeYouBuy';
+import Rail, { RailProfile } from './pages/Rail';
 import Settings from './pages/Settings';
 
 function App() {
@@ -25,6 +26,8 @@ function App() {
             <Route path="/stats" element={<Statistics />} />
             <Route path="/wishlist" element={<Wishlist />} />
             <Route path="/compare" element={<BeforeYouBuy />} />
+            <Route path="/rail" element={<Rail />} />
+            <Route path="/rail/:id" element={<RailProfile />} />
             <Route path="/settings" element={<Settings />} />
           </Route>
         </Routes>

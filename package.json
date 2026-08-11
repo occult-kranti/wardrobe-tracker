@@ -11,6 +11,7 @@
     "preview": "vite preview",
     "test:migrate": "node scripts/test-migrate.mjs",
     "test:demo": "node scripts/test-demo.mjs",
+    "test:art": "node scripts/test-art.mjs",
     "test:smoke": "node scripts/smoke.mjs",
     "shots": "node scripts/screenshot.mjs",
     "verify": "npm run build && npm run lint:brand && npm run test:migrate && npm run test:demo"
