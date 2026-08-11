@@ -17,6 +17,12 @@ export function isFutureDate(dateStr: string): boolean {
   return dateStr > todayLocal();
 }
 
+export function addDays(dateStr: string, days: number): string {
+  const d = new Date(`${dateStr}T00:00:00`);
+  d.setDate(d.getDate() + days);
+  return formatLocalDate(d);
+}
+
 export function daysSince(dateStr: string): number {
   const then = new Date(`${dateStr}T00:00:00`);
   const now = new Date();

@@ -21,23 +21,31 @@ When these rules conflict with a request, follow the rules and note the conflict
 4. **Nothing decorative behind clothing photos.** Photo tiles are flat
    `--color-surface` (light) / `--color-mat` (dark). Pattern-paper crosses and
    seam arcs live on page grounds and empty states only.
-5. **Type:** Bodoni Moda ≥22px only (mastheads, hero numerals, italic editorial
+5. **Type:** Fraunces ≥20px only (mastheads, hero numerals, italic editorial
    labels). Switzer for UI/body; interactive labels ≥13px. IBM Plex Mono ≤15px
    for ledger data/chips; 11px mono is non-interactive metadata only.
 6. **Icons** live in `src/components/icons.tsx`: 24×24, 1.5px stroke,
    `currentColor`, butt caps, miter joins, half-grid coordinates, and **exactly
-   one 2px 45° notch in the NE quadrant** per icon. New icons must be
-   indistinguishable in style from the set. Never emoji, never lucide.
+   one 2px 45° notch in the NE quadrant** per icon. Garment icons are **technical
+   fashion flats** — real construction detail, never a body, never the A-line
+   gender glyph for dresses. New icons must be indistinguishable in style from the
+   set. Never emoji, never lucide.
 7. **Motion:** 140–200ms ease-out fades; stroke-dashoffset draw-ins; numeral
    tick-ups; the seal-press (1.15→0.96→1, 180ms) for wear-logging only. Everything
    collapses to opacity under `prefers-reduced-motion`.
 8. **Voice:** house tailor. Dry, exact, warm at reward moments ("Logged. Worn 14
    times."), plain in utility/destructive flows, **no exclamation points**, no
    shame copy, no gendered assumptions about categories or bodies.
-9. **Psychology floor:** log-wear ≤2 taps from Today; ethical streaks
-   (consistency, not chains); Before You Buy = savvy friend, never parent (no
-   guilt scores, no red warnings); no social graph; 44px touch targets; AA
-   contrast (4.5:1 text) in BOTH themes for any new pair.
+9. **Psychology floor:** log-wear ≤2 taps from Today; **zero gamification chrome**
+   (no badges, streaks, confetti, progress-as-achievement) — only cumulative
+   factual totals; Before You Buy = savvy friend, never parent (no guilt scores,
+   no red warnings, and never any commerce/affiliate surface); no social graph;
+   44px touch targets; AA contrast (4.5:1 text) in BOTH themes for any new pair.
+10. **Copy law:** address the clothes, never the user's identity. Retire, never
+   delete. Banned: body-verdict words (flattering, slimming, hide), gendered
+   address (ladies, girl, babe, his & hers), shame/diet language (closet detox,
+   "do you REALLY need it?", wasted money), and "pre-loved". Roughly one
+   exclamation point for the entire app. See `docs/06-focus-group-requirements.md`.
 
 ## Where things live
 

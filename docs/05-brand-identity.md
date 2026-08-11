@@ -77,9 +77,15 @@ law, grafted from Loden).
 
 ## 4. Typography
 
+> **Amended 2026-08-11** by the focus-group panel (`docs/06-focus-group-requirements.md`):
+> display face changed from Bodoni Moda to **Fraunces**. The panel asked for ink-trap
+> warmth ("Fraunces territory; not Playfair") and the engineering judge independently
+> flagged that didone hairlines degrade at 1× and below 22px. Fraunces keeps the
+> editorial voice while surviving small sizes and low-DPI screens.
+
 | Face | Source | Use |
 |---|---|---|
-| **Bodoni Moda** (var., opsz) | Google Fonts | Display. Wordmark + mastheads (700), H1–H2 (600), *Italic 400* for editorial labels ("Cost per wear"). Hero numerals 600. **Never below 22px** except the wordmark. |
+| **Fraunces** (var., `opsz`/`SOFT`/`WONK`) | Google Fonts | Display. Wordmark + mastheads (700), H1–H2 (600), *Italic 400* for editorial labels ("Cost per wear"). Hero numerals 600. **Never below 20px** except the wordmark. |
 | **Switzer** 400/500/600 | Fontshare | UI/body. Body 15px/1.6. Buttons + nav: 13px 600 ALL CAPS tracked +0.08em (garment-tag typesetting; 13px floor grafted from Loden — 12px was below the legibility floor). |
 | **IBM Plex Mono** 400/500 | Google Fonts | The ledger voice: tables, prices, dates, specimen numbers, tag chips. 11–13px caps tracked +0.06em. **Never above 15px.** 11px is for non-interactive metadata only. |
 
@@ -163,9 +169,9 @@ worn), and chip punch-hole.
 1. **Log today's wear in ≤2 taps**, from a thumb-zone hero action that never
    requires scrolling. Suggestions ≤6. Closet browsing is the fallback, never the
    default path.
-2. **Ethical streaks only:** consistency over perfection; celebrate cumulative,
-   unloseable stats ("312 wears recorded"); no guilt notifications; no paying to
-   protect streaks.
+2. **No streak chrome at all** (amended by panel): no badges, streaks, confetti, or
+   progress-as-achievement. Only cumulative, unloseable, factual totals ("312 wears
+   recorded"), stated like a bank balance. No guilt notifications — no notifications.
 3. **Variable reward = insight, not slot machine:** after each log, one honest,
    dismissible payoff card (cost-per-wear fell / first wear in 94 days / most-worn
    this month).

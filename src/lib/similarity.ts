@@ -1,4 +1,4 @@
-import type { ClothingItem, Category, Occasion } from '../types';
+import type { ClothingItem, CategoryId, Occasion } from '../types';
 
 // "Do I already own something like this?" — the engine behind Before You Buy.
 // Similarity is deliberately explainable: same category is a hard gate, then
@@ -49,7 +49,9 @@ function nameTokens(name: string): Set<string> {
 }
 
 export interface SimilarityQuery {
-  category: Category;
+  /** Optional: category is a scored signal, never a gate. A jumpsuit has to be
+      able to compete with a shirt-and-trousers pairing you already own. */
+  category?: CategoryId;
   color: string;
   name?: string;
   brand?: string;
@@ -73,9 +75,10 @@ export function findSimilarItems(items: ClothingItem[], query: SimilarityQuery, 
   const matches: SimilarMatch[] = [];
   for (const item of items) {
     if (item.id === query.excludeId) continue;
-    if (item.category !== query.category) continue;
+    if (item.retired) continue;
 
     const reasons: string[] = [];
+    const sameCategory = query.category ? item.category === query.category : false;
     const closeness = colorCloseness(item.color, query.color);
     if (closeness > 0.75) reasons.push('nearly the same color');
     else if (closeness > 0.5) reasons.push('a similar color');
@@ -101,14 +104,33 @@ export function findSimilarItems(items: ClothingItem[], query: SimilarityQuery, 
       if (shared.length > 0) reasons.push(`described alike ("${shared.join('", "')}")`);
     }
 
-    // Same category alone isn't a match — require at least one real signal.
-    const score = 0.5 * closeness + 0.2 * occasionOverlap + 0.15 * brandMatch + 0.15 * nameOverlap;
+    // Category is one signal among several — never a gate. Requiring at least
+    // one stated reason keeps every match explainable.
+    const score =
+      0.45 * closeness +
+      0.25 * occasionOverlap +
+      0.15 * (sameCategory ? 1 : 0) +
+      0.1 * brandMatch +
+      0.05 * nameOverlap;
     if (score >= 0.3 && reasons.length > 0) {
+      if (sameCategory) reasons.unshift('the same kind of piece');
       matches.push({ item, score, reasons });
     }
   }
 
   return matches.sort((a, b) => b.score - a.score).slice(0, limit);
+}
+
+/** Aggregate line for Before You Buy: facts, then stop talking. */
+export function matchSummary(matches: SimilarMatch[]): string | null {
+  if (matches.length === 0) return null;
+  const wears = matches.reduce((sum, m) => sum + m.item.wearCount, 0);
+  const spent = matches.reduce((sum, m) => sum + (m.item.cost ?? 0), 0);
+  const pieces = `${matches.length} similar ${matches.length === 1 ? 'piece' : 'pieces'}`;
+  if (spent > 0) {
+    return `You own ${pieces}. Total spent: $${spent.toFixed(0)}. Total wears: ${wears}.`;
+  }
+  return `You own ${pieces}. Total wears: ${wears}.`;
 }
 
 /** Supportive framing stats for a matched owned item. */
