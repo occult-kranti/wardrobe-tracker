@@ -19,6 +19,7 @@
   --color-accent-hover: #97102A;
   --color-accent-fill: #BE1231;
   --color-on-accent: #FFFDF6;
+  --color-accent-on-ink: #E96070; /* the accent stated on the ink fill (5.5:1) */
   --color-success: #2E6B4F;
   --color-warning: #7D5813;
   --color-danger: #771324;       /* oxblood — DANGER TEXT ONLY */
@@ -54,6 +55,7 @@
     --color-accent-hover: #F0798A;
     --color-accent-fill: #BE1231;
     --color-on-accent: #FFFDF6;
+    --color-accent-on-ink: #BE1231; /* the fill inverts to chalk, so this darkens (5.5:1) */
     --color-success: #58A97F;
     --color-warning: #D9A93F;
     --color-danger: #F297A4;     /* danger TEXT only — far too light to fill */
@@ -81,6 +83,7 @@
   --color-accent-hover: #F0798A;
   --color-accent-fill: #BE1231;
   --color-on-accent: #FFFDF6;
+  --color-accent-on-ink: #BE1231;
   --color-success: #58A97F;
   --color-warning: #D9A93F;
   --color-danger: #F297A4;
@@ -133,6 +136,11 @@
   --color-accent-hover: #6F1F42;
   --color-accent-fill: #8E2A55;
   --color-on-accent: #FFF7F4;    /* 7.75:1 on the fill */
+  /* Brass, not a lightened damson: a damson tinted light enough to read on the
+     plum-black fill is by definition a pink, and docs/13-the-salon.md rules that
+     in this room the rose lives in the neutral and never in the accent. Gold is
+     decorative-only by §2 of the contract, and a 2px rule is decoration. */
+  --color-accent-on-ink: #D9A75C;
   --color-danger: #6E1C22;
   --color-danger-fill: #6E1C22;  /* chalk label measures 10.93:1 */
   --color-success: #2C6250;
@@ -159,6 +167,7 @@
   --color-accent-hover: var(--color-accent-hover);
   --color-accent-fill: var(--color-accent-fill);
   --color-on-accent: var(--color-on-accent);
+  --color-accent-on-ink: var(--color-accent-on-ink);
   --color-success: var(--color-success);
   --color-warning: var(--color-warning);
   --color-danger: var(--color-danger);
@@ -249,6 +258,39 @@
     background: color-mix(in srgb, var(--color-text) 55%, transparent);
   }
 
+  /* A rail of tags. Geometry notes live on the TagRail component in ui.tsx.
+     The scrollbar is suppressed rather than styled: the house has no grey OS
+     widget with arrow buttons in it, and on classic-scrollbar platforms that
+     widget was landing on the row beneath. The block padding is symmetric and
+     positive — a rail never pulls a neighbour up with a negative margin, which
+     is the trick that caused the overlap in the first place. */
+  .tag-rail {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+    padding: 3px;                  /* room for the 2px focus ring at 2px offset */
+    margin-inline: -3px;           /* paid back inline only; block margins stay honest */
+    scroll-padding-inline: 3px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .tag-rail::-webkit-scrollbar { width: 0; height: 0; }
+  .tag-rail > * { flex: none; scroll-snap-align: start; }
+  .tag-rail[data-edge='start'] {
+    -webkit-mask-image: linear-gradient(to right, transparent 0, #000 32px);
+    mask-image: linear-gradient(to right, transparent 0, #000 32px);
+  }
+  .tag-rail[data-edge='end'] {
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent 100%);
+    mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent 100%);
+  }
+  .tag-rail[data-edge='both'] {
+    -webkit-mask-image: linear-gradient(to right, transparent 0, #000 32px, #000 calc(100% - 32px), transparent 100%);
+    mask-image: linear-gradient(to right, transparent 0, #000 32px, #000 calc(100% - 32px), transparent 100%);
+  }
+
   /* Basting stitch divider with bar-tack ends. */
   .basting {
     height: 1px;
@@ -279,6 +321,34 @@
   .plate-ink {
     border: 1px solid var(--color-text);
     box-shadow: 1px 1px 0 0 var(--color-text);
+  }
+
+  /* The primary button's hover, as the contract has specified it since
+     ratification (§7: "hover slides a 2px carmine underline under the label").
+     What actually shipped was `hover:opacity-90` — a button that answers a
+     pointer by fading looks disabled, not live, and it was the same gesture on
+     every tone. The rule is drawn in `--color-accent-on-ink`: the accent stated
+     against the PRIMARY FILL rather than against the page, since that fill is
+     ink in the light rooms and chalk in the dark one, and one hex cannot be
+     legible on both. */
+  .btn-underline {
+    position: relative;
+  }
+  .btn-underline::after {
+    content: '';
+    position: absolute;
+    left: 16px;
+    right: 16px;
+    bottom: 9px;
+    height: 2px;
+    background: var(--color-accent-on-ink);
+    transform: scaleX(0);
+    transform-origin: left center;
+    transition: transform 160ms ease-out;
+  }
+  .btn-underline:hover::after,
+  .btn-underline:focus-visible::after {
+    transform: scaleX(1);
   }
 
   /* Chalk registration crosses at card corners on hover/selection. */

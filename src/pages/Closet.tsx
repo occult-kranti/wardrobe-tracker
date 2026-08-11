@@ -4,7 +4,7 @@ import { useWardrobe } from '../context/WardrobeContext';
 import ItemDetail from '../components/ItemDetail';
 import AddItemModal from '../components/AddItemModal';
 import { showToast } from '../components/Toast';
-import { Button, IconButton, Chip, Masthead, Modal, EmptyState } from '../components/ui';
+import { Button, IconButton, Chip, Masthead, Modal, EmptyState, TagRail } from '../components/ui';
 import {
   IconSearch, IconClose, IconCheck, IconPin, IconFilter, IconMenu,
   IconDown, IconUp, IconWash, IconPatch, IconPlus,
@@ -444,44 +444,49 @@ export default function Closet() {
             </button>
           </div>
 
-          {/* Category chips — user taxonomy, quiet ones withheld by default. */}
-          <div className="flex gap-2 overflow-x-auto pb-1 -mb-1">
-            <Chip selected={!activeCategory} onClick={() => setCategoryParam(null)}>
-              Everything
-            </Chip>
-            {chipCategories.map(cat => (
-              <Chip
-                key={cat.id}
-                selected={activeCategory === cat.id}
-                onClick={() => setCategoryParam(activeCategory === cat.id ? null : cat.id)}
-                title={cat.quiet ? 'Quiet category' : undefined}
-              >
-                {cat.label}
+          {/* Two rails, held together as one deck: what a piece IS, then where
+              it currently is. Kept 8px apart and 20px clear of the grid so they
+              read as two questions rather than one wall of chips. */}
+          <div className="space-y-2">
+            {/* Category — the user's own taxonomy, quiet ones withheld by default. */}
+            <TagRail label="Filter by category">
+              <Chip selected={!activeCategory} onClick={() => setCategoryParam(null)}>
+                Everything
               </Chip>
-            ))}
-          </div>
+              {chipCategories.map(cat => (
+                <Chip
+                  key={cat.id}
+                  selected={activeCategory === cat.id}
+                  onClick={() => setCategoryParam(activeCategory === cat.id ? null : cat.id)}
+                  title={cat.quiet ? 'Quiet category' : undefined}
+                >
+                  {cat.label}
+                </Chip>
+              ))}
+            </TagRail>
 
-          {/* Bench states — ready through the mending pile. */}
-          <div className="flex gap-2 overflow-x-auto pb-1 -mb-1">
-            <Chip selected={benchFilter === ''} onClick={() => setBenchFilter('')}>
-              All {browsable.length}
-            </Chip>
-            {LAUNDRY_ORDER.map(status => (
-              <Chip
-                key={status}
-                selected={benchFilter === status}
-                onClick={() => setBenchFilter(benchFilter === status ? '' : status)}
-              >
-                {LAUNDRY_LABELS[status]} {benchCounts[status] ?? 0}
+            {/* Bench states — ready through the mending pile. */}
+            <TagRail label="Filter by state">
+              <Chip selected={benchFilter === ''} onClick={() => setBenchFilter('')}>
+                All {browsable.length}
               </Chip>
-            ))}
-            <Chip
-              selected={benchFilter === 'mending'}
-              onClick={() => setBenchFilter(benchFilter === 'mending' ? '' : 'mending')}
-              title="Needs repair and at the tailor"
-            >
-              Mending pile {benchCounts.mending}
-            </Chip>
+              {LAUNDRY_ORDER.map(status => (
+                <Chip
+                  key={status}
+                  selected={benchFilter === status}
+                  onClick={() => setBenchFilter(benchFilter === status ? '' : status)}
+                >
+                  {LAUNDRY_LABELS[status]} {benchCounts[status] ?? 0}
+                </Chip>
+              ))}
+              <Chip
+                selected={benchFilter === 'mending'}
+                onClick={() => setBenchFilter(benchFilter === 'mending' ? '' : 'mending')}
+                title="Needs repair and at the tailor"
+              >
+                Mending pile {benchCounts.mending}
+              </Chip>
+            </TagRail>
           </div>
 
           {showFilters && (

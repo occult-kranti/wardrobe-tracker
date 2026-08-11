@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useWardrobe } from '../context/WardrobeContext';
 import { addDays, formatLocalDate, isFutureDate, todayLocal } from '../lib/dates';
 import type { ClothingItem, Outfit, WearLog } from '../types';
-import { Button, Card, EmptyState, IconButton, Masthead, Modal, SectionTitle } from '../components/ui';
+import { Button, Card, EmptyState, IconButton, Masthead, Modal, SectionTitle, TagRail } from '../components/ui';
 import {
   IconArrowRight, IconChevronLeft, IconChevronRight, IconEyelet, IconEyeletFilled, IconPlus,
 } from '../components/icons';
@@ -335,7 +335,7 @@ export default function Calendar() {
                 An outfit here goes down for the next open day on this page —{' '}
                 {openDay === today ? 'today' : longDate(openDay)}.
               </p>
-              <div className="flex gap-2 overflow-x-auto pb-1">
+              <TagRail label="Outfits you can put down for this day">
                 {scheduleOrder.map(outfit => {
                   const members = outfit.itemIds
                     .map(id => byId.get(id))
@@ -359,7 +359,7 @@ export default function Calendar() {
                     </button>
                   );
                 })}
-              </div>
+              </TagRail>
             </>
           ) : (
             <p className="text-[14px] text-text-2 leading-snug">

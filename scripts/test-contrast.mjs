@@ -31,29 +31,46 @@ for (const theme of ['light','dark','salon']) {
       bg:g('--color-bg'), surface:g('--color-surface'), sunken:g('--color-sunken'), mat:g('--color-mat'),
       text:g('--color-text'), text2:g('--color-text-2'), accent:g('--color-accent'),
       accentFill:g('--color-accent-fill'), onAccent:g('--color-on-accent'),
+      accentOnInk:g('--color-accent-on-ink'),
       dangerFill:g('--color-danger-fill'), chalk:g('--color-chalk'),
       inkFill:g('--color-ink-fill'), onInk:g('--color-on-ink'),
+      border:g('--color-border'),
     };
   }, theme);
   const hex = s => s.startsWith('#') ? [1,3,5].map(i=>parseInt(s.slice(i,i+2),16)) : parse(s);
+  // Text pairs answer to AA 4.5:1. The last group is not text: WCAG 1.4.11 sets
+  // 3:1 for graphical objects and interface component boundaries, and holding a
+  // 2px rule or a hairline to the text bar would only push the palette darker
+  // for no legibility gained.
   const pairs = [
-    ['text/bg', t.text, t.bg], ['text/surface', t.text, t.surface],
-    ['text-2/bg', t.text2, t.bg], ['text-2/surface', t.text2, t.surface],
-    ['text-2/sunken', t.text2, t.sunken], ['text/mat', t.text, t.mat],
-    ['accent/bg', t.accent, t.bg], ['accent/sunken', t.accent, t.sunken],
-    ['on-accent/accent-fill', t.onAccent, t.accentFill],
-    ['chalk/danger-fill', t.chalk, t.dangerFill],
-    ['on-ink/ink-fill', t.onInk, t.inkFill],
+    ['text/bg', t.text, t.bg, 4.5], ['text/surface', t.text, t.surface, 4.5],
+    ['text-2/bg', t.text2, t.bg, 4.5], ['text-2/surface', t.text2, t.surface, 4.5],
+    ['text-2/sunken', t.text2, t.sunken, 4.5], ['text/mat', t.text, t.mat, 4.5],
+    ['accent/bg', t.accent, t.bg, 4.5], ['accent/sunken', t.accent, t.sunken, 4.5],
+    ['accent/surface', t.accent, t.surface, 4.5],
+    ['on-accent/accent-fill', t.onAccent, t.accentFill, 4.5],
+    ['chalk/danger-fill', t.chalk, t.dangerFill, 4.5],
+    ['on-ink/ink-fill', t.onInk, t.inkFill, 4.5],
+    // non-text
+    ['accent-on-ink/ink-fill *', t.accentOnInk, t.inkFill, 3],
+    // Measured but never a gate: a chalk hairline is decorative, always paired
+    // with layering or a label, and no WCAG clause governs it. It is printed so
+    // a theme author can see how faint their border really is — the light room's
+    // is the faintest in the house — without a number nobody agreed on failing
+    // the build.
+    ['border/bg (fyi)', t.border, t.bg, null],
   ];
-  const rows = pairs.map(([n,a,c]) => [n, ratio(hex(a), hex(c))]);
-  const min = rows.reduce((m,r) => r[1] < m[1] ? r : m);
-  const fails = rows.filter(r => r[1] < 4.5);
-  for (const [n, r] of rows) {
-    console.log(r >= 4.5 ? 'PASS' : 'FAIL', '-', `${theme}: ${n}`, `(${r.toFixed(2)}:1)`);
+  const rows = pairs.map(([n,a,c,min]) => [n, ratio(hex(a), hex(c)), min]);
+  const gated = rows.filter(r => r[2] !== null);
+  const worst = gated.reduce((m,r) => (r[1]/r[2]) < (m[1]/m[2]) ? r : m);
+  const fails = gated.filter(r => r[1] < r[2]);
+  for (const [n, r, min] of rows) {
+    if (min === null) console.log('    ', '-', `${theme}: ${n}`, `(${r.toFixed(2)}:1)`);
+    else console.log(r >= min ? 'PASS' : 'FAIL', '-', `${theme}: ${n}`, `(${r.toFixed(2)}:1, floor ${min})`);
   }
-  console.log(`  ${theme} tightest: ${min[0]} at ${min[1].toFixed(2)}:1`);
+  console.log(`  ${theme} tightest against its own floor: ${worst[0]} at ${worst[1].toFixed(2)}:1 (floor ${worst[2]})`);
   failed += fails.length;
 }
 await b.close();
-console.log(failed === 0 ? 'ALL THEMES PASS AA 4.5:1' : `${failed} PAIRS BELOW AA`);
+console.log(failed === 0 ? 'ALL THEMES PASS (text 4.5:1, * non-text per WCAG 1.4.11)' : `${failed} PAIRS BELOW THEIR FLOOR`);
 process.exit(failed ? 1 : 0);

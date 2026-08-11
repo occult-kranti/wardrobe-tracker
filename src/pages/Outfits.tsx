@@ -6,7 +6,7 @@ import { todayLocal } from '../lib/dates';
 import { ShareSheet } from '../components/ShareSheet';
 import { categoryLabel, displayTag, type ClothingItem, type Outfit, type ShareScope } from '../types';
 import {
-  Button, Card, Chip, EmptyState, Field, IconButton, Masthead, SectionTitle, inputClass,
+  Button, Card, Chip, EmptyState, Field, IconButton, Masthead, SectionTitle, TagRail, inputClass,
 } from '../components/ui';
 import {
   IconCheck, IconClose, IconEyeletFilled, IconPin, IconPlus, IconShears,
@@ -135,11 +135,11 @@ function OutfitCard({
 
       {members.length > 0 ? (
         <>
-          <div className="flex gap-1.5 mt-4 overflow-x-auto pb-1">
+          <TagRail label={`Pieces in ${outfit.name}`} className="gap-1.5 mt-4">
             {members.map(item => (
               <Thumb key={item.id} item={item} alt={item.name} className="w-14 h-[70px] shrink-0" />
             ))}
-          </div>
+          </TagRail>
           <p className="text-[13px] text-text-2 mt-2 leading-snug line-clamp-2">
             {names.slice(0, 3).join(' · ')}
             {names.length > 3 ? ` · +${names.length - 3}` : ''}

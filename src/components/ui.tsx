@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ButtonHTMLAttributes, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ButtonHTMLAttributes, type ReactNode } from 'react';
 import { IconClose, IconEyelet, IconEyeletFilled } from './icons';
 
 /**
@@ -15,11 +15,16 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const toneClasses: Record<ButtonTone, string> = {
-  // ink fill / cream label; inverts to chalk-on-ink in dark
-  primary: 'bg-ink text-on-ink hover:opacity-90',
-  // the reserved carmine — log-wear actions only
+  // Ink fill / cream label; inverts to chalk-on-ink in dark. Hover slides a 2px
+  // accent rule in under the label (contract §7) — the shipped version faded the
+  // whole button to 90% opacity instead, which is the gesture for *disabled*.
+  primary: 'bg-ink text-on-ink btn-underline',
+  // the reserved accent fill — log-wear actions only
   hero: 'bg-accent-fill text-on-accent hover:brightness-110',
-  secondary: 'border border-text text-text hover:bg-sunken',
+  // §7: "hover gains corner crosses" — `.registered` is that exact motif, and it
+  // was already in the stylesheet, used on cards but never on the button it was
+  // written for.
+  secondary: 'border border-text text-text hover:bg-sunken registered',
   tertiary: 'text-accent underline underline-offset-[3px] decoration-1 hover:decoration-2 px-1',
   // --color-danger is a TEXT token (light pink in dark mode); filling with it put
   // a chalk label at roughly 2:1 on the one button that wipes everything.
@@ -101,6 +106,67 @@ export function Chip({
     <button type="button" onClick={onClick} aria-pressed={selected} className={cls} title={title}>
       {inner}
     </button>
+  );
+}
+
+/**
+ * A tag rail: one line of chips that runs off the edge of the page.
+ *
+ * It replaces `flex gap-2 overflow-x-auto pb-1 -mb-1`, which was wrong twice
+ * over. Tailwind v4 emits `space-y-5` as
+ * `:where(.space-y-5 > :not(:last-child)) { margin-block-end: 20px }` — a
+ * ZERO-specificity selector — so the `-mb-1` utility beside it did not trim
+ * that gap, it REPLACED it. Measured in the browser, the closet's second filter
+ * row began at y=219 while the first ended at y=223: the rows overlapped by
+ * 4px. On any platform whose scrollbars are classic rather than overlay, the
+ * 15px OS scrollbar was then drawn inside that overlap, landing on top of the
+ * row below — which is exactly what the bug report showed.
+ *
+ * So a rail owns its own scrollbar (none — a grey OS widget with arrow buttons
+ * is a foreign object in a letterpress interface; shift-wheel, drag and Tab all
+ * still work) and its own edges, and never negotiates margins with a sibling.
+ * A rail with more to show fades at that edge instead of guillotining a chip
+ * mid-word, which is the honest signal that the row continues.
+ */
+export function TagRail({
+  children,
+  label,
+  className = '',
+}: {
+  children: ReactNode;
+  label: string;
+  className?: string;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [edge, setEdge] = useState<'none' | 'start' | 'end' | 'both'>('none');
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const read = () => {
+      const slack = el.scrollWidth - el.clientWidth;
+      if (slack <= 1) return setEdge('none');
+      const atStart = el.scrollLeft <= 1;
+      const atEnd = el.scrollLeft >= slack - 1;
+      setEdge(atStart ? 'end' : atEnd ? 'start' : 'both');
+    };
+    read();
+    el.addEventListener('scroll', read, { passive: true });
+    // The chips arrive with the data, and the rail is inside a resizable column,
+    // so neither the content width nor the container width is known at mount.
+    const ro = new ResizeObserver(read);
+    ro.observe(el);
+    for (const child of Array.from(el.children)) ro.observe(child);
+    return () => {
+      el.removeEventListener('scroll', read);
+      ro.disconnect();
+    };
+  }, [children]);
+
+  return (
+    <div ref={ref} data-edge={edge} role="group" aria-label={label} className={`tag-rail ${className}`}>
+      {children}
+    </div>
   );
 }
 
