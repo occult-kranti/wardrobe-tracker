@@ -102,6 +102,7 @@ export const DEFAULT_CATEGORIES: UserCategory[] = [
   { id: 'layers', label: 'Layers' },
   { id: 'outerwear', label: 'Outerwear' },
   { id: 'shoes', label: 'Shoes' },
+  { id: 'jewellery', label: 'Jewellery' },
   { id: 'accessories', label: 'Accessories' },
 ];
 
@@ -119,7 +120,9 @@ export const initialState: AppState = {
   settings: {
     categories: DEFAULT_CATEGORIES,
     occasions: DEFAULT_OCCASIONS,
-    theme: 'system',
+    // Dark by default — cataloguing happens at night, and it is the look this
+    // wardrobe's owner asked for twice. Light paper stays one tap away.
+    theme: 'dark',
   },
 };
 

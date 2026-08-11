@@ -240,6 +240,7 @@ export function GarmentPlate({ categoryId, color }: { categoryId: string; color?
     layers: <path d="M28 16L18 24v62h44V24l-10-8M28 16l12 12 12-12M40 28v58" />,
     outerwear: <path d="M28 16L12 26l6 20h4v40h36V46h4l6-20-16-10M28 16l12 12 12-12M40 28v58" />,
     shoes: <path d="M10 70h68v12H10zM10 70V48h16l12 10h24c8 0 16 4 16 12" />,
+    jewellery: <path d="M18 22c0 26 10 38 22 38s22-12 22-38M40 60v10M40 70l9 9-9 9-9-9z" />,
     accessories: <path d="M16 34h48v52H16zM30 34V22a10 10 0 0120 0v12M16 50h48" />,
   };
   const flat = flats[categoryId] ?? flats.accessories;

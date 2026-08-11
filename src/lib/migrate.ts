@@ -89,7 +89,7 @@ export function migrate(raw: unknown): AppState {
       ...storedSettings,
       categories: adopted,
       occasions: [...occasionSet],
-      theme: (storedSettings.theme as AppState['settings']['theme']) ?? 'system',
+      theme: (storedSettings.theme as AppState['settings']['theme']) ?? 'dark',
     },
   } as AppState;
 }

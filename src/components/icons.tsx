@@ -105,6 +105,16 @@ export const IconShoe = (p: IconProps) => (
   </Icon>
 );
 
+export const IconJewellery = (p: IconProps) => (
+  <Icon {...p}>
+    {/* necklace flat: chain arc, clasp, pendant drop — drawn on the table, no neck */}
+    <path d="M5.5 5.5c0 6.5 2.9 9.5 6.5 9.5s6.5-3 6.5-9.5" />
+    <path d="M12 15v2.5" />
+    <path d="M12 17.5l2.5 2.5L12 22.5 9.5 20z" />
+    <Notch x={18} y={4.5} />
+  </Icon>
+);
+
 export const IconAccessory = (p: IconProps) => (
   <Icon {...p}>
     {/* tote flat: gusset, handles */}
@@ -377,6 +387,7 @@ export const CATEGORY_ICONS: Record<string, (p: IconProps) => React.ReactElement
   layers: IconLayer,
   outerwear: IconOuterwear,
   shoes: IconShoe,
+  jewellery: IconJewellery,
   accessories: IconAccessory,
 };
 
