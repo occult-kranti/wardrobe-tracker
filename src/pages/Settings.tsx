@@ -451,7 +451,7 @@ export default function Settings() {
           title="Paper"
           body="Five rooms in the same building: the pattern room where cloth is cut, the salon where a collection is shown, the gilding room where the gold leaf is laid, the dye house where the madder vats stain the walls rose, and the atelier at night. System follows the device. The choice belongs to this screen, not to a wardrobe, so it holds when you open a different one."
           control={
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               {THEMES.map(opt => (
                 <Toggle
                   key={opt.value}

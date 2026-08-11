@@ -5,7 +5,7 @@ import {
   IconWishlist, IconCompare, IconRail, IconSettings, IconPlus, IconTheme, IconMenu, IconClose,
   IconEvents, IconFeed, IconChats, IconProfile,
 } from './icons';
-import { Wordmark, TagMark } from './art';
+import { GroundFrieze, Wordmark, TagMark } from './art';
 import { useWardrobe } from '../context/WardrobeContext';
 import { useSession } from '../context/SessionContext';
 import AddItemModal from './AddItemModal';
@@ -69,6 +69,10 @@ export default function Layout() {
 
   return (
     <div className="flex min-h-screen bg-bg pattern-paper">
+      {/* The seven closets, standing behind the paper with the owner's name
+          over each in its own language. First in the DOM and z-0; the content
+          column sits at z-10 and scrolls past. */}
+      <GroundFrieze name={active?.name} />
       {/* Mobile masthead */}
       <header className="lg:hidden fixed top-0 inset-x-0 z-50 bg-bg/95 backdrop-blur-sm border-b border-border">
         <div className="flex items-center justify-between h-14 px-4">
@@ -148,7 +152,7 @@ export default function Layout() {
       </aside>
 
       {/* Main */}
-      <main className="flex-1 min-w-0 pt-14 lg:pt-0 pb-20 lg:pb-0">
+      <main className="relative z-10 flex-1 min-w-0 pt-14 lg:pt-0 pb-20 lg:pb-0">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-10 py-6 lg:py-10">
           <Outlet />
         </div>

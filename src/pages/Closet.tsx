@@ -590,7 +590,7 @@ export default function Closet() {
           )}
 
           {filteredItems.length > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-7">
+            <div className="bg-surface plate rounded-[2px] p-4 sm:p-5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-7">
               {filteredItems.map(item => (
                 <ClosetCard
                   key={item.id}

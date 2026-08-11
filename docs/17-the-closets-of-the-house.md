@@ -61,3 +61,32 @@ The standing rules hold throughout: no ornament behind a photograph (§6.1 — t
 artwork surrounds the photo grid, the mats stay flat), metals are decorative
 and never text (§2), no room is named for a person (§2.7), and the script
 typography names furniture, never people.
+
+
+## Superseded the same day: the frieze
+
+The owner asked for more than one piece per room, and for the owner's own name
+in the art. So the per-room pairs became **one frieze of all seven cultures** —
+tansu, armoire, sandook, almirah, wardrobe, and two new pieces: the Chinese
+**yìguì** compound cabinet (twin doors, the great round brass lockplate) and the
+Korean **bandaji** blanket chest (drop-front door, iron hinge plates, nailhead
+studs) — standing in a row behind every page, largest overlap at the shoulders,
+the way furniture actually stands in a godown.
+
+Over each piece, the open wardrobe's own name in that culture's language:
+*Meher's wardrobe · L'armoire de Meher · Meher की अलमारी · Meherの箪笥 ·
+صندوق Meher · Meher的衣柜 · Meher의 반닫이.* Because the name is in the art,
+the frieze is a live component (`GroundFrieze` in art.tsx), not CSS — and it
+recolours per room through a single new token, `--color-artline`: gold ochre in
+the pattern room, antique brass in the salon, the leaf in the gilding room,
+**silver** in the atelier at night, **bronze** in the dye house. One artwork,
+five colour theories, which is what was asked: "just need to change the color
+theory for each theme."
+
+In the same pass, the elements gained their own ground: the closet and outfit
+photo grids now sit on a muslin plate (which §6.1 had always technically
+required — the pattern crosses were ornament behind the photo grid), picking up
+the kakemono mounting and Mughal corners in the rooms that carry them; and the
+primary and hero buttons carry a **zari weave** — a diaper of thread-dots in the
+fill's own label colour at 12%, drawn with token-following gradients so it holds
+in all five rooms and shifts no measured ratio.

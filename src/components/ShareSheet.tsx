@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useSession } from '../context/SessionContext';
-import { Button, Field, Modal, inputClass } from './ui';
+import { Button, Field, Modal, inputClass, selectClass } from './ui';
 import { Basting } from './art';
 import { LookCard } from './social';
 import { SCOPE_LABELS, type ShareScope, type SharedLook } from '../types';
@@ -100,7 +100,7 @@ export function ShareSheet({
           <Field label="Which wardrobe" htmlFor="share-person">
             <select
               id="share-person"
-              className={inputClass}
+              className={selectClass}
               value={scope.accountId}
               onChange={e => setScope({ kind: 'person', accountId: e.target.value })}
             >
@@ -117,7 +117,7 @@ export function ShareSheet({
           <Field label="Which conversation" htmlFor="share-thread">
             <select
               id="share-thread"
-              className={inputClass}
+              className={selectClass}
               value={scope.conversationId}
               onChange={e => setScope({ kind: 'conversation', conversationId: e.target.value })}
             >
@@ -134,8 +134,9 @@ export function ShareSheet({
       ) : null}
 
       <div className="mt-5">
-        <Field label="A line with it" hint="Optional. What it was for, or what it did.">
+        <Field label="A line with it" htmlFor="share-caption" hint="Optional. What it was for, or what it did.">
           <input
+            id="share-caption"
             className={inputClass}
             value={caption}
             onChange={e => setCaption(e.target.value)}

@@ -87,6 +87,75 @@ export function WaxSeal({ size = 44, label = 'T' }: { size?: number; label?: str
   );
 }
 
+
+/* ---------------- the ground frieze ---------------- */
+
+import { FRIEZE_PIECES } from '../lib/friezeArt';
+
+/**
+ * Seven cultures of keeping clothes, standing in a row behind the page — and
+ * over each piece, the open wardrobe's own name written in that culture's
+ * language: Meher's wardrobe, L'armoire de Meher, Meher की अलमारी, Meherの箪笥,
+ * صندوق Meher, Meher的衣柜, Meher의 반닫이.
+ *
+ * A live component rather than CSS background, because the NAME is in the art.
+ * Stroked entirely in var(--color-artline), so each room recolours the whole
+ * frieze through one token: gold ochre in the pattern room, antique brass in
+ * the salon, the leaf in the gilding room, SILVER in the atelier at night,
+ * bronze in the dye house. Fixed to the viewport bottom, aria-hidden, behind
+ * the content (which sits at z-10); desktop only — at phone widths the frieze
+ * would be all overlap and no room.
+ */
+const FRIEZE_ORDER: Array<{ piece: string; native: (n: string) => string; roman: string | null }> = [
+  { piece: 'tansu', native: n => `${n}の箪笥`, roman: 'TANSU' },
+  { piece: 'armoire', native: n => `L'armoire de ${n}`, roman: null },
+  { piece: 'sandook', native: n => `صندوق ${n}`, roman: 'SANDOOK' },
+  { piece: 'almirah', native: n => `${n} की अलमारी`, roman: 'ALMIRAH' },
+  { piece: 'wardrobe', native: n => `${n}'s wardrobe`, roman: null },
+  { piece: 'yigui', native: n => `${n}的衣柜`, roman: 'YIGUI' },
+  { piece: 'bandaji', native: n => `${n}의 반닫이`, roman: 'BANDAJI' },
+];
+
+function escapeXml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+export function GroundFrieze({ name }: { name?: string }) {
+  const first = escapeXml((name ?? 'Toile').trim().split(/\s+/)[0] || 'Toile');
+  const parts: string[] = [];
+  FRIEZE_ORDER.forEach((entry, i) => {
+    const x = i * 208;
+    const cx = x + 143;
+    parts.push(`<g transform='translate(${x} 122) scale(0.62)'>${FRIEZE_PIECES[entry.piece]}</g>`);
+    parts.push(
+      `<text x='${cx}' y='158' text-anchor='middle' font-family='serif' font-size='24' ` +
+        `fill='var(--color-artline)' fill-opacity='0.30'>${entry.native(first)}</text>`
+    );
+    if (entry.roman) {
+      parts.push(
+        `<text x='${cx}' y='186' text-anchor='middle' font-family='Georgia, serif' font-size='17' ` +
+          `letter-spacing='4' fill='var(--color-artline)' fill-opacity='0.22'>${entry.roman}</text>`
+      );
+    }
+  });
+  const svg =
+    `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1534 470' width='1534' height='470' ` +
+    `style='display:block'>${parts.join('')}</svg>`;
+  return (
+    <div
+      aria-hidden="true"
+      className="hidden lg:flex fixed bottom-0 inset-x-0 z-0 pointer-events-none overflow-hidden justify-end"
+      dangerouslySetInnerHTML={{ __html: svg }}
+    />
+  );
+}
+
+
 /* ---------------- empty-state plates ---------------- */
 
 const plateStroke = {

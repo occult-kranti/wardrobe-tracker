@@ -194,3 +194,16 @@ chosen rather than forgotten:
   (gold, rose) render on zero surfaces. The gilding room now demonstrates what
   a ground that carries its own character looks like; the salon deserves the
   same treatment or an honest merge.
+
+## Held from the element consult (2026-08-11)
+
+Applied: theme-picker wrap, done-event opacity, the sub-44px delete link, the
+three native-chrome selects, sr-only file-input tab stop, group-name and
+caption field pairing, three sub-floor interactive labels, pin unification with
+aria-pressed, IconButton disabled treatment, LinkButton's tertiary underline.
+Still open, by choice:
+- Form-wrapping the three composers (EventComposer, ask-a-piece, ShareSheet)
+  so Enter submits like every other composer.
+- A focus-within ring on Before You Buy's sr-only colour input.
+- The six hand-rolled tertiary links (Settings ×2, Wishlist, Feed, Profile)
+  → Button/LinkButton tone="tertiary" now that its underline survives.

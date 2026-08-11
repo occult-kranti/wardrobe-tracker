@@ -589,13 +589,9 @@ export default function Dashboard() {
                 </div>
 
                 {pool.length > 0 && !showAll ? (
-                  <button
-                    type="button"
-                    onClick={() => setShowAll(true)}
-                    className="type-ledger text-[10px] text-text-2 hover:text-text mt-3 h-11 inline-flex items-center transition-colors duration-150"
-                  >
+                  <Button tone="tertiary" className="mt-3" onClick={() => setShowAll(true)}>
                     Show everything in the closet
-                  </button>
+                  </Button>
                 ) : null}
               </>
             )}

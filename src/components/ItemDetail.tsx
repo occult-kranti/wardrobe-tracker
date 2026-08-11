@@ -14,7 +14,7 @@ import {
 import { daysSince } from '../lib/dates';
 import { costPerWear, formatMoney, formatPerWear } from '../lib/cost';
 import { findSimilarItems, wearContext } from '../lib/similarity';
-import { Button, Chip, Modal, SectionTitle, Stat, inputClass, selectClass } from './ui';
+import { Button, Chip, IconButton, Modal, SectionTitle, Stat, inputClass, selectClass } from './ui';
 import { Basting, GarmentPlate } from './art';
 import { IconPin } from './icons';
 import { showToast } from './Toast';
@@ -137,18 +137,14 @@ export default function ItemDetail({ itemId, onClose }: Props) {
           <div>
             <Thumb item={item} className="w-full aspect-[4/5]" />
             <div className="flex items-center gap-1 mt-1">
-              <button
-                type="button"
-                onClick={() => toggleFavoriteItem(item.id)}
+              <IconButton
+                label={item.favorite ? 'Unpin this piece' : 'Pin this piece'}
                 aria-pressed={item.favorite}
-                aria-label={item.favorite ? 'Unpin this piece' : 'Pin this piece'}
-                title={item.favorite ? 'Unpin this piece' : 'Pin this piece'}
-                className={`w-11 h-11 inline-flex items-center justify-center rounded-[2px] transition-colors duration-150 ${
-                  item.favorite ? 'text-accent' : 'text-text-2 hover:text-text hover:bg-sunken'
-                }`}
+                active={item.favorite}
+                onClick={() => toggleFavoriteItem(item.id)}
               >
                 <IconPin size={18} />
-              </button>
+              </IconButton>
               <span className="type-ledger text-[11px] text-text-2">
                 {item.favorite ? 'Pinned' : 'Pin'}
               </span>
@@ -472,13 +468,9 @@ export default function ItemDetail({ itemId, onClose }: Props) {
                       </Button>
                     </div>
                   ) : (
-                    <button
-                      type="button"
-                      onClick={() => setConfirmDelete(true)}
-                      className="text-[13px] text-text-2 underline underline-offset-[3px] decoration-1 hover:text-text"
-                    >
+                    <Button tone="tertiary" onClick={() => setConfirmDelete(true)}>
                       Added by mistake? Delete instead
-                    </button>
+                    </Button>
                   )}
                 </div>
               </div>

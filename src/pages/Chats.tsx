@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useSession } from '../context/SessionContext';
 import { useWardrobe } from '../context/WardrobeContext';
-import { Button, Card, EmptyState, Field, LinkButton, Masthead, Modal, SectionTitle, inputClass } from '../components/ui';
+import { Button, Card, EmptyState, Field, LinkButton, Masthead, Modal, SectionTitle, inputClass, selectClass } from '../components/ui';
 import { Basting, PlateEmptyWishlist } from '../components/art';
 import { IconChevronLeft, IconPlus } from '../components/icons';
 import { AccountMark, LookCard, PieceCard, shortDate } from '../components/social';
@@ -174,8 +174,8 @@ export default function Chats() {
         </ul>
         {picked.length > 1 ? (
           <div className="mt-4">
-            <Field label="Name this group" hint="Optional. Their names are used otherwise.">
-              <input className={inputClass} value={groupName} onChange={e => setGroupName(e.target.value)} placeholder="The Rail" />
+            <Field label="Name this group" htmlFor="group-name" hint="Optional. Their names are used otherwise.">
+              <input id="group-name" className={inputClass} value={groupName} onChange={e => setGroupName(e.target.value)} placeholder="The Rail" />
             </Field>
           </div>
         ) : null}
@@ -342,17 +342,13 @@ export function ChatThread() {
         {attached.look ? (
           <div className="mb-3 max-w-[280px]">
             <LookCard look={attached.look} compact />
-            <button type="button" onClick={() => setAttached({})} className="type-ledger text-[11px] text-accent underline underline-offset-[3px] min-h-11">
-              Take it off
-            </button>
+            <Button tone="tertiary" onClick={() => setAttached({})}>Take it off</Button>
           </div>
         ) : null}
         {attached.piece ? (
           <div className="mb-3 max-w-[280px]">
             <PieceCard piece={attached.piece} />
-            <button type="button" onClick={() => setAttached({})} className="type-ledger text-[11px] text-accent underline underline-offset-[3px] min-h-11">
-              Take it off
-            </button>
+            <Button tone="tertiary" onClick={() => setAttached({})}>Take it off</Button>
           </div>
         ) : null}
 
@@ -383,7 +379,7 @@ export function ChatThread() {
         </p>
         <div className="space-y-5 mt-5">
           <Field label="Whose piece" htmlFor="ask-owner">
-            <select id="ask-owner" className={inputClass} value={askOwner} onChange={e => setAskOwner(e.target.value)}>
+            <select id="ask-owner" className={selectClass} value={askOwner} onChange={e => setAskOwner(e.target.value)}>
               {others.map(a => a ? <option key={a.id} value={a.id}>{a.name}</option> : null)}
             </select>
           </Field>

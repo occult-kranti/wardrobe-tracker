@@ -19,11 +19,11 @@ const toneClasses: Record<ButtonTone, string> = {
   // Ink fill / cream label; inverts to chalk-on-ink in dark. Hover slides a 2px
   // accent rule in under the label (contract §7) — the shipped version faded the
   // whole button to 90% opacity instead, which is the gesture for *disabled*.
-  primary: 'bg-ink text-on-ink btn-underline',
+  primary: 'bg-ink text-on-ink btn-underline btn-weave',
   // The reserved accent fill — log-wear actions only. Hover slides the same
   // 2px rule as primary, stated in on-accent; brightness-110 was outside the
   // motion vocabulary and dropped the label from 6.98:1 toward 6.0.
-  hero: 'bg-accent-fill text-on-accent btn-underline [--btn-underline-color:var(--color-on-accent)]',
+  hero: 'bg-accent-fill text-on-accent btn-underline btn-weave [--btn-underline-color:var(--color-on-accent)] [--btn-weave-color:var(--color-on-accent)]',
   // §7: "hover gains corner crosses" — `.registered` is that exact motif, and it
   // was already in the stylesheet, used on cards but never on the button it was
   // written for.
@@ -76,7 +76,7 @@ export function LinkButton({
   className?: string;
 }) {
   return (
-    <Link to={to} className={buttonClass(tone, compact, `no-underline ${className}`)}>
+    <Link to={to} className={buttonClass(tone, compact, `${tone === 'tertiary' ? '' : 'no-underline'} ${className}`)}>
       {icon}
       {children}
     </Link>
@@ -95,7 +95,7 @@ export function IconButton({
     <button
       aria-label={label}
       title={label}
-      className={`w-11 h-11 inline-flex items-center justify-center rounded-[2px] transition-colors duration-150 ${
+      className={`w-11 h-11 inline-flex items-center justify-center rounded-[2px] transition-colors duration-150 disabled:opacity-40 disabled:pointer-events-none ${
         active ? 'bg-ink text-on-ink' : 'text-text-2 hover:text-text hover:bg-sunken'
       } ${className}`}
       {...rest}

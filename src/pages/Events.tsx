@@ -268,7 +268,10 @@ export default function Events() {
   }
 
   const renderEvent = (event: WardrobeEvent, done: boolean) => (
-    <Card key={event.id} className={done ? 'opacity-75' : ''}>
+    // Never opacity on the plate: it multiplies every child against the page
+    // ground, and in the gilding room it pushed text-2 to ~3.9:1. The date line
+    // already says '· done'.
+    <Card key={event.id}>
       <SectionTitle aside={whenLine(event)}>{event.name}</SectionTitle>
       <p className="type-ledger text-[11px] text-text-2 -mt-2 mb-4">
         {EVENT_LABELS[event.kind]}

@@ -237,7 +237,7 @@ export default function AddItemModal({ open, onClose }: Props) {
               id="add-item-photo"
               type="file"
               accept="image/*"
-              className="sr-only"
+              className="sr-only" tabIndex={-1}
               onChange={e => {
                 const file = e.target.files?.[0];
                 if (file) readPhoto(file);

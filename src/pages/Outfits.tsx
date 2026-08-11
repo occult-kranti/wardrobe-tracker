@@ -122,6 +122,7 @@ function OutfitCard({
         <div className="flex items-center shrink-0 -mt-2 -mr-2">
           <IconButton
             label={outfit.favorite ? `Unpin "${outfit.name}"` : `Pin "${outfit.name}"`}
+            aria-pressed={outfit.favorite}
             active={outfit.favorite}
             onClick={onToggleFavorite}
           >
@@ -614,7 +615,7 @@ export default function Outfits() {
 
       {/* ---------- saved outfits ---------- */}
       {sortedOutfits.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="bg-surface plate rounded-[2px] p-4 sm:p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
           {sortedOutfits.map(outfit => {
             const members = outfit.itemIds
               .map(id => byId.get(id))
