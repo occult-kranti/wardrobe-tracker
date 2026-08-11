@@ -224,6 +224,51 @@
    text-2/sunken at 5.22:1, 16% over AA. Full table in
    docs/15-the-gilding-room.md.
    ============================================================ */
+/* ============================================================
+   the dye house — the fifth room: the dark rose.
+
+   Where the cloth meets the madder vat. The owner asked for a dark-themed
+   rose; this is the honest house version of it — not the atelier tinted
+   pink, but the room where rose is MADE: walls stained plum by years of
+   madder steam, brass fittings, rose-chalk lettering. The ground carries
+   real chroma (0.032 at hue 3 — the atelier's ink cloth is near-neutral),
+   so the room reads rose the moment it opens.
+
+   Same physics as every room: the accent is washing blue chalked for a
+   plum ground, the wax keeps its dark-stated token, the mat lifts above
+   the ground so dark garments keep their edges, and gold is decorative
+   only. Tightest gate: seal on the vat ground at 3.21:1 against WCAG
+   1.4.11's 3:1. Full table in docs/16-the-dye-house.md.
+   ============================================================ */
+:root[data-theme="dyehouse"] {
+  --color-bg: #261318;           /* the vat room's stained wall */
+  --color-surface: #301A20;      /* pressed rosewood */
+  --color-mat: #3D262C;          /* lifted, so black garments keep their edges */
+  --color-sunken: #3A2129;
+  --color-bg-deep: #1B0C10;      /* the vat itself */
+  --color-text: #F5E4DE;         /* rose chalk (14.33:1 on bg) */
+  --color-text-2: #CBA49D;       /* 7.85:1 on bg, 6.53:1 on sunken */
+  --color-border: #6D453C;
+  --color-accent: #85C3DD;       /* washing blue chalked for plum (9.13:1) */
+  --color-accent-hover: #A0D1E6;
+  --color-accent-fill: #105F7D;
+  --color-on-accent: #FFFDF6;    /* 6.98:1 on the fill */
+  --color-accent-on-ink: #0E566E; /* stated on the rose-chalk ink fill (6.62:1) */
+  --color-seal: #CE1837;         /* the wax, dark-stated: 3.21:1 on bg, chalk T 5.17:1 */
+  --color-success: #66B18C;
+  --color-warning: #DCA94B;
+  --color-danger: #F2A3AC;       /* danger TEXT only */
+  --color-danger-fill: #8C1B32;  /* chalk label 8.50:1 */
+  --color-gold: #DCA75F;         /* bright brass — decorative only, never text */
+  --color-charcoal: #3A2129;
+  --color-chalk: #FFF6F0;
+  --color-ink-fill: #F5E4DE;     /* inverts: rose-chalk fill, plum label */
+  --color-on-ink: #261318;
+  --pattern-ink: 220, 167, 95;   /* the grid drawn in brass */
+  --pattern-alpha: 0.06;
+  color-scheme: dark;
+}
+
 :root[data-theme="gilt"] {
   --color-bg: #F3DCD4;           /* rose silk */
   --color-surface: #FAEEE7;      /* tissue over the leaf */
@@ -456,6 +501,20 @@
   /* The masthead's thin second rule is drawn in the leaf. */
   :root[data-theme="gilt"] .rule-double::after {
     background: color-mix(in srgb, var(--color-gold) 75%, transparent);
+  }
+
+  /* The dye house takes the same mounting, struck in brass on plum. The two
+     bold rooms carry the double frame; the quiet rooms stay plain. */
+  :root[data-theme="dyehouse"] .plate {
+    outline: 1px solid color-mix(in srgb, var(--color-gold) 30%, transparent);
+    outline-offset: 3px;
+  }
+  :root[data-theme="dyehouse"] .plate-ink {
+    outline: 1px solid color-mix(in srgb, var(--color-gold) 45%, transparent);
+    outline-offset: 3px;
+  }
+  :root[data-theme="dyehouse"] .rule-double::after {
+    background: color-mix(in srgb, var(--color-gold) 60%, transparent);
   }
 
   /* Basting stitch divider with bar-tack ends. */

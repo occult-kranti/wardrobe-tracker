@@ -15,7 +15,11 @@ When these rules conflict with a request, follow the rules and note the conflict
    accent-fill/accent-on-ink/seal/success/warning/danger/gold/charcoal/chalk`).
    Never introduce a raw hex in a component. Themes are set via `data-theme` on
    `<html>`, and EVERY room must declare EVERY token — an omitted one silently
-   inherits the light room's value, and `check-brand` fails on it.
+   inherits the light room's value, and `check-brand` fails on it. Five rooms:
+   light (pattern room) · salon · gilt (gilding room) · dyehouse (dye house) ·
+   dark (atelier). Adding a room touches: index.css, types.ts (Theme +
+   THEME_LABELS), accounts.ts loadTheme, Settings THEMES + copy, Layout cycle
+   order, check-brand rooms list, test-contrast themes list, and a docs/ entry.
 2. **Two reds and a blue.** `--color-seal` is sealing-wax carmine and paints
    exactly four things: the wax seal, the wordmark underline, the favicon, the
    recap card. `--color-accent` is washing blue and carries the whole interface.

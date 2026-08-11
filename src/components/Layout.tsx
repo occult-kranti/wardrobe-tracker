@@ -60,7 +60,7 @@ export default function Layout() {
 
   // Three rooms and the device's own choice, in order.
   const cycleTheme = () => {
-    const order = ['dark', 'salon', 'gilt', 'light', 'system'] as const;
+    const order = ['dark', 'dyehouse', 'salon', 'gilt', 'light', 'system'] as const;
     setTheme(order[(order.indexOf(theme as typeof order[number]) + 1) % order.length]);
   };
 
