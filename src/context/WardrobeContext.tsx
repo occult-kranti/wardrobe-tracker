@@ -11,9 +11,7 @@ import {
   type AppSettings,
   type CategoryId,
   type ClothingItem,
-  type Occasion,
   type Outfit,
-  type UserCategory,
   type WearLog,
   type WishlistItem,
 } from '../types';

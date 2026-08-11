@@ -1,8 +1,41 @@
-import { useState, useRef } from 'react';
-import { X, Camera } from 'lucide-react';
+import { useRef, useState, type FormEvent } from 'react';
 import { useWardrobe } from '../context/WardrobeContext';
-import { CATEGORY_LABELS, SEASON_LABELS, OCCASION_LABELS, PRESET_COLORS, type Category, type Season, type Occasion } from '../types';
+import {
+  PRESET_COLORS,
+  SEASON_LABELS,
+  SOURCE_LABELS,
+  categoryLabel,
+  displayTag,
+  type CategoryId,
+  type ItemSource,
+  type Season,
+} from '../types';
+import { Button, Chip, Field, Modal, inputClass, selectClass } from './ui';
+import { Basting, GarmentPlate } from './art';
+import { IconCamera, IconCheck, IconClose, IconPlus } from './icons';
 import { showToast } from './Toast';
+
+/**
+ * ADD A PIECE — the intake form.
+ *
+ * Contract notes (docs/06-focus-group-requirements.md §1 rows 2–3, §3):
+ *  - The photo is OPTIONAL and has to look like a choice, not a gap. With no file
+ *    chosen the form shows the drawn flat that will stand in for the piece
+ *    everywhere else, labelled as the stand-in. We never mint a remote
+ *    placeholder URL: the app is offline-first and a placehold.co link would break
+ *    that the first time the network went away.
+ *  - `source` renders every origin at the same weight. Secondhand, swapped and
+ *    self-made are not lesser entries, and the euphemism the panel struck from the
+ *    vocabulary stays out of these labels — the plain words are the proud ones.
+ *  - `fitsLike` is one free line. No size schema, no measurements — a measurement
+ *    taxonomy invites body-surveillance and erases people.
+ *  - Name is the only required field; everything else can arrive later.
+ */
+
+const SEASON_ORDER: Season[] = ['spring', 'summer', 'fall', 'winter'];
+const SOURCE_ORDER: ItemSource[] = [
+  'new', 'secondhand', 'swapped', 'gifted', 'inherited', 'self-made',
+];
 
 interface Props {
   open: boolean;
@@ -10,244 +43,419 @@ interface Props {
 }
 
 export default function AddItemModal({ open, onClose }: Props) {
-  const { addItem } = useWardrobe();
+  const { addItem, addOccasion, settings } = useWardrobe();
+
   const [name, setName] = useState('');
-  const [category, setCategory] = useState<Category>('tops');
+  const [category, setCategory] = useState<CategoryId>(
+    () => settings.categories[0]?.id ?? ''
+  );
   const [color, setColor] = useState(PRESET_COLORS[0]);
-  const [season, setSeason] = useState<Season[]>(['spring', 'summer', 'fall', 'winter']);
-  const [occasion, setOccasion] = useState<Occasion[]>(['casual']);
+  const [brand, setBrand] = useState('');
+  const [source, setSource] = useState<ItemSource | ''>('');
+  const [fitsLike, setFitsLike] = useState('');
+  const [season, setSeason] = useState<Season[]>([...SEASON_ORDER]);
+  const [occasion, setOccasion] = useState<string[]>(
+    () => (settings.occasions.includes('casual') ? ['casual'] : [])
+  );
+  const [newTag, setNewTag] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [cost, setCost] = useState('');
   const [notes, setNotes] = useState('');
   const [dragOver, setDragOver] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleImageUpload = (file: File) => {
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  /* ---------- photo ---------- */
+
+  const readPhoto = (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      showToast('That file is not an image. A JPG or PNG works.', 'error');
+      return;
+    }
     const reader = new FileReader();
-    reader.onload = (e) => setImageUrl(e.target?.result as string);
+    reader.onload = e => setImageUrl((e.target?.result as string) ?? '');
+    reader.onerror = () => showToast('That photo would not open. Try another.', 'error');
     reader.readAsDataURL(file);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name.trim()) return;
-    addItem({
-      name: name.trim(),
-      category,
-      color,
-      season,
-      occasion,
-      imageUrl: imageUrl || `https://placehold.co/300x400/${color.replace('#', '')}/ffffff?text=${encodeURIComponent(name)}`,
-      cost: cost ? parseFloat(cost) : undefined,
-      favorite: false,
-      notes: notes.trim() || undefined,
-    });
-    showToast(`"${name.trim()}" added to your closet`, 'success');
+  /* ---------- tags ---------- */
+
+  const toggleSeason = (s: Season) =>
+    setSeason(prev => (prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]));
+
+  const toggleOccasion = (tag: string) =>
+    setOccasion(prev => (prev.includes(tag) ? prev.filter(x => x !== tag) : [...prev, tag]));
+
+  // addOccasion normalises to trimmed lowercase; mirror that so the chip we
+  // select is the same string the vocabulary just gained.
+  const commitTag = () => {
+    const tag = newTag.trim().toLowerCase();
+    if (!tag) return;
+    addOccasion(tag);
+    setOccasion(prev => (prev.includes(tag) ? prev : [...prev, tag]));
+    setNewTag('');
+  };
+
+  /* ---------- submit ---------- */
+
+  const reset = () => {
     setName('');
+    setBrand('');
+    setSource('');
+    setFitsLike('');
     setImageUrl('');
     setCost('');
     setNotes('');
-    setSeason(['spring', 'summer', 'fall', 'winter']);
-    setOccasion(['casual']);
+    setSeason([...SEASON_ORDER]);
+    setOccasion(settings.occasions.includes('casual') ? ['casual'] : []);
+    setNewTag('');
+    setColor(PRESET_COLORS[0]);
+  };
+
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    const parsedCost = cost.trim() === '' ? undefined : Number.parseFloat(cost);
+
+    addItem({
+      name: trimmed,
+      category,
+      color,
+      brand: brand.trim() || undefined,
+      source: source || undefined,
+      fitsLike: fitsLike.trim() || undefined,
+      season,
+      occasion,
+      // Empty means "no photo", and the drawn flat takes over. Never a remote URL.
+      imageUrl: imageUrl || '',
+      cost: parsedCost !== undefined && Number.isFinite(parsedCost) ? parsedCost : undefined,
+      favorite: false,
+      notes: notes.trim() || undefined,
+    });
+
+    // Graceful on the way out. Never a lecture.
+    showToast('Added. It starts at 0 wears.', 'success');
+    reset();
     onClose();
   };
 
-  const toggleSeason = (s: Season) => {
-    setSeason(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
-  };
-  const toggleOccasion = (o: Occasion) => {
-    setOccasion(prev => prev.includes(o) ? prev.filter(x => x !== o) : [...prev, o]);
-  };
-
-  if (!open) return null;
-
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={onClose}>
-      <div className="bg-cream rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between p-5 border-b border-border">
-          <h2 className="text-lg font-semibold text-text font-[family-name:var(--font-heading)]">Add Clothing Item</h2>
-          <button onClick={onClose} className="w-8 h-8 rounded-lg bg-surface flex items-center justify-center hover:bg-surface-hover transition-colors">
-            <X size={16} />
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="p-5 space-y-5">
-          {/* Image upload */}
+    <Modal open={open} onClose={onClose} title="Add a piece" wide>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* ---------- photo, optional on purpose ---------- */}
+        <Field
+          label="Photo"
+          htmlFor="add-item-photo"
+          hint="Optional. Plenty of pieces never get one."
+        >
           <div
-            className={`border-2 border-dashed rounded-xl p-6 text-center transition-colors ${
-              dragOver ? 'border-accent bg-accent/5' : 'border-border bg-surface'
-            } ${imageUrl ? 'p-2' : ''}`}
-            onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+            onDragOver={e => {
+              e.preventDefault();
+              setDragOver(true);
+            }}
             onDragLeave={() => setDragOver(false)}
             onDrop={e => {
               e.preventDefault();
               setDragOver(false);
               const file = e.dataTransfer.files[0];
-              if (file) handleImageUpload(file);
+              if (file) readPhoto(file);
             }}
+            className={`rounded-[2px] p-3 transition-colors duration-150 ${
+              dragOver ? 'bg-sunken plate-ink' : 'bg-sunken plate'
+            }`}
           >
             {imageUrl ? (
-              <div className="relative">
-                <img src={imageUrl} alt="Preview" className="w-full h-48 object-contain rounded-lg" />
-                <button
-                  type="button"
-                  onClick={() => setImageUrl('')}
-                  className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/70"
-                >
-                  <X size={14} />
-                </button>
+              <div className="flex items-start gap-4">
+                <div className="w-[104px] aspect-[4/5] bg-mat rounded-[2px] overflow-hidden shrink-0">
+                  <img
+                    src={imageUrl}
+                    alt="The photo you chose for this piece"
+                    loading="lazy"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="type-ledger text-[11px] text-text-2">Photo attached</p>
+                  <p className="text-[13px] text-text-2 mt-1 leading-snug">
+                    It is stored on this device with the rest of the closet.
+                  </p>
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    <Button
+                      type="button"
+                      compact
+                      icon={<IconCamera size={16} />}
+                      onClick={() => fileRef.current?.click()}
+                    >
+                      Replace
+                    </Button>
+                    <Button
+                      type="button"
+                      compact
+                      tone="tertiary"
+                      icon={<IconClose size={14} />}
+                      onClick={() => {
+                        setImageUrl('');
+                        if (fileRef.current) fileRef.current.value = '';
+                      }}
+                    >
+                      Remove photo
+                    </Button>
+                  </div>
+                </div>
               </div>
             ) : (
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="space-y-2"
-              >
-                <div className="w-12 h-12 rounded-full bg-surface-hover mx-auto flex items-center justify-center">
-                  <Camera size={20} className="text-text-muted" />
+              <div className="flex items-start gap-4">
+                {/* The stand-in, live: exactly what the closet will show. */}
+                <div className="w-[104px] aspect-[4/5] bg-mat rounded-[2px] overflow-hidden shrink-0">
+                  <GarmentPlate categoryId={category} color={color} />
                 </div>
-                <p className="text-sm text-text-secondary">Click or drag to upload photo</p>
-                <p className="text-xs text-text-muted">JPG, PNG up to 5MB</p>
-              </button>
+                <div className="min-w-0 flex-1">
+                  <p className="type-ledger text-[11px] text-text-2">Drawn stand-in</p>
+                  <p className="text-[13px] text-text-2 mt-1 leading-snug">
+                    Without a photo the closet shows this flat, drawn in the colour and
+                    kind of piece you pick. That is a finished state, not a gap.
+                  </p>
+                  <div className="flex flex-wrap items-center gap-3 mt-3">
+                    <Button
+                      type="button"
+                      compact
+                      icon={<IconCamera size={16} />}
+                      onClick={() => fileRef.current?.click()}
+                    >
+                      Choose a photo
+                    </Button>
+                    <span className="type-ledger text-[11px] text-text-2">
+                      or drop one here
+                    </span>
+                  </div>
+                </div>
+              </div>
             )}
             <input
-              ref={fileInputRef}
+              ref={fileRef}
+              id="add-item-photo"
               type="file"
               accept="image/*"
-              className="hidden"
-              onChange={e => e.target.files?.[0] && handleImageUpload(e.target.files[0])}
+              className="sr-only"
+              onChange={e => {
+                const file = e.target.files?.[0];
+                if (file) readPhoto(file);
+              }}
             />
           </div>
+        </Field>
 
-          {/* Name */}
-          <div>
-            <label className="block text-sm font-medium text-text-secondary mb-1.5">Item Name</label>
+        <Basting />
+
+        {/* ---------- what it is ---------- */}
+        <Field label="Name" htmlFor="add-item-name" hint="The only thing this form needs.">
+          <input
+            id="add-item-name"
+            type="text"
+            value={name}
+            onChange={e => setName(e.target.value)}
+            placeholder="Navy wool blazer"
+            autoComplete="off"
+            required
+            className={inputClass}
+          />
+        </Field>
+
+        <fieldset className="border-0 p-0 m-0 space-y-1.5">
+          <legend className="type-ledger text-[11px] text-text-2">Kind of piece</legend>
+          <div className="flex flex-wrap gap-1.5 pt-0.5">
+            {settings.categories.map(cat => (
+              <Chip
+                key={cat.id}
+                selected={category === cat.id}
+                onClick={() => setCategory(cat.id)}
+              >
+                {categoryLabel(settings, cat.id)}
+              </Chip>
+            ))}
+          </div>
+        </fieldset>
+
+        <fieldset className="border-0 p-0 m-0 space-y-1.5">
+          <legend className="type-ledger text-[11px] text-text-2">Colour</legend>
+          <div className="flex flex-wrap gap-1.5 pt-0.5">
+            {PRESET_COLORS.map(hex => {
+              const selected = color.toLowerCase() === hex.toLowerCase();
+              return (
+                <button
+                  key={hex}
+                  type="button"
+                  onClick={() => setColor(hex)}
+                  aria-pressed={selected}
+                  aria-label={`Colour ${hex}`}
+                  title={hex}
+                  className={`w-11 h-11 rounded-[2px] inline-flex items-center justify-center transition-[box-shadow] duration-150 ${
+                    selected ? 'plate-ink' : 'border border-border hover:border-text'
+                  }`}
+                  style={{ backgroundColor: hex }}
+                >
+                  {selected ? (
+                    <span className="w-5 h-5 bg-surface text-text inline-flex items-center justify-center rounded-[2px]">
+                      <IconCheck size={12} />
+                    </span>
+                  ) : null}
+                </button>
+              );
+            })}
+          </div>
+        </fieldset>
+
+        <Basting />
+
+        {/* ---------- how it came to you ---------- */}
+        <div className="grid sm:grid-cols-2 gap-5">
+          <Field label="Brand" htmlFor="add-item-brand">
             <input
+              id="add-item-brand"
               type="text"
-              value={name}
-              onChange={e => setName(e.target.value)}
-              placeholder="e.g., Navy Blazer"
-              className="w-full px-3.5 py-2.5 bg-surface border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent transition-all"
-              required
+              value={brand}
+              onChange={e => setBrand(e.target.value)}
+              placeholder="Brand, or made by you"
+              autoComplete="off"
+              className={inputClass}
             />
-          </div>
+          </Field>
 
-          {/* Category */}
-          <div>
-            <label className="block text-sm font-medium text-text-secondary mb-1.5">Category</label>
-            <div className="grid grid-cols-3 gap-2">
-              {(Object.keys(CATEGORY_LABELS) as Category[]).map(cat => (
-                <button
-                  key={cat}
-                  type="button"
-                  onClick={() => setCategory(cat)}
-                  className={`px-3 py-2 rounded-lg text-xs font-medium transition-all ${
-                    category === cat
-                      ? 'bg-accent text-white'
-                      : 'bg-surface text-text-secondary hover:bg-surface-hover'
-                  }`}
-                >
-                  {CATEGORY_LABELS[cat]}
-                </button>
+          <Field label="How it came to you" htmlFor="add-item-source">
+            <select
+              id="add-item-source"
+              value={source}
+              onChange={e => setSource(e.target.value as ItemSource | '')}
+              className={selectClass}
+            >
+              <option value="">Not saying</option>
+              {SOURCE_ORDER.map(key => (
+                <option key={key} value={key}>
+                  {SOURCE_LABELS[key]}
+                </option>
               ))}
-            </div>
-          </div>
+            </select>
+          </Field>
+        </div>
 
-          {/* Color */}
-          <div>
-            <label className="block text-sm font-medium text-text-secondary mb-1.5">Color</label>
-            <div className="flex flex-wrap gap-2">
-              {PRESET_COLORS.map(c => (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => setColor(c)}
-                  className={`w-8 h-8 rounded-full border-2 transition-all ${
-                    color === c ? 'border-text scale-110' : 'border-transparent hover:scale-105'
-                  }`}
-                  style={{ backgroundColor: c }}
-                  aria-label={`Select color ${c}`}
-                />
-              ))}
-            </div>
-          </div>
+        {/* One line, in your own words. Deliberately not a size schema. */}
+        <Field
+          label="Fits like"
+          htmlFor="add-item-fits"
+          hint="One line, however you'd describe it to a friend. No sizes, no measurements."
+        >
+          <input
+            id="add-item-fits"
+            type="text"
+            value={fitsLike}
+            onChange={e => setFitsLike(e.target.value)}
+            placeholder="fits like a slim medium, hits at hip"
+            autoComplete="off"
+            className={inputClass}
+          />
+        </Field>
 
-          {/* Season */}
-          <div>
-            <label className="block text-sm font-medium text-text-secondary mb-1.5">Seasons</label>
-            <div className="flex flex-wrap gap-2">
-              {(Object.keys(SEASON_LABELS) as Season[]).map(s => (
-                <button
-                  key={s}
-                  type="button"
-                  onClick={() => toggleSeason(s)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                    season.includes(s)
-                      ? 'bg-success/15 text-success'
-                      : 'bg-surface text-text-muted hover:bg-surface-hover'
-                  }`}
-                >
-                  {SEASON_LABELS[s]}
-                </button>
-              ))}
-            </div>
-          </div>
+        <Basting />
 
-          {/* Occasion */}
-          <div>
-            <label className="block text-sm font-medium text-text-secondary mb-1.5">Occasions</label>
-            <div className="flex flex-wrap gap-2">
-              {(Object.keys(OCCASION_LABELS) as Occasion[]).map(o => (
-                <button
-                  key={o}
-                  type="button"
-                  onClick={() => toggleOccasion(o)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                    occasion.includes(o)
-                      ? 'bg-accent/15 text-accent'
-                      : 'bg-surface text-text-muted hover:bg-surface-hover'
-                  }`}
-                >
-                  {OCCASION_LABELS[o]}
-                </button>
-              ))}
-            </div>
+        {/* ---------- when and what for ---------- */}
+        <fieldset className="border-0 p-0 m-0 space-y-1.5">
+          <legend className="type-ledger text-[11px] text-text-2">Seasons</legend>
+          <div className="flex flex-wrap gap-1.5 pt-0.5">
+            {SEASON_ORDER.map(s => (
+              <Chip key={s} selected={season.includes(s)} onClick={() => toggleSeason(s)}>
+                {SEASON_LABELS[s]}
+              </Chip>
+            ))}
           </div>
+        </fieldset>
 
-          {/* Cost */}
-          <div>
-            <label className="block text-sm font-medium text-text-secondary mb-1.5">Cost (optional)</label>
+        <fieldset className="border-0 p-0 m-0 space-y-1.5">
+          <legend className="type-ledger text-[11px] text-text-2">Occasions</legend>
+          <div className="flex flex-wrap gap-1.5 pt-0.5">
+            {settings.occasions.map(tag => (
+              <Chip
+                key={tag}
+                selected={occasion.includes(tag)}
+                onClick={() => toggleOccasion(tag)}
+              >
+                {displayTag(tag)}
+              </Chip>
+            ))}
+          </div>
+          <div className="flex items-end gap-2 pt-2">
+            <div className="flex-1 min-w-0">
+              <label htmlFor="add-item-new-tag" className="sr-only">
+                Add an occasion tag
+              </label>
+              <input
+                id="add-item-new-tag"
+                type="text"
+                value={newTag}
+                onChange={e => setNewTag(e.target.value)}
+                onKeyDown={e => {
+                  // Enter here adds a tag; it must never submit the whole form.
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    commitTag();
+                  }
+                }}
+                placeholder="add a tag"
+                autoComplete="off"
+                className={inputClass}
+              />
+            </div>
+            <Button
+              type="button"
+              compact
+              icon={<IconPlus size={14} />}
+              onClick={commitTag}
+              disabled={newTag.trim() === ''}
+            >
+              Add
+            </Button>
+          </div>
+        </fieldset>
+
+        <Basting />
+
+        {/* ---------- the ledger side ---------- */}
+        <div className="grid sm:grid-cols-2 gap-5">
+          <Field label="Cost" htmlFor="add-item-cost" hint="Optional. It feeds cost per wear.">
             <input
+              id="add-item-cost"
               type="number"
+              inputMode="decimal"
               value={cost}
               onChange={e => setCost(e.target.value)}
               placeholder="0.00"
               min="0"
               step="0.01"
-              className="w-full px-3.5 py-2.5 bg-surface border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent transition-all"
+              className={`${inputClass} tabular`}
             />
-          </div>
+          </Field>
 
-          {/* Notes */}
-          <div>
-            <label className="block text-sm font-medium text-text-secondary mb-1.5">Notes (optional)</label>
+          <Field label="Notes" htmlFor="add-item-notes">
             <textarea
+              id="add-item-notes"
               value={notes}
               onChange={e => setNotes(e.target.value)}
-              placeholder="Any details about this item..."
+              placeholder="Mended at the cuff, second-hand from the market"
               rows={2}
-              className="w-full px-3.5 py-2.5 bg-surface border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent transition-all resize-none"
+              className={`${inputClass} resize-none`}
             />
-          </div>
+          </Field>
+        </div>
 
-          <button
-            type="submit"
-            className="w-full py-3 bg-accent text-white rounded-lg text-sm font-semibold hover:bg-accent-hover active:scale-[0.98] transition-all"
-          >
-            Add to Closet
-          </button>
-        </form>
-      </div>
-    </div>
+        <div className="pt-1">
+          <Button type="submit" tone="primary" className="w-full">
+            Add to the closet
+          </Button>
+          <p className="text-[13px] text-text-2 mt-3 text-center leading-snug">
+            Everything except the name can be filled in later, or never.
+          </p>
+        </div>
+      </form>
+    </Modal>
   );
 }

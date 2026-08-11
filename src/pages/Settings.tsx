@@ -1,144 +1,606 @@
-import { useState } from 'react';
-import { Download, Upload, Trash2, AlertTriangle } from 'lucide-react';
+import { useRef, useState, type ButtonHTMLAttributes, type ReactNode } from 'react';
 import { useWardrobe } from '../context/WardrobeContext';
+import { SCHEMA_VERSION, displayTag, initialState, type AppState } from '../types';
+import { daysSince, formatLocalDate, todayLocal } from '../lib/dates';
+import { migrate } from '../lib/migrate';
+import { buildDemoState, DEMO_SUMMARY } from '../lib/demoData';
+import {
+  Button,
+  Card,
+  Chip,
+  Field,
+  IconButton,
+  Masthead,
+  SectionTitle,
+  inputClass,
+} from '../components/ui';
+import { Basting } from '../components/art';
+import {
+  IconClose,
+  IconDown,
+  IconExport,
+  IconEyelet,
+  IconEyeletFilled,
+  IconImport,
+  IconUp,
+} from '../components/icons';
 import { showToast } from '../components/Toast';
 
+/**
+ * SETTINGS — stewardship, not preferences.
+ *
+ * Three contracts meet here (docs/06-focus-group-requirements.md §1 rows 1 and 9):
+ *
+ *  1. Own your taxonomy. Categories are the user's data — rename, add, reorder,
+ *     and mark any of them quiet. Six fixed boxes erase everyone who dresses
+ *     outside them. Occasions are free-form lowercase tags.
+ *  2. Export the WHOLE state, generically. The old export hand-picked three keys
+ *     and silently dropped the wishlist; anything added later would have been
+ *     dropped too. It now serializes every data field the context holds, and
+ *     import runs the file through migrate() so unknown fields round-trip intact.
+ *  3. Say plainly where the data lives. The backup reminder is a quiet inline
+ *     card that can be dismissed — never a notification, never blocking.
+ *
+ * Destructive flows are plain, inline, and state exactly what is lost. No native
+ * confirm() dialogs, no accounts, no telemetry, no commerce.
+ */
+
+/* ---------- local helpers (not in the shared primitives) ---------- */
+
+/** Derived values on the context that must never be written into a backup. */
+const DERIVED_KEYS = new Set(['activeItems']);
+
+/**
+ * Everything on the context that is data rather than behaviour. Generic on
+ * purpose: a field added to AppState tomorrow lands in the export by itself.
+ */
+function serializableState(ctx: object): Record<string, unknown> {
+  return Object.fromEntries(
+    Object.entries(ctx).filter(([key, value]) => typeof value !== 'function' && !DERIVED_KEYS.has(key))
+  );
+}
+
+/** Whole days since an ISO timestamp, in local time. Null if it won't parse. */
+function daysSinceISO(iso: string): number | null {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  return daysSince(formatLocalDate(d));
+}
+
+/** '2026-08-10T…' → '10 Aug 2026'. */
+function longDay(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return 'unknown';
+  return d.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+/** A 44px pressed-state toggle: the Chip's eyelet at a real touch size. */
+function Toggle({
+  active,
+  children,
+  className = '',
+  ...rest
+}: ButtonHTMLAttributes<HTMLButtonElement> & { active?: boolean; children: ReactNode }) {
+  return (
+    <button
+      type="button"
+      aria-pressed={active}
+      className={`h-11 px-3 type-label inline-flex items-center justify-center gap-2 rounded-[2px] border transition-colors duration-150 ${
+        active
+          ? 'bg-ink text-on-ink border-transparent'
+          : 'border-border text-text-2 hover:text-text hover:bg-sunken'
+      } ${className}`}
+      {...rest}
+    >
+      <span className={active ? 'text-accent' : 'opacity-60'}>
+        {active ? <IconEyeletFilled size={10} /> : <IconEyelet size={10} />}
+      </span>
+      {children}
+    </button>
+  );
+}
+
+/** A settings row: label and explanation at left, the control at right. */
+function Row({
+  title,
+  body,
+  control,
+}: {
+  title: string;
+  body: string;
+  control: ReactNode;
+}) {
+  return (
+    <div className="flex items-start justify-between gap-4 py-1">
+      <div className="min-w-0">
+        <p className="text-[15px] text-text leading-tight">{title}</p>
+        <p className="text-[13px] text-text-2 leading-snug mt-1">{body}</p>
+      </div>
+      <div className="shrink-0">{control}</div>
+    </div>
+  );
+}
+
+const THEMES: { value: 'light' | 'dark' | 'system'; label: string }[] = [
+  { value: 'light', label: 'Light' },
+  { value: 'dark', label: 'Dark' },
+  { value: 'system', label: 'System' },
+];
+
+/* ---------- the page ---------- */
+
 export default function Settings() {
-  const { items, outfits, wearLogs } = useWardrobe();
+  const wardrobe = useWardrobe();
+  const {
+    items,
+    outfits,
+    wearLogs,
+    wishlist,
+    settings,
+    updateSettings,
+    addCategory,
+    renameCategory,
+    setCategoryQuiet,
+    moveCategory,
+    addOccasion,
+    replaceState,
+    markExported,
+  } = wardrobe;
+
+  const [pending, setPending] = useState<{ state: AppState; fileName: string } | null>(null);
   const [showReset, setShowReset] = useState(false);
+  const [showDemo, setShowDemo] = useState(false);
+  const [reminderOff, setReminderOff] = useState(false);
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const [newCategory, setNewCategory] = useState('');
+  const [newOccasion, setNewOccasion] = useState('');
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const theme = settings.theme ?? 'system';
+  const records = items.length + outfits.length + wearLogs.length + wishlist.length;
+
+  /* ---------- export: the whole state, generically ---------- */
 
   const handleExport = () => {
-    const data = { items, outfits, wearLogs, exportedAt: new Date().toISOString() };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const payload = {
+      ...serializableState(wardrobe),
+      schemaVersion: SCHEMA_VERSION,
+      exportedAt: new Date().toISOString(),
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `wardrobe-backup-${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `toile-backup-${todayLocal()}.json`;
     a.click();
     URL.revokeObjectURL(url);
-    showToast('Backup downloaded successfully', 'success');
+    markExported();
+    showToast(`Exported. ${records} records in one file.`, 'success');
   };
 
-  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+  /* ---------- import: parse, migrate, then ask ---------- */
+
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    const input = e.target;
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (ev) => {
+    reader.onload = ev => {
       try {
-        const data = JSON.parse(ev.target?.result as string);
-        if (confirm(`Import ${data.items?.length || 0} items and ${data.outfits?.length || 0} outfits? This will replace current data.`)) {
-          localStorage.setItem('wardrobe-tracker', JSON.stringify({
-            items: data.items || [],
-            outfits: data.outfits || [],
-            wearLogs: data.wearLogs || [],
-          }));
-          showToast('Data imported successfully', 'success');
-          window.location.reload();
-        }
+        const parsed = JSON.parse(String(ev.target?.result ?? ''));
+        // migrate() carries every older shape forward and keeps unknown fields.
+        setPending({ state: migrate(parsed), fileName: file.name });
       } catch {
-        showToast('Invalid backup file', 'error');
+        showToast('That file did not read as a backup.', 'error');
       }
+      // Let the same file be chosen twice in a row.
+      input.value = '';
     };
     reader.readAsText(file);
   };
 
+  const confirmImport = () => {
+    if (!pending) return;
+    replaceState(pending.state);
+    showToast(`Imported. ${pending.state.items.length} pieces on record.`, 'success');
+    setPending(null);
+  };
+
+  /* ---------- backup reminder: quiet, inline, dismissible ---------- */
+
+  const sinceExport = settings.lastExportAt ? daysSinceISO(settings.lastExportAt) : null;
+  const backupStale = sinceExport === null || sinceExport > 30;
+  // "Meaningful" = enough on record that losing it would actually cost something.
+  const showReminder = !reminderOff && backupStale && records >= 3;
+
+  /* ---------- taxonomy ---------- */
+
+  const commitRename = (id: string, label: string) => {
+    const trimmed = label.trim();
+    if (trimmed) renameCategory(id, trimmed);
+    setDrafts(prev => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+  };
+
+  const handleAddCategory = (e: React.FormEvent) => {
+    e.preventDefault();
+    const label = newCategory.trim();
+    if (!label) return;
+    addCategory(label);
+    setNewCategory('');
+    showToast(`Added "${label}".`, 'success');
+  };
+
+  const handleAddOccasion = (e: React.FormEvent) => {
+    e.preventDefault();
+    const tag = newOccasion.trim().toLowerCase();
+    if (!tag) return;
+    addOccasion(tag);
+    setNewOccasion('');
+  };
+
+  /* ---------- reset ---------- */
+
   const handleReset = () => {
-    localStorage.removeItem('wardrobe-tracker');
-    showToast('All data reset', 'info');
-    window.location.reload();
+    replaceState(initialState);
+    setShowReset(false);
+    showToast('Reset. The closet is empty.', 'info');
+  };
+
+  /* ---------- sample wardrobe ---------- */
+
+  const hasRecords = records > 0;
+
+  const handleLoadDemo = () => {
+    replaceState(buildDemoState());
+    setShowDemo(false);
+    showToast(
+      `Loaded. ${DEMO_SUMMARY.items} pieces, ${DEMO_SUMMARY.outfits} outfits.`,
+      'success'
+    );
   };
 
   return (
-    <div className="space-y-6 max-w-xl">
-      <h1 className="text-2xl font-semibold text-text font-[family-name:var(--font-heading)]">Settings</h1>
+    <div className="space-y-6 max-w-3xl">
+      <Masthead title="Settings" meta={`Schema ${SCHEMA_VERSION}`} />
 
-      {/* Data Management */}
-      <div className="bg-cream border border-border rounded-xl p-5 space-y-4">
-        <h2 className="text-base font-semibold text-text">Data Management</h2>
-
-        <div className="flex items-center justify-between py-3 border-b border-border">
-          <div>
-            <p className="text-sm font-medium text-text">Export Data</p>
-            <p className="text-xs text-text-muted mt-0.5">Download a backup of your wardrobe</p>
-          </div>
-          <button
-            onClick={handleExport}
-            className="px-3 py-2 bg-surface border border-border rounded-lg text-sm font-medium text-text-secondary hover:bg-surface-hover flex items-center gap-1.5 transition-all"
-          >
-            <Download size={14} />
-            Export
-          </button>
-        </div>
-
-        <div className="flex items-center justify-between py-3 border-b border-border">
-          <div>
-            <p className="text-sm font-medium text-text">Import Data</p>
-            <p className="text-xs text-text-muted mt-0.5">Restore from a previous backup</p>
-          </div>
-          <label className="px-3 py-2 bg-surface border border-border rounded-lg text-sm font-medium text-text-secondary hover:bg-surface-hover flex items-center gap-1.5 transition-all cursor-pointer">
-            <Upload size={14} />
-            Import
-            <input type="file" accept=".json" className="hidden" onChange={handleImport} />
-          </label>
-        </div>
-
-        <div className="pt-1">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-error">Reset All Data</p>
-              <p className="text-xs text-text-muted mt-0.5">This will permanently delete everything</p>
+      {/* ---------- backup reminder ---------- */}
+      {showReminder ? (
+        <Card>
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <p className="type-editorial text-[20px] leading-snug text-balance">
+                This closet lives in one browser, on one device.
+              </p>
+              <p className="text-[14px] text-text-2 leading-relaxed mt-2">
+                Toile keeps {records} records in this browser's local storage. There is no
+                account and no copy on a server — clearing site data, switching browsers, or
+                losing the device takes the history with it. An export is the only copy there is.
+              </p>
+              <p className="type-ledger text-[11px] text-text-2 tabular mt-3">
+                {settings.lastExportAt
+                  ? `Last export ${longDay(settings.lastExportAt)} · ${sinceExport} days ago`
+                  : 'No export yet'}
+              </p>
+              <button type="button" onClick={handleExport} className="type-label text-accent underline underline-offset-[3px] decoration-1 hover:decoration-2 mt-3 h-11 inline-flex items-center">
+                Export a backup now
+              </button>
             </div>
-            <button
-              onClick={() => setShowReset(true)}
-              className="px-3 py-2 bg-error/10 text-error rounded-lg text-sm font-medium hover:bg-error/20 flex items-center gap-1.5 transition-all"
+            <IconButton
+              label="Dismiss the backup reminder"
+              onClick={() => setReminderOff(true)}
+              className="-mr-2 -mt-2 shrink-0"
             >
-              <Trash2 size={14} />
-              Reset
-            </button>
+              <IconClose size={16} />
+            </IconButton>
           </div>
+        </Card>
+      ) : null}
 
-          {showReset && (
-            <div className="mt-3 p-4 bg-error/5 border border-error/20 rounded-lg">
-              <div className="flex items-start gap-3">
-                <AlertTriangle size={18} className="text-error flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium text-error">Are you sure?</p>
-                  <p className="text-xs text-text-secondary mt-1">
-                    This will delete all {items.length} items, {outfits.length} outfits, and {wearLogs.length} wear logs. This cannot be undone.
-                  </p>
-                  <div className="flex gap-2 mt-3">
-                    <button
-                      onClick={handleReset}
-                      className="px-3 py-1.5 bg-error text-white rounded-lg text-xs font-medium hover:bg-error/90 transition-all"
-                    >
-                      Yes, Delete Everything
-                    </button>
-                    <button
-                      onClick={() => setShowReset(false)}
-                      className="px-3 py-1.5 bg-surface text-text-secondary rounded-lg text-xs font-medium hover:bg-surface-hover transition-all"
-                    >
-                      Cancel
-                    </button>
-                  </div>
+      {/* ---------- taxonomy: categories ---------- */}
+      <Card>
+        <SectionTitle aside={`${settings.categories.length} categories`}>
+          Your categories
+        </SectionTitle>
+        <p className="text-[14px] text-text-2 leading-relaxed">
+          These are yours to name and order. The list here is the order they appear in
+          everywhere else — browse, the add form, the ledger.
+        </p>
+
+        <Basting className="my-4" />
+
+        <ul className="space-y-3">
+          {settings.categories.map((cat, index) => (
+            <li key={cat.id}>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 min-w-0">
+                  <label htmlFor={`cat-${cat.id}`} className="sr-only">
+                    Category name
+                  </label>
+                  <input
+                    id={`cat-${cat.id}`}
+                    type="text"
+                    value={drafts[cat.id] ?? cat.label}
+                    onChange={e => setDrafts(prev => ({ ...prev, [cat.id]: e.target.value }))}
+                    onBlur={e => commitRename(cat.id, e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        e.currentTarget.blur();
+                      }
+                    }}
+                    autoComplete="off"
+                    className={inputClass}
+                  />
                 </div>
+                <Toggle
+                  active={cat.quiet === true}
+                  onClick={() => setCategoryQuiet(cat.id, !cat.quiet)}
+                  aria-label={`${cat.label}: quiet`}
+                  className="shrink-0"
+                >
+                  Quiet
+                </Toggle>
+                <IconButton
+                  label={`Move ${cat.label} up`}
+                  onClick={() => moveCategory(cat.id, -1)}
+                  disabled={index === 0}
+                  className="shrink-0 disabled:opacity-30 disabled:pointer-events-none"
+                >
+                  <IconUp size={16} />
+                </IconButton>
+                <IconButton
+                  label={`Move ${cat.label} down`}
+                  onClick={() => moveCategory(cat.id, 1)}
+                  disabled={index === settings.categories.length - 1}
+                  className="shrink-0 disabled:opacity-30 disabled:pointer-events-none"
+                >
+                  <IconDown size={16} />
+                </IconButton>
+              </div>
+              {cat.quiet ? (
+                <p className="type-ledger text-[10px] text-text-2 mt-1">
+                  Hidden from browse and the generator. No photo expected.
+                </p>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+
+        <p className="text-[13px] text-text-2 leading-snug mt-4">
+          Quiet is for what you keep but don't style — hidden from browse and the generator,
+          no photo expected. Categories can't be removed yet; making one quiet takes it out of
+          the way without touching the pieces filed under it.
+        </p>
+
+        <Basting className="my-4" />
+
+        <form onSubmit={handleAddCategory} className="flex items-end gap-3">
+          <div className="flex-1 min-w-0">
+            <Field label="Add a category" htmlFor="new-category">
+              <input
+                id="new-category"
+                type="text"
+                value={newCategory}
+                onChange={e => setNewCategory(e.target.value)}
+                placeholder="Workwear, costume, hosiery"
+                autoComplete="off"
+                className={inputClass}
+              />
+            </Field>
+          </div>
+          <Button type="submit" disabled={!newCategory.trim()}>
+            Add
+          </Button>
+        </form>
+      </Card>
+
+      {/* ---------- taxonomy: occasions ---------- */}
+      <Card>
+        <SectionTitle aside={`${settings.occasions.length} tags`}>Occasion tags</SectionTitle>
+        <p className="text-[14px] text-text-2 leading-relaxed">
+          Free-form and lowercase. These are the tags offered when you file a piece or ask
+          Before You Buy what it's for.
+        </p>
+
+        <div className="flex flex-wrap gap-1.5 mt-4">
+          {settings.occasions.map(tag => (
+            <Chip key={tag} as="span">
+              {displayTag(tag)}
+            </Chip>
+          ))}
+        </div>
+
+        <Basting className="my-4" />
+
+        <form onSubmit={handleAddOccasion} className="flex items-end gap-3">
+          <div className="flex-1 min-w-0">
+            <Field label="Add a tag" htmlFor="new-occasion">
+              <input
+                id="new-occasion"
+                type="text"
+                value={newOccasion}
+                onChange={e => setNewOccasion(e.target.value)}
+                placeholder="gig, studio, funeral"
+                autoComplete="off"
+                className={inputClass}
+              />
+            </Field>
+          </div>
+          <Button type="submit" disabled={!newOccasion.trim()}>
+            Add
+          </Button>
+        </form>
+      </Card>
+
+      {/* ---------- appearance ---------- */}
+      <Card>
+        <SectionTitle>Appearance</SectionTitle>
+        <Row
+          title="Paper"
+          body="Light is the pattern room; dark is the atelier at night. System follows the device."
+          control={
+            <div className="flex gap-2">
+              {THEMES.map(opt => (
+                <Toggle
+                  key={opt.value}
+                  active={theme === opt.value}
+                  onClick={() => updateSettings({ theme: opt.value })}
+                >
+                  {opt.label}
+                </Toggle>
+              ))}
+            </div>
+          }
+        />
+      </Card>
+
+      {/* ---------- data ---------- */}
+      <Card>
+        <SectionTitle aside={`${records} records`}>Your data</SectionTitle>
+
+        <div className="space-y-4">
+          <Row
+            title="Export"
+            body="One JSON file holding everything on this device: pieces, outfits, wear logs, the wishlist, your categories and tags."
+            control={
+              <Button tone="primary" icon={<IconExport size={16} />} onClick={handleExport}>
+                Export
+              </Button>
+            }
+          />
+
+          <Basting />
+
+          <Row
+            title="Import"
+            body="Reads a backup from any version of Toile and brings it forward. Fields it doesn't recognise are kept, not dropped."
+            control={
+              <>
+                <Button icon={<IconImport size={16} />} onClick={() => fileRef.current?.click()}>
+                  Choose a file
+                </Button>
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept=".json,application/json"
+                  className="hidden"
+                  aria-hidden="true"
+                  tabIndex={-1}
+                  onChange={handleFile}
+                />
+              </>
+            }
+          />
+
+          {pending ? (
+            <div className="bg-sunken rounded-[2px] p-4">
+              <p className="type-ledger text-[11px] text-text-2">{pending.fileName}</p>
+              <p className="text-[14px] text-text leading-relaxed mt-2">
+                That file holds {pending.state.items.length} pieces, {pending.state.outfits.length}{' '}
+                outfits, {pending.state.wearLogs.length} wear logs and{' '}
+                {pending.state.wishlist.length} wishlist entries. Bringing it in replaces what is
+                on this device now.
+              </p>
+              <div className="flex flex-wrap gap-2 mt-4">
+                <Button onClick={confirmImport}>Bring it in</Button>
+                <Button onClick={() => setPending(null)}>Cancel</Button>
               </div>
             </div>
-          )}
-        </div>
-      </div>
+          ) : null}
 
-      {/* About */}
-      <div className="bg-cream border border-border rounded-xl p-5">
-        <h2 className="text-base font-semibold text-text mb-3">About</h2>
-        <div className="space-y-2 text-sm text-text-secondary">
-          <p><strong className="text-text">Wardrobe Tracker</strong></p>
-          <p>Version 1.0.0</p>
-          <p>A digital closet companion built with care.</p>
-          <p className="text-xs text-text-muted mt-3">
-            All data is stored locally in your browser. No data is sent to any server.
-          </p>
+          <Basting />
+
+          <Row
+            title="Sample wardrobe"
+            body={`A worked example — ${DEMO_SUMMARY.items} pieces including ${DEMO_SUMMARY.jewellery} pieces of jewellery, ${DEMO_SUMMARY.outfits} saved outfits, a year of wear history, and a wishlist mid-cooling-off. Useful for seeing the populated screens before cataloguing your own.`}
+            control={
+              <Button onClick={() => setShowDemo(true)}>Load sample</Button>
+            }
+          />
+
+          {showDemo ? (
+            <div className="bg-sunken rounded-[2px] p-4">
+              <p className="text-[15px] text-text leading-tight">
+                {hasRecords ? 'Replace what is here with the sample?' : 'Load the sample wardrobe?'}
+              </p>
+              <p className="text-[14px] text-text-2 leading-relaxed mt-2">
+                {hasRecords
+                  ? `This device currently holds ${records} records. Loading the sample replaces all of them, and there is no copy unless you exported one.`
+                  : 'Nothing is on this device yet, so nothing will be lost. Reset from here whenever you want to start your own.'}
+              </p>
+              <div className="flex flex-wrap gap-2 mt-4">
+                <Button tone={hasRecords ? 'destructive' : 'primary'} onClick={handleLoadDemo}>
+                  {hasRecords ? 'Replace with the sample' : 'Load it'}
+                </Button>
+                <Button onClick={() => setShowDemo(false)}>Cancel</Button>
+              </div>
+            </div>
+          ) : null}
+
+          <Basting />
+
+          <Row
+            title="Start over"
+            body="Clears this device and returns Toile to its defaults."
+            control={
+              <Button tone="destructive" onClick={() => setShowReset(true)}>
+                Reset
+              </Button>
+            }
+          />
+
+          {showReset ? (
+            <div className="bg-sunken rounded-[2px] p-4">
+              <p className="text-[15px] text-text leading-tight">Reset everything?</p>
+              <p className="text-[14px] text-text-2 leading-relaxed mt-2">
+                This clears {items.length} pieces, {outfits.length} outfits, {wearLogs.length} wear
+                logs and {wishlist.length} wishlist entries, along with every category and
+                occasion tag you have added. It cannot be undone, and there is no copy anywhere
+                unless you exported one.
+              </p>
+              <div className="flex flex-wrap gap-2 mt-4">
+                <Button tone="destructive" onClick={handleReset}>
+                  Reset everything
+                </Button>
+                <Button onClick={() => setShowReset(false)}>Keep it</Button>
+              </div>
+            </div>
+          ) : null}
         </div>
-      </div>
+      </Card>
+
+      {/* ---------- about ---------- */}
+      <Card>
+        <SectionTitle>About</SectionTitle>
+        <p className="type-masthead text-[24px]">Toile</p>
+        <p className="type-editorial text-[16px] text-text-2 mt-1">Your wardrobe, on record.</p>
+
+        <Basting className="my-4" />
+
+        <p className="text-[14px] text-text-2 leading-relaxed">
+          Everything you enter stays in this browser's local storage. There are no accounts, no
+          sync, no analytics, and nothing is sent anywhere — the app makes no network requests
+          about your closet at all. There are no shop links, affiliate codes or sponsored
+          pieces, and there never will be. Because the data lives only here, keeping a copy is
+          on you.
+        </p>
+
+        <button
+          type="button"
+          onClick={handleExport}
+          className="type-label text-accent underline underline-offset-[3px] decoration-1 hover:decoration-2 mt-3 h-11 inline-flex items-center"
+        >
+          Export a backup
+        </button>
+
+        <p className="type-ledger text-[10px] text-text-2 tabular mt-2">
+          Schema version {SCHEMA_VERSION}
+        </p>
+      </Card>
     </div>
   );
 }
