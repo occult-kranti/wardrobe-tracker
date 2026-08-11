@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Screenshot output (regenerate with npm run shots)
+shots/

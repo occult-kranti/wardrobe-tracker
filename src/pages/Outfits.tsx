@@ -1,159 +1,567 @@
-import { useState } from 'react';
-import { Heart, Trash2, Shuffle, Plus, X, Check } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useWardrobe } from '../context/WardrobeContext';
-import { CATEGORY_LABELS, type ClothingItem } from '../types';
+import { categoryLabel, displayTag, type ClothingItem, type Outfit } from '../types';
+import {
+  Button, Card, Chip, EmptyState, Field, IconButton, Masthead, SectionTitle, inputClass,
+} from '../components/ui';
+import {
+  IconCheck, IconClose, IconEyeletFilled, IconPin, IconPlus, IconShears,
+} from '../components/icons';
+import { Basting, GarmentPlate, PlateEmptyOutfits, PlateWashline } from '../components/art';
 import { showToast } from '../components/Toast';
-import { EmptyOutfitArt, DecorativeDivider } from '../components/art';
-import type { Outfit } from '../types';
 
-function OutfitCard({ outfit, items, onToggleFavorite, onDelete, onWear }: {
+/**
+ * OUTFITS — sets of pieces that already work together.
+ *
+ * Three surfaces, in order of how often they get used:
+ *   1. The draw — deals only from getWearablePool() (clean, unbenched, unretired,
+ *      non-quiet), optionally narrowed to one occasion. An empty pool is a state
+ *      with a plate, not an error.
+ *   2. The builder — groups by settings.categories and takes any number of pieces
+ *      from any category. No one-slot-per-category assumption: two coats and three
+ *      necklaces is a valid outfit.
+ *   3. The saved outfits — photos first, one ledger line, one carmine "wear today".
+ *
+ * Contract: docs/05-brand-identity.md §7, docs/06-focus-group-requirements.md §1.6.
+ */
+
+/* ---------- local helpers (not in the shared primitives) ---------- */
+
+/** 'YYYY-MM-DD' → a Date at local midnight. Never parse these as UTC. */
+function localDate(dateStr: string): Date {
+  return new Date(`${dateStr}T00:00:00`);
+}
+
+function shortDate(dateStr: string): string {
+  const d = localDate(dateStr);
+  if (Number.isNaN(d.getTime())) return dateStr;
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function wearsPhrase(n: number): string {
+  return n === 1 ? 'worn once' : `worn ${n} times`;
+}
+
+function piecesPhrase(n: number): string {
+  return `${n} ${n === 1 ? 'piece' : 'pieces'}`;
+}
+
+function pickOne<T>(list: T[]): T {
+  return list[Math.floor(Math.random() * list.length)];
+}
+
+function shuffled<T>(list: T[]): T[] {
+  const copy = [...list];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
+/** Photo tile, or the drawn flat when there's no photo. The no-photo state is first-class. */
+function Thumb({ item, className = '', alt = '' }: { item: ClothingItem; className?: string; alt?: string }) {
+  return (
+    <span className={`block bg-mat overflow-hidden rounded-[2px] ${className}`}>
+      {item.imageUrl ? (
+        <img src={item.imageUrl} alt={alt} className="w-full h-full object-cover" />
+      ) : (
+        <GarmentPlate categoryId={item.category} color={item.color} />
+      )}
+    </span>
+  );
+}
+
+/* ---------- saved outfit ---------- */
+
+function OutfitCard({
+  outfit,
+  members,
+  onToggleFavorite,
+  onDelete,
+  onWear,
+}: {
   outfit: Outfit;
-  items: ClothingItem[];
+  members: ClothingItem[];
   onToggleFavorite: () => void;
   onDelete: () => void;
   onWear: () => void;
 }) {
-  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const retired = members.filter(m => m.retired);
+
+  const ledger = [
+    outfit.wearCount === 0 ? 'Not worn yet' : `Worn ${outfit.wearCount}×`,
+    outfit.lastWorn ? `Last worn ${shortDate(outfit.lastWorn)}` : null,
+    piecesPhrase(outfit.itemIds.length),
+  ]
+    .filter(Boolean)
+    .join(' · ');
+
+  const names = members.map(m => m.name);
 
   return (
-    <div className="bg-bg-card border border-border rounded-xl overflow-hidden hover:border-border-light card-lift">
-      <div className="p-4">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="font-medium text-text truncate">{outfit.name}</h3>
-          <div className="flex items-center gap-1">
-            <button onClick={onToggleFavorite} className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors ${outfit.favorite ? 'text-rose' : 'text-text-muted hover:text-rose'}`} aria-label={outfit.favorite ? 'Remove from favorites' : 'Add to favorites'}>
-              <Heart size={14} className={outfit.favorite ? 'fill-rose' : ''} />
-            </button>
-            {!confirmDelete ? (
-              <button onClick={() => setConfirmDelete(true)} className="w-7 h-7 rounded-full text-text-muted flex items-center justify-center hover:text-error transition-colors" aria-label="Delete outfit">
-                <Trash2 size={14} />
-              </button>
-            ) : (
-              <button onClick={() => { onDelete(); setConfirmDelete(false); }} className="w-7 h-7 rounded-full bg-error text-white flex items-center justify-center" aria-label="Confirm delete">
-                <X size={14} />
-              </button>
-            )}
+    <Card className="flex flex-col">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <h3 className="type-editorial text-[19px] leading-tight break-words">{outfit.name}</h3>
+          {outfit.occasion ? (
+            <span className="inline-flex mt-2">
+              <Chip as="span">{displayTag(outfit.occasion)}</Chip>
+            </span>
+          ) : null}
+        </div>
+        <div className="flex items-center shrink-0 -mt-2 -mr-2">
+          <IconButton
+            label={outfit.favorite ? `Unpin "${outfit.name}"` : `Pin "${outfit.name}"`}
+            active={outfit.favorite}
+            onClick={onToggleFavorite}
+          >
+            <IconPin size={18} />
+          </IconButton>
+          <IconButton label={`Delete outfit "${outfit.name}"`} onClick={() => setConfirming(true)}>
+            <IconShears size={18} />
+          </IconButton>
+        </div>
+      </div>
+
+      {members.length > 0 ? (
+        <>
+          <div className="flex gap-1.5 mt-4 overflow-x-auto pb-1">
+            {members.map(item => (
+              <Thumb key={item.id} item={item} alt={item.name} className="w-14 h-[70px] shrink-0" />
+            ))}
+          </div>
+          <p className="text-[13px] text-text-2 mt-2 leading-snug line-clamp-2">
+            {names.slice(0, 3).join(' · ')}
+            {names.length > 3 ? ` · +${names.length - 3}` : ''}
+          </p>
+        </>
+      ) : (
+        <p className="text-[13px] text-text-2 mt-4">
+          The pieces in this outfit are no longer in the closet.
+        </p>
+      )}
+
+      {retired.length > 0 ? (
+        <p className="text-[13px] text-text-2 mt-3 leading-snug">
+          {retired.length === 1
+            ? `"${retired[0].name}" has been retired. The outfit keeps its record.`
+            : `${retired.length} pieces here have been retired. The outfit keeps its record.`}
+        </p>
+      ) : null}
+
+      <Basting className="mt-4" />
+
+      {confirming ? (
+        <div className="flex items-center justify-between gap-3 mt-4">
+          <p className="text-[13px] text-text-2 leading-snug">
+            Delete this outfit? The pieces stay in the closet.
+          </p>
+          <div className="flex items-center gap-1 shrink-0">
+            <Button tone="tertiary" onClick={() => setConfirming(false)}>
+              Keep
+            </Button>
+            <Button
+              tone="destructive"
+              onClick={() => {
+                setConfirming(false);
+                onDelete();
+              }}
+            >
+              Delete
+            </Button>
           </div>
         </div>
-        <div className="flex gap-2 overflow-x-auto pb-2">
-          {outfit.itemIds.map(id => {
-            const item = items.find(i => i.id === id);
-            if (!item) return null;
-            return (
-              <div key={id} className="flex-shrink-0 w-16">
-                <div className="aspect-[3/4] rounded-lg overflow-hidden border border-border">
-                  <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" loading="lazy" />
-                </div>
-                <p className="text-[10px] text-text-muted mt-1 truncate">{item.name}</p>
-              </div>
-            );
-          })}
+      ) : (
+        <div className="flex items-center justify-between gap-3 mt-4">
+          <p className="type-ledger text-[11px] text-text-2 tabular leading-snug">{ledger}</p>
+          <Button tone="hero" onClick={onWear} icon={<IconEyeletFilled size={10} />} className="shrink-0">
+            Wear today
+          </Button>
         </div>
-        <button onClick={onWear} className="mt-3 w-full py-2 bg-accent/10 text-accent border border-accent/30 rounded-lg text-xs font-medium hover:bg-accent/20 transition-all btn-shine">
-          I wore this today
-        </button>
-      </div>
-    </div>
+      )}
+    </Card>
   );
 }
 
+/* ---------- the page ---------- */
+
 export default function Outfits() {
-  const { items, outfits, addOutfit, deleteOutfit, toggleFavoriteOutfit, logWear } = useWardrobe();
-  const [showBuilder, setShowBuilder] = useState(false);
-  const [selectedItems, setSelectedItems] = useState<string[]>([]);
-  const [outfitName, setOutfitName] = useState('');
+  const {
+    items, activeItems, outfits, settings,
+    addOutfit, deleteOutfit, toggleFavoriteOutfit, logWear, getWearablePool,
+  } = useWardrobe();
+  const navigate = useNavigate();
 
-  const handleCreate = () => {
-    if (selectedItems.length < 2 || !outfitName.trim()) return;
-    addOutfit({ name: outfitName.trim(), itemIds: selectedItems, favorite: false });
-    showToast(`Outfit "${outfitName.trim()}" saved`, 'success');
-    setSelectedItems([]);
-    setOutfitName('');
-    setShowBuilder(false);
-  };
+  const [building, setBuilding] = useState(false);
+  const [selected, setSelected] = useState<string[]>([]);
+  const [name, setName] = useState('');
+  const [includeQuiet, setIncludeQuiet] = useState(false);
+  /** '' = draw from everything ready. */
+  const [occasion, setOccasion] = useState('');
+  /** Carried onto the saved outfit only when the set came out of a filtered draw. */
+  const [draftOccasion, setDraftOccasion] = useState('');
 
-  const toggleItem = (id: string) => {
-    setSelectedItems(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
-  };
+  const byId = useMemo(() => new Map(items.map(i => [i.id, i])), [items]);
 
-  const generateRandom = () => {
-    const tops = items.filter(i => i.category === 'tops');
-    const bottoms = items.filter(i => i.category === 'bottoms');
-    const shoes = items.filter(i => i.category === 'shoes');
-    if (tops.length && bottoms.length) {
-      const random = [tops[Math.floor(Math.random() * tops.length)].id, bottoms[Math.floor(Math.random() * bottoms.length)].id];
-      if (shoes.length) random.push(shoes[Math.floor(Math.random() * shoes.length)].id);
-      addOutfit({ name: `Random #${outfits.length + 1}`, itemIds: random, favorite: false });
-      showToast('Random outfit generated', 'success');
+  const sortedOutfits = useMemo(
+    () =>
+      [...outfits].sort((a, b) => {
+        if (a.favorite !== b.favorite) return a.favorite ? -1 : 1;
+        return b.dateCreated.localeCompare(a.dateCreated);
+      }),
+    [outfits]
+  );
+
+  /* ---------- the draw ---------- */
+
+  const pool = useMemo(() => getWearablePool(), [getWearablePool]);
+  const drawPool = useMemo(
+    () => (occasion ? pool.filter(i => i.occasion.includes(occasion)) : pool),
+    [pool, occasion]
+  );
+
+  const draw = () => {
+    // Group what's ready, then take one piece from a random handful of categories.
+    // Categories are user data, so nothing here assumes a top/bottom/shoe shape.
+    const byCategory = new Map<string, ClothingItem[]>();
+    for (const item of drawPool) {
+      const list = byCategory.get(item.category);
+      if (list) list.push(item);
+      else byCategory.set(item.category, [item]);
     }
+
+    const order = settings.categories.map(c => c.id).filter(id => byCategory.has(id));
+    for (const id of byCategory.keys()) if (!order.includes(id)) order.push(id);
+    const rank = new Map(order.map((id, i) => [id, i]));
+
+    let drawn: ClothingItem[] = [];
+    if (order.length >= 2) {
+      const want = Math.min(order.length, 2 + Math.floor(Math.random() * 3));
+      drawn = shuffled(order)
+        .slice(0, want)
+        .sort((a, b) => (rank.get(a) ?? 0) - (rank.get(b) ?? 0))
+        .map(id => pickOne(byCategory.get(id) as ClothingItem[]));
+    } else if (drawPool.length >= 2) {
+      // One category with several pieces still makes a set — layering is allowed.
+      drawn = shuffled(drawPool).slice(0, 2);
+    }
+
+    if (drawn.length < 2) return;
+
+    const n = outfits.length + 1;
+    setDraftOccasion(occasion);
+    setSelected(drawn.map(i => i.id));
+    setName(occasion ? `${displayTag(occasion)} set ${n}` : `Set ${n}`);
+    setBuilding(true);
+    showToast(`Dealt. ${piecesPhrase(drawn.length)}, all ready to wear.`, 'info');
   };
+
+  /* ---------- the builder ---------- */
+
+  const openBuilder = () => {
+    setSelected([]);
+    setName('');
+    setDraftOccasion('');
+    setBuilding(true);
+  };
+
+  const closeBuilder = () => {
+    setBuilding(false);
+    setSelected([]);
+    setName('');
+    setDraftOccasion('');
+  };
+
+  const hasQuietCategories = settings.categories.some(c => c.quiet);
+
+  const groups = useMemo(() => {
+    const known = new Set(settings.categories.map(c => c.id));
+    const rows = settings.categories
+      .filter(c => includeQuiet || !c.quiet)
+      .map(c => ({
+        id: c.id,
+        label: categoryLabel(settings, c.id),
+        items: activeItems.filter(i => i.category === c.id),
+      }))
+      .filter(g => g.items.length > 0);
+
+    // Pieces filed under a category that is no longer in settings still have to be
+    // reachable — otherwise they quietly drop out of every outfit.
+    const orphanIds: string[] = [];
+    for (const item of activeItems) {
+      if (!known.has(item.category) && !orphanIds.includes(item.category)) orphanIds.push(item.category);
+    }
+    for (const id of orphanIds) {
+      rows.push({
+        id,
+        label: categoryLabel(settings, id),
+        items: activeItems.filter(i => i.category === id),
+      });
+    }
+    return rows;
+  }, [settings, activeItems, includeQuiet]);
+
+  const toggleItem = (id: string) =>
+    setSelected(prev => (prev.includes(id) ? prev.filter(s => s !== id) : [...prev, id]));
+
+  const save = () => {
+    const trimmed = name.trim();
+    if (!trimmed || selected.length < 2) return;
+    addOutfit({
+      name: trimmed,
+      itemIds: selected,
+      favorite: false,
+      occasion: draftOccasion || undefined,
+    });
+    showToast(`Saved. "${trimmed}" — ${piecesPhrase(selected.length)}.`, 'success');
+    closeBuilder();
+  };
+
+  /* ---------- nothing in the closet yet ---------- */
+
+  if (activeItems.length === 0) {
+    return (
+      <>
+        <Masthead title="Outfits" />
+        <Card>
+          <EmptyState
+            plate={<PlateEmptyOutfits />}
+            title="Nothing to put together yet."
+            body="An outfit is pieces from the closet, saved as a set. Add a piece or two and this page has something to work with."
+            action={
+              <Button tone="primary" onClick={() => navigate('/closet')}>
+                Open the closet
+              </Button>
+            }
+          />
+        </Card>
+      </>
+    );
+  }
+
+  /* ---------- page ---------- */
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="heading-editorial text-2xl sm:text-3xl text-text">Outfits</h1>
-          <p className="text-xs text-text-muted mt-1 uppercase tracking-wider">{outfits.length} curated looks</p>
-        </div>
-        <div className="flex gap-2">
-          <button onClick={generateRandom} className="px-3 py-2 bg-bg-card border border-border rounded-lg text-sm font-medium text-text-secondary hover:border-border-light hover:text-text transition-all flex items-center gap-1.5">
-            <Shuffle size={14} /> Random
-          </button>
-          <button onClick={() => setShowBuilder(!showBuilder)} className="px-3 py-2 bg-accent/10 text-accent border border-accent/30 rounded-lg text-sm font-medium hover:bg-accent/20 transition-all flex items-center gap-1.5">
-            <Plus size={14} /> {showBuilder ? 'Cancel' : 'Create'}
-          </button>
-        </div>
-      </div>
-      <DecorativeDivider />
+      <Masthead
+        title="Outfits"
+        meta={`${outfits.length} ${outfits.length === 1 ? 'outfit' : 'outfits'}`}
+        action={
+          !building && outfits.length > 0 ? (
+            <Button tone="primary" onClick={openBuilder} icon={<IconPlus size={14} />}>
+              Build an outfit
+            </Button>
+          ) : null
+        }
+      />
 
-      {/* Outfit Builder */}
-      {showBuilder && (
-        <div className="bg-bg-card border border-border rounded-xl p-5 space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-text uppercase tracking-wider">Build Outfit</h2>
-            <button onClick={() => setShowBuilder(false)} className="w-7 h-7 rounded-lg bg-bg-elevated border border-border flex items-center justify-center text-text-muted hover:text-text transition-colors">
-              <X size={14} />
-            </button>
+      {/* ---------- builder ---------- */}
+      {building ? (
+        <Card>
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h2 className="type-masthead text-[22px]">Build an outfit</h2>
+              <p className="text-[13px] text-text-2 mt-1 leading-snug">
+                Take as many pieces as the outfit needs, from any category. Two coats and three
+                necklaces is a valid answer.
+              </p>
+            </div>
+            <IconButton label="Close the builder" onClick={closeBuilder} className="shrink-0 -mt-2 -mr-2">
+              <IconClose size={18} />
+            </IconButton>
           </div>
-          <input type="text" value={outfitName} onChange={e => setOutfitName(e.target.value)} placeholder="Name your look..."
-            className="w-full px-3.5 py-2.5 bg-bg-elevated border border-border rounded-lg text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all" />
-          <p className="text-xs text-text-muted">Select items ({selectedItems.length} selected)</p>
-          <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 max-h-64 overflow-y-auto">
-            {items.map(item => {
-              const selected = selectedItems.includes(item.id);
+
+          <Basting className="my-5" />
+
+          <Field label="Outfit name" htmlFor="outfit-name">
+            <input
+              id="outfit-name"
+              type="text"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              placeholder="Tuesday blacks, the good coat, opening night"
+              className={inputClass}
+            />
+          </Field>
+
+          {hasQuietCategories ? (
+            <label htmlFor="include-quiet" className="inline-flex items-center gap-2.5 h-11 mt-2 cursor-pointer">
+              <input
+                id="include-quiet"
+                type="checkbox"
+                checked={includeQuiet}
+                onChange={e => setIncludeQuiet(e.target.checked)}
+                className="w-4 h-4 accent-accent"
+              />
+              <span className="type-ledger text-[11px] text-text-2">Include quiet categories</span>
+            </label>
+          ) : null}
+
+          <div className="space-y-5 mt-4">
+            {groups.map(group => {
+              const chosen = group.items.filter(i => selected.includes(i.id)).length;
               return (
-                <button key={item.id} onClick={() => toggleItem(item.id)} className={`relative aspect-[3/4] rounded-lg overflow-hidden border transition-all ${selected ? 'border-accent ring-2 ring-accent/30' : 'border-border hover:border-border-light'}`}>
-                  <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" loading="lazy" />
-                  {selected && <div className="absolute inset-0 bg-accent/20 flex items-center justify-center"><Check size={20} className="text-accent" /></div>}
-                  <span className="absolute bottom-0 left-0 right-0 px-1.5 py-0.5 bg-black/60 text-white text-[9px] truncate">{CATEGORY_LABELS[item.category]}</span>
-                </button>
+                <div key={group.id}>
+                  <div className="flex items-baseline justify-between gap-3 mb-2">
+                    <p className="type-ledger text-[11px] text-text-2">{group.label}</p>
+                    {chosen > 0 ? (
+                      <span className="type-ledger text-[10px] text-text-2 tabular">{chosen} in</span>
+                    ) : null}
+                  </div>
+                  <ul className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                    {group.items.map(item => {
+                      const isSelected = selected.includes(item.id);
+                      return (
+                        <li key={item.id}>
+                          <button
+                            type="button"
+                            onClick={() => toggleItem(item.id)}
+                            aria-pressed={isSelected}
+                            data-selected={isSelected}
+                            className={`w-full text-left registered rounded-[2px] p-1 transition-colors duration-150 ${
+                              isSelected ? 'bg-sunken' : 'hover:bg-sunken/60'
+                            }`}
+                          >
+                            <span className="block relative">
+                              <Thumb item={item} className="aspect-[4/5] w-full" />
+                              {isSelected ? (
+                                <span className="absolute top-1 right-1 w-5 h-5 bg-ink text-on-ink inline-flex items-center justify-center rounded-[2px] animate-seal">
+                                  <IconCheck size={12} />
+                                </span>
+                              ) : null}
+                            </span>
+                            <span className="block text-[12px] text-text mt-1.5 leading-tight line-clamp-2">
+                              {item.name}
+                            </span>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
               );
             })}
           </div>
-          <button onClick={handleCreate} disabled={selectedItems.length < 2 || !outfitName.trim()}
-            className="w-full py-2.5 bg-accent/10 text-accent border border-accent/30 rounded-lg text-sm font-semibold hover:bg-accent/20 disabled:opacity-40 disabled:cursor-not-allowed transition-all btn-shine">
-            Save Outfit
-          </button>
-        </div>
-      )}
 
-      {/* Outfits Grid */}
-      {outfits.length > 0 ? (
-        <div className="grid sm:grid-cols-2 gap-4">
-          {outfits.map(outfit => (
-            <OutfitCard key={outfit.id} outfit={outfit} items={items}
-              onToggleFavorite={() => { toggleFavoriteOutfit(outfit.id); showToast(outfit.favorite ? 'Removed from favorites' : 'Added to favorites', 'success'); }}
-              onDelete={() => { deleteOutfit(outfit.id); showToast('Outfit deleted', 'info'); }}
-              onWear={() => { logWear(outfit.itemIds); showToast(`Logged wear for "${outfit.name}"`, 'success'); }}
-            />
-          ))}
+          <div className="flex items-center justify-between gap-3 mt-6 pt-4 border-t border-border">
+            <span className="type-ledger text-[11px] text-text-2 tabular">
+              {selected.length} selected{selected.length === 1 ? ' — a set takes two' : ''}
+            </span>
+            <Button tone="primary" onClick={save} disabled={!name.trim() || selected.length < 2}>
+              Save outfit
+            </Button>
+          </div>
+        </Card>
+      ) : null}
+
+      {/* ---------- the draw ---------- */}
+      <Card>
+        <SectionTitle aside={`${pool.length} ready`}>Draw a set</SectionTitle>
+
+        {pool.length === 0 ? (
+          <EmptyState
+            plate={<PlateWashline />}
+            title="Everything's on the line. Laundry first."
+            body="The draw only deals pieces that are clean, mended, and in rotation. It will have something the moment a wash finishes."
+          />
+        ) : (
+          <>
+            <div className="flex flex-wrap gap-2">
+              <Chip selected={occasion === ''} onClick={() => setOccasion('')}>
+                Anything
+              </Chip>
+              {settings.occasions.map(tag => (
+                <Chip
+                  key={tag}
+                  selected={occasion === tag}
+                  onClick={() => setOccasion(occasion === tag ? '' : tag)}
+                >
+                  {displayTag(tag)}
+                </Chip>
+              ))}
+            </div>
+
+            <Basting className="my-5" />
+
+            {drawPool.length < 2 ? (
+              <EmptyState
+                plate={<PlateWashline />}
+                title={
+                  occasion
+                    ? `Nothing ready for ${displayTag(occasion).toLowerCase()} right now.`
+                    : 'One piece is ready. A set takes two.'
+                }
+                body={
+                  occasion
+                    ? 'Clear the tag to draw from everything that is clean and in rotation.'
+                    : 'The rest are in the wash, benched, or resting in a quiet category.'
+                }
+              />
+            ) : (
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <p className="text-[14px] text-text-2 leading-snug">
+                  {drawPool.length} pieces are clean and in rotation
+                  {occasion ? ` for ${displayTag(occasion).toLowerCase()}` : ''}. The draw takes a few
+                  of them at random and hands them to the builder.
+                </p>
+                <Button onClick={draw} className="shrink-0 w-full sm:w-auto">
+                  Draw a set
+                </Button>
+              </div>
+            )}
+          </>
+        )}
+      </Card>
+
+      {/* ---------- saved outfits ---------- */}
+      {sortedOutfits.length > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {sortedOutfits.map(outfit => {
+            const members = outfit.itemIds
+              .map(id => byId.get(id))
+              .filter((i): i is ClothingItem => Boolean(i));
+            return (
+              <OutfitCard
+                key={outfit.id}
+                outfit={outfit}
+                members={members}
+                onToggleFavorite={() => {
+                  toggleFavoriteOutfit(outfit.id);
+                  showToast(
+                    outfit.favorite ? 'Unpinned.' : 'Pinned. It sits at the top now.',
+                    'info'
+                  );
+                }}
+                onDelete={() => {
+                  deleteOutfit(outfit.id);
+                  showToast('Deleted. The pieces stay in the closet.', 'info');
+                }}
+                onWear={() => {
+                  logWear(outfit.itemIds, outfit.id);
+                  showToast(`Logged. "${outfit.name}" ${wearsPhrase(outfit.wearCount + 1)}.`, 'seal');
+                }}
+              />
+            );
+          })}
         </div>
       ) : (
-        <div className="text-center py-16">
-          <EmptyOutfitArt className="w-40 h-40 mx-auto mb-4 opacity-60" />
-          <h2 className="text-lg font-medium text-text">No outfits yet</h2>
-          <p className="text-sm text-text-muted mt-1">Create your first curated look.</p>
-        </div>
+        <Card>
+          <EmptyState
+            plate={<PlateEmptyOutfits />}
+            title="No outfits put together yet."
+            body="An outfit is a set you already know works — saved once, logged in a tap after that. Build one by hand, or let the draw deal a set from what's clean."
+            action={
+              !building ? (
+                <Button tone="primary" onClick={openBuilder} icon={<IconPlus size={14} />}>
+                  Build an outfit
+                </Button>
+              ) : undefined
+            }
+          />
+        </Card>
       )}
     </div>
   );

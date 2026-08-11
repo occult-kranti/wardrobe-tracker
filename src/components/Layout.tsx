@@ -1,113 +1,97 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation, Outlet } from 'react-router-dom';
-import { LayoutDashboard, Shirt, Sparkles, CalendarDays, BarChart3, ShoppingBag, Settings, Menu, X, Plus } from 'lucide-react';
+import {
+  IconToday, IconCloset, IconOutfits, IconCalendar, IconLedger,
+  IconWishlist, IconCompare, IconRail, IconSettings, IconPlus, IconTheme, IconMenu, IconClose,
+} from './icons';
+import { Wordmark, TagMark } from './art';
 import { useWardrobe } from '../context/WardrobeContext';
 import AddItemModal from './AddItemModal';
 import { ToastContainer } from './Toast';
-import { LogoIcon, DecorativeDivider } from './art';
+import { IconButton } from './ui';
 
-const navItems = [
-  { path: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { path: '/closet', label: 'My Closet', icon: Shirt },
-  { path: '/outfits', label: 'Outfits', icon: Sparkles },
-  { path: '/calendar', label: 'Calendar', icon: CalendarDays },
-  { path: '/stats', label: 'Statistics', icon: BarChart3 },
-  { path: '/wishlist', label: 'Wishlist', icon: ShoppingBag },
-  { path: '/settings', label: 'Settings', icon: Settings },
+interface NavItem {
+  path: string;
+  label: string;
+  /** Used in the 5-slot mobile rail only, where the full label will not fit. */
+  shortLabel?: string;
+  icon: typeof IconToday;
+}
+
+const navItems: NavItem[] = [
+  { path: '/', label: 'Today', icon: IconToday },
+  { path: '/closet', label: 'Closet', icon: IconCloset },
+  { path: '/outfits', label: 'Outfits', icon: IconOutfits },
+  { path: '/calendar', label: 'Calendar', icon: IconCalendar },
+  { path: '/ledger', label: 'Ledger', icon: IconLedger },
+  { path: '/wishlist', label: 'Wishlist', icon: IconWishlist },
+  // shortLabel is for the mobile rail only, where "Before you buy" wrapped to two
+  // lines and shoved its icon out of the icon column.
+  { path: '/compare', label: 'Before you buy', shortLabel: 'Compare', icon: IconCompare },
+  { path: '/rail', label: 'Shared rail', shortLabel: 'Rail', icon: IconRail },
+  { path: '/settings', label: 'Settings', icon: IconSettings },
 ];
 
+// Five slots in the thumb zone; the rest live behind "More".
+const mobilePrimary = ['/', '/closet', '/outfits', '/compare'];
+
 export default function Layout() {
-  const [mobileOpen, setMobileOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   const location = useLocation();
-  const { items } = useWardrobe();
+  const { activeItems, settings, updateSettings } = useWardrobe();
+
+  const theme = settings.theme ?? 'system';
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (theme === 'system') root.removeAttribute('data-theme');
+    else root.setAttribute('data-theme', theme);
+  }, [theme]);
+
+  useEffect(() => {
+    setMoreOpen(false);
+  }, [location.pathname]);
+
+  const cycleTheme = () => {
+    const next = theme === 'system' ? 'light' : theme === 'light' ? 'dark' : 'system';
+    updateSettings({ theme: next });
+  };
+
+  const primaryNav = navItems.filter(n => mobilePrimary.includes(n.path));
+  const secondaryNav = navItems.filter(n => !mobilePrimary.includes(n.path));
 
   return (
-    <div className="flex min-h-screen bg-bg relative">
-      {/* Blob background */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-96 h-96 rounded-full bg-accent opacity-[0.03] blur-3xl" />
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 rounded-full bg-wine opacity-[0.03] blur-3xl" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-accent opacity-[0.02] blur-3xl" />
-      </div>
-
-      {/* Noise texture overlay */}
-      <div className="fixed inset-0 pointer-events-none z-[1] opacity-[0.015]"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
-        }}
-      />
-
-      {/* Mobile header */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-bg-elevated/95 backdrop-blur-xl border-b border-border">
-        <div className="flex items-center justify-between px-4 h-14">
-          <Link to="/" className="flex items-center gap-2.5">
-            <LogoIcon className="w-6 h-6 text-accent" />
-            <span className="font-[family-name:var(--font-heading)] text-base font-semibold text-text tracking-tight">
-              Atelier
-            </span>
+    <div className="flex min-h-screen bg-bg pattern-paper">
+      {/* Mobile masthead */}
+      <header className="lg:hidden fixed top-0 inset-x-0 z-50 bg-bg/95 backdrop-blur-sm border-b border-border">
+        <div className="flex items-center justify-between h-14 px-4">
+          <Link to="/" className="flex items-center gap-2 text-text min-h-11 py-1" aria-label="Toile — home">
+            <TagMark size={22} />
+            <Wordmark className="w-[64px]" />
           </Link>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setAddOpen(true)}
-              className="w-10 h-10 rounded-lg bg-accent/10 text-accent border border-accent/20 flex items-center justify-center active:scale-95 transition-all hover:bg-accent/20"
-              aria-label="Add clothing item"
-            >
-              <Plus size={18} />
-            </button>
-            <button
-              onClick={() => setMobileOpen(!mobileOpen)}
-              className="w-10 h-10 rounded-lg bg-bg-card border border-border flex items-center justify-center text-text-secondary hover:text-text transition-colors"
-              aria-label={mobileOpen ? 'Close navigation menu' : 'Open navigation menu'}
-              aria-expanded={mobileOpen}
-            >
-              {mobileOpen ? <X size={18} /> : <Menu size={18} />}
-            </button>
+          <div className="flex items-center gap-1">
+            <IconButton label="Change theme" onClick={cycleTheme}>
+              <IconTheme size={18} />
+            </IconButton>
+            <IconButton label="Add a piece" onClick={() => setAddOpen(true)} active>
+              <IconPlus size={18} />
+            </IconButton>
           </div>
         </div>
-        {mobileOpen && (
-          <nav className="border-t border-border bg-bg-elevated px-4 py-3 space-y-0.5">
-            {navItems.map(item => {
-              const Icon = item.icon;
-              const active = location.pathname === item.path;
-              return (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  onClick={() => setMobileOpen(false)}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                    active
-                      ? 'bg-accent/10 text-accent border border-accent/20'
-                      : 'text-text-secondary hover:text-text hover:bg-bg-card border border-transparent'
-                  }`}
-                  aria-current={active ? 'page' : undefined}
-                >
-                  <Icon size={17} aria-hidden="true" />
-                  {item.label}
-                </Link>
-              );
-            })}
-          </nav>
-        )}
       </header>
 
-      {/* Desktop sidebar */}
-      <aside className="hidden lg:flex flex-col w-[220px] bg-bg-elevated border-r border-border sticky top-0 h-screen z-10">
-        <div className="p-6 pb-4">
-          <Link to="/" className="flex items-center gap-2.5">
-            <LogoIcon className="w-7 h-7 text-accent" />
-            <div>
-              <span className="font-[family-name:var(--font-heading)] text-lg font-semibold text-text tracking-tight block leading-none">
-                Atelier
-              </span>
-              <span className="text-[10px] text-text-muted tracking-[0.2em] uppercase">Wardrobe</span>
-            </div>
+      {/* Desktop rail */}
+      <aside className="hidden lg:flex flex-col w-[220px] shrink-0 border-r border-border bg-bg sticky top-0 h-screen">
+        <div className="px-6 pt-7 pb-6">
+          <Link to="/" className="flex items-center gap-2.5 text-text min-h-11 py-1" aria-label="Toile — home">
+            <TagMark size={34} />
+            <Wordmark className="w-[76px]" />
           </Link>
+          <p className="type-editorial text-[13px] text-text-2 mt-3">Your wardrobe, on record.</p>
         </div>
 
-        <DecorativeDivider className="mx-4 mb-2" />
-
-        <nav className="flex-1 px-3 space-y-0.5 pt-2" aria-label="Main navigation">
+        <nav className="flex-1 px-3 space-y-0.5" aria-label="Main">
           {navItems.map(item => {
             const Icon = item.icon;
             const active = location.pathname === item.path;
@@ -115,43 +99,107 @@ export default function Layout() {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                  active
-                    ? 'bg-accent/10 text-accent border border-accent/20'
-                    : 'text-text-secondary hover:text-text hover:bg-bg-card border border-transparent'
-                }`}
                 aria-current={active ? 'page' : undefined}
+                className={`flex items-center gap-2.5 h-11 px-3 type-label text-[13px] whitespace-nowrap transition-colors duration-150 border-l-2 ${
+                  active
+                    ? 'border-accent text-text bg-surface'
+                    : 'border-transparent text-text-2 hover:text-text hover:bg-surface/60'
+                }`}
               >
-                <Icon size={17} aria-hidden="true" />
+                <Icon size={20} />
                 {item.label}
               </Link>
             );
           })}
         </nav>
 
-        <div className="p-4 space-y-3">
-          <DecorativeDivider />
+        <div className="p-4 space-y-4">
           <button
             onClick={() => setAddOpen(true)}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-accent/10 text-accent border border-accent/30 rounded-lg text-sm font-medium hover:bg-accent/20 active:scale-[0.98] transition-all btn-shine"
-            aria-label="Add clothing item"
+            className="w-full h-11 type-label inline-flex items-center justify-center gap-2 bg-ink text-on-ink rounded-[2px] hover:opacity-90 active:translate-y-px transition-[opacity] duration-150"
           >
-            <Plus size={15} aria-hidden="true" />
-            Add Item
+            <IconPlus size={16} />
+            Add a piece
           </button>
-          <div className="px-3 py-3 bg-bg-card rounded-lg border border-border">
-            <p className="text-[10px] text-text-muted uppercase tracking-wider">Items</p>
-            <p className="text-2xl font-semibold text-text mt-0.5 font-[family-name:var(--font-heading)]">{items.length}</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="type-ledger text-[10px] text-text-2">In the closet</p>
+              <p className="type-masthead text-[24px] leading-none tabular mt-1">{activeItems.length}</p>
+            </div>
+            <IconButton label={`Theme: ${theme}`} onClick={cycleTheme}>
+              <IconTheme size={18} />
+            </IconButton>
           </div>
         </div>
       </aside>
 
-      {/* Main content */}
-      <main className="flex-1 min-h-screen lg:pt-0 pt-14 relative z-10">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
+      {/* Main */}
+      <main className="flex-1 min-w-0 pt-14 lg:pt-0 pb-20 lg:pb-0">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-10 py-6 lg:py-10">
           <Outlet />
         </div>
       </main>
+
+      {/* Mobile bottom rail — thumb zone */}
+      <nav
+        className="lg:hidden fixed bottom-0 inset-x-0 z-50 h-14 bg-bg border-t border-border flex"
+        aria-label="Main"
+      >
+        {primaryNav.map(item => {
+          const Icon = item.icon;
+          const active = location.pathname === item.path;
+          return (
+            <Link
+              key={item.path}
+              to={item.path}
+              aria-current={active ? 'page' : undefined}
+              className={`relative flex-1 flex flex-col items-center justify-center gap-0.5 ${
+                active ? 'text-text' : 'text-text-2'
+              }`}
+            >
+              <Icon size={20} />
+              <span className="type-label whitespace-nowrap">
+                {item.shortLabel ?? item.label}
+              </span>
+              {active ? (
+                <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-accent" />
+              ) : null}
+            </Link>
+          );
+        })}
+        <button
+          onClick={() => setMoreOpen(v => !v)}
+          aria-expanded={moreOpen}
+          aria-label={moreOpen ? 'Close more menu' : 'More pages'}
+          className={`flex-1 flex flex-col items-center justify-center gap-0.5 ${
+            moreOpen ? 'text-text' : 'text-text-2'
+          }`}
+        >
+          {moreOpen ? <IconClose size={20} /> : <IconMenu size={20} />}
+          <span className="type-label whitespace-nowrap">More</span>
+        </button>
+      </nav>
+
+      {moreOpen && (
+        <div className="lg:hidden fixed bottom-14 inset-x-0 z-50 bg-surface border-t border-border animate-slip">
+          {secondaryNav.map(item => {
+            const Icon = item.icon;
+            const active = location.pathname === item.path;
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={`flex items-center gap-3 h-12 px-5 type-label text-[13px] border-b border-border last:border-0 ${
+                  active ? 'text-text bg-sunken' : 'text-text-2'
+                }`}
+              >
+                <Icon size={18} />
+                {item.label}
+              </Link>
+            );
+          })}
+        </div>
+      )}
 
       <AddItemModal open={addOpen} onClose={() => setAddOpen(false)} />
       <ToastContainer />

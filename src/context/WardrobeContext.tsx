@@ -1,42 +1,72 @@
-import { createContext, useContext, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useCallback, useMemo, type ReactNode } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
-import type { ClothingItem, Outfit, WearLog, WishlistItem, AppState } from '../types';
-
-const initialState: AppState = {
-  items: [],
-  outfits: [],
-  wearLogs: [],
-  wishlist: [],
-};
+import { todayLocal, isFutureDate, addDays } from '../lib/dates';
+import { migrate } from '../lib/migrate';
+import {
+  initialState,
+  isActive,
+  isBenched,
+  isQuietCategory,
+  type AppState,
+  type AppSettings,
+  type BorrowStatus,
+  type CategoryId,
+  type CircleMessage,
+  type ClothingItem,
+  type Outfit,
+  type WearLog,
+  type WishlistItem,
+} from '../types';
 
 interface WardrobeContextType extends AppState {
+  /** Active (non-retired) items — what every browse surface should use. */
+  activeItems: ClothingItem[];
   addItem: (item: Omit<ClothingItem, 'id' | 'dateAdded' | 'wearCount' | 'laundryStatus'>) => void;
   updateItem: (id: string, updates: Partial<ClothingItem>) => void;
   deleteItem: (id: string) => void;
+  retireItem: (id: string, reason?: string) => void;
+  unretireItem: (id: string) => void;
   toggleFavoriteItem: (id: string) => void;
   setLaundryStatus: (id: string, status: ClothingItem['laundryStatus']) => void;
   addOutfit: (outfit: Omit<Outfit, 'id' | 'dateCreated' | 'wearCount'>) => void;
   deleteOutfit: (id: string) => void;
   toggleFavoriteOutfit: (id: string) => void;
-  logWear: (itemIds: string[], outfitId?: string) => void;
+  logWear: (itemIds: string[], outfitId?: string, date?: string) => void;
+  removeWearLog: (id: string) => void;
   addWishlistItem: (item: Omit<WishlistItem, 'id' | 'dateAdded'>) => void;
   updateWishlistItem: (id: string, updates: Partial<WishlistItem>) => void;
   deleteWishlistItem: (id: string) => void;
   moveWishlistToCloset: (id: string) => void;
+  releaseWishlistItem: (id: string) => void;
+  keepWishlistItem: (id: string) => void;
+  updateSettings: (updates: Partial<AppSettings>) => void;
+  sendRailMessage: (groupId: string, text: string, request?: CircleMessage['request']) => void;
+  setRequestStatus: (messageId: string, status: BorrowStatus) => void;
+  returnLoan: (loanId: string) => void;
+  setLendable: (itemId: string, lendable: boolean) => void;
+  addCategory: (label: string) => void;
+  renameCategory: (id: CategoryId, label: string) => void;
+  setCategoryQuiet: (id: CategoryId, quiet: boolean) => void;
+  moveCategory: (id: CategoryId, direction: -1 | 1) => void;
+  addOccasion: (tag: string) => void;
+  replaceState: (next: AppState) => void;
+  markExported: () => void;
   getItem: (id: string) => ClothingItem | undefined;
   getOutfit: (id: string) => Outfit | undefined;
-  getItemsByCategory: (category: ClothingItem['category']) => ClothingItem[];
   getMostWorn: (limit?: number) => ClothingItem[];
   getLeastWorn: (limit?: number) => ClothingItem[];
   getUnwornItems: () => ClothingItem[];
-  getWearCount: (id: string) => number;
+  /** Clean, unbenched, unretired, non-quiet — the only pieces the generator deals. */
+  getWearablePool: () => ClothingItem[];
   getOutfitSuggestions: () => Outfit[];
 }
 
 const WardrobeContext = createContext<WardrobeContextType | null>(null);
 
 export function WardrobeProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useLocalStorage<AppState>('wardrobe-tracker', initialState);
+  const [state, setState] = useLocalStorage<AppState>('wardrobe-tracker', initialState, migrate);
+
+  const activeItems = useMemo(() => state.items.filter(isActive), [state.items]);
 
   const addItem = useCallback((item: Omit<ClothingItem, 'id' | 'dateAdded' | 'wearCount' | 'laundryStatus'>) => {
     const newItem: ClothingItem = {
@@ -61,6 +91,27 @@ export function WardrobeProvider({ children }: { children: ReactNode }) {
       ...prev,
       items: prev.items.filter(item => item.id !== id),
       outfits: prev.outfits.map(o => ({ ...o, itemIds: o.itemIds.filter(iid => iid !== id) })),
+    }));
+  }, [setState]);
+
+  // Retiring keeps every wear the piece ever earned — the history is the point.
+  const retireItem = useCallback((id: string, reason?: string) => {
+    setState(prev => ({
+      ...prev,
+      items: prev.items.map(item =>
+        item.id === id ? { ...item, retired: { date: todayLocal(), reason } } : item
+      ),
+    }));
+  }, [setState]);
+
+  const unretireItem = useCallback((id: string) => {
+    setState(prev => ({
+      ...prev,
+      items: prev.items.map(item => {
+        if (item.id !== id) return item;
+        const { retired: _retired, ...rest } = item;
+        return rest;
+      }),
     }));
   }, [setState]);
 
@@ -103,28 +154,60 @@ export function WardrobeProvider({ children }: { children: ReactNode }) {
     }));
   }, [setState]);
 
-  const logWear = useCallback((itemIds: string[], outfitId?: string) => {
-    const today = new Date().toISOString().split('T')[0];
-    const newLog: WearLog = {
-      id: crypto.randomUUID(),
-      date: today,
-      itemIds,
-      outfitId,
-    };
-    setState(prev => ({
-      ...prev,
-      wearLogs: [...prev.wearLogs, newLog],
-      items: prev.items.map(item =>
-        itemIds.includes(item.id)
-          ? { ...item, wearCount: item.wearCount + 1, lastWorn: today, laundryStatus: 'worn' as const }
-          : item
-      ),
-      outfits: prev.outfits.map(o =>
-        o.id === outfitId
-          ? { ...o, wearCount: o.wearCount + 1, lastWorn: today }
-          : o
-      ),
-    }));
+  const logWear = useCallback((itemIds: string[], outfitId?: string, date?: string) => {
+    const logDate = date ?? todayLocal();
+    const planned = isFutureDate(logDate);
+    setState(prev => {
+      // Wearing an outfit always credits every item in it.
+      const creditedIds = outfitId
+        ? Array.from(new Set([...itemIds, ...(prev.outfits.find(o => o.id === outfitId)?.itemIds ?? [])]))
+        : itemIds;
+      const newLog: WearLog = { id: crypto.randomUUID(), date: logDate, itemIds: creditedIds, outfitId };
+      // Future dates are plans: recorded, but they don't move wear counts or
+      // laundry until the day actually arrives.
+      if (planned) {
+        return { ...prev, wearLogs: [...prev.wearLogs, newLog] };
+      }
+      return {
+        ...prev,
+        wearLogs: [...prev.wearLogs, newLog],
+        items: prev.items.map(item =>
+          creditedIds.includes(item.id)
+            ? {
+                ...item,
+                wearCount: item.wearCount + 1,
+                lastWorn: !item.lastWorn || logDate > item.lastWorn ? logDate : item.lastWorn,
+                laundryStatus: 'worn' as const,
+              }
+            : item
+        ),
+        outfits: prev.outfits.map(o =>
+          o.id === outfitId
+            ? { ...o, wearCount: o.wearCount + 1, lastWorn: !o.lastWorn || logDate > o.lastWorn ? logDate : o.lastWorn }
+            : o
+        ),
+      };
+    });
+  }, [setState]);
+
+  const removeWearLog = useCallback((id: string) => {
+    setState(prev => {
+      const log = prev.wearLogs.find(l => l.id === id);
+      if (!log) return prev;
+      const wasPlanned = isFutureDate(log.date);
+      return {
+        ...prev,
+        wearLogs: prev.wearLogs.filter(l => l.id !== id),
+        items: wasPlanned ? prev.items : prev.items.map(item =>
+          log.itemIds.includes(item.id)
+            ? { ...item, wearCount: Math.max(0, item.wearCount - 1) }
+            : item
+        ),
+        outfits: wasPlanned || !log.outfitId ? prev.outfits : prev.outfits.map(o =>
+          o.id === log.outfitId ? { ...o, wearCount: Math.max(0, o.wearCount - 1) } : o
+        ),
+      };
+    });
   }, [setState]);
 
   const addWishlistItem = useCallback((item: Omit<WishlistItem, 'id' | 'dateAdded'>) => {
@@ -147,6 +230,28 @@ export function WardrobeProvider({ children }: { children: ReactNode }) {
     setState(prev => ({ ...prev, wishlist: prev.wishlist.filter(item => item.id !== id) }));
   }, [setState]);
 
+  const releaseWishlistItem = useCallback((id: string) => {
+    setState(prev => ({
+      ...prev,
+      wishlist: prev.wishlist.map(w =>
+        w.id === id
+          ? { ...w, status: 'let-go' as const, releasedAt: todayLocal(), coolingOff: w.coolingOff ? { ...w.coolingOff, asked: true } : undefined }
+          : w
+      ),
+    }));
+  }, [setState]);
+
+  const keepWishlistItem = useCallback((id: string) => {
+    setState(prev => ({
+      ...prev,
+      wishlist: prev.wishlist.map(w =>
+        w.id === id
+          ? { ...w, status: 'kept' as const, coolingOff: w.coolingOff ? { ...w.coolingOff, asked: true } : undefined }
+          : w
+      ),
+    }));
+  }, [setState]);
+
   const moveWishlistToCloset = useCallback((id: string) => {
     setState(prev => {
       const wishItem = prev.wishlist.find(w => w.id === id);
@@ -156,12 +261,13 @@ export function WardrobeProvider({ children }: { children: ReactNode }) {
         name: wishItem.name,
         category: wishItem.category,
         color: wishItem.color,
-        imageUrl: wishItem.imageUrl || `https://placehold.co/300x400/${wishItem.color.replace('#', '')}/ffffff?text=${encodeURIComponent(wishItem.name)}`,
+        brand: wishItem.brand,
+        imageUrl: wishItem.imageUrl || '',
         dateAdded: new Date().toISOString(),
         wearCount: 0,
         favorite: false,
-        season: ['spring', 'summer', 'fall', 'winter'],
-        occasion: ['casual'],
+        season: [],
+        occasion: [],
         cost: wishItem.price,
         notes: wishItem.notes,
         laundryStatus: 'clean',
@@ -169,38 +275,202 @@ export function WardrobeProvider({ children }: { children: ReactNode }) {
       return {
         ...prev,
         items: [...prev.items, newItem],
-        wishlist: prev.wishlist.filter(w => w.id !== id),
+        wishlist: prev.wishlist.map(w => w.id === id ? { ...w, status: 'bought' as const } : w),
       };
     });
   }, [setState]);
 
+  const updateSettings = useCallback((updates: Partial<AppSettings>) => {
+    setState(prev => ({ ...prev, settings: { ...prev.settings, ...updates } }));
+  }, [setState]);
+
+  /* ---------- the Shared Rail ----------
+     Local records only: profiles, one thread, loans. Nothing here syncs. */
+
+  const sendRailMessage = useCallback((groupId: string, text: string, request?: CircleMessage['request']) => {
+    const trimmed = text.trim();
+    if (!trimmed && !request) return;
+    setState(prev => {
+      const me = prev.circle.profiles.find(p => p.isMe);
+      if (!me) return prev;
+      const message: CircleMessage = {
+        id: crypto.randomUUID(),
+        groupId,
+        authorId: me.id,
+        date: todayLocal(),
+        text: trimmed,
+        request,
+      };
+      return { ...prev, circle: { ...prev.circle, messages: [...prev.circle.messages, message] } };
+    });
+  }, [setState]);
+
+  /** Advance a borrow request; lending opens a loan, returning closes it. */
+  const setRequestStatus = useCallback((messageId: string, status: BorrowStatus) => {
+    setState(prev => {
+      const message = prev.circle.messages.find(m => m.id === messageId);
+      if (!message?.request || message.request.status === status) return prev;
+      const me = prev.circle.profiles.find(p => p.isMe);
+      const messages = prev.circle.messages.map(m =>
+        m.id === messageId ? { ...m, request: { ...m.request as NonNullable<CircleMessage['request']>, status } } : m
+      );
+      let loans = prev.circle.loans;
+      if (status === 'lent') {
+        const lendable = me?.lendable.find(l => l.name === message.request?.pieceName);
+        loans = [...loans, {
+          id: crypto.randomUUID(),
+          pieceName: message.request.pieceName,
+          itemId: lendable?.itemId,
+          withId: message.authorId === me?.id
+            ? prev.circle.groups.find(g => g.id === message.groupId)?.memberIds.find(id => id !== me?.id) ?? message.authorId
+            : message.authorId,
+          direction: message.authorId === me?.id ? 'from' : 'to',
+          since: todayLocal(),
+        }];
+      }
+      if (status === 'returned') {
+        loans = loans.map(l =>
+          l.pieceName === message.request?.pieceName && !l.returned ? { ...l, returned: todayLocal() } : l
+        );
+      }
+      return { ...prev, circle: { ...prev.circle, messages, loans } };
+    });
+  }, [setState]);
+
+  const returnLoan = useCallback((loanId: string) => {
+    setState(prev => ({
+      ...prev,
+      circle: {
+        ...prev.circle,
+        loans: prev.circle.loans.map(l => l.id === loanId && !l.returned ? { ...l, returned: todayLocal() } : l),
+      },
+    }));
+  }, [setState]);
+
+  /** Put a piece of this closet on, or take it off, my open-to-borrow list. */
+  const setLendable = useCallback((itemId: string, lendable: boolean) => {
+    setState(prev => {
+      const me = prev.circle.profiles.find(p => p.isMe);
+      const item = prev.items.find(i => i.id === itemId);
+      if (!me || !item) return prev;
+      const has = me.lendable.some(l => l.itemId === itemId);
+      if (has === lendable) return prev;
+      const nextLendable = lendable
+        ? [...me.lendable, { itemId, name: item.name, category: item.category }]
+        : me.lendable.filter(l => l.itemId !== itemId);
+      return {
+        ...prev,
+        circle: {
+          ...prev.circle,
+          profiles: prev.circle.profiles.map(p => p.isMe ? { ...p, lendable: nextLendable } : p),
+        },
+      };
+    });
+  }, [setState]);
+
+  const addCategory = useCallback((label: string) => {
+    const trimmed = label.trim();
+    if (!trimmed) return;
+    const id = trimmed.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || crypto.randomUUID();
+    setState(prev => {
+      if (prev.settings.categories.some(c => c.id === id)) return prev;
+      return {
+        ...prev,
+        settings: { ...prev.settings, categories: [...prev.settings.categories, { id, label: trimmed }] },
+      };
+    });
+  }, [setState]);
+
+  const renameCategory = useCallback((id: CategoryId, label: string) => {
+    const trimmed = label.trim();
+    if (!trimmed) return;
+    setState(prev => ({
+      ...prev,
+      settings: {
+        ...prev.settings,
+        categories: prev.settings.categories.map(c => c.id === id ? { ...c, label: trimmed } : c),
+      },
+    }));
+  }, [setState]);
+
+  const setCategoryQuiet = useCallback((id: CategoryId, quiet: boolean) => {
+    setState(prev => ({
+      ...prev,
+      settings: {
+        ...prev.settings,
+        categories: prev.settings.categories.map(c => c.id === id ? { ...c, quiet } : c),
+      },
+    }));
+  }, [setState]);
+
+  const moveCategory = useCallback((id: CategoryId, direction: -1 | 1) => {
+    setState(prev => {
+      const list = [...prev.settings.categories];
+      const index = list.findIndex(c => c.id === id);
+      const target = index + direction;
+      if (index < 0 || target < 0 || target >= list.length) return prev;
+      [list[index], list[target]] = [list[target], list[index]];
+      return { ...prev, settings: { ...prev.settings, categories: list } };
+    });
+  }, [setState]);
+
+  const addOccasion = useCallback((tag: string) => {
+    const trimmed = tag.trim().toLowerCase();
+    if (!trimmed) return;
+    setState(prev =>
+      prev.settings.occasions.includes(trimmed)
+        ? prev
+        : { ...prev, settings: { ...prev.settings, occasions: [...prev.settings.occasions, trimmed] } }
+    );
+  }, [setState]);
+
+  const replaceState = useCallback((next: AppState) => setState(migrate(next)), [setState]);
+
+  const markExported = useCallback(() => {
+    setState(prev => ({ ...prev, settings: { ...prev.settings, lastExportAt: new Date().toISOString() } }));
+  }, [setState]);
+
   const getItem = useCallback((id: string) => state.items.find(i => i.id === id), [state.items]);
   const getOutfit = useCallback((id: string) => state.outfits.find(o => o.id === id), [state.outfits]);
-  const getItemsByCategory = useCallback((category: ClothingItem['category']) =>
-    state.items.filter(i => i.category === category), [state.items]);
   const getMostWorn = useCallback((limit = 5) =>
-    [...state.items].sort((a, b) => b.wearCount - a.wearCount).slice(0, limit), [state.items]);
+    [...activeItems].sort((a, b) => b.wearCount - a.wearCount).slice(0, limit), [activeItems]);
   const getLeastWorn = useCallback((limit = 5) =>
-    [...state.items].sort((a, b) => a.wearCount - b.wearCount).slice(0, limit), [state.items]);
+    [...activeItems].sort((a, b) => a.wearCount - b.wearCount).slice(0, limit), [activeItems]);
   const getUnwornItems = useCallback(() =>
-    state.items.filter(i => i.wearCount === 0), [state.items]);
-  const getWearCount = useCallback((id: string) =>
-    state.items.find(i => i.id === id)?.wearCount ?? 0, [state.items]);
+    activeItems.filter(i => i.wearCount === 0), [activeItems]);
+
+  const getWearablePool = useCallback(() =>
+    activeItems.filter(i =>
+      i.laundryStatus === 'clean' && !isBenched(i) && !isQuietCategory(state.settings, i.category)
+    ), [activeItems, state.settings]);
+
   const getOutfitSuggestions = useCallback(() => {
-    const today = new Date().toISOString().split('T')[0];
-    const todayLog = state.wearLogs.find(l => l.date === today);
-    if (todayLog) return [];
-    return state.outfits.filter(o => o.favorite).sort(() => Math.random() - 0.5).slice(0, 3);
-  }, [state.outfits, state.wearLogs]);
+    const today = todayLocal();
+    if (state.wearLogs.some(l => l.date === today)) return [];
+    const retiredIds = new Set(state.items.filter(i => i.retired).map(i => i.id));
+    const wearable = state.outfits.filter(o => o.itemIds.every(id => !retiredIds.has(id)));
+    const favorites = wearable.filter(o => o.favorite);
+    const pool = favorites.length > 0 ? favorites : wearable;
+    // Most-recently-worn last: variety without randomness that re-shuffles on render.
+    return [...pool]
+      .sort((a, b) => (a.lastWorn ?? '').localeCompare(b.lastWorn ?? ''))
+      .slice(0, 3);
+  }, [state.outfits, state.wearLogs, state.items]);
 
   return (
     <WardrobeContext.Provider value={{
       ...state,
-      addItem, updateItem, deleteItem, toggleFavoriteItem, setLaundryStatus,
-      addOutfit, deleteOutfit, toggleFavoriteOutfit, logWear,
+      activeItems,
+      addItem, updateItem, deleteItem, retireItem, unretireItem,
+      toggleFavoriteItem, setLaundryStatus,
+      addOutfit, deleteOutfit, toggleFavoriteOutfit, logWear, removeWearLog,
       addWishlistItem, updateWishlistItem, deleteWishlistItem, moveWishlistToCloset,
-      getItem, getOutfit, getItemsByCategory,
-      getMostWorn, getLeastWorn, getUnwornItems, getWearCount,
+      releaseWishlistItem, keepWishlistItem,
+      updateSettings, addCategory, renameCategory, setCategoryQuiet, moveCategory, addOccasion,
+      sendRailMessage, setRequestStatus, returnLoan, setLendable,
+      replaceState, markExported,
+      getItem, getOutfit,
+      getMostWorn, getLeastWorn, getUnwornItems, getWearablePool,
       getOutfitSuggestions,
     }}>
       {children}
@@ -213,3 +483,5 @@ export function useWardrobe() {
   if (!ctx) throw new Error('useWardrobe must be used within WardrobeProvider');
   return ctx;
 }
+
+export { addDays };

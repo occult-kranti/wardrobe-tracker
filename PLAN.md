@@ -1,180 +1,86 @@
-# 🎯 Wardrobe Tracker — Master Plan
+# TOILE — Project Plan
 
-> **Current Status:** Website MVP is built and live at https://occult-kranti.github.io/wardrobe-tracker/
-> **Goal:** Iterate on the website until satisfied, then build a mobile application.
-
----
-
-## Phase 1: Foundation (✅ COMPLETE)
-
-### Market Research (DONE)
-- [x] Analyzed 10+ wardrobe apps (Stylebook, Cladwell, Whering, Acloset, Fits, PutTogether, Wardrowbe, Alta, Indyx, Vesta)
-- [x] Key insights documented:
-  - 74% of apps use subscription models
-  - Setup time is #1 pain point (2-3 hours for manual entry)
-  - Users report 40-60% reduction in impulse purchases
-  - Morning routine drops from 20min to 5min
-  - Source: MDPI study on wardrobe management apps
-
-### Design System (DONE)
-- [x] Color psychology research and palette defined:
-  - Primary: Terracotta `#C4705A` — warmth, earthy, unique in market
-  - Success: Sage `#7A9E7E` — calm, sustainable
-  - Background: Cream `#FAF8F5` — soft, lets clothing images shine
-- [x] Typography: General Sans (headings) + Outfit (body)
-- [x] Touch targets: 44px minimum
-- [x] ADHD/neurodiversity considerations
-- [x] Card-based layout with generous whitespace
-
-### Tech Stack (DONE)
-- [x] React 18 + TypeScript + Vite
-- [x] Tailwind CSS v4
-- [x] React Router DOM
-- [x] Lucide React icons
-- [x] LocalStorage persistence (offline-first)
-- [x] Framer Motion for animations
-
-### Core Features Built (MVP)
-- [x] Dashboard — stats, suggestions, category breakdown
-- [x] My Closet — upload photos, categorize, search, filter
-- [x] Outfit Builder — visual builder, random generator
-- [x] Statistics — utilization, cost-per-wear, monthly activity
-- [x] Settings — export/import, reset
-- [x] Add Item modal — photo upload, color picker, tags
+> **Status:** The rebrand and feature rebuild are complete on
+> `claude/wardrobe-tracker-redesign-hg0b34`.
+> **Goal:** Iterate on the web app until it earns a mobile build.
 
 ---
 
-## Phase 2: Website Enhancement (🔄 IN PROGRESS)
+## Phase 1 — Research & identity (✅ complete)
 
-### 2.1 Critical Fixes
-- [ ] **Fix deployment** — GitHub Pages is active but need to verify live site works
-- [ ] **Add proper .gitignore** — `node_modules` was accidentally committed to gh-pages branch
-- [ ] **Verify all routes work** — React Router may need `HashRouter` for GitHub Pages
+- [x] Market research: 12+ competitors, churn drivers, monetization, trust ruptures,
+      and unclaimed visual territories → `docs/01-market-research.md`
+- [x] UX/behavioral psychology: habit loops, interaction cost, cold start, ethical
+      reward design, accessibility floor → `docs/02-design-psychology.md`
+- [x] Three independent brand concepts, scored by a psychologist, a designer, and an
+      engineer. **Toile** won 2/3 verdicts; runner-up ideas grafted in
+      → `docs/05-brand-identity.md`
+- [x] Focus group (LGBTQ+ fashion designers + shopaholic archetypes), moderated, then
+      reviewed by a developer and a behavioral psychologist
+      → `docs/06-focus-group-requirements.md`
+- [x] Brand contract encoded as a loadable skill → `skills/wardrobe-brand/SKILL.md`
+- [x] Repo agents: `design-critic`, `brand-artist` → `.claude/agents/`
 
-### 2.2 UX Improvements
-- [ ] **Item Detail Modal** — Tap any clothing item to see full details, wear history, cost-per-wear
-- [ ] **Calendar/Planner Page** — Weekly outfit calendar, schedule outfits in advance
-- [ ] **Better empty states** — Friendly illustrations when closet is empty
-- [ ] **Onboarding flow** — First-time user tutorial
-- [ ] **Toast notifications** — Success/error feedback (item added, outfit saved, etc.)
+## Phase 2 — Rebuild (✅ complete)
 
-### 2.3 Data Features
-- [ ] **Cost tracking** — Better cost-per-wear analytics, total wardrobe value
-- [ ] **Wear logging** — Tap "worn today" on any item or outfit
-- [ ] **Laundry tracker** — Mark items as "in wash"
-- [ ] **Wishlist** — Save items you want to buy
+**Design system**
+- [x] Token set for both themes, AA-verified (warning ochre darkened after audit)
+- [x] Custom icon set: technical fashion flats, 1.5px butt/miter, one NE notch each
+- [x] Hand-coded SVG art: wordmark, tag monogram, wax seal, six empty-state plates,
+      and `GarmentPlate` for first-class no-photo items
+- [x] Primitives with focus trap, 44px targets, one-primary-button discipline
+- [x] Fraunces + Switzer + IBM Plex Mono; pattern paper, double rules, basting
+      dividers, letterpress plates, seal-press motion (reduced-motion safe)
 
-### 2.4 Visual Polish
-- [ ] **PWA support** — Manifest.json, service worker, install prompt
-- [ ] **Loading skeletons** — Better perceived performance
-- [ ] **Image optimization** — Lazy loading, compression
-- [ ] **Dark mode** — Toggle for dark theme
+**Data & correctness**
+- [x] Local-timezone dates (wear logs no longer shift across UTC)
+- [x] Outfit wears credit every member piece
+- [x] Future-dated logs are plans, not wears
+- [x] User-owned categories and occasions, with quiet categories
+- [x] `source`, `fitsLike`, `retired`, bench laundry states
+- [x] Wishlist `status` + cooling-off
+- [x] Lossless migration, 17 passing checks (v1 data keeps every wear)
+- [x] Export serializes whole state (wishlist was silently dropped before)
 
-### 2.5 Quality Assurance
-- [ ] **Responsive testing** — iPhone SE to desktop
-- [ ] **Accessibility audit** — ARIA labels, keyboard nav, screen reader
-- [ ] **Performance audit** — Lighthouse score 90+
-- [ ] **Cross-browser testing** — Chrome, Safari, Firefox
+**Features**
+- [x] Before You Buy (cross-category similarity, explainable reasons)
+- [x] Brand + source with a plain brand table
+- [x] Retire, don't delete
+- [x] Mending pile · honest generator · never-worn ledger · stayed-yours ledger
+- [x] Taxonomy editor · theme control · backup reminder
+- [x] PWA manifest and drawn app icons
 
----
+## Phase 3 — Next (📋)
 
-## Phase 3: Advanced Website Features (📋 PLANNED)
+- [ ] Service worker for true offline (manifest is in; SW is not)
+- [ ] Repair log with costs folded into cost-per-wear (needs a centralized CPW helper)
+- [ ] Category delete/merge with item reassignment
+- [ ] Optional local PIN lock — ship only with honest copy (localStorage is plaintext)
+- [ ] Client-side background removal for photos (on-device = privacy *and* speed)
+- [ ] Packing list generator
+- [ ] Sealed "season recap" export card (the shareable artifact, opt-in, no social graph)
+- [ ] Automated a11y + contrast regression checks in CI
 
-### 3.1 Smart Features
-- [ ] **Weather integration** — Suggest outfits based on weather
-- [ ] **Color coordination** — Suggest items that match selected piece
-- [ ] **Outfit rating** — Rate outfits, learn preferences over time
-- [ ] **Seasonal rotation** — Suggest storing away out-of-season items
+## Phase 4 — Mobile (📱 later)
 
-### 3.2 Social/Sharing
-- [ ] **Export outfit images** — Shareable PNG of outfit combinations
-- [ ] **Packing list generator** — Generate packing list for trips
-- [ ] **Wardrobe capsule** — Create minimalist capsule wardrobes
+Gate: Phase 3 complete, Lighthouse 90+ across the board, and the PWA genuinely
+pleasant to install and use offline. Capacitor is the likely path — it reuses this
+codebase and keeps the local-first promise intact.
 
-### 3.3 Data Insights
-- [ ] **Spending analysis** — Track wardrobe investment over time
-- [ ] **Sustainability score** — Cost-per-wear, outfit variety
-- [ ] **Style evolution** — See how style changes over months
+## Non-negotiables (any future work must hold these)
 
----
-
-## Phase 4: Mobile Application (📱 FUTURE)
-
-### When to Start Mobile App
-> **Criteria:** Website must meet ALL of these before moving to mobile:
-> 1. All Phase 2 features complete
-> 2. Lighthouse score 90+ on all metrics
-> 3. User testing confirms UX is smooth
-> 4. PWA works well as "app-like" experience
-
-### Mobile App Options
-| Approach | Pros | Cons |
-|---|---|---|
-| **React Native** | Shared codebase, native feel | More complex setup |
-| **Capacitor (PWA wrap)** | Fast, web code reuse | Less native feel |
-| **Flutter** | Fast, beautiful UI | Dart language, separate codebase |
-
-### Mobile-First Features
-- [ ] **Camera integration** — Take photos directly in app
-- [ ] **Background removal** — Auto-remove photo backgrounds
-- [ ] **Push notifications** — Daily outfit suggestions
-- [ ] **Widget support** — iOS/Android home screen widgets
-- [ ] **Offline sync** — Work offline, sync when connected
-- [ ] **Biometric lock** — Face ID / fingerprint for privacy
+1. **Local-first, forever.** No accounts, no cloud sync, no telemetry.
+2. **No commerce.** No shop links, affiliate codes, or retailer suggestions — a
+   feature that talks you out of buying cannot profit from buying.
+3. **No shame mechanics.** No guilt screens, red alarm colors on low-wear pieces, or
+   wasted-money framing. An app users lie to is worse than no app.
+4. **No gamification chrome.** No badges, streaks, or confetti. Cumulative factual
+   totals only.
+5. **No gendered anything.** The app asks what you own, never who you are.
+6. **No required field that erases someone.** Not brand (erases makers), not photos
+   (erases the privacy-conscious), not fixed categories (erases everyone else).
+7. **Lossless export, permanently**, including fields added by future versions.
 
 ---
 
-## Phase 5: Launch & Growth (🚀 LATER)
-
-- [ ] **App Store submission** — iOS App Store, Google Play
-- [ ] **Marketing website** — Landing page with features, testimonials
-- [ ] **Blog/SEO** — Content marketing for organic growth
-- [ ] **User feedback loop** — In-app surveys, analytics
-- [ ] **Monetization strategy** — Freemium model, premium features
-
----
-
-## Immediate Next Steps (This Session)
-
-1. **Verify live site** — Check if https://occult-kranti.github.io/wardrobe-tracker/ loads correctly
-2. **Add Calendar page** — I already wrote the component, need to wire it up
-3. **Add Item Detail modal** — I already wrote the component, need to integrate
-4. **Fix Router for GitHub Pages** — May need HashRouter instead of BrowserRouter
-5. **Clean up gh-pages branch** — Remove node_modules, only deploy dist/
-6. **Push updates** — Commit and redeploy
-
----
-
-## Design Principles (Always Follow)
-
-1. **Warm Minimalism** — Clean but not cold
-2. **Clothing-First** — UI should never compete with clothing photos
-3. **Friction Reduction** — Every tap should feel effortless
-4. **Offline-First** — No server dependency, ever
-5. **Privacy-First** — All data stays on device
-
----
-
-## Skills/Agents to Create
-
-| Skill Name | Purpose |
-|---|---|
-| `wardrobe-design` | UI component design, color theory, layout |
-| `wardrobe-analytics` | Statistics, charts, data visualization |
-| `wardrobe-ux` | User flow, accessibility, interaction design |
-| `wardrobe-mobile` | React Native / Capacitor mobile development |
-
----
-
-## Resources
-
-- **GitHub Repo:** https://github.com/occult-kranti/wardrobe-tracker
-- **Live Site:** https://occult-kranti.github.io/wardrobe-tracker/
-- **Market Research:** `docs/01-market-research.md`
-- **Design System:** `docs/02-design-psychology.md`
-- **Feature Spec:** `docs/03-feature-spec.md`
-
----
-
-*Plan created: 2026-08-11*
-*Next review: After Phase 2 completion*
+*Plan updated 2026-08-11.*

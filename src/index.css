@@ -1,63 +1,137 @@
 @import "tailwindcss";
 
-@theme {
-  /* ===== MIDNIGHT ATELIER - Dark Editorial Theme ===== */
-  
-  /* Backgrounds */
-  --color-bg: #0C0C0E;
-  --color-bg-elevated: #141416;
-  --color-bg-card: #1A1A1D;
-  --color-bg-card-hover: #222225;
-  
-  /* Text */
-  --color-text: #F0E6D8;
-  --color-text-secondary: #A89B8C;
-  --color-text-muted: #6B6156;
-  
-  /* Borders */
-  --color-border: #2A2825;
-  --color-border-light: #3A3632;
-  
-  /* Accents - Rich & Sophisticated */
-  --color-accent: #C9A86C;
-  --color-accent-hover: #D4B87D;
-  --color-accent-dim: #8B7347;
-  
-  --color-wine: #8B3A3A;
-  --color-wine-hover: #A04545;
-  --color-wine-dim: #5C2626;
-  
-  --color-sage: #6B8E6B;
-  --color-sage-hover: #7A9E7A;
-  --color-sage-dim: #4A6B4A;
-  
-  --color-amber: #C4956A;
-  --color-amber-hover: #D4A57A;
-  
-  --color-rose: #B06B7A;
-  --color-rose-hover: #C07A8A;
-  
-  /* Semantic */
-  --color-success: #6B8E6B;
-  --color-warning: #C4956A;
-  --color-error: #C45B5A;
-  
-  /* Typography */
-  --font-sans: 'Inter', system-ui, sans-serif;
-  --font-heading: 'Playfair Display', 'Georgia', serif;
-  --font-mono: 'JetBrains Mono', monospace;
-  
-  /* Radii - Sharper, more editorial */
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
+/* ============================================================
+   TOILE — design tokens
+   Contract: docs/05-brand-identity.md. Never hardcode a hex in
+   a component; every color resolves through these variables.
+   ============================================================ */
+
+:root {
+  /* the pattern room (light) */
+  --color-bg: #F4EFE2;
+  --color-surface: #FBF8F0;
+  --color-mat: #FBF8F0;          /* tile behind clothing photos */
+  --color-sunken: #EAE1CC;
+  --color-text: #201D18;
+  --color-text-2: #5C554A;
+  --color-border: #D8CFBA;
+  --color-accent: #BE1231;       /* sealing-wax carmine — the only saturated color */
+  --color-accent-hover: #97102A;
+  --color-accent-fill: #BE1231;
+  --color-on-accent: #FFFDF6;
+  --color-success: #2E6B4F;
+  --color-warning: #7D5813;
+  --color-danger: #771324;       /* oxblood — DANGER TEXT ONLY */
+  --color-danger-fill: #771324;  /* destructive button fill, chalk label (10.9:1) */
+  --color-gold: #C9A227;         /* decorative only — never text, never labeled fills */
+  --color-charcoal: #3A362E;
+  --color-chalk: #FFFDF6;
+  --color-ink-fill: #201D18;     /* primary button fill */
+  --color-on-ink: #FBF8F0;
+
+  --pattern-ink: 0, 0, 0;
+  --pattern-alpha: 0.06;
+
+  --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+  --font-ui: 'Switzer', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  --radius: 2px;                 /* print-cornered: radius 2 globally */
+  color-scheme: light;
+}
+
+/* the atelier at night (dark) */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-bg: #17140F;
+    --color-surface: #201C15;
+    --color-mat: #2B2A22;        /* lifted so black/navy garments keep their edges */
+    --color-sunken: #2A251C;
+    --color-text: #EFE9D9;
+    --color-text-2: #A89F8D;
+    --color-border: #383226;
+    --color-accent: #E85C70;     /* chalk red — text-safe on ink cloth */
+    --color-accent-hover: #F0798A;
+    --color-accent-fill: #BE1231;
+    --color-on-accent: #FFFDF6;
+    --color-success: #58A97F;
+    --color-warning: #D9A93F;
+    --color-danger: #F297A4;     /* danger TEXT only — far too light to fill */
+    --color-danger-fill: #8C1B32;/* per contract §7; chalk label measures 7.5:1 */
+    --color-gold: #D9B44A;
+    --color-charcoal: #2A251C;
+    --color-chalk: #EFE9D9;
+    --color-ink-fill: #EFE9D9;   /* inverts: chalk fill, ink label */
+    --color-on-ink: #201D18;
+    --pattern-ink: 255, 255, 255;
+    --pattern-alpha: 0.05;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --color-bg: #17140F;
+  --color-surface: #201C15;
+  --color-mat: #2B2A22;
+  --color-sunken: #2A251C;
+  --color-text: #EFE9D9;
+  --color-text-2: #A89F8D;
+  --color-border: #383226;
+  --color-accent: #E85C70;
+  --color-accent-hover: #F0798A;
+  --color-accent-fill: #BE1231;
+  --color-on-accent: #FFFDF6;
+  --color-success: #58A97F;
+  --color-warning: #D9A93F;
+  --color-danger: #F297A4;
+  --color-danger-fill: #8C1B32;
+  --color-gold: #D9B44A;
+  --color-charcoal: #2A251C;
+  --color-chalk: #EFE9D9;
+  --color-ink-fill: #EFE9D9;
+  --color-on-ink: #201D18;
+  --pattern-ink: 255, 255, 255;
+  --pattern-alpha: 0.05;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--color-bg);
+  --color-surface: var(--color-surface);
+  --color-mat: var(--color-mat);
+  --color-sunken: var(--color-sunken);
+  --color-text: var(--color-text);
+  --color-text-2: var(--color-text-2);
+  --color-border: var(--color-border);
+  --color-accent: var(--color-accent);
+  --color-accent-hover: var(--color-accent-hover);
+  --color-accent-fill: var(--color-accent-fill);
+  --color-on-accent: var(--color-on-accent);
+  --color-success: var(--color-success);
+  --color-warning: var(--color-warning);
+  --color-danger: var(--color-danger);
+  --color-danger-fill: var(--color-danger-fill);
+  --color-gold: var(--color-gold);
+  --color-charcoal: var(--color-charcoal);
+  --color-chalk: var(--color-chalk);
+  --color-ink: var(--color-ink-fill);
+  --color-on-ink: var(--color-on-ink);
+
+  --font-display: var(--font-display);
+  --font-ui: var(--font-ui);
+  --font-mono: var(--font-mono);
+
+  --radius-none: 0px;
+  --radius-sm: 2px;
+  --radius-md: 2px;
+  --radius-lg: 2px;
+  --radius-xl: 2px;
 }
 
 @layer base {
   html {
-    font-family: var(--font-sans);
-    background: var(--color-bg);
+    font-family: var(--font-ui);
+    background-color: var(--color-bg);
     color: var(--color-text);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -66,6 +140,8 @@
   body {
     margin: 0;
     min-height: 100vh;
+    font-size: 15px;
+    line-height: 1.6;
   }
 
   #root {
@@ -74,94 +150,188 @@
     flex-direction: column;
   }
 
-  /* Custom scrollbar */
-  ::-webkit-scrollbar {
-    width: 6px;
+  /* Ledger numerals line up in columns everywhere. */
+  table, .tabular {
+    font-variant-numeric: tabular-nums lining-nums;
   }
-  ::-webkit-scrollbar-track {
-    background: var(--color-bg);
+
+  ::selection {
+    background: var(--color-accent-fill);
+    color: var(--color-on-accent);
   }
-  ::-webkit-scrollbar-thumb {
-    background: var(--color-border-light);
-    border-radius: 3px;
+
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
   }
-  ::-webkit-scrollbar-thumb:hover {
-    background: var(--color-text-muted);
+}
+
+@layer components {
+  /* Pattern-cutting paper: one small cross per 24px tile.
+     Never applied behind the photo grid. */
+  .pattern-paper {
+    background-image:
+      linear-gradient(rgba(var(--pattern-ink), var(--pattern-alpha)) 0.75px, transparent 0.75px),
+      linear-gradient(90deg, rgba(var(--pattern-ink), var(--pattern-alpha)) 0.75px, transparent 0.75px);
+    background-size: 24px 3px, 3px 24px;
+    background-position: 0 0;
+  }
+
+  /* The double rule: 2px + 1px, 3px apart — masthead and table headers.
+     Real geometry, not a box-shadow. The old `0 3.5px 0 -3px` faked the thin
+     line with a shadow: the 0.5px sliver rounded away to nothing at 1×, and the
+     negative spread inset it 3px on each side, so the house's most-repeated
+     motif rendered as a single rule on all eight mastheads. */
+  .rule-double {
+    position: relative;
+    border-bottom: 2px solid var(--color-text);
+  }
+  .rule-double::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 100%;
+    margin-top: 3px;
+    height: 1px;
+    background: color-mix(in srgb, var(--color-text) 55%, transparent);
+  }
+
+  /* Basting stitch divider with bar-tack ends. */
+  .basting {
+    height: 1px;
+    background-image: repeating-linear-gradient(
+      to right,
+      var(--color-border) 0 4px,
+      transparent 4px 7px
+    );
+    position: relative;
+  }
+  .basting::before,
+  .basting::after {
+    content: '';
+    position: absolute;
+    top: -1px;
+    width: 1px;
+    height: 3px;
+    background: var(--color-border);
+  }
+  .basting::before { left: 0; }
+  .basting::after { right: 0; }
+
+  /* Letterpress plate edge: depth without a shadow. */
+  .plate {
+    border: 1px solid var(--color-border);
+    box-shadow: 1px 1px 0 0 var(--color-border);
+  }
+  .plate-ink {
+    border: 1px solid var(--color-text);
+    box-shadow: 1px 1px 0 0 var(--color-text);
+  }
+
+  /* Chalk registration crosses at card corners on hover/selection. */
+  .registered {
+    position: relative;
+  }
+  .registered::before,
+  .registered::after {
+    content: '';
+    position: absolute;
+    width: 5px;
+    height: 5px;
+    opacity: 0;
+    transition: opacity 140ms ease-out;
+    background-image:
+      linear-gradient(var(--color-text) 1px, transparent 1px),
+      linear-gradient(90deg, var(--color-text) 1px, transparent 1px);
+    background-size: 5px 1px, 1px 5px;
+    background-position: center;
+    background-repeat: no-repeat;
+  }
+  .registered::before { top: -3px; left: -3px; }
+  .registered::after { bottom: -3px; right: -3px; }
+  .registered:hover::before,
+  .registered:hover::after,
+  .registered[data-selected="true"]::before,
+  .registered[data-selected="true"]::after { opacity: 1; }
+
+  /* Garment tiles carry a hairline so the photo always has an edge.
+     Measured need: near-black pieces render darker than the dark mat (lum 29-42
+     against a mat of ~43) and white pieces sit lighter than the cream mat, so
+     without this the garment silhouette dissolves into the tile. An outline is
+     used rather than a border so it never disturbs the 4:5 box. */
+  .bg-mat {
+    outline: 1px solid var(--color-border);
+    outline-offset: -1px;
+  }
+
+  .type-masthead {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-optical-sizing: auto;
+    letter-spacing: -0.01em;
+    line-height: 1.1;
+  }
+
+  .type-editorial {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-weight: 400;
+  }
+
+  .type-ledger {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums lining-nums;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .type-label {
+    font-family: var(--font-ui);
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
   }
 }
 
 @layer utilities {
-  .text-balance {
-    text-wrap: balance;
+  .text-balance { text-wrap: balance; }
+
+  /* The seal press — the one sanctioned bounce, for logging a wear. */
+  @keyframes seal-press {
+    0%   { transform: scale(1.15); opacity: 0; }
+    55%  { transform: scale(0.96); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
   }
-  
-  /* Editorial heading style */
-  .heading-editorial {
-    font-family: var(--font-heading);
-    font-weight: 600;
-    letter-spacing: -0.02em;
-    line-height: 1.1;
+  .animate-seal { animation: seal-press 180ms ease-out both; }
+
+  @keyframes draw-in {
+    from { stroke-dashoffset: var(--dash-len, 200); }
+    to   { stroke-dashoffset: 0; }
   }
-  
-  /* Gold gradient text */
-  .text-gold {
-    background: linear-gradient(135deg, #C9A86C 0%, #E8D5A3 50%, #C9A86C 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+  .animate-draw { animation: draw-in 300ms ease-out both; }
+
+  @keyframes slip-up {
+    from { transform: translateY(8px); opacity: 0; }
+    to   { transform: translateY(0); opacity: 1; }
   }
-  
-  /* Subtle noise texture overlay */
-  .noise-overlay {
-    position: relative;
+  .animate-slip { animation: slip-up 180ms ease-out both; }
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
   }
-  .noise-overlay::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-    opacity: 0.03;
-    pointer-events: none;
-    z-index: 1;
+  .animate-fade { animation: fade-in 140ms ease-out both; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
-  
-  /* Decorative line */
-  .deco-line {
-    height: 1px;
-    background: linear-gradient(90deg, transparent 0%, var(--color-accent-dim) 50%, transparent 100%);
-  }
-  
-  /* Card hover lift */
-  .card-lift {
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-  }
-  .card-lift:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-  }
-  
-  /* Button shine effect */
-  .btn-shine {
-    position: relative;
-    overflow: hidden;
-  }
-  .btn-shine::after {
-    content: '';
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: linear-gradient(
-      45deg,
-      transparent 30%,
-      rgba(255, 255, 255, 0.05) 50%,
-      transparent 70%
-    );
-    transform: translateX(-100%);
-    transition: transform 0.6s ease;
-  }
-  .btn-shine:hover::after {
-    transform: translateX(100%);
+  .animate-seal, .animate-draw, .animate-slip {
+    animation: fade-in 0.01ms both;
   }
 }
