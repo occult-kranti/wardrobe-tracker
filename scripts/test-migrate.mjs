@@ -27,6 +27,24 @@ const v1 = {
       season: [], occasion: ['market-day'], imageUrl: '', dateAdded: '2026-02-01',
       wearCount: 0, favorite: false, laundryStatus: 'washing',
     },
+    // A hand-edited export can carry a cost that is not a number. Until now
+    // migrate coerced wearCount but never cost, so a string reached
+    // ItemDetail's `item.cost.toFixed(0)` and white-screened the modal.
+    {
+      id: 'c', name: 'Overcoat', category: 'outerwear', color: '#3a362e',
+      season: ['winter'], occasion: ['work'], imageUrl: '', dateAdded: '2026-01-15',
+      wearCount: 4, cost: '420', favorite: false, laundryStatus: 'clean',
+    },
+    {
+      id: 'd', name: 'Scarf', category: 'accessories', color: '#be1231',
+      season: [], occasion: [], imageUrl: '', dateAdded: '2026-01-20',
+      wearCount: 2, cost: 'not a price', favorite: false, laundryStatus: 'clean',
+    },
+    {
+      id: 'e', name: 'Gifted Ring', category: 'accessories', color: '#c9a227',
+      season: [], occasion: [], imageUrl: '', dateAdded: '2026-01-25',
+      wearCount: 9, cost: 0, favorite: false, laundryStatus: 'clean',
+    },
   ],
   outfits: [{ id: 'o1', name: 'Monday', itemIds: ['a'], favorite: true, dateCreated: '2026-03-01', wearCount: 3 }],
   wearLogs: [{ id: 'l1', date: '2026-08-01', itemIds: ['a'] }],
@@ -37,8 +55,12 @@ const v1 = {
 const m = migrate(v1);
 const checks = [
   ['schemaVersion set', m.schemaVersion === 2],
-  ['items preserved', m.items.length === 2],
+  ['items preserved', m.items.length === 5],
   ['wear counts intact', m.items[0].wearCount === 14],
+  // Losslessness is read strictly: a numeric string is parsed, not thrown away.
+  ['numeric string cost coerced', m.items[2].cost === 420],
+  ['unparseable cost dropped', m.items[3].cost === undefined],
+  ['recorded zero cost preserved', m.items[4].cost === 0],
   ['outfits preserved', m.outfits.length === 1],
   ['wearLogs preserved', m.wearLogs.length === 1],
   ['wishlist preserved', m.wishlist.length === 1],

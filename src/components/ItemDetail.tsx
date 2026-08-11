@@ -12,6 +12,7 @@ import {
   type LaundryStatus,
 } from '../types';
 import { daysSince } from '../lib/dates';
+import { costPerWear, formatMoney, formatPerWear } from '../lib/cost';
 import { findSimilarItems, wearContext } from '../lib/similarity';
 import { Button, Chip, Modal, SectionTitle, Stat, inputClass, selectClass } from './ui';
 import { Basting, GarmentPlate } from './art';
@@ -111,7 +112,7 @@ export default function ItemDetail({ itemId, onClose }: Props) {
   if (!item) return null;
 
   const days = item.lastWorn ? daysSince(item.lastWorn.slice(0, 10)) : null;
-  const costPerWear = item.cost && item.wearCount > 0 ? item.cost / item.wearCount : null;
+  const cpw = costPerWear(item);
   const recent = [...history].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 10);
   const benched = isBenched(item);
 
@@ -212,10 +213,14 @@ export default function ItemDetail({ itemId, onClose }: Props) {
           ) : (
             <Stat value="—" label="no first wear yet" />
           )}
-          {costPerWear !== null ? (
-            <Stat value={`$${costPerWear.toFixed(2)}`} label="per wear" />
-          ) : item.cost ? (
-            <Stat value={`$${item.cost.toFixed(0)}`} label="paid, resting so far" />
+          {cpw.reason === 'ok' ? (
+            <Stat value={formatPerWear(cpw.value)} label="per wear" />
+          ) : cpw.reason === 'free' ? (
+            // A recorded 0 is an answer, not a gap — this piece was inherited,
+            // gifted or swapped. "$0.00 per wear" would read as a rendering bug.
+            <Stat value="—" label="no purchase price" />
+          ) : cpw.reason === 'no-wears' && cpw.basis !== undefined && cpw.basis > 0 ? (
+            <Stat value={formatMoney(cpw.basis)} label="paid, resting so far" />
           ) : (
             <Stat value="—" label="no cost recorded" />
           )}

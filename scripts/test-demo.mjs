@@ -9,7 +9,11 @@ const s = buildDemoState();
 const active = s.items.filter(i=>!i.retired);
 const jew = active.filter(i=>i.category==='jewellery');
 const withJew = s.outfits.filter(o=>o.itemIds.some(id=>jew.some(j=>j.id===id)));
-const today = new Date().toISOString().slice(0,10);
+// Local date, never toISOString(): west of UTC in the evening that returns
+// tomorrow, which silently reclassifies the D(+1) planned row as past and drops
+// 'planned future days' from 2 to 1. Same bug class the app itself already fixed.
+const d0 = new Date();
+const today = `${d0.getFullYear()}-${String(d0.getMonth()+1).padStart(2,'0')}-${String(d0.getDate()).padStart(2,'0')}`;
 const planned = s.wearLogs.filter(l=>l.date>today);
 const ids = new Set(s.items.map(i=>i.id));
 const dangling = s.outfits.flatMap(o=>o.itemIds.filter(id=>!ids.has(id))).concat(s.wearLogs.flatMap(l=>l.itemIds.filter(id=>!ids.has(id))));
@@ -36,7 +40,67 @@ const checks = [
  ['no remote urls (offline-first)', !/https?:\/\//.test(JSON.stringify(s)), ''],
  ['theme dark by default', s.settings.theme==='dark', s.settings.theme],
  ['jewellery in taxonomy', s.settings.categories.some(c=>c.id==='jewellery'), ''],
+ ...consistency(),
 ];
+
+/**
+ * The demo used to assert 639 wears while its own logs implied 133 — a 4.8x
+ * contradiction that made every per-month number disagree with the headline.
+ * logWear() maintains one invariant: a non-future log increments wearCount by
+ * one per credited piece and moves lastWorn forward. These check the fixture
+ * obeys the same rule the app does.
+ */
+function consistency() {
+  const past = s.wearLogs.filter(l => l.date <= today);
+  const wears = new Map(), last = new Map();
+  for (const l of past) for (const id of l.itemIds) {
+    wears.set(id, (wears.get(id) ?? 0) + 1);
+    if (!last.has(id) || l.date > last.get(id)) last.set(id, l.date);
+  }
+  const byId = new Map(s.items.map(i => [i.id, i]));
+
+  const badCount = s.items.filter(i => i.wearCount !== (wears.get(i.id) ?? 0));
+  const badLast = s.items.filter(i => (i.lastWorn ?? null) !== (last.get(i.id) ?? null));
+  const badOutfit = s.outfits.filter(o =>
+    o.wearCount !== past.filter(l => l.outfitId === o.id).length);
+  const beforeAdded = past.filter(l => l.itemIds.some(id => {
+    const i = byId.get(id); return i && l.date < i.dateAdded.slice(0,10);
+  }));
+  const afterRetired = past.filter(l => l.itemIds.some(id => {
+    const i = byId.get(id); return i && i.retired && l.date >= i.retired.date;
+  }));
+  const retiredWears = s.items.filter(i => i.retired).reduce((a,i) => a + i.wearCount, 0);
+
+  const monthsSet = [...new Set(past.map(l => l.date.slice(0,7)))].sort();
+  // No hole inside the charted window: an empty month renders as a bar clamped
+  // to 3% height, which reads as a rendering fault rather than a quiet month.
+  const charted = monthsSet.slice(-12);
+  let holes = 0;
+  for (let i = 1; i < charted.length; i++) {
+    const [py, pm] = charted[i-1].split('-').map(Number);
+    const expect = new Date(py, pm, 1);
+    const key = `${expect.getFullYear()}-${String(expect.getMonth()+1).padStart(2,'0')}`;
+    if (key !== charted[i]) holes++;
+  }
+  // Seasonal swing must be real: the busiest month should outrun the quietest
+  // whole month by a clear margin, or the chart is a flat line.
+  const wholeMonths = monthsSet.slice(-13, -1);
+  const perMonth = wholeMonths.map(m =>
+    past.filter(l => l.date.slice(0,7) === m).reduce((a,l) => a + l.itemIds.length, 0));
+  const swing = perMonth.length ? Math.max(...perMonth) / Math.max(1, Math.min(...perMonth)) : 0;
+
+  return [
+    ['wearCount matches the log', badCount.length === 0, badCount.map(i=>i.name).slice(0,3).join(',')],
+    ['lastWorn matches the log', badLast.length === 0, badLast.map(i=>i.name).slice(0,3).join(',')],
+    ['outfit wearCount matches the log', badOutfit.length === 0, badOutfit.map(o=>o.name).slice(0,3).join(',')],
+    ['no wear before a piece was added', beforeAdded.length === 0, beforeAdded.length],
+    ['no wear on or after retirement', afterRetired.length === 0, afterRetired.length],
+    ['retired pieces keep their wears', retiredWears > 0, retiredWears],
+    ['at least 12 months of history', monthsSet.length >= 12, monthsSet.length],
+    ['no empty month in the charted window', holes === 0, holes],
+    ['seasonal swing is visible', swing >= 1.5, swing.toFixed(2)+'x'],
+  ];
+}
 let fail=0;
 for(const [n,ok,d] of checks){console.log(ok?'PASS':'FAIL','-',n, d!==''&&d!==undefined?`(${d})`:'');if(!ok)fail++;}
 const cost = active.reduce((a,i)=>a+(i.cost||0),0);

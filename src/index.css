@@ -21,7 +21,8 @@
   --color-on-accent: #FFFDF6;
   --color-success: #2E6B4F;
   --color-warning: #7D5813;
-  --color-danger: #771324;
+  --color-danger: #771324;       /* oxblood — DANGER TEXT ONLY */
+  --color-danger-fill: #771324;  /* destructive button fill, chalk label (10.9:1) */
   --color-gold: #C9A227;         /* decorative only — never text, never labeled fills */
   --color-charcoal: #3A362E;
   --color-chalk: #FFFDF6;
@@ -55,7 +56,8 @@
     --color-on-accent: #FFFDF6;
     --color-success: #58A97F;
     --color-warning: #D9A93F;
-    --color-danger: #F297A4;
+    --color-danger: #F297A4;     /* danger TEXT only — far too light to fill */
+    --color-danger-fill: #8C1B32;/* per contract §7; chalk label measures 7.5:1 */
     --color-gold: #D9B44A;
     --color-charcoal: #2A251C;
     --color-chalk: #EFE9D9;
@@ -82,6 +84,7 @@
   --color-success: #58A97F;
   --color-warning: #D9A93F;
   --color-danger: #F297A4;
+  --color-danger-fill: #8C1B32;
   --color-gold: #D9B44A;
   --color-charcoal: #2A251C;
   --color-chalk: #EFE9D9;
@@ -107,6 +110,7 @@
   --color-success: var(--color-success);
   --color-warning: var(--color-warning);
   --color-danger: var(--color-danger);
+  --color-danger-fill: var(--color-danger-fill);
   --color-gold: var(--color-gold);
   --color-charcoal: var(--color-charcoal);
   --color-chalk: var(--color-chalk);
@@ -173,10 +177,24 @@
     background-position: 0 0;
   }
 
-  /* The double rule: 2px + 0.5px, 3px apart — masthead and table headers. */
+  /* The double rule: 2px + 1px, 3px apart — masthead and table headers.
+     Real geometry, not a box-shadow. The old `0 3.5px 0 -3px` faked the thin
+     line with a shadow: the 0.5px sliver rounded away to nothing at 1×, and the
+     negative spread inset it 3px on each side, so the house's most-repeated
+     motif rendered as a single rule on all eight mastheads. */
   .rule-double {
+    position: relative;
     border-bottom: 2px solid var(--color-text);
-    box-shadow: 0 3.5px 0 -3px var(--color-text);
+  }
+  .rule-double::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 100%;
+    margin-top: 3px;
+    height: 1px;
+    background: color-mix(in srgb, var(--color-text) 55%, transparent);
   }
 
   /* Basting stitch divider with bar-tack ends. */

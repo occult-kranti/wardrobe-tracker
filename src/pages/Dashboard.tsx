@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useWardrobe } from '../context/WardrobeContext';
 import { categoryLabel, isQuietCategory, type ClothingItem, type Outfit, type WearLog } from '../types';
 import { todayLocal, isFutureDate, daysSince } from '../lib/dates';
+import { costPerWear, formatPerWear } from '../lib/cost';
 import { Button, Card, EmptyState, Masthead, Modal, SectionTitle, Stat, Chip } from '../components/ui';
 import { IconArrowRight, IconCheck, IconEyeletFilled } from '../components/icons';
 import { Basting, GarmentPlate, PlateEmptyCloset, WaxSeal } from '../components/art';
@@ -128,7 +129,10 @@ export default function Dashboard() {
 
   /* ---------- totals (plans are not wears) ---------- */
 
-  const recordedWears = useMemo(() => wearLogs.filter(l => !isFutureDate(l.date)).length, [wearLogs]);
+  // "Wears recorded" used to count entries in the log — a count of logged DAYS —
+  // while the Ledger showed the item-wear total under the same words, 24× larger.
+  // The contract wants the cumulative unloseable total (§8.2): item wears.
+  const itemWears = useMemo(() => activeItems.reduce((sum, i) => sum + i.wearCount, 0), [activeItems]);
   const restingCount = useMemo(() => activeItems.filter(i => i.wearCount === 0).length, [activeItems]);
 
   /* ---------- one honest insight, rotated by the day ---------- */
@@ -139,9 +143,10 @@ export default function Dashboard() {
 
     const most = [...worn].sort((a, b) => b.wearCount - a.wearCount)[0];
     if (most) {
+      const { value } = costPerWear(most);
       lines.push(
-        most.cost && most.cost > 0
-          ? `"${most.name}" is down to $${(most.cost / most.wearCount).toFixed(2)} a wear.`
+        value !== null && value > 0
+          ? `"${most.name}" is down to ${formatPerWear(value)} a wear.`
           : `"${most.name}" leads the closet at ${most.wearCount} wears.`
       );
     }
@@ -153,11 +158,11 @@ export default function Dashboard() {
       lines.push(`"${quietest.name}" hasn't been worn since ${monthLabel(quietest.lastWorn)}.`);
     }
 
-    if (recordedWears > 0) {
+    if (itemWears > 0) {
       const first = wearLogs
         .filter(l => !isFutureDate(l.date))
         .reduce<string | null>((min, l) => (min === null || l.date < min ? l.date : min), null);
-      lines.push(`${recordedWears} wears recorded${first ? ` since ${monthLabel(first)}` : ''}.`);
+      lines.push(`${itemWears} wears recorded${first ? ` since ${monthLabel(first)}` : ''}.`);
     }
 
     if (restingCount > 0) {
@@ -175,7 +180,7 @@ export default function Dashboard() {
 
     if (lines.length === 0) return null;
     return lines[dayOfYear() % lines.length];
-  }, [activeItems, wearLogs, recordedWears, restingCount]);
+  }, [activeItems, wearLogs, itemWears, restingCount]);
 
   /* ---------- category ledger ---------- */
 
@@ -253,7 +258,7 @@ export default function Dashboard() {
     showToast(
       only
         ? `Logged. "${only.name}" ${wearsPhrase(only.wearCount + 1)}.`
-        : `Logged. ${picked.length} pieces — ${recordedWears + 1} wears recorded.`,
+        : `Logged. ${picked.length} pieces — ${itemWears + picked.length} wears recorded.`,
       'seal'
     );
     if (first) showToast(first, 'info');
@@ -394,7 +399,7 @@ export default function Dashboard() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-5">
           <Stat value={activeItems.length} label="In the closet" />
           <Stat value={outfits.length} label="Outfits" />
-          <Stat value={recordedWears} label="Wears recorded" />
+          <Stat value={itemWears} label="Wears recorded" />
           <Stat value={restingCount} label="Resting" />
         </div>
       </Card>

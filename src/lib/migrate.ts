@@ -7,6 +7,7 @@ import {
   type ClothingItem,
   type WishlistItem,
 } from '../types';
+import { isRecordedAmount } from './cost';
 
 // Every stored shape this app has ever written must load without loss. Unknown
 // keys are preserved verbatim so an export from a newer version can round-trip
@@ -24,6 +25,17 @@ function migrateItem(raw: Loose): ClothingItem {
   if (!Array.isArray(item.season)) item.season = [];
   if (!Array.isArray(item.occasion)) item.occasion = [];
   if (typeof item.wearCount !== 'number') item.wearCount = 0;
+  // Cost was never sanitized, so a hand-edited export carrying cost: "420"
+  // survived to `item.cost.toFixed(0)` and took the detail modal down with it.
+  // Parse what can be parsed — losing a recoverable value would break the
+  // lossless promise — and drop only what is genuinely not a number. A recorded
+  // 0 is a real answer (inherited, gifted) and must survive untouched.
+  const rawCost: unknown = (item as Loose).cost;
+  if (rawCost !== undefined && !isRecordedAmount(rawCost)) {
+    const parsed = typeof rawCost === 'string' ? Number(rawCost.trim()) : NaN;
+    if (isRecordedAmount(parsed)) item.cost = parsed;
+    else delete item.cost;
+  }
   if (typeof item.favorite !== 'boolean') item.favorite = false;
   if (typeof item.laundryStatus !== 'string') item.laundryStatus = 'clean';
   if (typeof item.imageUrl !== 'string') item.imageUrl = '';

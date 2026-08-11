@@ -10,14 +10,24 @@ import AddItemModal from './AddItemModal';
 import { ToastContainer } from './Toast';
 import { IconButton } from './ui';
 
-const navItems = [
+interface NavItem {
+  path: string;
+  label: string;
+  /** Used in the 5-slot mobile rail only, where the full label will not fit. */
+  shortLabel?: string;
+  icon: typeof IconToday;
+}
+
+const navItems: NavItem[] = [
   { path: '/', label: 'Today', icon: IconToday },
   { path: '/closet', label: 'Closet', icon: IconCloset },
   { path: '/outfits', label: 'Outfits', icon: IconOutfits },
   { path: '/calendar', label: 'Calendar', icon: IconCalendar },
   { path: '/ledger', label: 'Ledger', icon: IconLedger },
   { path: '/wishlist', label: 'Wishlist', icon: IconWishlist },
-  { path: '/compare', label: 'Before you buy', icon: IconCompare },
+  // shortLabel is for the mobile rail only, where "Before you buy" wrapped to two
+  // lines and shoved its icon out of the icon column.
+  { path: '/compare', label: 'Before you buy', shortLabel: 'Compare', icon: IconCompare },
   { path: '/settings', label: 'Settings', icon: IconSettings },
 ];
 
@@ -89,7 +99,7 @@ export default function Layout() {
                 key={item.path}
                 to={item.path}
                 aria-current={active ? 'page' : undefined}
-                className={`flex items-center gap-3 h-11 px-3 type-label text-[13px] transition-colors duration-150 border-l-2 ${
+                className={`flex items-center gap-2.5 h-11 px-3 type-label text-[13px] whitespace-nowrap transition-colors duration-150 border-l-2 ${
                   active
                     ? 'border-accent text-text bg-surface'
                     : 'border-transparent text-text-2 hover:text-text hover:bg-surface/60'
@@ -142,13 +152,17 @@ export default function Layout() {
               key={item.path}
               to={item.path}
               aria-current={active ? 'page' : undefined}
-              className={`flex-1 flex flex-col items-center justify-center gap-0.5 ${
+              className={`relative flex-1 flex flex-col items-center justify-center gap-0.5 ${
                 active ? 'text-text' : 'text-text-2'
               }`}
             >
               <Icon size={20} />
-              <span className="type-ledger text-[9px]">{item.label}</span>
-              {active ? <span className="absolute bottom-1 w-1 h-1 rounded-full bg-accent" /> : null}
+              <span className="type-label whitespace-nowrap">
+                {item.shortLabel ?? item.label}
+              </span>
+              {active ? (
+                <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-accent" />
+              ) : null}
             </Link>
           );
         })}
@@ -161,7 +175,7 @@ export default function Layout() {
           }`}
         >
           {moreOpen ? <IconClose size={20} /> : <IconMenu size={20} />}
-          <span className="type-ledger text-[9px]">More</span>
+          <span className="type-label whitespace-nowrap">More</span>
         </button>
       </nav>
 

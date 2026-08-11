@@ -21,7 +21,9 @@ const toneClasses: Record<ButtonTone, string> = {
   hero: 'bg-accent-fill text-on-accent hover:brightness-110',
   secondary: 'border border-text text-text hover:bg-sunken',
   tertiary: 'text-accent underline underline-offset-[3px] decoration-1 hover:decoration-2 px-1',
-  destructive: 'bg-danger text-chalk hover:opacity-90',
+  // --color-danger is a TEXT token (light pink in dark mode); filling with it put
+  // a chalk label at roughly 2:1 on the one button that wipes everything.
+  destructive: 'bg-danger-fill text-chalk hover:opacity-90',
 };
 
 export function Button({ tone = 'secondary', compact, icon, children, className = '', ...rest }: ButtonProps) {

@@ -1,4 +1,5 @@
 import type { ClothingItem, CategoryId, Occasion } from '../types';
+import { costPerWear, formatMoney, formatPerWear } from './cost';
 
 // "Do I already own something like this?" — the engine behind Before You Buy.
 // Similarity is deliberately explainable: same category is a hard gate, then
@@ -128,7 +129,7 @@ export function matchSummary(matches: SimilarMatch[]): string | null {
   const spent = matches.reduce((sum, m) => sum + (m.item.cost ?? 0), 0);
   const pieces = `${matches.length} similar ${matches.length === 1 ? 'piece' : 'pieces'}`;
   if (spent > 0) {
-    return `You own ${pieces}. Total spent: $${spent.toFixed(0)}. Total wears: ${wears}.`;
+    return `You own ${pieces}. Total spent: ${formatMoney(spent)}. Total wears: ${wears}.`;
   }
   return `You own ${pieces}. Total wears: ${wears}.`;
 }
@@ -136,7 +137,7 @@ export function matchSummary(matches: SimilarMatch[]): string | null {
 /** Supportive framing stats for a matched owned item. */
 export function wearContext(item: ClothingItem): string {
   if (item.wearCount === 0) return 'never worn yet';
-  const cpw = item.cost && item.wearCount > 0 ? item.cost / item.wearCount : null;
+  const { value } = costPerWear(item);
   const wears = `worn ${item.wearCount}×`;
-  return cpw !== null ? `${wears} · $${cpw.toFixed(2)}/wear` : wears;
+  return value !== null && value > 0 ? `${wears} · ${formatPerWear(value)}/wear` : wears;
 }

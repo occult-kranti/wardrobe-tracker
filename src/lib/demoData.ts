@@ -1,5 +1,6 @@
-import { SCHEMA_VERSION, DEFAULT_CATEGORIES, DEFAULT_OCCASIONS, type AppState, type ClothingItem, type Outfit, type WearLog, type WishlistItem } from '../types';
+import { SCHEMA_VERSION, DEFAULT_CATEGORIES, DEFAULT_OCCASIONS, type AppState, type ClothingItem, type Outfit, type Season, type WearLog, type WishlistItem } from '../types';
 import { todayLocal, addDays } from './dates';
+import { GARMENT_ART } from './garmentArt';
 
 /**
  * A sample wardrobe that exercises every feature at once, so the populated
@@ -9,6 +10,21 @@ import { todayLocal, addDays } from './dates';
  * offline-first promise intact even in the demo. Two pieces deliberately have
  * no image so the drawn GarmentPlate stand-in is visible.
  */
+
+/**
+ * The drawn plate for a piece, if one exists.
+ *
+ * These replaced flat colour rectangles with a caption stamped on them. Each is
+ * a technical flat — placket, sleeve seams, waistband, hardware — with the
+ * textile carrying the colour rhythm, drawn so a garment reads as itself at
+ * tile size. Pieces without a plate fall back to the procedural swatch below,
+ * and two pieces deliberately have neither so the drawn GarmentPlate stand-in
+ * stays visible.
+ */
+function plate(id: string): string | undefined {
+  const svg = GARMENT_ART[id];
+  return svg ? `data:image/svg+xml;utf8,${encodeURIComponent(svg)}` : undefined;
+}
 
 function swatch(base: string, accent: string, label: string, motif: 'plain' | 'stripe' | 'check' | 'drape' = 'plain'): string {
   const motifs: Record<string, string> = {
@@ -93,12 +109,50 @@ const SEEDS: Seed[] = [
   // No image on purpose.
   { id: 'd-acc-belt', name: 'Tan Leather Belt', category: 'accessories', color: '#8B6B4A', brand: 'Anderson’s', source: 'new', cost: 90, wearCount: 17, season: ['spring', 'fall'], occasion: ['work', 'casual'], addedDaysAgo: 260, lastWorn: -11 },
 
+  // ---- independent makers, added later than the core wardrobe
+  // A closet that is all high-street reads as a shopping list. These arrived
+  // over the last year, which is also what gives the cost-per-wear curve its
+  // steps: every one of them starts the sum again.
+  { id: 'd-top-marimekko', name: 'Printed Poplin Shirt', category: 'tops', color: '#F0EBE0', brand: 'Marimekko', source: 'new', fitsLike: 'straight cut, roomy through the body', cost: 165, wearCount: 42, favorite: true, season: ['spring', 'summer'], occasion: ['casual', 'work'], addedDaysAgo: 480, lastWorn: -7, swatch: ['#F0EBE0', '#BE1231', 'Poplin'] },
+  { id: 'd-bot-toogood', name: 'Painter Trousers', category: 'bottoms', color: '#D9C4A3', brand: 'Toogood', source: 'new', fitsLike: 'very wide, sits at the natural waist', cost: 290, wearCount: 55, season: ['spring', 'summer', 'fall'], occasion: ['casual', 'performance'], addedDaysAgo: 520, lastWorn: -6, notes: 'The pockets are big enough for a full sketchbook.', swatch: ['#D9C4A3', '#8A7350', 'Painter'] },
+  { id: 'd-one-bode', name: 'Quilted Patchwork Dress', category: 'dresses', color: '#C9A227', brand: 'Bode', source: 'secondhand', fitsLike: 'shirt dress cut, wears warm', cost: 240, wearCount: 17, favorite: true, season: ['fall', 'winter'], occasion: ['party', 'casual'], addedDaysAgo: 440, lastWorn: -18, notes: 'Found it secondhand. Someone had already mended the third block.', swatch: ['#C9A227', '#BE1231', 'Quilt', 'check'] },
+  { id: 'd-lay-nicholson', name: 'Boiled Wool Overshirt', category: 'layers', color: '#4A5240', brand: 'Studio Nicholson', source: 'new', fitsLike: 'sized to layer over a knit', cost: 310, wearCount: 48, season: ['fall', 'winter', 'spring'], occasion: ['work', 'casual'], addedDaysAgo: 400, lastWorn: -4, swatch: ['#4A5240', '#C4C9B8', 'Overshirt'] },
+  { id: 'd-out-ganni', name: 'Cropped Puffer', category: 'outerwear', color: '#771324', brand: 'Ganni', source: 'secondhand', fitsLike: 'cropped at the hip, room for a jumper', cost: 145, wearCount: 26, season: ['winter'], occasion: ['casual'], addedDaysAgo: 460, lastWorn: -12, swatch: ['#771324', '#E0A4AE', 'Puffer'] },
+  { id: 'd-shoe-nomasei', name: 'Ecru Leather Mary Janes', category: 'shoes', color: '#E8E2D4', brand: 'Nomasei', source: 'new', fitsLike: 'true to size, strap needs no breaking in', cost: 395, wearCount: 44, favorite: true, season: ['spring', 'summer', 'fall'], occasion: ['work', 'party'], addedDaysAgo: 420, lastWorn: -3, swatch: ['#E8E2D4', '#8A8175', 'Mary Jane'] },
+  { id: 'd-acc-telfar', name: 'Small Shopper', category: 'accessories', color: '#771324', brand: 'Telfar', source: 'new', fitsLike: 'holds a laptop, just', cost: 202, wearCount: 63, favorite: true, season: ['spring', 'summer', 'fall', 'winter'], occasion: ['casual', 'work', 'party'], addedDaysAgo: 390, lastWorn: -2, swatch: ['#771324', '#E0A4AE', 'Shopper'] },
+  // Gifted, so it costs the ledger nothing — the one piece that arrives inside
+  // the charted year, and it steps the cost-per-wear curve not at all.
+  { id: 'd-jew-completedworks', name: 'Ceramic Drop Earrings', category: 'jewellery', color: '#F0EBE0', brand: 'Completedworks', source: 'gifted', fitsLike: 'light, long enough to swing', cost: 0, wearCount: 11, season: ['spring', 'summer', 'fall', 'winter'], occasion: ['party', 'formal', 'performance'], addedDaysAgo: 70, lastWorn: -8, swatch: ['#2A251C', '#F0EBE0', 'Ceramic'] },
+
   // ---- retired (history kept)
   { id: 'd-ret-jacket', name: 'Cropped Denim Jacket', category: 'outerwear', color: '#6B8FA3', brand: 'Zara', source: 'new', cost: 60, wearCount: 3, season: ['spring'], occasion: ['casual'], addedDaysAgo: 800, lastWorn: -300, retiredDaysAgo: 60, retiredReason: 'Not me anymore', swatch: ['#6B8FA3', '#DCE6EC', 'Denim Jkt'] },
   { id: 'd-ret-heels', name: 'Red Patent Heels', category: 'shoes', color: '#A03D3D', brand: 'Zara', source: 'new', cost: 75, wearCount: 1, season: ['summer'], occasion: ['party'], addedDaysAgo: 760, lastWorn: -400, retiredDaysAgo: 120, retiredReason: 'Swapped on', swatch: ['#A03D3D', '#F0D0D0', 'Patent'] },
 ];
 
-function buildItems(): ClothingItem[] {
+/**
+ * Wear counts are DERIVED from the generated history, never asserted beside it.
+ *
+ * `WardrobeContext.logWear` guarantees one invariant: a non-future log increments
+ * `wearCount` by one for every credited piece and moves `lastWorn` forward. The
+ * demo used to violate it — the seeds claimed 639 wears while the logs implied
+ * 133, so cost-per-wear read $3.61 from the items and $17.33 from the log. Any
+ * time-series built on the log therefore contradicted the headline by 4.8×.
+ * Deriving both fields here restores the invariant the app itself maintains.
+ */
+function buildItems(logs: WearLog[]): ClothingItem[] {
+  const today = todayLocal();
+  const wears = new Map<string, number>();
+  const lastWorn = new Map<string, string>();
+
+  for (const log of logs) {
+    if (log.date > today) continue; // future logs are plans, not wears
+    for (const id of log.itemIds) {
+      wears.set(id, (wears.get(id) ?? 0) + 1);
+      const seen = lastWorn.get(id);
+      if (!seen || log.date > seen) lastWorn.set(id, log.date);
+    }
+  }
+
   return SEEDS.map(s => {
     const item: ClothingItem = {
       id: s.id,
@@ -110,10 +164,12 @@ function buildItems(): ClothingItem[] {
       fitsLike: s.fitsLike,
       season: s.season,
       occasion: s.occasion,
-      imageUrl: s.swatch ? swatch(s.swatch[0], s.swatch[1], s.swatch[2], s.swatch[3] ?? 'plain') : '',
+      imageUrl:
+        plate(s.id) ??
+        (s.swatch ? swatch(s.swatch[0], s.swatch[1], s.swatch[2], s.swatch[3] ?? 'plain') : ''),
       dateAdded: D(-s.addedDaysAgo),
-      lastWorn: s.lastWorn !== undefined ? D(s.lastWorn) : undefined,
-      wearCount: s.wearCount,
+      lastWorn: lastWorn.get(s.id),
+      wearCount: wears.get(s.id) ?? 0,
       cost: s.cost,
       favorite: s.favorite ?? false,
       notes: s.notes,
@@ -191,31 +247,166 @@ const OUTFITS: Array<Omit<Outfit, 'dateCreated' | 'lastWorn'> & { createdDaysAgo
   },
 ];
 
-// A year of history, weighted toward the outfits actually in rotation, plus a
-// couple of planned days in the future so the calendar shows both states.
+/* ============================================================
+   The wear history
+
+   Fifteen months, simulated a day at a time rather than listed by hand, so the
+   analytics have something to find: seasonal swing, a cost-per-wear curve that
+   actually falls, and a re-wear rate that means what it says.
+
+   Deterministic on purpose — no Math.random. The sample wardrobe is a fixture,
+   and a fixture that reshuffles on every load cannot be screenshotted, reviewed,
+   or asserted against.
+   ============================================================ */
+
+/**
+ * Two years and change. A 12-month chart then has a full cycle behind it, so
+ * the seasonal swing is a cycle to compare against rather than a slope, and both
+ * winters are complete.
+ */
+const HISTORY_DAYS = 620;
+
+/** Meteorological seasons, indexed by month number (0 = January). */
+const SEASON_BY_MONTH: Season[] = [
+  'winter', 'winter', 'spring', 'spring', 'spring', 'summer',
+  'summer', 'summer', 'fall', 'fall', 'fall', 'winter',
+];
+
+/** FNV-1a folded into mulberry32. A stable 0..1 from any set of parts. */
+function rand(...parts: Array<string | number>): number {
+  const s = parts.join('|');
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  let t = (h >>> 0) + 0x6d2b79f5;
+  t = Math.imul(t ^ (t >>> 15), 1 | t);
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+}
+
+const seedById = new Map(SEEDS.map(s => [s.id, s]));
+
+/** Acquired by this day, and not yet retired. */
+function ownedOn(s: Seed, day: number): boolean {
+  if (day < -s.addedDaysAgo) return false;
+  return s.retiredDaysAgo === undefined || day < -s.retiredDaysAgo;
+}
+
+/**
+ * A piece's appetite for a given day. The curated `wearCount` on each seed is
+ * kept as the *intent* — how much this piece is in rotation — and the history is
+ * generated to match that shape rather than asserting the total outright.
+ */
+function appetite(s: Seed, day: number, season: Season): number {
+  if (s.wearCount === 0) return 0; // never-worn pieces stay never-worn
+  if (!ownedOn(s, day)) return 0;
+  // Benched pieces are out of rotation now, but they were worn before they broke.
+  if ((s.laundry === 'needs-repair' || s.laundry === 'at-tailor') && day > -30) return 0;
+  // Out-of-season pieces still surface occasionally; that is what makes the
+  // seasonal swing a swing rather than a gate.
+  return s.wearCount * (s.season.includes(season) ? 1 : 0.09);
+}
+
+function pickWeighted(pool: Seed[], day: number, season: Season, salt: string): Seed | undefined {
+  const weighted = pool
+    .map(s => ({ s, w: appetite(s, day, season) }))
+    .filter(x => x.w > 0);
+  if (weighted.length === 0) return undefined;
+  const total = weighted.reduce((sum, x) => sum + x.w, 0);
+  let r = rand(salt, day) * total;
+  for (const x of weighted) {
+    r -= x.w;
+    if (r <= 0) return x.s;
+  }
+  return weighted[weighted.length - 1].s;
+}
+
+/** How well a saved outfit suits a season — the share of its pieces that fit. */
+function outfitSeasonFit(itemIds: string[], season: Season): number {
+  const seeds = itemIds.map(id => seedById.get(id)).filter((s): s is Seed => s !== undefined);
+  if (seeds.length === 0) return 0;
+  return seeds.filter(s => s.season.includes(season)).length / seeds.length;
+}
+
 function buildWearLogs(): WearLog[] {
   const logs: WearLog[] = [];
-  const byOutfit: Record<string, string[]> = Object.fromEntries(OUTFITS.map(o => [o.id, o.itemIds]));
-  const schedule: Array<[number, string]> = [
-    [-2, 'd-fit-monday'], [-4, 'd-fit-saturday'], [-5, 'd-fit-saturday'],
-    [-6, 'd-fit-coldsnap'], [-9, 'd-fit-coldsnap'], [-11, 'd-fit-summer'],
-    [-14, 'd-fit-summer'], [-16, 'd-fit-gallery'], [-19, 'd-fit-monday'],
-    [-21, 'd-fit-coldsnap'], [-25, 'd-fit-gallery'], [-30, 'd-fit-stage'],
-    [-33, 'd-fit-monday'], [-40, 'd-fit-stage'], [-47, 'd-fit-saturday'],
-    [-54, 'd-fit-monday'], [-61, 'd-fit-coldsnap'], [-75, 'd-fit-saturday'],
-    [-90, 'd-fit-monday'], [-104, 'd-fit-gallery'], [-120, 'd-fit-monday'],
-    [-140, 'd-fit-saturday'], [-165, 'd-fit-coldsnap'], [-190, 'd-fit-monday'],
-  ];
-  schedule.forEach(([offset, outfitId], i) => {
-    logs.push({ id: `d-log-${i}`, date: D(offset), itemIds: byOutfit[outfitId], outfitId });
-  });
-  // A few loose-piece days (no saved outfit).
-  logs.push({ id: 'd-log-loose-0', date: D(-3), itemIds: ['d-top-breton', 'd-bot-denim', 'd-shoe-sneaker', 'd-jew-signet'] });
-  logs.push({ id: 'd-log-loose-1', date: D(-8), itemIds: ['d-one-jumpsuit', 'd-shoe-chelsea', 'd-jew-cuff'] });
-  logs.push({ id: 'd-log-loose-2', date: D(-13), itemIds: ['d-one-wrap', 'd-jew-pendant', 'd-shoe-heel'] });
+  const inCategory = (c: string) => SEEDS.filter(s => s.category === c);
+  let n = 0;
+
+  for (let day = -HISTORY_DAYS; day <= 0; day++) {
+    const date = D(day);
+    const season = SEASON_BY_MONTH[Number(date.slice(5, 7)) - 1];
+
+    // Not every day gets catalogued. Real logs have gaps, and a chart without
+    // any looks generated.
+    if (rand('logged', day) > 0.72) continue;
+
+    // Roughly two days in five reach for a saved outfit rather than assembling
+    // from scratch — but only one that is actually wearable that day.
+    const wearable = OUTFITS.filter(
+      o =>
+        o.itemIds.every(id => {
+          const s = seedById.get(id);
+          return s !== undefined && appetite(s, day, season) > 0;
+        }) && outfitSeasonFit(o.itemIds, season) >= 0.5
+    );
+    if (wearable.length > 0 && rand('mode', day) < 0.42) {
+      const chosen = wearable[Math.floor(rand('whichfit', day) * wearable.length)];
+      logs.push({ id: `d-log-${n++}`, date, itemIds: [...chosen.itemIds], outfitId: chosen.id });
+      continue;
+    }
+
+    // Otherwise assemble a look the way a person does — a base, then layers,
+    // then shoes, then the jewellery that finishes it.
+    const ids = new Set<string>();
+    // The pick's salt must differ from the gate's: `rand('acc', day) < 0.38`
+    // followed by a pick from the SAME roll conditions the pick below 0.38 and
+    // parks it on whichever piece sits first in the pool — the Canvas Tote took
+    // every accessory day for fifteen months while a weight-63 bag got one wear.
+    const take = (pool: Seed[], salt: string) => {
+      const s = pickWeighted(pool, day, season, `pick:${salt}`);
+      if (s) ids.add(s.id);
+    };
+
+    if (rand('shape', day) < 0.3) {
+      take(inCategory('dresses'), 'onepiece');
+    } else {
+      take(inCategory('tops'), 'top');
+      take(inCategory('bottoms'), 'bottom');
+    }
+    if (season !== 'summer' && rand('layer', day) < 0.5) take(inCategory('layers'), 'layer');
+    if ((season === 'winter' || season === 'fall') && rand('outer', day) < 0.65) {
+      take(inCategory('outerwear'), 'outer');
+    }
+    take(inCategory('shoes'), 'shoes');
+    take(inCategory('jewellery'), 'jewel1');
+    if (rand('jewel2', day) < 0.45) take(inCategory('jewellery'), 'jewel2');
+    if (rand('acc', day) < 0.38) take(inCategory('accessories'), 'acc');
+
+    if (ids.size > 0) logs.push({ id: `d-log-${n++}`, date, itemIds: [...ids] });
+  }
+
+  // Keep each piece's curated recency true. A garment whose caption says it was
+  // worn two days ago has to have been worn two days ago, and a 15-month
+  // simulation will not land every piece on its mark by itself.
+  for (const s of SEEDS) {
+    if (s.lastWorn === undefined || s.wearCount === 0) continue;
+    const date = D(s.lastWorn);
+    const loose = logs.find(l => l.date === date && l.outfitId === undefined);
+    if (loose) {
+      if (!loose.itemIds.includes(s.id)) loose.itemIds.push(s.id);
+    } else {
+      logs.push({ id: `d-log-${n++}`, date, itemIds: [s.id] });
+    }
+  }
+
+  logs.sort((a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id));
+
   // Planned days — future logs are plans, not wears.
-  logs.push({ id: 'd-log-plan-0', date: D(1), itemIds: byOutfit['d-fit-gallery'], outfitId: 'd-fit-gallery' });
-  logs.push({ id: 'd-log-plan-1', date: D(3), itemIds: byOutfit['d-fit-monday'], outfitId: 'd-fit-monday' });
+  logs.push({ id: 'd-log-plan-0', date: D(1), itemIds: [...OUTFITS[1].itemIds], outfitId: OUTFITS[1].id });
+  logs.push({ id: 'd-log-plan-1', date: D(3), itemIds: [...OUTFITS[0].itemIds], outfitId: OUTFITS[0].id });
   return logs;
 }
 
@@ -301,23 +492,32 @@ function buildWishlist(): WishlistItem[] {
 }
 
 export function buildDemoState(): AppState {
-  const items = buildItems();
-  const outfits: Outfit[] = OUTFITS.map(o => ({
-    id: o.id,
-    name: o.name,
-    itemIds: o.itemIds,
-    occasion: o.occasion,
-    favorite: o.favorite,
-    wearCount: o.wearCount,
-    dateCreated: D(-o.createdDaysAgo),
-    lastWorn: o.lastWornDaysAgo !== undefined ? D(-o.lastWornDaysAgo) : undefined,
-  }));
+  const wearLogs = buildWearLogs();
+  const items = buildItems(wearLogs);
+  const today = todayLocal();
+
+  // Outfit totals are read back out of the log for the same reason item totals
+  // are: logWear moves both together, so anything else is a number the app
+  // itself would never produce.
+  const outfits: Outfit[] = OUTFITS.map(o => {
+    const worn = wearLogs.filter(l => l.outfitId === o.id && l.date <= today);
+    return {
+      id: o.id,
+      name: o.name,
+      itemIds: o.itemIds,
+      occasion: o.occasion,
+      favorite: o.favorite,
+      wearCount: worn.length,
+      dateCreated: D(-o.createdDaysAgo),
+      lastWorn: worn.length > 0 ? worn[worn.length - 1].date : undefined,
+    };
+  });
 
   return {
     schemaVersion: SCHEMA_VERSION,
     items,
     outfits,
-    wearLogs: buildWearLogs(),
+    wearLogs,
     wishlist: buildWishlist(),
     settings: {
       categories: DEFAULT_CATEGORIES,
@@ -327,9 +527,14 @@ export function buildDemoState(): AppState {
   };
 }
 
-/** Headline counts, for the Settings copy that describes what will be loaded. */
+/** Headline counts, for the Settings copy that describes what will be loaded.
+    Counts the ACTIVE closet only — retired pieces keep their history but are not
+    what the loader is offering, and quoting SEEDS.length advertised 31 pieces
+    against a closet that displays 29. */
+const ACTIVE_SEEDS = SEEDS.filter(s => s.retiredDaysAgo === undefined);
+
 export const DEMO_SUMMARY = {
-  items: SEEDS.length,
+  items: ACTIVE_SEEDS.length,
   outfits: OUTFITS.length,
-  jewellery: SEEDS.filter(s => s.category === 'jewellery').length,
+  jewellery: ACTIVE_SEEDS.filter(s => s.category === 'jewellery').length,
 };

@@ -19,6 +19,7 @@ import {
   type AppSettings, type ClothingItem, type LaundryStatus, type Season,
 } from '../types';
 import { wearContext } from '../lib/similarity';
+import { costPerWear } from '../lib/cost';
 
 /**
  * Closet — the browse surface. Clothing photos are the hero; everything else is
@@ -56,7 +57,9 @@ function makerLabel(item: ClothingItem): string | null {
  * means something — `ZARA · WORN 14× · $3.12/WEAR`.
  */
 function specimenCaption(item: ClothingItem): string {
-  const cpwMeaningful = typeof item.cost === 'number' && item.cost > 0 && item.wearCount > 0;
+  // The predicate used to be re-derived here and inside wearContext, so the two
+  // had to be edited in lockstep or the caption silently changed shape.
+  const cpwMeaningful = costPerWear(item).reason === 'ok';
   const wears =
     item.wearCount === 0 || cpwMeaningful
       ? wearContext(item)
@@ -142,7 +145,7 @@ function ClosetCard({
       >
         <GarmentTile item={item} className="aspect-[4/5] group-hover:border-text" />
         <p className="mt-2 text-[14px] leading-snug text-text truncate">{item.name}</p>
-        <p className="type-ledger text-[10px] text-text-2 mt-1 truncate">{specimenCaption(item)}</p>
+        <p className="type-ledger text-[10px] text-text-2 tabular mt-1 truncate">{specimenCaption(item)}</p>
         <StatusMark status={item.laundryStatus} />
       </button>
 

@@ -34,6 +34,7 @@ const COLOR_ALLOWED = new Set([
   'src/lib/demoData.ts',
   'src/types.ts',        // PRESET_COLORS is the user-facing swatch palette
   'src/lib/similarity.ts',
+  'src/lib/garmentArt.ts', // generated garment plates; artwork, like art.tsx
 ]);
 
 const EMOJI = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}]/u;
@@ -63,7 +64,14 @@ for (const file of files) {
     if (EMOJI.test(line)) {
       add(file, n, 'no-emoji', line.trim().slice(0, 80));
     }
-    if (!COLOR_ALLOWED.has(rel) && HEX.test(line) && !line.includes('//')) {
+    // The comment exemption used to be `!line.includes('//')`, which let a raw
+    // hex through on ANY line containing a URL — an inline SVG carrying
+    // xmlns="http://..." bypassed the token rule entirely. Only a line that is
+    // actually a comment is exempt now.
+    const trimmed = line.trim();
+    const isComment =
+      trimmed.startsWith('//') || trimmed.startsWith('*') || trimmed.startsWith('/*');
+    if (!COLOR_ALLOWED.has(rel) && HEX.test(line) && !isComment) {
       add(file, n, 'no-raw-hex', `${line.trim().slice(0, 80)} — use a token`);
     }
     if (BAD_RADIUS.test(line)) {

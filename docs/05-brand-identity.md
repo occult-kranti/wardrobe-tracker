@@ -122,9 +122,21 @@ except the single "log wear" action, which may fill carmine.
    + T on carmine.
 4. **Wax seal:** flat carmine circle, chalk T, rotated **−3°** (hand-pressed graft),
    used on the exported recap card and seal-press confirmations.
-5. **Charts as art:** hairline axes, ink bars with one carmine hero bar,
-   basting-dash projection lines, Bodoni numerals, on muslin plates in double-rule
-   frames.
+5. **Charts as art:** hairline axes, ink bars, basting-dash projection lines,
+   display numerals, on muslin plates in double-rule frames.
+
+   > **Amended 2026-08-11** by the focus-group panel
+   > (`docs/06-focus-group-requirements.md` §2.6). The carmine hero bar is
+   > **withdrawn**. §2.6 reads "Stats are neutral territory… **every category gets
+   > identical visual weight** — dresses are never rendered softer, rounder, or
+   > pinker," and colouring exactly one bar is that operation regardless of what
+   > selects it; in dark mode the accent resolves to a chalk red, so the singled-out
+   > row rendered literally pinker. Bars are `--color-text` throughout, in every
+   > chart. The focal point is carried by a **basting-dash leader line and a mono
+   > callout** — the projection-line clause of this same section, which had never
+   > been built. §2.6 post-dates this contract and the stricter reading wins.
+   >
+   > This resolves the conflict recorded as finding 10 in `docs/09-design-critique.md`.
 
 **Signature motifs** (used consistently, nowhere else in the market):
 tag-shaped chips with a left eyelet · basting-stitch dividers (1px dash 4 3 with
