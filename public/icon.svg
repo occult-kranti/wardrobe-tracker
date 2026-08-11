@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
+  <rect width="192" height="192" fill="#F4EFE2"/>
+  <!-- garment tag: clipped corner, eyelet, string -->
+  <path d="M62 34h68a6 6 0 016 6v112a6 6 0 01-6 6H62a6 6 0 01-6-6V58z"
+        fill="#BE1231" stroke="#201D18" stroke-width="5" stroke-linejoin="miter"/>
+  <path d="M56 58L80 34" stroke="#201D18" stroke-width="5"/>
+  <circle cx="96" cy="66" r="9" fill="none" stroke="#FFFDF6" stroke-width="4"/>
+  <path d="M96 57c0-14-9-19-18-25" fill="none" stroke="#201D18" stroke-width="4"/>
+  <text x="96" y="134" text-anchor="middle" fill="#FFFDF6"
+        font-family="Georgia, 'Times New Roman', serif" font-weight="700" font-size="62">T</text>
+</svg>
