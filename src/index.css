@@ -237,6 +237,16 @@
   .registered[data-selected="true"]::before,
   .registered[data-selected="true"]::after { opacity: 1; }
 
+  /* Garment tiles carry a hairline so the photo always has an edge.
+     Measured need: near-black pieces render darker than the dark mat (lum 29-42
+     against a mat of ~43) and white pieces sit lighter than the cream mat, so
+     without this the garment silhouette dissolves into the tile. An outline is
+     used rather than a border so it never disturbs the 4:5 box. */
+  .bg-mat {
+    outline: 1px solid var(--color-border);
+    outline-offset: -1px;
+  }
+
   .type-masthead {
     font-family: var(--font-display);
     font-weight: 600;
