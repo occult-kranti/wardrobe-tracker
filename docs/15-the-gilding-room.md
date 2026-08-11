@@ -90,3 +90,35 @@ laundry.
 an older seed number are rebuilt at boot, so a fix to the seed reaches browsers
 that installed the samples last week — previously it only reached people who had
 never opened the app. Real wardrobes are never touched.
+
+## Addendum, same day: the ground art and the mountings
+
+The owner asked the room to go further: borders styled after traditional gold
+Japanese work, and the rose ground paired with a deeper colour below it
+carrying closet linework.
+
+**The Japanese references, joining Klimt.** The *byōbu* folding screen — gold
+ground with stylised *kasumi* mist bands, where the gold and the clouds ARE the
+picture space — and the *kakemono* hanging scroll, whose mounting frames the
+work twice: an inner brocade border inside an outer mount.
+
+**What ships:**
+
+1. **The ground carries its artwork.** Below the rose silk, a deeper band
+   (`--color-bg-deep`) rises from the page bottom, and standing in it, drawn in
+   gold line at 20–38%, an armoire with one door open — rail, hanging garments,
+   drawers — with kasumi bands drifting through. Fixed to the viewport
+   bottom-right, so the room appears to stand behind the paper and the content
+   scrolls past it. Hand-coded SVG in the stylesheet, no raster. The photo grid
+   still sits on flat mats; §6.1's rule that ornament never sits behind the
+   clothes is untouched — the artwork surrounds them.
+2. **Every plate takes the kakemono mounting.** The card's own gold hairline,
+   then a second, fainter gold rule floated 3px outside it — the double frame
+   of a scroll mounting, on outfit cards, stat plates, and modals alike. The
+   masthead's thin second rule is drawn in the leaf. Gold stays a frame colour
+   throughout, never text — §2's rule for gold, kept.
+3. **`--color-bg-deep` joins the token sheet in every room** (the all-rooms
+   check requires it), and because captions scroll across the band, the
+   contrast suite gates `text/bg-deep` and `text-2/bg-deep` in all four rooms —
+   which immediately caught the first band hex at 4.45:1, 0.05 under AA. It
+   ships at `#E4BAAB`, 4.62:1. Twenty gated pairs per room now; eighty in all.

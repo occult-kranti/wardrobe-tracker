@@ -35,7 +35,7 @@ for (const theme of ['light','dark','salon','gilt']) {
       seal:g('--color-seal'),
       dangerFill:g('--color-danger-fill'), chalk:g('--color-chalk'),
       inkFill:g('--color-ink-fill'), onInk:g('--color-on-ink'),
-      border:g('--color-border'),
+      border:g('--color-border'), bgDeep:g('--color-bg-deep'),
     };
   }, theme);
   const hex = s => s.startsWith('#') ? [1,3,5].map(i=>parseInt(s.slice(i,i+2),16)) : parse(s);
@@ -53,6 +53,9 @@ for (const theme of ['light','dark','salon','gilt']) {
     // on it at 4.37:1 — under AA, in the shipped default, on the tile every
     // garment photograph lands on.
     ['accent/mat', t.accent, t.mat, 4.5],
+    // The page-bottom band is a surface captions scroll across.
+    ['text/bg-deep', t.text, t.bgDeep, 4.5],
+    ['text-2/bg-deep', t.text2, t.bgDeep, 4.5],
     ['on-accent/accent-fill', t.onAccent, t.accentFill, 4.5],
     ['chalk/danger-fill', t.chalk, t.dangerFill, 4.5],
     ['on-ink/ink-fill', t.onInk, t.inkFill, 4.5],

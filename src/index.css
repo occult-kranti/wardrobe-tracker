@@ -42,6 +42,7 @@
   --color-surface: #FBF8F0;
   --color-mat: #FBF8F0;          /* tile behind clothing photos */
   --color-sunken: #EAE1CC;
+  --color-bg-deep: #E3D6BA;      /* the ground below the ground — page-bottom band */
   --color-text: #201D18;
   --color-text-2: #5C554A;
   --color-border: #D8CFBA;
@@ -79,6 +80,7 @@
     --color-surface: #201C15;
     --color-mat: #2B2A22;        /* lifted so black/navy garments keep their edges */
     --color-sunken: #2A251C;
+    --color-bg-deep: #100E0A;
     --color-text: #EFE9D9;
     --color-text-2: #A89F8D;
     --color-border: #383226;
@@ -110,6 +112,7 @@
   --color-surface: #201C15;
   --color-mat: #2B2A22;
   --color-sunken: #2A251C;
+  --color-bg-deep: #100E0A;
   --color-text: #EFE9D9;
   --color-text-2: #A89F8D;
   --color-border: #383226;
@@ -169,6 +172,7 @@
   --color-surface: #F6EEE9;      /* tissue */
   --color-mat: #EFE6DF;          /* mount board — quieter than the room it sits in */
   --color-sunken: #DBCCC3;
+  --color-bg-deep: #D3BFB4;
   --color-text: #241A19;         /* ink, warmed to plum-black (12.56:1 on bg) */
   --color-text-2: #5C4C48;       /* 6.02:1 on bg */
   --color-border: #C9B8AE;
@@ -225,6 +229,7 @@
   --color-surface: #FAEEE7;      /* tissue over the leaf */
   --color-mat: #F6E9E1;          /* the photograph's mount — quieter than the room */
   --color-sunken: #E9C8BC;       /* deeper rose wells */
+  --color-bg-deep: #E4BAAB;      /* the deeper silk the armoire stands in (text-2 4.62:1) */
   --color-text: #33201C;         /* plum-black ink (11.73:1 on bg) */
   --color-text-2: #6E453C;       /* 6.20:1 on bg, 5.22:1 on sunken */
   --color-border: #D3A47F;       /* GOLD hairlines — the room's signature, C 0.075 */
@@ -410,6 +415,48 @@
     scroll-snap-type: x proximity;
   }
   .tag-rail > * { flex: none; scroll-snap-align: start; }
+
+
+  /* The gilding room's ground carries its artwork.
+
+     Below the rose silk, a deeper band — and standing in it, an armoire with
+     one door open, drawn in gold line, with kasumi mist bands drifting through.
+     The reference joining Klimt's leaf is the Japanese gold tradition: the
+     byobu folding screen, where gold ground and stylised kasumi clouds ARE the
+     picture space, and the kakemono scroll mounting (see the plate rules
+     below). Fixed to the viewport bottom-right, so the room appears to stand
+     behind the paper; drawn at 20-38% gold so it stays a room, never a page.
+     The photo grid itself still sits on flat mats — the ornament surrounds the
+     clothes, §6.1's rule, unchanged. */
+  :root[data-theme="gilt"] .pattern-paper {
+    background-image:
+      linear-gradient(rgba(var(--pattern-ink), var(--pattern-alpha)) 0.75px, transparent 0.75px),
+      linear-gradient(90deg, rgba(var(--pattern-ink), var(--pattern-alpha)) 0.75px, transparent 0.75px),
+      url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20460%20560'%3E%20%3Cg%20fill='none'%20stroke='%23A2751F'%20stroke-linejoin='miter'%20stroke-linecap='butt'%3E%20%3Cg%20stroke-width='2'%20stroke-opacity='0.20'%3E%20%3Cpath%20d='M300%2096h118a11%2011%200%20010%2022H336a11%2011%200%2001-11-11'/%3E%20%3Cpath%20d='M338%20134h96a10%2010%200%20010%2020h-70'/%3E%20%3Cpath%20d='M18%20512h160a10%2010%200%20010%2020H74'/%3E%20%3Cpath%20d='M60%20546h120a8%208%200%20010%2016H96'/%3E%20%3C/g%3E%20%3Cg%20stroke-width='2.5'%20stroke-opacity='0.30'%3E%20%3Cpath%20d='M64%2078h332v16H64z'/%3E%20%3Cpath%20d='M84%2094h292v336H84z'/%3E%20%3Cpath%20d='M84%2094L30%20118v346l54-34'/%3E%20%3Cpath%20d='M42%20140v298'/%3E%20%3Cpath%20d='M230%2094v336'/%3E%20%3Cpath%20d='M248%20112h110v240H248z'/%3E%20%3Ccircle%20cx='240'%20cy='262'%20r='3.5'/%3E%20%3Cpath%20d='M92%20132h130'/%3E%20%3Cpath%20d='M84%20430h292v46H84z'/%3E%20%3Cpath%20d='M230%20430v46'/%3E%20%3Ccircle%20cx='157'%20cy='453'%20r='3'/%3E%20%3Ccircle%20cx='303'%20cy='453'%20r='3'/%3E%20%3Cpath%20d='M96%20476v16'/%3E%20%3Cpath%20d='M364%20476v16'/%3E%20%3C/g%3E%20%3Cg%20stroke-width='2'%20stroke-opacity='0.38'%3E%20%3Cpath%20d='M124%20132v8'/%3E%20%3Cpath%20d='M174%20132v8'/%3E%20%3Cpath%20d='M106%20151c6-4%2012-8%2018-11%206%203%2012%207%2018%2011%205%2032%206%2062%202%2098-13%203-27%203-40%200-4-36-3-66%202-98z'/%3E%20%3Cpath%20d='M158%20151c5-4%2010-7%2016-10%206%203%2011%206%2016%2010%203%2022%203%2044%201%2066-11%202-22%202-34%200-2-22-2-44%201-66z'/%3E%20%3Cpath%20d='M204%20132v10'/%3E%20%3Cpath%20d='M204%20142c10%2024%2012%2052%208%2082'/%3E%20%3Cpath%20d='M214%20142c8%2022%209%2048%206%2074'/%3E%20%3C/g%3E%20%3C/g%3E%20%3C/svg%3E"),
+      linear-gradient(to top, var(--color-bg-deep) 0, var(--color-bg-deep) 64px, transparent 320px);
+    background-size: 24px 3px, 3px 24px, 400px 487px, 100% 100%;
+    background-position: 0 0, 0 0, right 28px bottom 0, 0 0;
+    background-repeat: repeat, repeat, no-repeat, no-repeat;
+    background-attachment: scroll, scroll, fixed, fixed;
+  }
+
+  /* Kakemono mounting: a hanging scroll is framed twice, the work inside a
+     brocade border inside an outer mount. In this room every plate takes that
+     double frame — the card's own gold hairline, then a second, fainter gold
+     rule floated 3px outside it. Decoration in the border, never in the text:
+     gold stays a frame colour here, exactly as §2 requires. */
+  :root[data-theme="gilt"] .plate {
+    outline: 1px solid color-mix(in srgb, var(--color-gold) 40%, transparent);
+    outline-offset: 3px;
+  }
+  :root[data-theme="gilt"] .plate-ink {
+    outline: 1px solid color-mix(in srgb, var(--color-gold) 55%, transparent);
+    outline-offset: 3px;
+  }
+  /* The masthead's thin second rule is drawn in the leaf. */
+  :root[data-theme="gilt"] .rule-double::after {
+    background: color-mix(in srgb, var(--color-gold) 75%, transparent);
+  }
 
   /* Basting stitch divider with bar-tack ends. */
   .basting {
