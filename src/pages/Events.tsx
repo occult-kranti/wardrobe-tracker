@@ -332,7 +332,7 @@ export default function Events() {
         title="Events"
         meta={`${upcoming.length} coming up`}
         action={
-          <Button tone="primary" compact icon={<IconPlus size={16} />} onClick={() => setAdding(true)}>
+          <Button tone="primary" icon={<IconPlus size={16} />} onClick={() => setAdding(true)}>
             Add
           </Button>
         }

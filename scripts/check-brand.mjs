@@ -166,6 +166,7 @@ for (const file of files) {
     ['prefers-color-scheme: dark', ':root:not([data-theme="light"])'],
     ['data-theme="dark"', ':root[data-theme="dark"]'],
     ['data-theme="salon"', ':root[data-theme="salon"]'],
+    ['data-theme="gilt"', ':root[data-theme="gilt"]'],
   ];
   for (const [name, selector] of rooms) {
     const body = blockOf(selector);

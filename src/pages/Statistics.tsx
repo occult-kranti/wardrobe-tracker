@@ -441,17 +441,26 @@ export default function Statistics() {
             {months.map(row => {
               const pct = monthlyMax > 0 ? (row.wears / monthlyMax) * 100 : 0;
               return (
-                <div key={row.key} className="flex-1 h-full flex flex-col justify-end items-center gap-1.5">
-                  <span className="type-ledger text-[10px] text-text-2 tabular">{row.wears}</span>
-                  <span
-                    className="w-full bg-text"
-                    style={{
-                      height: `${row.wears > 0 ? Math.max(pct, 3) : 0}%`,
-                      // The running month is only part-counted; drawn open so it
-                      // never reads as a fall off a cliff.
-                      opacity: row.partial ? 0.45 : 1,
-                    }}
-                  />
+                <div key={row.key} className="flex-1 h-full flex flex-col justify-end items-center gap-1.5 min-h-0">
+                  <span className="type-ledger text-[11px] text-text-2 tabular">{row.wears}</span>
+                  {/* The bar lives in its own track so `height: %` resolves
+                      against the PLOT AREA. It used to resolve against the flex
+                      column that also holds the numeral and the gap; the
+                      overflow was absorbed by default flex-shrink, and eight
+                      months spanning 119–146 wears all rendered 99–100px tall.
+                      A ledger whose chart flattens a 23% spread to nothing is
+                      lying, which is the one thing a ledger cannot do. */}
+                  <span className="w-full flex-1 min-h-0 flex items-end">
+                    <span
+                      className="w-full bg-text"
+                      style={{
+                        height: `${row.wears > 0 ? Math.max(pct, 3) : 0}%`,
+                        // The running month is only part-counted; drawn open so it
+                        // never reads as a fall off a cliff.
+                        opacity: row.partial ? 0.45 : 1,
+                      }}
+                    />
+                  </span>
                 </div>
               );
             })}
@@ -467,9 +476,16 @@ export default function Statistics() {
             ))}
           </div>
           {monthlyPeak >= 0 ? (
-            <div className="flex items-center gap-2 mt-3">
-              <LeaderLine width={64} />
-              <span className="type-ledger text-[11px] text-text-2">
+            /* The leader starts under the peak column, not at the card edge —
+               §6.5 made this line the sole focal device after the coloured bar
+               was withdrawn, and it was pointing at whichever month came first. */
+            <div
+              className="flex items-center gap-2 mt-3"
+              // Capped so a late-year peak cannot push the caption off the card.
+              style={{ marginInlineStart: `min(${(monthlyPeak / months.length) * 100}%, calc(100% - 230px))` }}
+            >
+              <LeaderLine width={40} />
+              <span className="type-ledger text-[11px] text-text-2 whitespace-nowrap">
                 Busiest · {monthTick(months[monthlyPeak].key)} · {monthlyMax} wears
               </span>
             </div>

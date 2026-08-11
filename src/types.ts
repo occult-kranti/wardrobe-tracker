@@ -223,6 +223,10 @@ export interface Account {
   createdAt: string;
   /** Seeded demo wardrobes, as opposed to one started on this device. */
   isSample?: boolean;
+  /** Which build of the sample seed this wardrobe was written by. A sample
+      whose number trails the code's is rebuilt at boot — without this, fixing
+      the seed only fixes it for people who have never opened the app. */
+  seedVersion?: number;
 }
 
 /** What a post carries, captured when it is shared. */
@@ -343,12 +347,13 @@ export const EMPTY_COMMUNITY: CommunityState = {
  * screen, not to a wardrobe — three closets on one device should not each drag
  * the interface to a different palette when opened. Stored device-level.
  */
-export type Theme = 'light' | 'dark' | 'salon' | 'system';
+export type Theme = 'light' | 'dark' | 'salon' | 'gilt' | 'system';
 
 export const THEME_LABELS: Record<Theme, string> = {
   light: 'The pattern room',
   dark: 'The atelier at night',
   salon: 'The salon',
+  gilt: 'The gilding room',
   system: 'Follow the device',
 };
 

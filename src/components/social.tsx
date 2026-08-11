@@ -55,9 +55,12 @@ export function AccountLine({ account, meta }: { account: Account; meta?: string
 export function LookCard({ look, compact }: { look: SharedLook; compact?: boolean }) {
   return (
     <div className={`border border-border rounded-[2px] overflow-hidden ${compact ? 'flex gap-3' : ''}`}>
+      {/* Capped: uncapped w-full inside the max-w-5xl column rendered each post
+          ~950×1267px, and eleven posts made a 16,000px page. The photograph is
+          a feed entry, not a hero. */}
       <span
-        className={`block bg-mat overflow-hidden shrink-0 ${compact ? 'w-16' : 'w-full'}`}
-        style={compact ? { aspectRatio: '4 / 5' } : { aspectRatio: '3 / 4' }}
+        className={`block bg-mat overflow-hidden shrink-0 ${compact ? 'w-16' : 'w-full max-w-[380px] mx-auto'}`}
+        style={{ aspectRatio: '4 / 5' }}
       >
         {look.imageUrl ? (
           <img src={look.imageUrl} alt={look.name} className="w-full h-full object-cover" />

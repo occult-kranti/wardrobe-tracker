@@ -190,6 +190,18 @@ for (const persona of PERSONAS) {
     [`${persona.id}: every piece has a photograph`, st.items.every(i => i.imageUrl), st.items.filter(i => !i.imageUrl).map(i => i.name).slice(0, 3).join(', ')],
     [`${persona.id}: photographs resolve to files`, st.items.every(i => !i.imageUrl || /^wardrobe\//.test(i.imageUrl)), ''],
     [`${persona.id}: every piece has a category`, st.items.every(i => st.settings.categories.some(c => c.id === i.category)), st.settings.categories.length],
+    // The bench states are lived-in: a closet where every piece reads "Ready"
+    // and every other chip reads 0 is a showroom. Each state has at least one
+    // member, clean stays the strong majority, and nothing "needs wash" that
+    // the log says was never worn.
+    [`${persona.id}: every bench state inhabited`,
+      ['worn', 'washing', 'needs-repair', 'at-tailor'].every(x => st.items.some(i => i.laundryStatus === x)),
+      ['worn', 'washing', 'needs-repair', 'at-tailor'].map(x => st.items.filter(i => i.laundryStatus === x).length).join('/')],
+    [`${persona.id}: the closet is still mostly ready`,
+      st.items.filter(i => i.laundryStatus === 'clean').length >= st.items.length * 0.6,
+      st.items.filter(i => i.laundryStatus === 'clean').length],
+    [`${persona.id}: nothing unworn queues for the wash`,
+      st.items.filter(i => ['worn', 'washing'].includes(i.laundryStatus)).every(i => i.wearCount > 0), ''],
   ];
   for (const [n, ok, d] of checks) { console.log(ok ? 'PASS' : 'FAIL', '-', n, d !== '' ? `(${d})` : ''); if (!ok) pfail++; }
 }

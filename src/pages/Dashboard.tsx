@@ -345,7 +345,11 @@ export default function Dashboard() {
             <Basting className="my-4" />
             <div className="flex items-center justify-between gap-3">
               <p className="text-[13px] text-text-2">Wore something else as well?</p>
-              <Button compact onClick={openSheet}>
+              {/* A log-wear action — the one sanctioned use of the hero fill,
+                  and exactly one per view. Without it the logged state had no
+                  accent at all and the heaviest object on the page was the
+                  rail's "Add a piece". */}
+              <Button tone="hero" compact icon={<IconEyeletFilled size={10} />} onClick={openSheet}>
                 Log another
               </Button>
             </div>

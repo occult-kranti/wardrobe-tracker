@@ -192,6 +192,62 @@
   color-scheme: light;
 }
 
+/* ============================================================
+   the gilding room — the fourth room, and the bold one.
+
+   Where gold leaf is laid. The reference is Klimt's gold-period ground —
+   gold over rose, ornament carrying the surface — and the zari thread of
+   Indian occasionwear: the one place in the building where the DECORATION
+   is the point. Available to everyone, named for a workshop, like every
+   other room (§2.7: identity-keyed skins are the prohibited class; a room
+   is not an identity).
+
+   How it stays inside the house physics while being the loudest room:
+
+   1. The boldness lives in the GROUND and the THREAD, not the accent.
+      The rose silk ground carries chroma 0.028 — half again the salon's
+      0.019, felt immediately — and the borders are actual gold (C 0.075,
+      the most chromatic hairline in the house) with the pattern-paper
+      crosses drawn in gold at 10%. The photographs still sit on a quieter
+      mat (C 0.022), so the boldness surrounds the clothes rather than
+      tinting them.
+   2. The interface accent is still washing blue, restated for this ground
+      (docs/14: a brand colour that changes per theme is not a brand
+      colour) — and blue against rose-gold is the Klimt move anyway.
+   3. The wax keeps its own token, like every room.
+
+   Every pair measured: tightest text pair is accent/sunken and
+   text-2/sunken at 5.22:1, 16% over AA. Full table in
+   docs/15-the-gilding-room.md.
+   ============================================================ */
+:root[data-theme="gilt"] {
+  --color-bg: #F3DCD4;           /* rose silk */
+  --color-surface: #FAEEE7;      /* tissue over the leaf */
+  --color-mat: #F6E9E1;          /* the photograph's mount — quieter than the room */
+  --color-sunken: #E9C8BC;       /* deeper rose wells */
+  --color-text: #33201C;         /* plum-black ink (11.73:1 on bg) */
+  --color-text-2: #6E453C;       /* 6.20:1 on bg, 5.22:1 on sunken */
+  --color-border: #D3A47F;       /* GOLD hairlines — the room's signature, C 0.075 */
+  --color-accent: #0E566E;       /* washing blue for a rose ground (6.21:1) */
+  --color-accent-hover: #0A4356; /* 8.20:1 */
+  --color-accent-fill: #0E566E;
+  --color-on-accent: #FFF8F2;    /* 7.75:1 on the fill */
+  --color-accent-on-ink: #7CBEDC; /* 7.52:1 on the plum ink fill */
+  --color-seal: #BE1231;         /* 4.82:1 on the silk, chalk T at 6.01:1 */
+  --color-danger: #701A1E;
+  --color-danger-fill: #701A1E;  /* chalk label 10.76:1 */
+  --color-success: #2E6247;
+  --color-warning: #6F4C15;
+  --color-gold: #A2751F;         /* the leaf itself — decorative only, never text */
+  --color-charcoal: #453029;
+  --color-chalk: #FFF8F2;
+  --color-ink-fill: #33201C;
+  --color-on-ink: #FAEEE7;       /* 13.52:1 */
+  --pattern-ink: 162, 117, 31;   /* the cutting grid drawn in GOLD, not ink */
+  --pattern-alpha: 0.10;
+  color-scheme: light;
+}
+
 @theme inline {
   --color-bg: var(--color-bg);
   --color-surface: var(--color-surface);
@@ -401,11 +457,14 @@
   .btn-underline::after {
     content: '';
     position: absolute;
-    left: 16px;
-    right: 16px;
+    /* Inset follows the button's own padding — hardcoded 16px sized for px-5
+       underlined only the middle of a compact button's label. */
+    left: 0;
+    right: 0;
+    margin-inline: var(--btn-underline-inset, 16px);
     bottom: 9px;
     height: 2px;
-    background: var(--color-accent-on-ink);
+    background: var(--btn-underline-color, var(--color-accent-on-ink));
     transform: scaleX(0);
     transform-origin: left center;
     transition: transform 160ms ease-out;

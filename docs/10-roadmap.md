@@ -164,3 +164,33 @@ Recorded so they are not re-proposed:
 | Raster stock photography | §6 "all hand-coded SVG/CSS, zero rasters"; most garment stock is shot on a model, and §2.4 says never draw bodies. |
 | Streaks, badges, confetti, notifications | Hard rule 4 and §2.2, unanimous panel rejection. |
 | Any commerce surface | Hard rule 2. A feature that talks you out of buying cannot profit from buying. |
+
+## Held from the 2026-08-11 design-critic pass
+
+The critic's P0s and top-five are fixed. These stay open, recorded so they are
+chosen rather than forgotten:
+
+- **The dark closet defeats its own mat** — studio cutouts with near-white
+  grounds render as light boxes on ink cloth. The fix is in the seed pipeline
+  (matte photos to `--color-mat` at build time, or reject >20% near-white
+  backgrounds in sourcing), not in CSS.
+- **Icon system pass**: nine of thirteen nav glyphs float their pattern notch in
+  empty space instead of crossing a principal stroke; `IconEvents` reads as a
+  spray bottle at 20px; Feed/Chats are confusable offset-rectangles; the
+  check counts notches but verifies neither quadrant nor crossing.
+- **Empty-state plates for the social pages** — Events/Feed wear the dress form,
+  Chats/Rail wear the wishlist suitcase, Profile wears the closet hanger. Four
+  new destinations deserve their own plates (brand-artist task).
+- **Type-scale drift**: 46 uses of `text-[14px]`, 29 of `text-[10px]`, both off
+  the contract scale. One mechanical sweep, but it touches ~20 files.
+- **Nav active state**: contract asks for a filled icon beside the accent rule;
+  the filled variants were never drawn. Mobile's active marker is a 4px dot in
+  the home-indicator zone.
+- **Specimen numbers**: the caption reads `ZARA · 14 WEARS` but §7 specifies
+  `№ 041 · ZARA · 14 WEARS`; §8.4 makes specimen framing load-bearing.
+- **`--color-charcoal` is declared in four rooms and used nowhere** — give it
+  its §7 job or retire it from the token sheet and the all-rooms check.
+- **Salon character**: two of the three things docs/13 says carry the room
+  (gold, rose) render on zero surfaces. The gilding room now demonstrates what
+  a ground that carries its own character looks like; the salon deserves the
+  same treatment or an honest merge.

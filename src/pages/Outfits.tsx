@@ -205,7 +205,12 @@ function OutfitCard({
             <p className="type-ledger text-[11px] text-text-2">
               {shared ? 'On the feed' : 'Not shared'}
             </p>
-            <Button compact onClick={onShare}>
+            {/* Tertiary, not a second bordered box: twenty cards each carried
+                two identical secondary buttons, and "Share this look" rendered
+                wider than "Wear today", making the social action the dominant
+                one on the whole browse page. One bordered control per card —
+                the log action. */}
+            <Button tone="tertiary" onClick={onShare}>
               {shared ? 'Take it off the feed' : 'Share this look'}
             </Button>
           </div>
@@ -442,7 +447,7 @@ export default function Outfits() {
         meta={`${outfits.length} ${outfits.length === 1 ? 'outfit' : 'outfits'}`}
         action={
           !building && outfits.length > 0 ? (
-            <Button tone="primary" onClick={openBuilder} icon={<IconPlus size={14} />}>
+            <Button tone="primary" onClick={openBuilder} icon={<IconPlus size={16} />}>
               Build an outfit
             </Button>
           ) : null

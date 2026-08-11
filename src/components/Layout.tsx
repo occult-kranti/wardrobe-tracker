@@ -10,7 +10,7 @@ import { useWardrobe } from '../context/WardrobeContext';
 import { useSession } from '../context/SessionContext';
 import AddItemModal from './AddItemModal';
 import { ToastContainer } from './Toast';
-import { IconButton } from './ui';
+import { Button, IconButton } from './ui';
 
 interface NavItem {
   path: string;
@@ -60,7 +60,7 @@ export default function Layout() {
 
   // Three rooms and the device's own choice, in order.
   const cycleTheme = () => {
-    const order = ['dark', 'salon', 'light', 'system'] as const;
+    const order = ['dark', 'salon', 'gilt', 'light', 'system'] as const;
     setTheme(order[(order.indexOf(theme as typeof order[number]) + 1) % order.length]);
   };
 
@@ -94,10 +94,10 @@ export default function Layout() {
             <TagMark size={34} />
             <Wordmark className="w-[76px]" />
           </Link>
-          <p className="type-editorial text-[13px] text-text-2 mt-3">Your wardrobe, on record.</p>
+          <p className="text-[13px] italic text-text-2 mt-3">Your wardrobe, on record.</p>
         </div>
 
-        <nav className="flex-1 px-3 space-y-0.5" aria-label="Main">
+        <nav className="flex-1 min-h-0 overflow-y-auto px-3 space-y-0.5" aria-label="Main">
           {navItems.map(item => {
             const Icon = item.icon;
             const active = location.pathname === item.path;
@@ -129,13 +129,12 @@ export default function Layout() {
             <span className="type-ledger text-[10px] shrink-0">OPEN</span>
             <span className="text-[13px] truncate flex-1 text-left">{active?.name ?? 'A wardrobe'}</span>
           </Link>
-          <button
-            onClick={() => setAddOpen(true)}
-            className="w-full h-11 type-label inline-flex items-center justify-center gap-2 bg-ink text-on-ink rounded-[2px] hover:opacity-90 active:translate-y-px transition-[opacity] duration-150"
-          >
-            <IconPlus size={16} />
+          {/* Through the Button primitive like everything else — this was a
+              hand-rolled ink fill still carrying hover:opacity-90, the exact
+              disabled-looking gesture the rebrand removed from Button itself. */}
+          <Button tone="primary" className="w-full" icon={<IconPlus size={16} />} onClick={() => setAddOpen(true)}>
             Add a piece
-          </button>
+          </Button>
           <div className="flex items-center justify-between">
             <div>
               <p className="type-ledger text-[10px] text-text-2">In the closet</p>

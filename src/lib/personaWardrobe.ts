@@ -5,6 +5,7 @@ import {
   EMPTY_CIRCLE,
   type AppState,
   type ClothingItem,
+  type LaundryStatus,
   type Outfit,
   type Season,
   type UserCategory,
@@ -48,6 +49,12 @@ const SEASON_BY_MONTH: Season[] = [
 ];
 
 const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+/**
+ * Bumped whenever the generated wardrobes change shape — photographs, bench
+ * states, costs. Samples recording an older number are rebuilt at boot.
+ */
+export const PERSONA_SEED_VERSION = 2;
 
 /** How far back the generated rotation runs, in days. */
 const HISTORY_DAYS = 250;
@@ -398,6 +405,36 @@ export function buildPersonaState(persona: PersonaSeed): AppState {
   }
 
   const firstLog = logs.length > 0 ? logs[0].date : today;
+
+  /**
+   * Bench states, derived from the same history as everything else.
+   *
+   * A closet where all sixty pieces read "Ready" and every other state reads 0
+   * is a showroom, not a wardrobe. But the states cannot be sprinkled at
+   * random either — "needs wash" on a piece that has not been worn in a month
+   * is a lie the wear log immediately exposes. So the laundry basket follows
+   * the log: pieces worn in the last few days are the candidates for the
+   * basket and the machine, heavily-worn pieces are the candidates for repair,
+   * and one structured piece is at the tailor. Deterministic (FNV → mulberry),
+   * like every other choice in this file.
+   */
+  const laundryFor = (seed: PersonaSeed['items'][number]): LaundryStatus => {
+    const worn = lastWorn.get(seed.id);
+    const count = wears.get(seed.id) ?? 0;
+    const since = worn
+      ? Math.round(
+          (new Date(`${today}T00:00:00`).getTime() - new Date(`${worn}T00:00:00`).getTime()) / 86400000
+        )
+      : Infinity;
+    const roll = rand(persona.id, seed.id, 'bench');
+    // Jewellery and bags do not queue for the wash.
+    const washable = !['jewellery', 'accessories'].includes(seed.category);
+    if (washable && since <= 2 && roll < 0.62) return 'worn';
+    if (washable && since <= 6 && roll < 0.18) return 'washing';
+    if (count >= 8 && roll > 0.955) return 'needs-repair';
+    return 'clean';
+  };
+
   const items: ClothingItem[] = persona.items.map(seed => ({
     id: seed.id,
     name: seed.name,
@@ -415,8 +452,30 @@ export function buildPersonaState(persona: PersonaSeed): AppState {
     wearCount: wears.get(seed.id) ?? 0,
     cost: seed.cost,
     favorite: false,
-    laundryStatus: 'clean',
+    laundryStatus: laundryFor(seed),
   }));
+
+  // Exactly one structured piece is at the tailor — the most-worn tailored
+  // garment that is not already benched. One, because "at the tailor" is an
+  // errand, and a wardrobe with four errands open reads as staged.
+  const tailorable = items
+    .filter(i => i.laundryStatus === 'clean' && i.wearCount >= 4)
+    .filter(i => /blazer|jacket|bandhgala|sherwani|suit|coat|trouser|kurta/i.test(i.name))
+    .sort((a, b) => b.wearCount - a.wearCount);
+  if (tailorable.length > 0) tailorable[0].laundryStatus = 'at-tailor';
+
+  // No state reads 0. The rolls above follow the log honestly, but a filter row
+  // where "In the wash" is a dead chip teaches the user those chips do nothing;
+  // if a state came up empty, the most-worn clean piece steps into it, which is
+  // also who it would really be.
+  for (const state of ['worn', 'washing', 'needs-repair'] as const) {
+    if (items.some(i => i.laundryStatus === state)) continue;
+    const candidate = items
+      .filter(i => i.laundryStatus === 'clean')
+      .filter(i => !['jewellery', 'accessories'].includes(i.category))
+      .sort((a, b) => b.wearCount - a.wearCount)[0];
+    if (candidate) candidate.laundryStatus = state;
+  }
 
   const outfits: Outfit[] = persona.outfits.map(o => ({
     id: o.id,

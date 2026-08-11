@@ -24,7 +24,7 @@ import {
   saveTheme,
   THEME_KEY,
 } from '../lib/accounts';
-import { buildPersonaState, PERSONAS } from '../lib/personaWardrobe';
+import { buildPersonaState, PERSONAS, PERSONA_SEED_VERSION } from '../lib/personaWardrobe';
 import { seedCommunity } from '../lib/communitySeed';
 import { initialState, type Account, type CommunityState, type Theme } from '../types';
 
@@ -82,6 +82,19 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   // First paint: read the registry, adopting any pre-accounts closet.
   useEffect(() => {
     let list = loadAccounts();
+    // Samples written by an older seed are rebuilt in place: they are
+    // demonstrations, and a demonstration showing last month's bugs teaches
+    // the wrong lesson. Real wardrobes (no isSample) are never touched.
+    let reseeded = false;
+    list = list.map(account => {
+      if (!account.isSample || account.seedVersion === PERSONA_SEED_VERSION) return account;
+      const persona = PERSONAS.find(p => p.id === account.id);
+      if (!persona) return account;
+      saveWardrobe(persona.id, buildPersonaState(persona));
+      reseeded = true;
+      return { ...account, seedVersion: PERSONA_SEED_VERSION };
+    });
+    if (reseeded) saveAccounts(list);
     let adoptedId: string | null = null;
     if (list.length === 0) {
       const adopted = adoptLegacyWardrobe();
@@ -193,6 +206,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         color: ACCOUNT_COLORS[added.length % ACCOUNT_COLORS.length],
         createdAt: new Date().toISOString().slice(0, 10),
         isSample: true,
+        seedVersion: PERSONA_SEED_VERSION,
       });
     }
     if (added.length === 0) return;

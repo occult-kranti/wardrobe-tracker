@@ -22,7 +22,7 @@ const p = await b.newPage();
 for (const h of ['**://fonts.googleapis.com/**','**://fonts.gstatic.com/**','**://api.fontshare.com/**']) await p.route(h, r => r.abort());
 await p.goto('http://localhost:4173/', { waitUntil: 'domcontentloaded' });
 
-for (const theme of ['light','dark','salon']) {
+for (const theme of ['light','dark','salon','gilt']) {
   const t = await p.evaluate(th => {
     document.documentElement.setAttribute('data-theme', th);
     const cs = getComputedStyle(document.documentElement);

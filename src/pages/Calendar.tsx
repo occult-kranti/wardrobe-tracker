@@ -223,7 +223,7 @@ export default function Calendar() {
             <button
               type="button"
               onClick={() => setWeekStart(startOfWeek(today))}
-              className="type-ledger text-[10px] text-text-2 hover:text-text transition-colors duration-150 mt-1"
+              className="type-label text-[13px] text-text-2 hover:text-text transition-colors duration-150 mt-1 min-h-11 px-1"
             >
               Back to this week
             </button>
@@ -292,7 +292,7 @@ export default function Calendar() {
                             ? `Remove the plan for ${longDate(date)}`
                             : `Remove the wear logged on ${longDate(date)}`
                         }
-                        className="type-ledger text-[10px] text-text-2 hover:text-text transition-colors duration-150 h-11 w-full text-left"
+                        className="type-label text-[13px] text-text-2 hover:text-text transition-colors duration-150 h-11 w-full text-left"
                       >
                         {planned ? 'Remove' : 'Undo'}
                       </button>
@@ -314,9 +314,9 @@ export default function Calendar() {
                       ? "Log today's wear"
                       : `Plan an outfit for ${longDate(date)}`
                   }
-                  className="type-ledger text-[10px] text-text-2 hover:text-text hover:bg-sunken transition-colors duration-150 h-11 w-full mt-2 inline-flex items-center gap-1.5 px-1 rounded-[2px]"
+                  className="type-label text-[13px] text-text-2 hover:text-text hover:bg-sunken transition-colors duration-150 h-11 w-full mt-2 inline-flex items-center gap-1.5 px-1 rounded-[2px]"
                 >
-                  <IconPlus size={12} />
+                  <IconPlus size={14} />
                   {isToday ? 'Log' : 'Plan'}
                 </button>
               ) : null}

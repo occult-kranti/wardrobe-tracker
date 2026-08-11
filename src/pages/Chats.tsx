@@ -4,7 +4,7 @@ import { useSession } from '../context/SessionContext';
 import { useWardrobe } from '../context/WardrobeContext';
 import { Button, Card, EmptyState, Field, LinkButton, Masthead, Modal, SectionTitle, inputClass } from '../components/ui';
 import { Basting, PlateEmptyWishlist } from '../components/art';
-import { IconChevronLeft } from '../components/icons';
+import { IconChevronLeft, IconPlus } from '../components/icons';
 import { AccountMark, LookCard, PieceCard, shortDate } from '../components/social';
 import { todayLocal } from '../lib/dates';
 import type { BorrowStatus, ChatMessage, SharedLook, SharedPiece } from '../types';
@@ -106,7 +106,7 @@ export default function Chats() {
         title="Conversations"
         meta={`${threads.length} open`}
         action={others.length > 0 ? (
-          <Button compact onClick={() => setStarting(true)}>New</Button>
+          <Button tone="primary" icon={<IconPlus size={16} />} onClick={() => setStarting(true)}>New</Button>
         ) : undefined}
       />
       <Card>
@@ -127,8 +127,11 @@ export default function Chats() {
                     <span className="block text-[15px] text-text truncate group-hover:underline underline-offset-[3px]">
                       {title}
                     </span>
-                    <span className="type-ledger text-[11px] text-text-2 block mt-0.5 truncate">
-                      {last ? `${byId.get(last.authorId)?.handle ?? ''} · ${last.text.slice(0, 60)}` : 'No messages yet'}
+                    {/* Prose stays prose — mono caps is for the ledger, and the
+                        hard slice(0,60) cut words mid-letter with no ellipsis
+                        while `truncate` was already sitting here doing the job. */}
+                    <span className="text-[13px] text-text-2 block mt-0.5 truncate">
+                      {last ? `${byId.get(last.authorId)?.handle ?? ''} · ${last.text}` : 'No messages yet'}
                     </span>
                   </span>
                   <span className="type-ledger text-[11px] text-text-2 tabular shrink-0">

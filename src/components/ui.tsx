@@ -20,8 +20,10 @@ const toneClasses: Record<ButtonTone, string> = {
   // accent rule in under the label (contract §7) — the shipped version faded the
   // whole button to 90% opacity instead, which is the gesture for *disabled*.
   primary: 'bg-ink text-on-ink btn-underline',
-  // the reserved accent fill — log-wear actions only
-  hero: 'bg-accent-fill text-on-accent hover:brightness-110',
+  // The reserved accent fill — log-wear actions only. Hover slides the same
+  // 2px rule as primary, stated in on-accent; brightness-110 was outside the
+  // motion vocabulary and dropped the label from 6.98:1 toward 6.0.
+  hero: 'bg-accent-fill text-on-accent btn-underline [--btn-underline-color:var(--color-on-accent)]',
   // §7: "hover gains corner crosses" — `.registered` is that exact motif, and it
   // was already in the stylesheet, used on cards but never on the button it was
   // written for.
@@ -37,9 +39,9 @@ export function buttonClass(tone: ButtonTone = 'secondary', compact = false, ext
   // 44px is the floor, not 40 — the accessibility directive outranks the
   // original 40px figure in the component law, so "compact" only narrows the
   // padding, never the hit area.
-  const height = compact ? 'h-11 px-3' : 'h-11 px-5';
+  const height = compact ? 'h-11 px-3 [--btn-underline-inset:8px]' : 'h-11 px-5';
   const base = tone === 'tertiary' ? 'min-h-11 py-1' : height;
-  return `type-label inline-flex items-center justify-center gap-2 rounded-[2px] transition-[opacity,filter,background-color] duration-150 active:translate-y-px disabled:opacity-40 disabled:pointer-events-none ${base} ${toneClasses[tone]} ${extra}`;
+  return `type-label whitespace-nowrap inline-flex items-center justify-center gap-2 rounded-[2px] transition-[opacity,filter,background-color] duration-150 active:translate-y-px disabled:opacity-40 disabled:pointer-events-none ${base} ${toneClasses[tone]} ${extra}`;
 }
 
 export function Button({ tone = 'secondary', compact, icon, children, className = '', ...rest }: ButtonProps) {
@@ -287,8 +289,8 @@ export function Masthead({
     <header className="mb-6">
       <div className="flex items-end justify-between gap-4 pb-2 rule-double">
         <h1 className="type-masthead text-[28px] sm:text-[34px]">{title}</h1>
-        <div className="flex items-center gap-3 pb-1">
-          {meta ? <span className="type-ledger text-[11px] text-text-2">{meta}</span> : null}
+        <div className="flex items-center gap-3 pb-1 shrink-0">
+          {meta ? <span className="type-ledger text-[11px] text-text-2 whitespace-nowrap">{meta}</span> : null}
           {action}
         </div>
       </div>
@@ -330,7 +332,7 @@ export function Field({
 }
 
 export const inputClass =
-  'w-full min-h-11 bg-transparent border-0 border-b border-border rounded-none px-0 py-2 text-[15px] text-text placeholder:text-text-2/70 focus:outline-none focus:border-b-2 focus:border-accent transition-[border] duration-150';
+  'w-full min-h-11 bg-transparent border-0 border-b border-border rounded-none px-0 py-2 text-[15px] text-text placeholder:text-text-2 focus:outline-none focus:border-b-2 focus:border-accent transition-[border] duration-150';
 
 export const selectClass = `${inputClass} appearance-none cursor-pointer`;
 

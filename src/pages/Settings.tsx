@@ -130,6 +130,7 @@ function Row({
 const THEMES: { value: Theme; label: string }[] = [
   { value: 'light', label: 'Pattern room' },
   { value: 'salon', label: 'Salon' },
+  { value: 'gilt', label: 'Gilding room' },
   { value: 'dark', label: 'Atelier' },
   { value: 'system', label: 'System' },
 ];
@@ -447,7 +448,7 @@ export default function Settings() {
         <SectionTitle>Appearance</SectionTitle>
         <Row
           title="Paper"
-          body="Three rooms in the same building: the pattern room where cloth is cut, the salon where a collection is shown, and the atelier at night. System follows the device. The choice belongs to this screen, not to a wardrobe, so it holds when you open a different one."
+          body="Four rooms in the same building: the pattern room where cloth is cut, the salon where a collection is shown, the gilding room where the gold leaf is laid, and the atelier at night. System follows the device. The choice belongs to this screen, not to a wardrobe, so it holds when you open a different one."
           control={
             <div className="flex gap-2">
               {THEMES.map(opt => (

@@ -413,7 +413,7 @@ export default function Closet() {
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder="Search by name"
-                className="w-full h-11 pl-9 pr-12 bg-surface border border-border rounded-[2px] text-[15px] text-text placeholder:text-text-2/70 focus:outline-none focus:border-accent transition-colors"
+                className="w-full h-11 pl-9 pr-12 bg-surface border border-border rounded-[2px] text-[15px] text-text placeholder:text-text-2 focus:outline-none focus:border-accent transition-colors"
               />
               {search && (
                 <button
@@ -450,7 +450,9 @@ export default function Closet() {
               read as two questions rather than one wall of chips. */}
           <div className="space-y-2">
             {/* Category — the user's own taxonomy, quiet ones withheld by default. */}
-            <TagRail label="Filter by category">
+            <div className="flex items-center gap-2">
+              <span className="type-ledger text-[11px] text-text-2 w-10 shrink-0" aria-hidden="true">Kind</span>
+              <TagRail label="Filter by category" className="flex-1">
               <Chip selected={!activeCategory} onClick={() => setCategoryParam(null)}>
                 Everything
               </Chip>
@@ -464,10 +466,14 @@ export default function Closet() {
                   {cat.label}
                 </Chip>
               ))}
-            </TagRail>
+              </TagRail>
+            </div>
 
-            {/* Bench states — ready through the mending pile. */}
-            <TagRail label="Filter by state">
+            {/* Bench states — ready through the mending pile. The two rails read
+                as two questions only if each says which question it is. */}
+            <div className="flex items-center gap-2">
+              <span className="type-ledger text-[11px] text-text-2 w-10 shrink-0" aria-hidden="true">State</span>
+              <TagRail label="Filter by state" className="flex-1">
               <Chip selected={benchFilter === ''} onClick={() => setBenchFilter('')}>
                 All {browsable.length}
               </Chip>
@@ -487,7 +493,8 @@ export default function Closet() {
               >
                 Mending pile {benchCounts.mending}
               </Chip>
-            </TagRail>
+              </TagRail>
+            </div>
           </div>
 
           {showFilters && (

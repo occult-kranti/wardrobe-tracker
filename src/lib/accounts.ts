@@ -71,7 +71,7 @@ export function saveActiveId(activeId: string | null): void {
  */
 export function loadTheme(): Theme {
   const stored = read<{ theme?: Theme }>(THEME_KEY, {}).theme;
-  return stored === 'light' || stored === 'dark' || stored === 'salon' || stored === 'system'
+  return stored === 'light' || stored === 'dark' || stored === 'salon' || stored === 'gilt' || stored === 'system'
     ? stored
     : 'dark';
 }
