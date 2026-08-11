@@ -23,8 +23,13 @@ jobs:
         with:
           node-version: 20
           cache: npm
+      # Browsers are only needed for the smoke/screenshot harnesses, not the build.
       - run: npm ci
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
       - run: npm run lint
+      - run: npm run test:migrate
+      - run: npm run test:demo
       - run: npm run build
       - uses: actions/upload-pages-artifact@v3
         with:

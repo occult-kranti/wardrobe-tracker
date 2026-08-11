@@ -1,0 +1,72 @@
+// Verifies a real v1 localStorage payload survives migration with no loss.
+import { build } from 'esbuild';
+import { writeFileSync, mkdtempSync } from 'fs';
+import { tmpdir } from 'os';
+import { join } from 'path';
+
+const out = join(mkdtempSync(join(tmpdir(), 'mig-')), 'migrate.mjs');
+await build({
+  entryPoints: [new URL('../src/lib/migrate.ts', import.meta.url).pathname],
+  bundle: true,
+  format: 'esm',
+  outfile: out,
+  logLevel: 'error',
+});
+
+const { migrate } = await import(out);
+
+const v1 = {
+  items: [
+    {
+      id: 'a', name: 'White Oxford', category: 'tops', color: '#f5f0eb',
+      season: ['spring'], occasion: ['work'], imageUrl: 'data:x', dateAdded: '2026-01-01',
+      wearCount: 14, cost: 68, favorite: true, laundryStatus: 'clean',
+    },
+    {
+      id: 'b', name: 'Kilt', category: 'skirts-custom', color: '#31415e',
+      season: [], occasion: ['market-day'], imageUrl: '', dateAdded: '2026-02-01',
+      wearCount: 0, favorite: false, laundryStatus: 'washing',
+    },
+  ],
+  outfits: [{ id: 'o1', name: 'Monday', itemIds: ['a'], favorite: true, dateCreated: '2026-03-01', wearCount: 3 }],
+  wearLogs: [{ id: 'l1', date: '2026-08-01', itemIds: ['a'] }],
+  wishlist: [{ id: 'w1', name: 'Cardigan', category: 'tops', color: '#d4a574', priority: 'high', dateAdded: '2026-07-01', purchased: false, price: 88 }],
+  someFutureKey: { keep: 'me' },
+};
+
+const m = migrate(v1);
+const checks = [
+  ['schemaVersion set', m.schemaVersion === 2],
+  ['items preserved', m.items.length === 2],
+  ['wear counts intact', m.items[0].wearCount === 14],
+  ['outfits preserved', m.outfits.length === 1],
+  ['wearLogs preserved', m.wearLogs.length === 1],
+  ['wishlist preserved', m.wishlist.length === 1],
+  ['purchased -> status', m.wishlist[0].status === 'waiting' && !('purchased' in m.wishlist[0])],
+  ['custom category adopted', m.settings.categories.some(c => c.id === 'skirts-custom')],
+  ['default categories seeded', m.settings.categories.some(c => c.id === 'tops')],
+  ['custom occasion adopted', m.settings.occasions.includes('market-day')],
+  ['performance in defaults', m.settings.occasions.includes('performance')],
+  ['unknown top-level key preserved', m.someFutureKey?.keep === 'me'],
+  ['theme defaults to dark', m.settings.theme === 'dark'],
+];
+
+// Idempotency: migrating twice must be a no-op.
+const twice = migrate(m);
+checks.push(['idempotent', JSON.stringify(twice) === JSON.stringify(m)]);
+
+// A purchased v1 wishlist item becomes 'bought'.
+const bought = migrate({ items: [], wishlist: [{ id: 'w', name: 'x', category: 'tops', color: '#000', priority: 'low', dateAdded: 'd', purchased: true }] });
+checks.push(['purchased:true -> bought', bought.wishlist[0].status === 'bought']);
+
+// Empty / garbage input must not throw.
+checks.push(['null safe', migrate(null).items.length === 0]);
+checks.push(['garbage safe', migrate('nonsense').items.length === 0]);
+
+let failed = 0;
+for (const [name, ok] of checks) {
+  console.log(ok ? 'PASS' : 'FAIL', '-', name);
+  if (!ok) failed++;
+}
+console.log(failed === 0 ? '\nALL MIGRATION CHECKS PASSED' : `\n${failed} CHECK(S) FAILED`);
+process.exit(failed === 0 ? 0 : 1);
