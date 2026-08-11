@@ -1,6 +1,7 @@
 import { useRef, useState, type ButtonHTMLAttributes, type ReactNode } from 'react';
 import { useWardrobe } from '../context/WardrobeContext';
-import { SCHEMA_VERSION, displayTag, initialState, type AppState } from '../types';
+import { useSession } from '../context/SessionContext';
+import { SCHEMA_VERSION, displayTag, initialState, type AppState, type Theme } from '../types';
 import { daysSince, formatLocalDate, todayLocal } from '../lib/dates';
 import { migrate } from '../lib/migrate';
 import { buildDemoState, DEMO_SUMMARY } from '../lib/demoData';
@@ -121,9 +122,10 @@ function Row({
   );
 }
 
-const THEMES: { value: 'light' | 'dark' | 'system'; label: string }[] = [
-  { value: 'light', label: 'Light' },
-  { value: 'dark', label: 'Dark' },
+const THEMES: { value: Theme; label: string }[] = [
+  { value: 'light', label: 'Pattern room' },
+  { value: 'salon', label: 'Salon' },
+  { value: 'dark', label: 'Atelier' },
   { value: 'system', label: 'System' },
 ];
 
@@ -137,7 +139,6 @@ export default function Settings() {
     wearLogs,
     wishlist,
     settings,
-    updateSettings,
     addCategory,
     renameCategory,
     setCategoryQuiet,
@@ -156,7 +157,7 @@ export default function Settings() {
   const [newOccasion, setNewOccasion] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const theme = settings.theme ?? 'system';
+  const { theme, setTheme } = useSession();
   const records = items.length + outfits.length + wearLogs.length + wishlist.length;
 
   /* ---------- export: the whole state, generically ---------- */
@@ -441,14 +442,14 @@ export default function Settings() {
         <SectionTitle>Appearance</SectionTitle>
         <Row
           title="Paper"
-          body="Light is the pattern room; dark is the atelier at night. System follows the device."
+          body="Three rooms in the same building: the pattern room where cloth is cut, the salon where a collection is shown, and the atelier at night. System follows the device. The choice belongs to this screen, not to a wardrobe, so it holds when you open a different one."
           control={
             <div className="flex gap-2">
               {THEMES.map(opt => (
                 <Toggle
                   key={opt.value}
                   active={theme === opt.value}
-                  onClick={() => updateSettings({ theme: opt.value })}
+                  onClick={() => setTheme(opt.value)}
                 >
                   {opt.label}
                 </Toggle>

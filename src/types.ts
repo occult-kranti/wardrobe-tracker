@@ -289,11 +289,26 @@ export const EMPTY_COMMUNITY: CommunityState = {
   messages: [],
 };
 
+/**
+ * Which room the app is shown in. This belongs to the eyes looking at the
+ * screen, not to a wardrobe — three closets on one device should not each drag
+ * the interface to a different palette when opened. Stored device-level.
+ */
+export type Theme = 'light' | 'dark' | 'salon' | 'system';
+
+export const THEME_LABELS: Record<Theme, string> = {
+  light: 'The pattern room',
+  dark: 'The atelier at night',
+  salon: 'The salon',
+  system: 'Follow the device',
+};
+
 export interface AppSettings {
   categories: UserCategory[];
   occasions: Occasion[];
   lastExportAt?: string;
-  theme?: 'light' | 'dark' | 'system';
+  /** Kept for older exports; the live value is device-level — see Theme below. */
+  theme?: Theme;
 }
 
 export interface AppState {

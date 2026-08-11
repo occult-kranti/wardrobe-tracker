@@ -6,11 +6,6 @@ Ordered by leverage, not by effort.
 
 ## Open, and asked for
 
-- **A third theme.** Requested as "a theme colour for women"; built as a theme
-  for everyone instead, because hard rule 5 and §2.7 forbid gendering anything.
-  Still to do: the palette itself, grounded in colour theory and fashion-retail
-  practice, with measured AA contrast for every pair the app renders, named in
-  the atelier vocabulary alongside "the pattern room" and "the atelier at night".
 - **Sharing scopes.** Sharing is currently everyone-or-nobody. The design calls
   for four — everyone, a group, one person, only yourself — plus a "what you
   share" screen that states the current state completely rather than per-tile.
@@ -34,6 +29,11 @@ Ordered by leverage, not by effort.
   occasions, and 7 occasion outfits + 8 daily-register outfits.
 - **Drawn garment plates** — 49 hand-drawn technical flats replace the caption
   swatches, validated by the new `test:art` suite (which caught five broken).
+- **The salon** — a third theme for everyone, grounded in colour theory with
+  every pair measured in a browser by the new `test:contrast` suite, which
+  caught the shipped dark theme failing AA by 0.01. Theme is now device-level,
+  so switching wardrobes no longer flips the palette.
+  Reasoning: `docs/13-the-salon.md`.
 - **Wardrobes, profiles, a feed, conversations and events** — three switchable
   worked wardrobes with their own closets, taxonomies, calendars and history;
   honest open/start screens in place of login; a feed with no engagement

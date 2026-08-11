@@ -14,7 +14,8 @@
     "test:art": "node scripts/test-art.mjs",
     "test:smoke": "node scripts/smoke.mjs",
     "shots": "node scripts/screenshot.mjs",
-    "verify": "npm run build && npm run lint:brand && npm run test:migrate && npm run test:demo"
+    "verify": "npm run build && npm run lint:brand && npm run test:migrate && npm run test:demo",
+    "test:contrast": "node scripts/test-contrast.mjs"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",

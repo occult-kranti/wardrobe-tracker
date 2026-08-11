@@ -3,6 +3,7 @@ import {
   type Account,
   type AppState,
   type CommunityState,
+  type Theme,
 } from '../types';
 
 /**
@@ -24,6 +25,7 @@ export const LEGACY_KEY = 'wardrobe-tracker';
 export const SESSION_KEY = 'toile-session';
 export const ACCOUNTS_KEY = 'toile-accounts';
 export const COMMUNITY_KEY = 'toile-community';
+export const THEME_KEY = 'toile-theme';
 
 export const wardrobeKey = (accountId: string) => `${LEGACY_KEY}:${accountId}`;
 
@@ -60,6 +62,22 @@ export function loadActiveId(): string | null {
 
 export function saveActiveId(activeId: string | null): void {
   write(SESSION_KEY, { activeId });
+}
+
+/**
+ * The theme is a property of the screen, not of a wardrobe. Keeping it in
+ * AppSettings meant opening a different closet could flip the whole interface
+ * from dark to light mid-session.
+ */
+export function loadTheme(): Theme {
+  const stored = read<{ theme?: Theme }>(THEME_KEY, {}).theme;
+  return stored === 'light' || stored === 'dark' || stored === 'salon' || stored === 'system'
+    ? stored
+    : 'dark';
+}
+
+export function saveTheme(theme: Theme): void {
+  write(THEME_KEY, { theme });
 }
 
 export function loadCommunity(): CommunityState {

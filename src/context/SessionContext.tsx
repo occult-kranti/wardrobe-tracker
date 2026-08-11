@@ -20,10 +20,13 @@ import {
   saveActiveId,
   saveCommunity,
   saveWardrobe,
+  loadTheme,
+  saveTheme,
+  THEME_KEY,
 } from '../lib/accounts';
 import { buildPersonaState, PERSONAS } from '../lib/personaWardrobe';
 import { seedCommunity } from '../lib/communitySeed';
-import { initialState, type Account, type CommunityState } from '../types';
+import { initialState, type Account, type CommunityState, type Theme } from '../types';
 
 /**
  * Which wardrobe is open, who else is on this device, and the little that is
@@ -39,6 +42,8 @@ interface SessionValue {
   activeId: string | null;
   active: Account | null;
   community: CommunityState;
+  theme: Theme;
+  setTheme: (theme: Theme) => void;
   ready: boolean;
   signIn: (id: string) => void;
   signOut: () => void;
@@ -71,6 +76,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [community, setCommunityState] = useState<CommunityState>(() => loadCommunity());
+  const [theme, setThemeState] = useState<Theme>(() => loadTheme());
   const [ready, setReady] = useState(false);
 
   // First paint: read the registry, adopting any pre-accounts closet.
@@ -107,6 +113,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       if (e.key === ACCOUNTS_KEY) setAccounts(loadAccounts());
       if (e.key === SESSION_KEY) setActiveId(loadActiveId());
       if (e.key === COMMUNITY_KEY) setCommunityState(loadCommunity());
+      if (e.key === THEME_KEY) setThemeState(loadTheme());
     };
     window.addEventListener('storage', handler);
     return () => window.removeEventListener('storage', handler);
@@ -154,6 +161,11 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     if (activeId === id) signOut();
   }, [accounts, activeId, persist, signOut]);
 
+  const setTheme = useCallback((next: Theme) => {
+    setThemeState(next);
+    saveTheme(next);
+  }, []);
+
   const setCommunity = useCallback<SessionValue['setCommunity']>(next => {
     setCommunityState(prev => {
       const value = typeof next === 'function' ? next(prev) : next;
@@ -193,6 +205,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     activeId,
     active: accounts.find(a => a.id === activeId) ?? null,
     community,
+    theme,
+    setTheme,
     ready,
     signIn,
     signOut,
@@ -201,7 +215,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     removeAccount,
     setCommunity,
     installSamples,
-  }), [accounts, activeId, community, ready, signIn, signOut, createAccount, updateAccount, removeAccount, setCommunity, installSamples]);
+  }), [accounts, activeId, community, theme, setTheme, ready, signIn, signOut, createAccount, updateAccount, removeAccount, setCommunity, installSamples]);
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
 }

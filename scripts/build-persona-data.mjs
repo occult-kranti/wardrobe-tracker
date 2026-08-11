@@ -77,8 +77,12 @@ function mapSeasons(tag) {
   return REAL_SEASONS[tag] ?? ['spring', 'summer', 'fall', 'winter'];
 }
 
-/** Cost tiers become plausible rupee-ish figures so the Ledger has something to divide. */
-const TIER_COST = { low: [1200, 3500], mid: [4500, 12000], high: [16000, 48000] };
+/**
+ * Cost tiers become figures the Ledger can divide. Kept in the same currency the
+ * app formats in — the first pass used rupee magnitudes and the closet rendered
+ * "$729.67/WEAR", which is not a number, it is a units bug wearing a dollar sign.
+ */
+const TIER_COST = { low: [14, 45], mid: [55, 160], high: [210, 640] };
 function costFor(tier, seed) {
   const [lo, hi] = TIER_COST[tier] ?? TIER_COST.mid;
   // Deterministic: the same item always carries the same price.

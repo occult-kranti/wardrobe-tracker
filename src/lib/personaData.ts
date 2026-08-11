@@ -95,7 +95,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 3089,
+    "cost": 27,
     "tier": "low",
     "outfits": [
      "AM-02",
@@ -120,7 +120,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 2306,
+    "cost": 34,
     "tier": "low",
     "outfits": [
      "AM-05",
@@ -143,7 +143,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 3334,
+    "cost": 21,
     "tier": "low",
     "outfits": [
      "AM-01",
@@ -164,7 +164,7 @@ export const PERSONAS: PersonaSeed[] = [
      "summer"
     ],
     "occasion": [],
-    "cost": 8789,
+    "cost": 103,
     "tier": "mid",
     "outfits": [
      "AM-16",
@@ -183,7 +183,7 @@ export const PERSONAS: PersonaSeed[] = [
      "summer"
     ],
     "occasion": [],
-    "cost": 1278,
+    "cost": 15,
     "tier": "low",
     "outfits": [
      "-"
@@ -202,7 +202,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 5524,
+    "cost": 119,
     "tier": "mid",
     "outfits": [
      "AM-03"
@@ -223,7 +223,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 1523,
+    "cost": 41,
     "tier": "low",
     "outfits": [
      "AM-05",
@@ -245,7 +245,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 9760,
+    "cost": 135,
     "tier": "mid",
     "outfits": [
      "AM-11",
@@ -268,7 +268,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 7642,
+    "cost": 74,
     "tier": "mid",
     "outfits": [
      "AM-13"
@@ -291,7 +291,7 @@ export const PERSONAS: PersonaSeed[] = [
     "occasion": [
      "festival"
     ],
-    "cost": 7454,
+    "cost": 140,
     "tier": "mid",
     "outfits": [
      "AM-06"
@@ -312,7 +312,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 9572,
+    "cost": 95,
     "tier": "mid",
     "outfits": [
      "AM-01",
@@ -338,7 +338,7 @@ export const PERSONAS: PersonaSeed[] = [
     "occasion": [
      "festival"
     ],
-    "cost": 10719,
+    "cost": 124,
     "tier": "mid",
     "outfits": [
      "-"
@@ -357,7 +357,7 @@ export const PERSONAS: PersonaSeed[] = [
      "fall"
     ],
     "occasion": [],
-    "cost": 5336,
+    "cost": 79,
     "tier": "mid",
     "outfits": [
      "AM-12",
@@ -381,7 +381,7 @@ export const PERSONAS: PersonaSeed[] = [
     "occasion": [
      "festival"
     ],
-    "cost": 33997,
+    "cost": 368,
     "tier": "high",
     "outfits": [
      "AM-07"
@@ -404,7 +404,7 @@ export const PERSONAS: PersonaSeed[] = [
     "occasion": [
      "festival"
     ],
-    "cost": 1258,
+    "cost": 42,
     "tier": "low",
     "outfits": [
      "AM-06",
@@ -423,7 +423,7 @@ export const PERSONAS: PersonaSeed[] = [
      "summer"
     ],
     "occasion": [],
-    "cost": 2041,
+    "cost": 35,
     "tier": "low",
     "outfits": [
      "-"
@@ -441,7 +441,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 3314,
+    "cost": 16,
     "tier": "low",
     "outfits": [
      "AM-13"
@@ -462,7 +462,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 1796,
+    "cost": 41,
     "tier": "low",
     "outfits": [
      "AM-10",
@@ -481,7 +481,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 3069,
+    "cost": 22,
     "tier": "low",
     "outfits": [
      "AM-13"
@@ -500,7 +500,7 @@ export const PERSONAS: PersonaSeed[] = [
      "summer"
     ],
     "occasion": [],
-    "cost": 2372,
+    "cost": 22,
     "tier": "low",
     "outfits": [
      "AM-14"
@@ -519,7 +519,7 @@ export const PERSONAS: PersonaSeed[] = [
      "fall"
     ],
     "occasion": [],
-    "cost": 17726,
+    "cost": 460,
     "tier": "high",
     "outfits": [
      "-"
@@ -540,7 +540,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 5636,
+    "cost": 86,
     "tier": "mid",
     "outfits": [
      "AM-04",
@@ -564,7 +564,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 11019,
+    "cost": 131,
     "tier": "mid",
     "outfits": [
      "AM-02",
@@ -587,7 +587,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 2234,
+    "cost": 15,
     "tier": "low",
     "outfits": [
      "AM-12"
@@ -605,7 +605,7 @@ export const PERSONAS: PersonaSeed[] = [
      "summer"
     ],
     "occasion": [],
-    "cost": 6783,
+    "cost": 115,
     "tier": "mid",
     "outfits": [
      "AM-06",
@@ -629,7 +629,7 @@ export const PERSONAS: PersonaSeed[] = [
     "occasion": [
      "festival"
     ],
-    "cost": 1989,
+    "cost": 21,
     "tier": "low",
     "outfits": [
      "AM-07"
@@ -650,7 +650,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 10048,
+    "cost": 99,
     "tier": "mid",
     "outfits": [
      "AM-01",
@@ -673,7 +673,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 1744,
+    "cost": 27,
     "tier": "low",
     "outfits": [
      "AM-08",
@@ -695,7 +695,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 2431,
+    "cost": 30,
     "tier": "low",
     "outfits": [
      "AM-10"
@@ -714,7 +714,7 @@ export const PERSONAS: PersonaSeed[] = [
      "summer"
     ],
     "occasion": [],
-    "cost": 3459,
+    "cost": 17,
     "tier": "low",
     "outfits": [
      "AM-14"
@@ -735,7 +735,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 7123,
+    "cost": 66,
     "tier": "mid",
     "outfits": [
      "AM-20"
@@ -756,7 +756,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 1820,
+    "cost": 44,
     "tier": "low",
     "outfits": [
      "AM-09"
@@ -777,7 +777,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 11738,
+    "cost": 64,
     "tier": "mid",
     "outfits": [
      "AM-02",
@@ -802,7 +802,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 9620,
+    "cost": 109,
     "tier": "mid",
     "outfits": [
      "AM-01",
@@ -829,7 +829,7 @@ export const PERSONAS: PersonaSeed[] = [
     "occasion": [
      "festival"
     ],
-    "cost": 3123,
+    "cost": 27,
     "tier": "low",
     "outfits": [
      "AM-06"
@@ -850,7 +850,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 30959,
+    "cost": 295,
     "tier": "high",
     "outfits": [
      "AM-05",
@@ -870,7 +870,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 5208,
+    "cost": 96,
     "tier": "mid",
     "outfits": [
      "AM-13"
@@ -891,7 +891,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 10591,
+    "cost": 141,
     "tier": "mid",
     "outfits": [
      "AM-10"
@@ -910,7 +910,7 @@ export const PERSONAS: PersonaSeed[] = [
      "fall"
     ],
     "occasion": [],
-    "cost": 1312,
+    "cost": 15,
     "tier": "low",
     "outfits": [
      "AM-12"
@@ -929,7 +929,7 @@ export const PERSONAS: PersonaSeed[] = [
      "summer"
     ],
     "occasion": [],
-    "cost": 8297,
+    "cost": 83,
     "tier": "mid",
     "outfits": [
      "AM-14"
@@ -950,7 +950,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 2918,
+    "cost": 36,
     "tier": "low",
     "outfits": [
      "AM-03",
@@ -972,7 +972,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 7426,
+    "cost": 132,
     "tier": "mid",
     "outfits": [
      "AM-01",
@@ -998,7 +998,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 3163,
+    "cost": 30,
     "tier": "low",
     "outfits": [
      "AM-01",
@@ -1020,7 +1020,7 @@ export const PERSONAS: PersonaSeed[] = [
      "summer"
     ],
     "occasion": [],
-    "cost": 3456,
+    "cost": 35,
     "tier": "low",
     "outfits": [
      "AM-05",
@@ -1042,7 +1042,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 11838,
+    "cost": 145,
     "tier": "mid",
     "outfits": [
      "AM-01",
@@ -1064,7 +1064,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 1400,
+    "cost": 29,
     "tier": "low",
     "outfits": [
      "AM-08",
@@ -1087,7 +1087,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 8573,
+    "cost": 55,
     "tier": "mid",
     "outfits": [
      "AM-10",
@@ -1108,7 +1108,7 @@ export const PERSONAS: PersonaSeed[] = [
      "summer"
     ],
     "occasion": [],
-    "cost": 8749,
+    "cost": 158,
     "tier": "mid",
     "outfits": [
      "AM-14"
@@ -1129,7 +1129,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 1938,
+    "cost": 28,
     "tier": "low",
     "outfits": [
      "AM-01",
@@ -1160,7 +1160,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 2549,
+    "cost": 14,
     "tier": "low",
     "outfits": [
      "AM-14"
@@ -1183,7 +1183,7 @@ export const PERSONAS: PersonaSeed[] = [
     "occasion": [
      "festival"
     ],
-    "cost": 9204,
+    "cost": 136,
     "tier": "mid",
     "outfits": [
      "AM-07"
@@ -1201,7 +1201,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 2304,
+    "cost": 20,
     "tier": "low",
     "outfits": [
      "AM-13",
@@ -1225,7 +1225,7 @@ export const PERSONAS: PersonaSeed[] = [
     "occasion": [
      "travel"
     ],
-    "cost": 3332,
+    "cost": 39,
     "tier": "low",
     "outfits": [
      "AM-05",
@@ -1913,7 +1913,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 26418,
+    "cost": 468,
     "tier": "high",
     "outfits": [
      "VS-01",
@@ -1934,7 +1934,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 17323,
+    "cost": 386,
     "tier": "high",
     "outfits": [
      "VS-17",
@@ -1956,7 +1956,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 40229,
+    "cost": 304,
     "tier": "high",
     "outfits": [
      "VS-02",
@@ -1976,7 +1976,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 39892,
+    "cost": 447,
     "tier": "high",
     "outfits": [
      "VS-13"
@@ -1995,7 +1995,7 @@ export const PERSONAS: PersonaSeed[] = [
      "fall"
     ],
     "occasion": [],
-    "cost": 30797,
+    "cost": 365,
     "tier": "high",
     "outfits": [
      "VS-12"
@@ -2013,7 +2013,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 10599,
+    "cost": 152,
     "tier": "mid",
     "outfits": [
      "-"
@@ -2031,7 +2031,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 44608,
+    "cost": 632,
     "tier": "high",
     "outfits": [
      "VS-20"
@@ -2054,7 +2054,7 @@ export const PERSONAS: PersonaSeed[] = [
     "occasion": [
      "formal"
     ],
-    "cost": 26755,
+    "cost": 325,
     "tier": "high",
     "outfits": [
      "VS-07"
@@ -2077,7 +2077,7 @@ export const PERSONAS: PersonaSeed[] = [
     "occasion": [
      "festival"
     ],
-    "cost": 17660,
+    "cost": 243,
     "tier": "high",
     "outfits": [
      "VS-06"
@@ -2098,7 +2098,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 8384,
+    "cost": 69,
     "tier": "mid",
     "outfits": [
      "VS-01",
@@ -2126,7 +2126,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 9531,
+    "cost": 98,
     "tier": "mid",
     "outfits": [
      "VS-02",
@@ -2149,7 +2149,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 11649,
+    "cost": 159,
     "tier": "mid",
     "outfits": [
      "-"
@@ -2172,7 +2172,7 @@ export const PERSONAS: PersonaSeed[] = [
     "occasion": [
      "formal"
     ],
-    "cost": 25030,
+    "cost": 566,
     "tier": "high",
     "outfits": [
      "VS-07"
@@ -2190,7 +2190,7 @@ export const PERSONAS: PersonaSeed[] = [
      "summer"
     ],
     "occasion": [],
-    "cost": 9355,
+    "cost": 101,
     "tier": "mid",
     "outfits": [
      "VS-14"
@@ -2208,7 +2208,7 @@ export const PERSONAS: PersonaSeed[] = [
      "summer"
     ],
     "occasion": [],
-    "cost": 10502,
+    "cost": 130,
     "tier": "mid",
     "outfits": [
      "VS-04"
@@ -2226,7 +2226,7 @@ export const PERSONAS: PersonaSeed[] = [
      "summer"
     ],
     "occasion": [],
-    "cost": 5119,
+    "cost": 85,
     "tier": "mid",
     "outfits": [
      "VS-05",
@@ -2245,7 +2245,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 11825,
+    "cost": 156,
     "tier": "mid",
     "outfits": [
      "VS-20"
@@ -2263,7 +2263,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 29072,
+    "cost": 606,
     "tier": "high",
     "outfits": [
      "VS-08",
@@ -2286,7 +2286,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 7675,
+    "cost": 95,
     "tier": "mid",
     "outfits": [
      "-"
@@ -2307,7 +2307,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 33804,
+    "cost": 353,
     "tier": "high",
     "outfits": [
      "VS-03",
@@ -2330,7 +2330,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 11911,
+    "cost": 111,
     "tier": "mid",
     "outfits": [
      "VS-10"
@@ -2351,7 +2351,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 47615,
+    "cost": 620,
     "tier": "high",
     "outfits": [
      "VS-09"
@@ -2372,7 +2372,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 2702,
+    "cost": 32,
     "tier": "low",
     "outfits": [
      "-"
@@ -2393,7 +2393,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 20364,
+    "cost": 609,
     "tier": "high",
     "outfits": [
      "VS-01",
@@ -2415,7 +2415,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 43270,
+    "cost": 527,
     "tier": "high",
     "outfits": [
      "VS-13",
@@ -2438,7 +2438,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 6737,
+    "cost": 89,
     "tier": "mid",
     "outfits": [
      "VS-02",
@@ -2458,7 +2458,7 @@ export const PERSONAS: PersonaSeed[] = [
      "summer"
     ],
     "occasion": [],
-    "cost": 6913,
+    "cost": 86,
     "tier": "mid",
     "outfits": [
      "VS-06",
@@ -2482,7 +2482,7 @@ export const PERSONAS: PersonaSeed[] = [
     "occasion": [
      "casual"
     ],
-    "cost": 9031,
+    "cost": 147,
     "tier": "mid",
     "outfits": [
      "VS-04",
@@ -2507,7 +2507,7 @@ export const PERSONAS: PersonaSeed[] = [
     "occasion": [
      "formal"
     ],
-    "cost": 47649,
+    "cost": 424,
     "tier": "high",
     "outfits": [
      "VS-07"
@@ -2526,7 +2526,7 @@ export const PERSONAS: PersonaSeed[] = [
      "summer"
     ],
     "occasion": [],
-    "cost": 5766,
+    "cost": 57,
     "tier": "mid",
     "outfits": [
      "-"
@@ -2547,7 +2547,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 5942,
+    "cost": 160,
     "tier": "mid",
     "outfits": [
      "VS-10"
@@ -2570,7 +2570,7 @@ export const PERSONAS: PersonaSeed[] = [
     "occasion": [
      "home"
     ],
-    "cost": 29122,
+    "cost": 403,
     "tier": "high",
     "outfits": [
      "VS-08"
@@ -2588,7 +2588,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 8515,
+    "cost": 93,
     "tier": "mid",
     "outfits": [
      "VS-20"
@@ -2609,7 +2609,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 47719,
+    "cost": 325,
     "tier": "high",
     "outfits": [
      "VS-01",
@@ -2635,7 +2635,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 38624,
+    "cost": 243,
     "tier": "high",
     "outfits": [
      "-"
@@ -2656,7 +2656,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 29529,
+    "cost": 592,
     "tier": "high",
     "outfits": [
      "VS-02",
@@ -2676,7 +2676,7 @@ export const PERSONAS: PersonaSeed[] = [
      "summer"
     ],
     "occasion": [],
-    "cost": 20434,
+    "cost": 510,
     "tier": "high",
     "outfits": [
      "VS-06",
@@ -2700,7 +2700,7 @@ export const PERSONAS: PersonaSeed[] = [
     "occasion": [
      "formal"
     ],
-    "cost": 43340,
+    "cost": 428,
     "tier": "high",
     "outfits": [
      "VS-07"
@@ -2718,7 +2718,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 34245,
+    "cost": 346,
     "tier": "high",
     "outfits": [
      "VS-13",
@@ -2742,7 +2742,7 @@ export const PERSONAS: PersonaSeed[] = [
     "occasion": [
      "casual"
     ],
-    "cost": 8493,
+    "cost": 147,
     "tier": "mid",
     "outfits": [
      "VS-04",
@@ -2767,7 +2767,7 @@ export const PERSONAS: PersonaSeed[] = [
     "occasion": [
      "sport"
     ],
-    "cost": 6727,
+    "cost": 80,
     "tier": "mid",
     "outfits": [
      "VS-10"
@@ -2786,7 +2786,7 @@ export const PERSONAS: PersonaSeed[] = [
      "summer"
     ],
     "occasion": [],
-    "cost": 8845,
+    "cost": 141,
     "tier": "mid",
     "outfits": [
      "-"
@@ -2809,7 +2809,7 @@ export const PERSONAS: PersonaSeed[] = [
     "occasion": [
      "work"
     ],
-    "cost": 26855,
+    "cost": 325,
     "tier": "high",
     "outfits": [
      "VS-01",
@@ -2832,7 +2832,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 35950,
+    "cost": 407,
     "tier": "high",
     "outfits": [
      "VS-01",
@@ -2870,7 +2870,7 @@ export const PERSONAS: PersonaSeed[] = [
     "occasion": [
      "work"
     ],
-    "cost": 45045,
+    "cost": 489,
     "tier": "high",
     "outfits": [
      "VS-01",
@@ -2894,7 +2894,7 @@ export const PERSONAS: PersonaSeed[] = [
     "occasion": [
      "formal"
     ],
-    "cost": 11477,
+    "cost": 117,
     "tier": "mid",
     "outfits": [
      "VS-19"
@@ -2917,7 +2917,7 @@ export const PERSONAS: PersonaSeed[] = [
     "occasion": [
      "formal"
     ],
-    "cost": 9359,
+    "cost": 56,
     "tier": "mid",
     "outfits": [
      "VS-17"
@@ -2938,7 +2938,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 1952,
+    "cost": 40,
     "tier": "low",
     "outfits": [
      "VS-01",
@@ -2963,7 +2963,7 @@ export const PERSONAS: PersonaSeed[] = [
     "occasion": [
      "formal"
     ],
-    "cost": 5123,
+    "cost": 146,
     "tier": "mid",
     "outfits": [
      "VS-07",
@@ -2987,7 +2987,7 @@ export const PERSONAS: PersonaSeed[] = [
     "occasion": [
      "formal"
     ],
-    "cost": 41003,
+    "cost": 449,
     "tier": "high",
     "outfits": [
      "VS-07",
@@ -3010,7 +3010,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 4771,
+    "cost": 152,
     "tier": "mid",
     "outfits": [
      "VS-01",
@@ -3039,7 +3039,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 11817,
+    "cost": 68,
     "tier": "mid",
     "outfits": [
      "VS-02",
@@ -3066,7 +3066,7 @@ export const PERSONAS: PersonaSeed[] = [
     "occasion": [
      "travel"
     ],
-    "cost": 18324,
+    "cost": 346,
     "tier": "high",
     "outfits": [
      "VS-15"
@@ -3084,7 +3084,7 @@ export const PERSONAS: PersonaSeed[] = [
      "summer"
     ],
     "occasion": [],
-    "cost": 8552,
+    "cost": 84,
     "tier": "mid",
     "outfits": [
      "VS-14"
@@ -3102,7 +3102,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 32135,
+    "cost": 613,
     "tier": "high",
     "outfits": [
      "VS-08",
@@ -3123,7 +3123,7 @@ export const PERSONAS: PersonaSeed[] = [
      "summer"
     ],
     "occasion": [],
-    "cost": 10846,
+    "cost": 142,
     "tier": "mid",
     "outfits": [
      "VS-14"
@@ -3146,7 +3146,7 @@ export const PERSONAS: PersonaSeed[] = [
     "occasion": [
      "formal"
     ],
-    "cost": 5463,
+    "cost": 97,
     "tier": "mid",
     "outfits": [
      "VS-07"
@@ -3165,7 +3165,7 @@ export const PERSONAS: PersonaSeed[] = [
      "fall"
     ],
     "occasion": [],
-    "cost": 7581,
+    "cost": 158,
     "tier": "mid",
     "outfits": [
      "VS-12"
@@ -3188,7 +3188,7 @@ export const PERSONAS: PersonaSeed[] = [
     "occasion": [
      "festival"
     ],
-    "cost": 9699,
+    "cost": 113,
     "tier": "mid",
     "outfits": [
      "VS-06"
@@ -3211,7 +3211,7 @@ export const PERSONAS: PersonaSeed[] = [
     "occasion": [
      "formal"
     ],
-    "cost": 6258,
+    "cost": 132,
     "tier": "mid",
     "outfits": [
      "VS-07"
@@ -3960,7 +3960,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 3394,
+    "cost": 41,
     "tier": "low",
     "outfits": [
      "MK-01",
@@ -3985,7 +3985,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 2121,
+    "cost": 28,
     "tier": "low",
     "outfits": [
      "MK-02"
@@ -4006,7 +4006,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 3149,
+    "cost": 15,
     "tier": "low",
     "outfits": [
      "MK-15"
@@ -4027,7 +4027,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 6567,
+    "cost": 157,
     "tier": "mid",
     "outfits": [
      "MK-03"
@@ -4045,7 +4045,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 2904,
+    "cost": 21,
     "tier": "low",
     "outfits": [
      "MK-13",
@@ -4070,7 +4070,7 @@ export const PERSONAS: PersonaSeed[] = [
     "occasion": [
      "festival"
     ],
-    "cost": 9832,
+    "cost": 141,
     "tier": "mid",
     "outfits": [
      "MK-07"
@@ -4093,7 +4093,7 @@ export const PERSONAS: PersonaSeed[] = [
     "occasion": [
      "festival"
     ],
-    "cost": 7714,
+    "cost": 80,
     "tier": "mid",
     "outfits": [
      "MK-06"
@@ -4111,7 +4111,7 @@ export const PERSONAS: PersonaSeed[] = [
      "summer"
     ],
     "occasion": [],
-    "cost": 9480,
+    "cost": 147,
     "tier": "mid",
     "outfits": [
      "MK-19"
@@ -4134,7 +4134,7 @@ export const PERSONAS: PersonaSeed[] = [
     "occasion": [
      "festival"
     ],
-    "cost": 7362,
+    "cost": 86,
     "tier": "mid",
     "outfits": [
      "-"
@@ -4157,7 +4157,7 @@ export const PERSONAS: PersonaSeed[] = [
     "occasion": [
      "sport"
     ],
-    "cost": 1462,
+    "cost": 31,
     "tier": "low",
     "outfits": [
      "MK-10",
@@ -4176,7 +4176,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 21990,
+    "cost": 444,
     "tier": "high",
     "outfits": [
      "MK-13"
@@ -4197,7 +4197,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 1707,
+    "cost": 25,
     "tier": "low",
     "outfits": [
      "MK-08",
@@ -4219,7 +4219,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 10228,
+    "cost": 140,
     "tier": "mid",
     "outfits": [
      "MK-01",
@@ -4241,7 +4241,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 1946,
+    "cost": 42,
     "tier": "low",
     "outfits": [
      "MK-05"
@@ -4264,7 +4264,7 @@ export const PERSONAS: PersonaSeed[] = [
     "occasion": [
      "festival"
     ],
-    "cost": 6963,
+    "cost": 156,
     "tier": "mid",
     "outfits": [
      "MK-07"
@@ -4282,7 +4282,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 5816,
+    "cost": 127,
     "tier": "mid",
     "outfits": [
      "MK-11",
@@ -4303,7 +4303,7 @@ export const PERSONAS: PersonaSeed[] = [
      "fall"
     ],
     "occasion": [],
-    "cost": 11199,
+    "cost": 66,
     "tier": "mid",
     "outfits": [
      "MK-12"
@@ -4326,7 +4326,7 @@ export const PERSONAS: PersonaSeed[] = [
     "occasion": [
      "festival"
     ],
-    "cost": 20536,
+    "cost": 481,
     "tier": "high",
     "outfits": [
      "MK-06"
@@ -4347,7 +4347,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 5194,
+    "cost": 110,
     "tier": "mid",
     "outfits": [
      "MK-16"
@@ -4370,7 +4370,7 @@ export const PERSONAS: PersonaSeed[] = [
     "occasion": [
      "party"
     ],
-    "cost": 10577,
+    "cost": 155,
     "tier": "mid",
     "outfits": [
      "MK-17"
@@ -4388,7 +4388,7 @@ export const PERSONAS: PersonaSeed[] = [
      "summer"
     ],
     "occasion": [],
-    "cost": 8459,
+    "cost": 94,
     "tier": "mid",
     "outfits": [
      "-"
@@ -4406,7 +4406,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 1806,
+    "cost": 18,
     "tier": "low",
     "outfits": [
      "-"
@@ -4425,7 +4425,7 @@ export const PERSONAS: PersonaSeed[] = [
      "summer"
     ],
     "occasion": [],
-    "cost": 11724,
+    "cost": 78,
     "tier": "mid",
     "outfits": [
      "MK-14"
@@ -4448,7 +4448,7 @@ export const PERSONAS: PersonaSeed[] = [
     "occasion": [
      "festival"
     ],
-    "cost": 5877,
+    "cost": 139,
     "tier": "mid",
     "outfits": [
      "MK-06"
@@ -4471,7 +4471,7 @@ export const PERSONAS: PersonaSeed[] = [
     "occasion": [
      "festival"
     ],
-    "cost": 7995,
+    "cost": 94,
     "tier": "mid",
     "outfits": [
      "MK-05"
@@ -4494,7 +4494,7 @@ export const PERSONAS: PersonaSeed[] = [
     "occasion": [
      "wedding"
     ],
-    "cost": 33195,
+    "cost": 259,
     "tier": "high",
     "outfits": [
      "-"
@@ -4515,7 +4515,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 5484,
+    "cost": 158,
     "tier": "mid",
     "outfits": [
      "MK-01",
@@ -4537,7 +4537,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 11838,
+    "cost": 129,
     "tier": "mid",
     "outfits": [
      "MK-02",
@@ -4561,7 +4561,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 1948,
+    "cost": 21,
     "tier": "low",
     "outfits": [
      "MK-04",
@@ -4586,7 +4586,7 @@ export const PERSONAS: PersonaSeed[] = [
     "occasion": [
      "festival"
     ],
-    "cost": 8573,
+    "cost": 145,
     "tier": "mid",
     "outfits": [
      "-"
@@ -4609,7 +4609,7 @@ export const PERSONAS: PersonaSeed[] = [
     "occasion": [
      "party"
     ],
-    "cost": 2193,
+    "cost": 15,
     "tier": "low",
     "outfits": [
      "-"
@@ -4632,7 +4632,7 @@ export const PERSONAS: PersonaSeed[] = [
     "occasion": [
      "sport"
     ],
-    "cost": 1410,
+    "cost": 22,
     "tier": "low",
     "outfits": [
      "MK-10",
@@ -4656,7 +4656,7 @@ export const PERSONAS: PersonaSeed[] = [
     "occasion": [
      "home"
     ],
-    "cost": 2438,
+    "cost": 41,
     "tier": "low",
     "outfits": [
      "MK-08"
@@ -4675,7 +4675,7 @@ export const PERSONAS: PersonaSeed[] = [
      "summer"
     ],
     "occasion": [],
-    "cost": 9544,
+    "cost": 71,
     "tier": "mid",
     "outfits": [
      "MK-14"
@@ -4698,7 +4698,7 @@ export const PERSONAS: PersonaSeed[] = [
     "occasion": [
      "outdoor"
     ],
-    "cost": 7426,
+    "cost": 116,
     "tier": "mid",
     "outfits": [
      "MK-20"
@@ -4721,7 +4721,7 @@ export const PERSONAS: PersonaSeed[] = [
     "occasion": [
      "wedding"
     ],
-    "cost": 7238,
+    "cost": 76,
     "tier": "mid",
     "outfits": [
      "MK-07"
@@ -4742,7 +4742,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 11013,
+    "cost": 60,
     "tier": "mid",
     "outfits": [
      "MK-04",
@@ -4766,7 +4766,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 9866,
+    "cost": 137,
     "tier": "mid",
     "outfits": [
      "MK-02",
@@ -4790,7 +4790,7 @@ export const PERSONAS: PersonaSeed[] = [
     "occasion": [
      "party"
     ],
-    "cost": 7748,
+    "cost": 76,
     "tier": "mid",
     "outfits": [
      "MK-16",
@@ -4814,7 +4814,7 @@ export const PERSONAS: PersonaSeed[] = [
     "occasion": [
      "formal"
     ],
-    "cost": 4659,
+    "cost": 89,
     "tier": "mid",
     "outfits": [
      "MK-01",
@@ -4838,7 +4838,7 @@ export const PERSONAS: PersonaSeed[] = [
     "occasion": [
      "festival"
     ],
-    "cost": 2738,
+    "cost": 27,
     "tier": "low",
     "outfits": [
      "MK-06",
@@ -4862,7 +4862,7 @@ export const PERSONAS: PersonaSeed[] = [
     "occasion": [
      "wedding"
     ],
-    "cost": 1955,
+    "cost": 34,
     "tier": "low",
     "outfits": [
      "MK-07"
@@ -4881,7 +4881,7 @@ export const PERSONAS: PersonaSeed[] = [
      "summer"
     ],
     "occasion": [],
-    "cost": 2983,
+    "cost": 21,
     "tier": "low",
     "outfits": [
      "MK-14"
@@ -4904,7 +4904,7 @@ export const PERSONAS: PersonaSeed[] = [
     "occasion": [
      "outdoor"
     ],
-    "cost": 7572,
+    "cost": 79,
     "tier": "mid",
     "outfits": [
      "MK-10",
@@ -4924,7 +4924,7 @@ export const PERSONAS: PersonaSeed[] = [
      "fall"
     ],
     "occasion": [],
-    "cost": 1907,
+    "cost": 23,
     "tier": "low",
     "outfits": [
      "MK-12"
@@ -4942,7 +4942,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 4999,
+    "cost": 146,
     "tier": "mid",
     "outfits": [
      "MK-13"
@@ -4963,7 +4963,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 10685,
+    "cost": 151,
     "tier": "mid",
     "outfits": [
      "MK-01",
@@ -4988,7 +4988,7 @@ export const PERSONAS: PersonaSeed[] = [
      "summer"
     ],
     "occasion": [],
-    "cost": 2149,
+    "cost": 35,
     "tier": "low",
     "outfits": [
      "MK-14"
@@ -5011,7 +5011,7 @@ export const PERSONAS: PersonaSeed[] = [
     "occasion": [
      "festival"
     ],
-    "cost": 3422,
+    "cost": 16,
     "tier": "low",
     "outfits": [
      "MK-06",
@@ -5033,7 +5033,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 2884,
+    "cost": 17,
     "tier": "low",
     "outfits": [
      "MK-03"
@@ -5054,7 +5054,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 1856,
+    "cost": 30,
     "tier": "low",
     "outfits": [
      "MK-02",
@@ -5082,7 +5082,7 @@ export const PERSONAS: PersonaSeed[] = [
     "occasion": [
      "festival"
     ],
-    "cost": 2639,
+    "cost": 23,
     "tier": "low",
     "outfits": [
      "MK-05",
@@ -5107,7 +5107,7 @@ export const PERSONAS: PersonaSeed[] = [
     "occasion": [
      "formal"
     ],
-    "cost": 7420,
+    "cost": 61,
     "tier": "mid",
     "outfits": [
      "MK-01",
@@ -5127,7 +5127,7 @@ export const PERSONAS: PersonaSeed[] = [
      "summer"
     ],
     "occasion": [],
-    "cost": 1414,
+    "cost": 21,
     "tier": "low",
     "outfits": [
      "MK-05",
@@ -5150,7 +5150,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 8743,
+    "cost": 87,
     "tier": "mid",
     "outfits": [
      "MK-03",
@@ -5171,7 +5171,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 28375,
+    "cost": 369,
     "tier": "high",
     "outfits": [
      "MK-13",
@@ -5193,7 +5193,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 1598,
+    "cost": 39,
     "tier": "low",
     "outfits": [
      "MK-01",
@@ -5221,7 +5221,7 @@ export const PERSONAS: PersonaSeed[] = [
     "occasion": [
      "festival"
     ],
-    "cost": 3116,
+    "cost": 14,
     "tier": "low",
     "outfits": [
      "MK-06",
@@ -5245,7 +5245,7 @@ export const PERSONAS: PersonaSeed[] = [
     "occasion": [
      "work"
     ],
-    "cost": 1843,
+    "cost": 33,
     "tier": "low",
     "outfits": [
      "MK-02",
@@ -5269,7 +5269,7 @@ export const PERSONAS: PersonaSeed[] = [
      "winter"
     ],
     "occasion": [],
-    "cost": 2381,
+    "cost": 32,
     "tier": "low",
     "outfits": [
      "MK-08",
@@ -5294,7 +5294,7 @@ export const PERSONAS: PersonaSeed[] = [
     "occasion": [
      "festival"
     ],
-    "cost": 3409,
+    "cost": 19,
     "tier": "low",
     "outfits": [
      "MK-06",

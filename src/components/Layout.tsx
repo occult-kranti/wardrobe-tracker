@@ -45,10 +45,8 @@ export default function Layout() {
   const [addOpen, setAddOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const location = useLocation();
-  const { activeItems, settings, updateSettings } = useWardrobe();
-  const { active } = useSession();
-
-  const theme = settings.theme ?? 'system';
+  const { activeItems } = useWardrobe();
+  const { active, theme, setTheme } = useSession();
 
   useEffect(() => {
     const root = document.documentElement;
@@ -60,9 +58,10 @@ export default function Layout() {
     setMoreOpen(false);
   }, [location.pathname]);
 
+  // Three rooms and the device's own choice, in order.
   const cycleTheme = () => {
-    const next = theme === 'system' ? 'light' : theme === 'light' ? 'dark' : 'system';
-    updateSettings({ theme: next });
+    const order = ['dark', 'salon', 'light', 'system'] as const;
+    setTheme(order[(order.indexOf(theme as typeof order[number]) + 1) % order.length]);
   };
 
   const primaryNav = navItems.filter(n => mobilePrimary.includes(n.path));

@@ -19,6 +19,7 @@ npm run shots         # screenshots of every route, mobile + desktop
 | `npm run test:migrate` | Nobody's closet is ever lost to a schema change | 22 |
 | `npm run test:demo` | The sample wardrobe stays complete, consistent, and offline-safe | 43 |
 | `npm run test:art` | Every baked garment plate actually renders in Chromium | 1/plate |
+| `npm run test:contrast` | Every text pair in every theme clears WCAG AA | 11/theme |
 | `npm run test:smoke` | The real app in a real browser | 36 |
 
 ### `lint:brand` — the design contract, enforced
