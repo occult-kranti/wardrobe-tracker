@@ -4,6 +4,25 @@ Written 2026-08-11, after the Ledger analytics pass; updated the same day after
 the expansion pass (Shared Rail, ceremony/festival wardrobe, drawn plates).
 Ordered by leverage, not by effort.
 
+## Open, and asked for
+
+- **A third theme.** Requested as "a theme colour for women"; built as a theme
+  for everyone instead, because hard rule 5 and §2.7 forbid gendering anything.
+  Still to do: the palette itself, grounded in colour theory and fashion-retail
+  practice, with measured AA contrast for every pair the app renders, named in
+  the atelier vocabulary alongside "the pattern room" and "the atelier at night".
+- **Sharing scopes.** Sharing is currently everyone-or-nobody. The design calls
+  for four — everyone, a group, one person, only yourself — plus a "what you
+  share" screen that states the current state completely rather than per-tile.
+- **Direct-message composition.** The threads seed and render, and a message can
+  carry a look or a piece; starting a *new* conversation from the UI is not
+  wired yet.
+- **Borrow requests inside conversations.** The states render and advance; the
+  request sheet that creates one (and picks whose piece it is) is not built.
+- **Brand linking on "Complete the look".** Deliberately not built — see
+  `docs/12-wardrobes-and-feed.md`. Would require the panel's commerce rule to
+  change, not just code.
+
 ## Shipped since first writing
 
 - **The Shared Rail** (`/rail`) — borrowing among known people as a local-first
@@ -15,9 +34,18 @@ Ordered by leverage, not by effort.
   occasions, and 7 occasion outfits + 8 daily-register outfits.
 - **Drawn garment plates** — 49 hand-drawn technical flats replace the caption
   swatches, validated by the new `test:art` suite (which caught five broken).
+- **Wardrobes, profiles, a feed, conversations and events** — three switchable
+  worked wardrobes with their own closets, taxonomies, calendars and history;
+  honest open/start screens in place of login; a feed with no engagement
+  mechanics; a group thread and one per pair; events holding outfits against
+  dated occasions, with "Complete the look" filling gaps from what is owned.
+  Decision record: `docs/12-wardrobes-and-feed.md`. Conventions:
+  `skills/toile-social/SKILL.md`.
 - **`loading="lazy"` removed from every data-URI image** — the direct cause of
   the below-the-fold void wall (finding 9's trigger). The structural fix (plate
-  under photo, one Thumb) is still open below. Everything here is checked against the two binding contracts
+  under photo, one Thumb) is still open below.
+
+Everything here is checked against the two binding contracts
 (`docs/05-brand-identity.md`, `docs/06-focus-group-requirements.md`); anything
 that could not be made to pass them is in *Rejected* at the bottom, with the rule
 it broke, so it does not get proposed again.
@@ -55,11 +83,11 @@ component that paints `GarmentPlate` as the **base layer** with the photo above
 it, so a tile is structurally incapable of being empty, and drop `loading="lazy"`
 above the fold.
 
-Two live bugs ride along: `art.tsx` strokes flats in `item.color`, so any dark
-piece with no photo draws an invisible garment; and `flats[categoryId] ??
-flats.accessories` means every accessory draws the handbag glyph — the Tan
-Leather Belt currently renders as a handbag. Add real `jewellery`, `belt`, `bag`
-and `scarf` flats.
+One live bug rides along: `flats[categoryId] ?? flats.accessories` means every
+accessory draws the handbag glyph — the Tan Leather Belt renders as a handbag.
+Add real `jewellery`, `belt`, `bag` and `scarf` flats. (The other — flats stroked
+in `item.color`, drawing dark pieces invisible — is fixed: the line is always
+`currentColor` now, with the colour said as a small chip beneath.)
 
 This is what actually delivers "the no-photo state is first-class" (§2.5).
 
