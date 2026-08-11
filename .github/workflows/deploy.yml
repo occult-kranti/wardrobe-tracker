@@ -1,21 +1,30 @@
 name: Deploy to GitHub Pages
 
+# Publishes by pushing the built site to the gh-pages branch, which Pages
+# serves (Settings → Pages → Source: "Deploy from a branch" / gh-pages).
+#
+# Why not actions/deploy-pages: the repo's github-pages environment carries a
+# deployment-branch policy that allows only gh-pages, so artifact deploys from
+# main are rejected ("Branch 'main' is not allowed to deploy to github-pages").
+# Changing that needs repo-admin in the UI; pushing to gh-pages does not. If the
+# environment is ever opened up (Settings → Environments → github-pages →
+# Deployment branches → add main, and Settings → Pages → Source → GitHub
+# Actions), this can go back to the artifact flow.
+
 on:
   push:
     branches: [main]
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 concurrency:
   group: pages
   cancel-in-progress: true
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -31,16 +40,16 @@ jobs:
       - run: npm run test:migrate
       - run: npm run test:demo
       - run: npm run build
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: dist
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Push dist to gh-pages
+        run: |
+          set -eu
+          touch dist/.nojekyll
+          cd dist
+          git init -b gh-pages
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Deploy ${GITHUB_SHA::7}"
+          git push --force "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" gh-pages
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
