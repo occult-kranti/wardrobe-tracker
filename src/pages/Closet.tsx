@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Tilt } from '../components/Glass';
 import { useWardrobe } from '../context/WardrobeContext';
 import ItemDetail from '../components/ItemDetail';
@@ -415,9 +415,20 @@ export default function Closet() {
           title="Nothing hangs here yet."
           body="Add one piece — a photo, a name, a color — and the ledger starts counting from its first wear."
           action={
-            <Button tone="primary" icon={<IconPlus size={16} />} onClick={() => setAddOpen(true)}>
-              Add a piece
-            </Button>
+            <div className="flex flex-col items-center gap-2">
+              <Button tone="primary" icon={<IconPlus size={16} />} onClick={() => setAddOpen(true)}>
+                Add a piece
+              </Button>
+              {/* The whole closet at once, for anyone who would rather
+                  photograph it than type it. One CTA still, per §8.4 — this
+                  is the quiet second road, not a second shout. */}
+              <Link
+                to="/intake"
+                className="type-ledger text-[11px] text-accent underline underline-offset-[3px] min-h-11 inline-flex items-center"
+              >
+                Or catalogue from photographs
+              </Link>
+            </div>
           }
         />
       ) : (

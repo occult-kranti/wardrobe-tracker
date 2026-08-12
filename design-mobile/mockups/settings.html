@@ -1,0 +1,446 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Toile mobile — Settings</title>
+<link rel="stylesheet" href="foundation.css">
+<body>
+<div style="display:flex;gap:30px;flex-wrap:wrap;justify-content:center">
+
+<!-- ========== at rest: the top of the dresser ========== -->
+<div class="stage">
+  <div class="phone" data-room="atelier">
+
+    <div class="topbar">
+      <svg viewBox="0 0 18 22" style="width:15px;height:18px;fill:none">
+        <g class="m2" stroke-width="1.2"><path d="M5 1h12v20H5L1 11z"/><circle cx="6.5" cy="11" r="2.2"/></g>
+      </svg>
+      <span class="wordmark">TOILE</span>
+      <span class="spacer"></span>
+      <span class="themedot"></span>
+      <span class="plus">+</span>
+    </div>
+
+    <!-- THE DRESSER, in the top rail. On mobile the chest is a strip: cornice,
+         one drawer front per module below (notice, categories, tags, appearance,
+         data) and a plinth for About. The tall side dresser is desktop only. -->
+    <div class="art" style="padding:8px 18px 0">
+      <svg viewBox="0 0 376 46" class="art">
+        <g class="m1" stroke-width="1.1">
+          <path d="M8 8h360l-6 7H14z"/>
+          <path d="M14 15h348v22H14z"/>
+          <path d="M10 37h356v5H10z"/>
+          <path d="M24 42v3M352 42v3"/>
+        </g>
+        <g class="m1" stroke-width="1" stroke-opacity=".85">
+          <path d="M20 19h64v14H20zM88 19h64v14H88zM156 19h64v14h-64zM224 19h64v14h-64zM292 19h64v14h-64z"/>
+        </g>
+        <!-- ring pulls: the drawer the page is standing at is stroked in metal 2 -->
+        <g class="m1" stroke-width="1"><circle cx="120" cy="26" r="3.4"/><circle cx="188" cy="26" r="3.4"/>
+          <circle cx="256" cy="26" r="3.4"/><circle cx="324" cy="26" r="3.4"/></g>
+        <g class="m2" stroke-width="1.3"><circle cx="52" cy="26" r="3.8"/><path d="M52 22v-3"/></g>
+      </svg>
+    </div>
+
+    <div class="screen" style="gap:9px;padding-top:6px">
+
+      <div>
+        <div style="display:flex;align-items:baseline;justify-content:space-between">
+          <span class="t-display">Settings</span>
+          <span class="t-mono-s">Schema 4</span>
+        </div>
+        <div class="rule-double" style="margin-top:7px"></div>
+      </div>
+
+      <!-- THE NOTICE — drawn as the drawer standing open: a ring pull hangs off
+           its bottom edge, and the remedy sits beside the warning. -->
+      <div class="plate" style="padding:12px 14px 14px">
+        <span class="brk tl"></span>
+        <!-- the dismiss × , inside the hairline -->
+        <svg viewBox="0 0 14 14" style="position:absolute;top:9px;right:11px;width:12px;height:12px;fill:none;z-index:2">
+          <path class="m2" stroke-width="1.3" d="M2 2l10 10M12 2L2 12"/></svg>
+        <p class="t-italic" style="font-size:16px;line-height:1.35;padding-right:20px">This closet lives in
+          one browser, on one device.</p>
+        <p class="t-mono" style="font-size:10px;line-height:1.65;margin-top:8px">Toile keeps 274 records in
+          this browser's local storage. There is no account and no copy on a server — clearing site data,
+          switching browsers, or losing the device takes the history with it. An export is the only copy
+          there is.</p>
+        <div class="rule" style="margin:10px 0 8px"></div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span class="tag" style="height:26px;flex:none"><span class="eyelet"></span><span>No export yet</span></span>
+          <div class="leader"></div>
+          <span class="t-mono-s gold" style="flex:none;border-bottom:1px solid var(--gold);padding-bottom:2px">Export a backup now</span>
+        </div>
+        <!-- the drawer's ring pull, overlapping the bottom edge -->
+        <svg viewBox="0 0 30 22" style="position:absolute;left:50%;bottom:-10px;transform:translateX(-50%);width:28px;height:20px;fill:none;z-index:2">
+          <g class="m2" stroke-width="1.3"><path d="M11 3h8v4h-8z"/><circle cx="15" cy="13" r="7"/></g>
+        </svg>
+      </div>
+
+      <!-- YOUR CATEGORIES — the drawer of dividers -->
+      <div class="plate" style="padding:11px 13px 10px">
+        <span class="brk tr"></span><span class="brk bl"></span>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span class="t-label" style="flex:none">Your categories</span>
+          <div class="rule-dash" style="flex:1"></div>
+          <span class="t-mono-s" style="flex:none">9 categories</span>
+        </div>
+        <p class="t-mono" style="font-size:9.5px;line-height:1.6;margin-top:7px">These are yours to name and
+          order. The list here is the order they appear everywhere else — browse, the add form, the ledger.</p>
+
+        <div style="margin-top:8px">
+          <!-- row anatomy: stepper left (top row has no up), name centre, quiet chip right -->
+          <div style="display:flex;align-items:center;gap:10px;padding:5px 0">
+            <svg viewBox="0 0 14 22" style="width:13px;height:20px;flex:none;fill:none">
+              <path class="m2" stroke-width="1.2" stroke-opacity=".3" d="M2 8l5-5 5 5"/>
+              <path class="m2" stroke-width="1.2" d="M2 14l5 5 5-5"/></svg>
+            <span class="t-italic" style="flex:1;font-size:14px">Tops</span>
+            <span class="tag" style="height:26px;flex:none"><span class="eyelet"></span><span>Quiet</span></span>
+          </div>
+          <div class="rule-dot"></div>
+          <div style="display:flex;align-items:center;gap:10px;padding:5px 0">
+            <svg viewBox="0 0 14 22" style="width:13px;height:20px;flex:none;fill:none">
+              <path class="m2" stroke-width="1.2" d="M2 8l5-5 5 5M2 14l5 5 5-5"/></svg>
+            <span class="t-italic" style="flex:1;font-size:14px">Bottoms</span>
+            <span class="tag" style="height:26px;flex:none"><span class="eyelet"></span><span>Quiet</span></span>
+          </div>
+          <div class="rule-dot"></div>
+          <!-- a quiet category: dim name, eyelet filled, the drawer shut on it -->
+          <div style="display:flex;align-items:center;gap:10px;padding:5px 0">
+            <svg viewBox="0 0 14 22" style="width:13px;height:20px;flex:none;fill:none">
+              <path class="m2" stroke-width="1.2" d="M2 8l5-5 5 5M2 14l5 5 5-5"/></svg>
+            <span class="t-italic" style="flex:1;font-size:14px;color:var(--ink-3)">Layers</span>
+            <span class="tag on" style="height:26px;flex:none"><span class="eyelet"></span><span>Quiet</span></span>
+          </div>
+        </div>
+
+        <div class="rule-dot" style="margin:4px 0 5px"></div>
+        <p class="t-mono-s" style="text-align:center">All 9 ▾</p>
+
+        <!-- the add form: one continuous outline with a drawer-front seam -->
+        <div style="display:flex;align-items:stretch;border:1px solid var(--line);border-radius:2px;
+          height:36px;margin-top:8px">
+          <span class="t-mono" style="flex:1;font-size:10.5px;color:var(--ink-3);display:flex;
+            align-items:center;padding-left:10px">Workwear, costume, hosiery</span>
+          <span class="t-mono-s" style="flex:none;border-left:1px solid var(--line);display:flex;
+            align-items:center;padding:0 15px">Add</span>
+        </div>
+      </div>
+
+      <!-- OCCASION TAGS — the drawer of strung tags -->
+      <div class="plate" style="padding:11px 13px 10px">
+        <span class="brk tl"></span><span class="brk br"></span>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span class="t-label" style="flex:none">Occasion tags</span>
+          <div class="rule-dash" style="flex:1"></div>
+          <span class="t-mono-s" style="flex:none">18 tags</span>
+        </div>
+        <p class="t-mono" style="font-size:9.5px;line-height:1.6;margin-top:7px">Free-form and lowercase —
+          the tags offered when you file a piece, or ask Before You Buy what it is for.</p>
+
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">
+          <span class="tag" style="height:26px;text-transform:none"><span class="eyelet"></span><span>casual ×</span></span>
+          <span class="tag" style="height:26px;text-transform:none"><span class="eyelet"></span><span>work ×</span></span>
+          <span class="tag" style="height:26px;text-transform:none"><span class="eyelet"></span><span>formal ×</span></span>
+          <span class="tag" style="height:26px;text-transform:none"><span class="eyelet"></span><span>performance ×</span></span>
+          <span class="tag" style="height:26px;text-transform:none"><span class="eyelet"></span><span>sport ×</span></span>
+          <span class="tag" style="height:26px;text-transform:none"><span class="eyelet"></span><span>party ×</span></span>
+          <span class="tag" style="height:26px;text-transform:none"><span class="eyelet"></span><span>festival ×</span></span>
+          <span class="tag" style="height:26px"><span class="eyelet"></span><span>+11 more</span></span>
+        </div>
+
+        <div style="display:flex;align-items:stretch;border:1px solid var(--line);border-radius:2px;
+          height:36px;margin-top:9px">
+          <span class="t-mono" style="flex:1;font-size:10.5px;color:var(--ink-3);display:flex;
+            align-items:center;padding-left:10px">gig, studio, funeral</span>
+          <span class="t-mono-s" style="flex:none;border-left:1px solid var(--line);display:flex;
+            align-items:center;padding:0 15px">Add</span>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="tabs">
+      <div class="tab"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>Today</div>
+      <div class="tab"><svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17"/><path d="M12 4v17M8.5 11h1M14.5 11h1"/></svg>Closet</div>
+      <div class="tab"><svg viewBox="0 0 24 24"><path d="M11 7a1 1 0 0 1 2 0M12 9v2M12 11 5 17h14z"/></svg>Outfits</div>
+      <div class="tab"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14"/><path d="M4 9h16M8 13h8M8 16h5"/></svg>Feed</div>
+      <div class="tab on"><svg viewBox="0 0 24 24"><circle cx="6" cy="8" r="1"/><circle cx="6" cy="12" r="1"/><circle cx="6" cy="16" r="1"/><path d="M10 8h9M10 12h9M10 16h9"/></svg>More</div>
+    </div>
+  </div>
+  <p class="caption-note"><b>Settings — the top of the dresser.</b> The chest strip in the top rail
+  carries one drawer front per module; the drawer you are standing at is stroked in the brighter
+  metal. The local-storage notice is drawn as the drawer standing open — ring pull over its bottom
+  edge, dismiss × inside the hairline, and the remedy set beside the warning. Category rows put the
+  stepper at the left edge and the QUIET chip at the right; Layers is quiet, its eyelet filled and
+  its name dimmed.</p>
+</div>
+
+<!-- ========== scrolled: appearance, data, the plinth ========== -->
+<div class="stage">
+  <div class="phone" data-room="atelier">
+
+    <div class="topbar">
+      <svg viewBox="0 0 18 22" style="width:15px;height:18px;fill:none">
+        <g class="m2" stroke-width="1.2"><path d="M5 1h12v20H5L1 11z"/><circle cx="6.5" cy="11" r="2.2"/></g>
+      </svg>
+      <span class="wordmark">TOILE</span>
+      <span class="spacer"></span>
+      <span class="themedot"></span>
+      <span class="plus">+</span>
+    </div>
+
+    <div class="screen" style="gap:9px;padding-top:8px">
+
+      <!-- the collapsed bar: the title has scrolled away, the meta stays -->
+      <div>
+        <div style="display:flex;align-items:baseline;justify-content:space-between">
+          <span class="t-label" style="font-size:12px">Settings</span>
+          <span class="t-mono-s">Schema 4</span>
+        </div>
+        <div class="rule" style="margin-top:6px"></div>
+      </div>
+
+      <!-- APPEARANCE — the room picker as a snap-scrolling row of doors -->
+      <div class="plate" style="padding:11px 0 11px 13px;flex:none">
+        <span class="brk tl"></span>
+        <div style="display:flex;align-items:center;gap:10px;padding-right:13px">
+          <span class="t-label" style="flex:none">Appearance</span>
+          <div class="rule-dash" style="flex:1"></div>
+        </div>
+
+        <!-- the row snaps and bleeds off the right edge: the next door peeks in -->
+        <div style="display:flex;gap:8px;margin-top:9px;overflow:hidden">
+          <!-- gilding room: the leaf frame -->
+          <div style="flex:none;width:96px">
+            <div style="border:1px solid var(--line);border-radius:2px;height:100px;display:flex;
+              align-items:center;justify-content:center">
+              <svg viewBox="0 0 60 84" style="width:48px;height:68px;fill:none">
+                <g class="m1" stroke-width="1.1"><path d="M8 14h44v58H8z"/><path d="M15 22h30v42H15z"/></g>
+                <g class="m2" stroke-width="1"><path d="M8 14l5-6h34l5 6"/>
+                  <path d="M21 34c5-5 13-5 18 0M21 46c5-5 13-5 18 0M21 56c5-5 13-5 18 0"/></g>
+              </svg>
+            </div>
+            <p class="t-mono-s" style="text-align:center;margin-top:6px;font-size:9px">Gilding room</p>
+          </div>
+          <!-- dye house: three vats -->
+          <div style="flex:none;width:96px">
+            <div style="border:1px solid var(--line);border-radius:2px;height:100px;display:flex;
+              align-items:center;justify-content:center">
+              <svg viewBox="0 0 60 84" style="width:48px;height:68px;fill:none">
+                <g class="m1" stroke-width="1.1"><path d="M6 16h48v56H6z"/></g>
+                <g class="m2" stroke-width="1.1">
+                  <path d="M12 42h12v22H12zM24 42h12v22H24zM36 42h12v22H36z"/>
+                  <path d="M12 48h36"/><path d="M18 42v-8M30 42v-8M42 42v-8"/>
+                </g>
+              </svg>
+            </div>
+            <p class="t-mono-s" style="text-align:center;margin-top:6px;font-size:9px">Dye house</p>
+          </div>
+          <!-- atelier: the active room — double frame, its lamp in the brighter metal -->
+          <div style="flex:none;width:96px">
+            <div class="plate double" style="padding:0;height:100px;display:flex;align-items:center;
+              justify-content:center;--ch:8px">
+              <div class="inner-rule"></div>
+              <svg viewBox="0 0 60 84" style="width:48px;height:68px;fill:none;position:relative;z-index:1">
+                <g class="m2" stroke-width="1.3">
+                  <path d="M22 10h16l7 11H15z"/><path d="M30 21v7"/>
+                  <path d="M8 58h44v6H8z"/><path d="M14 64v10M46 64v10"/>
+                  <path d="M18 58V42h24v16"/>
+                </g>
+                <g class="m1" stroke-width="1"><path d="M24 49h12"/></g>
+              </svg>
+            </div>
+            <p class="t-mono-s gold" style="text-align:center;margin-top:6px;font-size:9px">Atelier</p>
+          </div>
+          <!-- system: half line, half dotted — cut by the edge, the row scrolls on -->
+          <div style="flex:none;width:96px">
+            <div style="border:1px solid var(--line);border-radius:2px;height:100px;display:flex;
+              align-items:center;justify-content:center">
+              <svg viewBox="0 0 60 84" style="width:48px;height:68px;fill:none">
+                <g class="m1" stroke-width="1.1"><path d="M8 14h22v58H8z"/><path d="M14 22h10v42H14z"/></g>
+                <g class="m1" stroke-width="1.1" stroke-dasharray="3 3"><path d="M30 14h22v58H30z"/>
+                  <path d="M36 22h10v42H36z"/></g>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <div class="rule-dot" style="margin:11px 13px 9px 0"></div>
+        <!-- the description gets the full column: never a word per line -->
+        <p style="font:400 11.8px/1.55 Georgia,serif;color:var(--ink);padding-right:13px">Paper. Five rooms
+          in the same building: the pattern room where cloth is cut, the salon where a collection is
+          shown, the gilding room where the gold leaf is laid, the dye house where the madder vats
+          stain the walls rose, and the atelier at night. System follows the device. The choice belongs
+          to this screen, not to a wardrobe, so it holds when you open a different one.</p>
+      </div>
+
+      <!-- YOUR DATA — the export drawer -->
+      <div class="plate" style="padding:10px 13px 9px;flex:none">
+        <span class="brk tr"></span><span class="brk bl"></span>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span class="t-label" style="flex:none">Your data</span>
+          <div class="rule-dash" style="flex:1"></div>
+          <span class="t-mono-s" style="flex:none">274 records</span>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:10px;margin-top:9px">
+          <div style="flex:1;min-width:0">
+            <p class="t-serif" style="font-size:15px">Export</p>
+            <p class="t-mono" style="font-size:9px;margin-top:2px">One JSON file holding everything on this device.</p>
+          </div>
+          <span class="btn" style="height:34px;padding:0 13px;flex:none"><span>Export</span></span>
+        </div>
+        <div class="rule-dot" style="margin:8px 0"></div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="flex:1;min-width:0">
+            <p class="t-serif" style="font-size:15px">Import</p>
+            <p class="t-mono" style="font-size:9px;margin-top:2px">Reads a backup from any version and brings it forward.</p>
+          </div>
+          <span class="tag" style="height:30px;flex:none"><span>Choose a file</span></span>
+        </div>
+        <div class="rule-dot" style="margin:8px 0"></div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="flex:1;min-width:0">
+            <p class="t-serif" style="font-size:15px">Sample wardrobe</p>
+            <p class="t-mono" style="font-size:9px;margin-top:2px">49 pieces, 20 outfits, a year of wear history.</p>
+          </div>
+          <span class="tag" style="height:30px;flex:none"><span>Load sample</span></span>
+        </div>
+        <!-- the one destructive control, held apart by a double rule -->
+        <div class="rule-double" style="margin:10px 0 9px;opacity:.5"></div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="flex:1;min-width:0">
+            <p class="t-serif" style="font-size:15px">Start over</p>
+            <p class="t-mono" style="font-size:9px;margin-top:2px">Clears this device and returns Toile to its defaults.</p>
+          </div>
+          <span class="btn" style="height:34px;padding:0 15px;flex:none;color:var(--seal)"><span>Reset</span></span>
+        </div>
+      </div>
+
+      <!-- ABOUT — the plinth -->
+      <div class="plate" style="padding:10px 13px 10px;flex:none">
+        <div style="display:flex;align-items:baseline;gap:11px">
+          <span class="t-display-s" style="flex:none">Toile</span>
+          <span class="t-italic" style="font-size:12.5px">Your wardrobe, on record.</span>
+        </div>
+        <div class="rule" style="margin:8px 0"></div>
+        <p class="t-mono" style="font-size:9.5px;line-height:1.6">Everything you enter stays in
+          this browser's local storage. No accounts, no sync, no analytics, nothing sent anywhere. No
+          shop links, no affiliate codes, and there never will be. Keeping a copy is on you.</p>
+        <div style="display:flex;align-items:baseline;margin-top:9px">
+          <span class="t-mono-s gold" style="border-bottom:1px solid var(--gold);padding-bottom:2px">Export a backup</span>
+          <div class="leader"></div>
+          <span class="t-mono-s">Schema version 4</span>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="tabs">
+      <div class="tab"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>Today</div>
+      <div class="tab"><svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17"/><path d="M12 4v17M8.5 11h1M14.5 11h1"/></svg>Closet</div>
+      <div class="tab"><svg viewBox="0 0 24 24"><path d="M11 7a1 1 0 0 1 2 0M12 9v2M12 11 5 17h14z"/></svg>Outfits</div>
+      <div class="tab"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14"/><path d="M4 9h16M8 13h8M8 16h5"/></svg>Feed</div>
+      <div class="tab on"><svg viewBox="0 0 24 24"><circle cx="6" cy="8" r="1"/><circle cx="6" cy="12" r="1"/><circle cx="6" cy="16" r="1"/><path d="M10 8h9M10 12h9M10 16h9"/></svg>More</div>
+    </div>
+  </div>
+  <p class="caption-note"><b>Settings, scrolled — appearance, data, the plinth.</b> The title has
+  collapsed to a hairline with its meta. The room picker is a snap-scrolling row of doors that
+  bleeds off the right edge; the active room carries the double frame and is drawn in the brighter
+  metal, and every miniature is drawn in the current room's metals, never its own. The long room
+  passage gets the full column — the bug this revamp fixes. RESET is the last row, held apart by a
+  double rule, and asks for the word before it does anything.</p>
+</div>
+
+<!-- ========== the export moment ========== -->
+<div class="stage">
+  <div class="phone" data-room="atelier">
+
+    <div class="topbar">
+      <svg viewBox="0 0 18 22" style="width:15px;height:18px;fill:none">
+        <g class="m2" stroke-width="1.2"><path d="M5 1h12v20H5L1 11z"/><circle cx="6.5" cy="11" r="2.2"/></g>
+      </svg>
+      <span class="wordmark">TOILE</span>
+      <span class="spacer"></span>
+      <span class="themedot"></span>
+      <span class="plus">+</span>
+    </div>
+
+    <div class="screen" style="gap:9px;padding-top:8px">
+      <div>
+        <div style="display:flex;align-items:baseline;justify-content:space-between">
+          <span class="t-display">Settings</span>
+          <span class="t-mono-s">Schema 4</span>
+        </div>
+        <div class="rule-double" style="margin-top:7px"></div>
+      </div>
+      <div class="plate" style="padding:12px 14px;opacity:.3">
+        <p class="t-italic" style="font-size:16px;line-height:1.35">This closet lives in one browser,
+          on one device.</p>
+        <div class="rule" style="margin:10px 0 8px"></div>
+        <p class="t-mono-s">No export yet</p>
+      </div>
+      <div class="plate" style="padding:11px 13px;opacity:.3">
+        <span class="t-label">Your data</span>
+        <div class="rule-dash" style="margin:8px 0"></div>
+        <p class="t-serif" style="font-size:15px">Export</p>
+      </div>
+    </div>
+
+    <!-- the canonical moment: a drawer slides out, the folio is tied with a ribbon -->
+    <div class="moment">
+      <svg viewBox="0 0 230 250" style="width:250px;height:272px;fill:none">
+        <!-- the dresser carcass, cornice, plinth -->
+        <g class="m1" stroke-width="1.8">
+          <path d="M28 22h174l-8 12H36z"/>
+          <path d="M36 34h158v182H36z"/>
+          <path d="M30 216h170v12H30z"/>
+          <path d="M46 228v10M184 228v10"/>
+        </g>
+        <!-- the drawers that stayed shut -->
+        <g class="m1" stroke-width="1.2" stroke-opacity=".85">
+          <path d="M44 42h142v30H44zM44 152h142v30H44zM44 186h142v26H44z"/>
+        </g>
+        <g class="m1" stroke-width="1.1">
+          <circle cx="115" cy="57" r="4.4"/><circle cx="115" cy="167" r="4.4"/><circle cx="115" cy="199" r="4.4"/>
+        </g>
+        <!-- the drawer standing out, drawn in the brighter metal -->
+        <g class="m2" stroke-width="1.9">
+          <path d="M18 82h194v58H18z"/>
+          <path d="M18 82l26-8h142l26 8"/>
+          <path d="M18 140l26 8h142l26-8"/>
+          <path d="M104 156h22v6h-22z"/><circle cx="115" cy="169" r="8"/>
+        </g>
+        <!-- the folio inside: one ruled sheet, every record on it -->
+        <g class="m1" stroke-width="1.3">
+          <path d="M74 88h82v46H74z"/>
+        </g>
+        <g class="m1" stroke-width="1" stroke-opacity=".8">
+          <path d="M82 98h66M82 106h66M82 114h66M82 122h44"/>
+        </g>
+        <!-- the ribbon ties itself around the folio -->
+        <g class="m2" stroke-width="1.6">
+          <path d="M115 88v46"/><path d="M74 111h82"/>
+          <path d="M115 111c-9-11-22-9-22-1s13 10 22-1zM115 111c9-11 22-9 22-1s-13 10-22-1z"/>
+          <path d="M112 118l-8 14M118 118l8 14"/>
+        </g>
+      </svg>
+      <p class="caption">The drawer slides out · a ribbon ties the folio</p>
+    </div>
+
+    <div class="tabs">
+      <div class="tab"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>Today</div>
+      <div class="tab"><svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17"/><path d="M12 4v17M8.5 11h1M14.5 11h1"/></svg>Closet</div>
+      <div class="tab"><svg viewBox="0 0 24 24"><path d="M11 7a1 1 0 0 1 2 0M12 9v2M12 11 5 17h14z"/></svg>Outfits</div>
+      <div class="tab"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14"/><path d="M4 9h16M8 13h8M8 16h5"/></svg>Feed</div>
+      <div class="tab on"><svg viewBox="0 0 24 24"><circle cx="6" cy="8" r="1"/><circle cx="6" cy="12" r="1"/><circle cx="6" cy="16" r="1"/><path d="M10 8h9M10 12h9M10 16h9"/></svg>More</div>
+    </div>
+  </div>
+  <p class="caption-note"><b>Export a backup — the canonical drawer moment.</b> 700ms: one drawer
+  slides out of the dresser, the folio inside rules itself line by line, and a ribbon ties around
+  it. A strung tag follows — BACKUP EXPORTED — KEEP IT SOMEWHERE SAFE — and the status chip in the
+  notice card changes from NO EXPORT YET to the date. The native shell adds one success buzz as the
+  ribbon pulls tight.</p>
+</div>
+
+</div>
+</body>
