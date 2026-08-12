@@ -28,3 +28,4 @@ shots/
 
 # Source packs (large, and the generated output is committed)
 *.zip
+scripts/fill-states.json

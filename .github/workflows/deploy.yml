@@ -40,6 +40,25 @@ jobs:
       - run: npm run test:migrate
       - run: npm run test:demo
       - run: npm run build
+      # V2 lives on its own branch and is served under /v2/. It builds with
+      # base './' so it can sit at any subpath. Building it here means every
+      # deploy of main re-publishes v2 alongside it — before this step, any
+      # push to main force-pushed gh-pages WITHOUT /v2/ and silently took the
+      # second site down.
+      - uses: actions/checkout@v4
+        with:
+          ref: v2
+          path: v2
+      - name: Build v2 into dist/v2
+        run: |
+          set -eu
+          cd v2
+          npm ci
+          npm run build
+          mkdir -p ../dist/v2
+          cp -r dist/. ../dist/v2/
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
       - name: Push dist to gh-pages
         run: |
           set -eu

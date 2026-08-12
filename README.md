@@ -7,7 +7,16 @@
 own, what you actually wear, and what it costs per wear. No account, no cloud, no
 subscription, no shop links. Everything lives on your device.
 
-**Live:** https://occult-kranti.github.io/wardrobe-tracker/
+**Live:** https://occult-kranti.github.io/wardrobe-tracker/ · **V2 (glass):** https://occult-kranti.github.io/wardrobe-tracker/v2/
+
+---
+
+## See it move
+
+![A ninety-second tour: a wardrobe started from nothing, the first pieces catalogued and worn, then the sample closets walked through every tool and all six rooms](docs/media/demo.gif)
+
+*The same tour at full speed and resolution:*
+*[**demo.mp4**](https://occult-kranti.github.io/wardrobe-tracker/demo.mp4) — starting a wardrobe, adding pieces, logging the first wear, outfits, calendar, ledger, wishlist, before-you-buy, events, feed, conversations, households, and the six rooms.*
 
 ---
 
