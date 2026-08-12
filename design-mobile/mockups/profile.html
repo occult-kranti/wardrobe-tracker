@@ -1,0 +1,328 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Toile mobile — Profile</title>
+<link rel="stylesheet" href="foundation.css">
+<body>
+<div style="display:flex;gap:30px;flex-wrap:wrap;justify-content:center">
+
+<!-- ========== at rest ========== -->
+<div class="stage">
+  <div class="phone" data-room="atelier">
+
+    <!-- THE ALMIRAH. The page is drawn as the inside of the cabinet: the left
+         door carries the mirror strip with its glints and the hasp with the
+         hanging padlock (= on this device only); the right stile carries three
+         iron hinge plates. Both live in the gutters — content starts inboard of
+         them, and nothing is ever drawn behind the plates. -->
+    <div class="art" style="position:absolute;inset:0;z-index:1;pointer-events:none">
+      <svg viewBox="0 0 412 915" style="width:412px;height:915px">
+        <!-- left door: frame, mirror strip, second hairline -->
+        <g class="m1" stroke-width="1.1" stroke-opacity=".9">
+          <path d="M13 24h36v800H13z"/>
+          <path d="M18.5 30h25v788h-25z"/>
+        </g>
+        <g class="m2" stroke-width=".9" stroke-opacity=".45">
+          <path d="M21.5 33.5h19v781h-19z"/>
+        </g>
+        <!-- the mirror's glints: four raked strokes, the only curves-free lie of light -->
+        <g class="m2" stroke-width="1" stroke-opacity=".55">
+          <path d="M23 128l16-30M23 168l16-30M23 356l16-30M23 396l16-30M23 620l16-30M23 660l16-30M23 782l16-30"/>
+        </g>
+        <!-- door corner ticks -->
+        <g class="m2" stroke-width="1" stroke-opacity=".7">
+          <path d="M13 34v-6h6M43 28h6v6M13 814v6h6M43 820h6v-6"/>
+        </g>
+        <!-- the hasp and the hanging padlock: the thesis of the page -->
+        <g class="m1" stroke-width="1.2">
+          <path d="M27 452h26v13H27z"/>
+          <circle cx="46" cy="458.5" r="2.6"/>
+          <path d="M31 465v6h8v-6"/>
+        </g>
+        <g class="m2" stroke-width="1.3">
+          <path d="M29.5 486a5.5 5.5 0 0 1 11 0v7h-11z"/>
+          <path d="M24 493h22v26H24z"/>
+          <circle cx="35" cy="503" r="2.6"/>
+          <path d="M35 505.5v6"/>
+        </g>
+
+        <!-- right stile: the door edge and three iron hinge plates with screws -->
+        <g class="m1" stroke-width="1.1" stroke-opacity=".85">
+          <path d="M377 24v800"/>
+        </g>
+        <g class="m1" stroke-width="1.15">
+          <path d="M381 132h19v46h-19z"/><path d="M381 452h19v46h-19z"/><path d="M381 764h19v46h-19z"/>
+        </g>
+        <g class="m2" stroke-width="1">
+          <circle cx="390.5" cy="142" r="3"/><circle cx="390.5" cy="155" r="3"/><circle cx="390.5" cy="168" r="3"/>
+          <circle cx="390.5" cy="462" r="3"/><circle cx="390.5" cy="475" r="3"/><circle cx="390.5" cy="488" r="3"/>
+          <circle cx="390.5" cy="774" r="3"/><circle cx="390.5" cy="787" r="3"/><circle cx="390.5" cy="800" r="3"/>
+          <!-- knuckles -->
+          <path d="M381 146h-4v18h4M381 466h-4v18h4M381 778h-4v18h4"/>
+        </g>
+      </svg>
+    </div>
+
+    <div class="screen" style="gap:9px;padding:16px 36px 0 56px">
+
+      <!-- name band: this page's title is a name, not a label -->
+      <div>
+        <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px">
+          <span class="t-display" style="font-size:32px">Meher Kapoor</span>
+          <span class="t-mono-s">@MEHER</span>
+        </div>
+        <div class="rule-tick" style="margin-top:8px"></div>
+      </div>
+
+      <!-- IDENTITY CARD — the almirah door, read from the inside -->
+      <div class="plate" style="padding:12px 13px 11px">
+        <span class="brk tr"></span><span class="brk bl"></span>
+        <div style="display:flex;gap:12px">
+          <!-- the monogram, cut as a hang tag with a punched eyelet -->
+          <svg viewBox="0 0 58 84" style="width:56px;height:81px;flex:none;fill:none">
+            <g class="m2" stroke-width="1.2">
+              <path d="M12 2h44v80H2V12z"/>
+              <circle cx="16" cy="15" r="5"/>
+            </g>
+            <text x="30" y="60" text-anchor="middle"
+              style="font:400 28px Georgia,serif;fill:var(--ink)">MK</text>
+          </svg>
+          <div style="flex:1;min-width:0">
+            <p class="t-mono" style="font-size:10.5px;line-height:1.65">NEW DELHI (HAUZ KHAS) ·
+              FREELANCE FASHION STYLIST + CONTENT CREATOR · SAMPLE WARDROBE</p>
+            <p class="t-mono cream" style="font-size:10.5px;line-height:1.6;margin-top:8px">THIS IS THE
+              WARDROBE YOU HAVE OPEN.</p>
+          </div>
+        </div>
+        <div class="rule-dash" style="margin:9px 0 7px"></div>
+        <!-- the padlock quoted small, beside the fact it stands for -->
+        <div style="display:flex;align-items:center;gap:8px">
+          <svg viewBox="0 0 16 20" style="width:13px;height:17px;flex:none;fill:none">
+            <g class="m2" stroke-width="1.3">
+              <path d="M4 8V5a4 4 0 0 1 8 0v3"/>
+              <path d="M2 8h12v10H2z"/><circle cx="8" cy="12.5" r="1.6"/>
+            </g>
+          </svg>
+          <span class="t-mono-s gold">On this device only</span>
+        </div>
+      </div>
+
+      <!-- STANDING RECORD — four facts, hairline-crossed -->
+      <div class="plate" style="padding:0">
+        <span class="brk tl"></span><span class="brk tr"></span>
+        <span class="brk bl"></span><span class="brk br"></span>
+        <div class="stats">
+          <div style="border-right:1px solid var(--line);border-bottom:1px solid var(--line)">
+            <p class="t-figure">61</p><div class="capline"></div>
+            <p class="t-mono-s cap">In the closet</p>
+          </div>
+          <div style="border-bottom:1px solid var(--line)">
+            <p class="t-figure">1,106</p><div class="capline"></div>
+            <p class="t-mono-s cap">Wears recorded</p>
+          </div>
+          <div style="border-right:1px solid var(--line)">
+            <p class="t-figure">20</p><div class="capline"></div>
+            <p class="t-mono-s cap">Outfits</p>
+          </div>
+          <div>
+            <p class="t-figure">$5,608</p><div class="capline"></div>
+            <p class="t-mono-s cap">What it cost</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- WARDROBE RULES — engraved lines, each under its own hairline -->
+      <div class="plate" style="padding:11px 13px 9px">
+        <span class="brk tl"></span><span class="brk br"></span>
+        <div style="display:flex;align-items:baseline;justify-content:space-between">
+          <span class="t-label" style="font-size:12.5px;letter-spacing:.2em">Wardrobe rules</span>
+          <span class="t-mono-s">4 rules</span>
+        </div>
+        <div class="rule-tick" style="margin:8px 0 9px"></div>
+
+        <div style="display:flex;gap:9px">
+          <svg viewBox="0 0 12 12" style="width:11px;height:11px;margin-top:3px;flex:none;fill:none">
+            <path class="m2" stroke-width="1" d="M6 0.5l1.4 4.1 4.1 1.4-4.1 1.4L6 11.5 4.6 7.4.5 6l4.1-1.4z"/></svg>
+          <p class="t-mono cream" style="font-size:11px;line-height:1.5">One craft piece per outfit minimum
+            (handloom, block print, kantha).</p>
+        </div>
+        <div class="rule-dot" style="margin:8px 0"></div>
+        <div style="display:flex;gap:9px">
+          <svg viewBox="0 0 12 12" style="width:11px;height:11px;margin-top:3px;flex:none;fill:none">
+            <path class="m2" stroke-width="1" d="M6 0.5l1.4 4.1 4.1 1.4-4.1 1.4L6 11.5 4.6 7.4.5 6l4.1-1.4z"/></svg>
+          <p class="t-mono cream" style="font-size:11px;line-height:1.5">Max three colours per outfit;
+            marigold counts as one.</p>
+        </div>
+        <div class="rule-dot" style="margin:8px 0"></div>
+        <div style="display:flex;gap:9px">
+          <svg viewBox="0 0 12 12" style="width:11px;height:11px;margin-top:3px;flex:none;fill:none">
+            <path class="m2" stroke-width="1" d="M6 0.5l1.4 4.1 4.1 1.4-4.1 1.4L6 11.5 4.6 7.4.5 6l4.1-1.4z"/></svg>
+          <p class="t-mono cream" style="font-size:11px;line-height:1.5">Tailoring altered to her waist
+            before first wear.</p>
+        </div>
+        <div class="rule-dot" style="margin:8px 0"></div>
+        <div style="display:flex;gap:9px">
+          <svg viewBox="0 0 12 12" style="width:11px;height:11px;margin-top:3px;flex:none;fill:none">
+            <path class="m2" stroke-width="1" d="M6 0.5l1.4 4.1 4.1 1.4-4.1 1.4L6 11.5 4.6 7.4.5 6l4.1-1.4z"/></svg>
+          <p class="t-mono cream" style="font-size:11px;line-height:1.5">Over 10k steps means flats or
+            sneakers.</p>
+        </div>
+        <div class="rule-dash" style="margin:9px 0 6px"></div>
+        <p class="t-mono-s" style="text-align:right">Edit in settings →</p>
+      </div>
+
+      <!-- NEVER WEARS — the jewellery stand lends its T-bar; the line hangs off it -->
+      <div style="padding:0 2px">
+        <div style="display:flex;align-items:center;gap:9px">
+          <span class="t-label" style="flex:none">Never wears</span>
+          <div class="rule-dash" style="flex:1"></div>
+        </div>
+        <svg viewBox="0 0 300 15" style="width:100%;height:15px;display:block;margin-top:4px;fill:none">
+          <g class="m2" stroke-width="1">
+            <path d="M6 4h288"/><path d="M6 4v6M294 4v6"/>
+            <path d="M60 4v4a3 3 0 0 0 6 0M132 4v4a3 3 0 0 0 6 0M204 4v4a3 3 0 0 0 6 0"/>
+          </g>
+        </svg>
+        <p class="t-mono" style="font-size:10.5px;line-height:1.55;margin-top:3px">FAST-FASHION DUPES OF
+          CRAFT MOTIFS · VISIBLE LUXURY LOGOS · NUDE HEELS · POLYESTER IN DELHI SUMMER
+          <span class="gold">+ MORE</span></p>
+      </div>
+
+      <!-- the almirah's floor: the page ends on a ruled line and a small seal,
+           and the rest of the cabinet is left bare -->
+      <div style="margin-top:auto;padding-bottom:14px">
+        <div style="display:flex;align-items:center;gap:9px">
+          <div class="rule" style="flex:1"></div>
+          <svg viewBox="0 0 26 26" style="width:20px;height:20px;flex:none;fill:none">
+            <g class="m2" stroke-width="1"><circle cx="13" cy="13" r="10" stroke-dasharray="2.6 2.2"/>
+              <circle cx="13" cy="13" r="6.4"/></g>
+          </svg>
+          <div class="rule" style="flex:1"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- the quick-add tag, hung clear of the rules card -->
+    <div style="position:absolute;right:46px;bottom:92px;z-index:5">
+      <svg viewBox="0 0 62 46" style="width:62px;height:46px;fill:none">
+        <g class="m2" stroke-width="1.3">
+          <path d="M12 2h48v42H12L2 23z"/>
+          <circle cx="17" cy="23" r="4"/>
+        </g>
+        <path class="m2" stroke-width="1.4" d="M36 15v16M28 23h16"/>
+      </svg>
+    </div>
+
+    <div class="tabs">
+      <div class="tab"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>Today</div>
+      <div class="tab"><svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17"/><path d="M12 4v17M8.5 11h1M14.5 11h1"/></svg>Closet</div>
+      <div class="tab"><svg viewBox="0 0 24 24"><path d="M11 7a1 1 0 0 1 2 0M12 9v2M12 11 5 17h14z"/></svg>Outfits</div>
+      <div class="tab"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14"/><path d="M4 9h16M8 13h8M8 16h5"/></svg>Feed</div>
+      <div class="tab on"><svg viewBox="0 0 24 24"><circle cx="6" cy="8" r="1"/><circle cx="6" cy="12" r="1"/><circle cx="6" cy="16" r="1"/><path d="M10 8h9M10 12h9M10 16h9"/></svg>More</div>
+    </div>
+  </div>
+  <p class="caption-note"><b>Profile — at rest.</b> The almirah owns the page: mirror strip and
+  glints down the left door, three iron hinge plates on the right stile, and the hasp with its
+  hanging padlock at the clasp — the local-first promise drawn, then said in words. The monogram
+  is cut as a hang tag; four facts sit on a crossed hairline; the four rules are engraved lines
+  under their own rules, read-only here. The never-wears line hangs from the jewellery stand's
+  T-bar. Tapping a stat opens the record behind it; the rules are edited in the dresser.</p>
+</div>
+
+<!-- ========== the almirah settles ========== -->
+<div class="stage">
+  <div class="phone" data-room="atelier">
+
+    <div class="art" style="position:absolute;inset:0;z-index:1;pointer-events:none;opacity:.5">
+      <svg viewBox="0 0 412 915" style="width:412px;height:915px">
+        <g class="m1" stroke-width="1.1" stroke-opacity=".9">
+          <path d="M13 24h36v800H13z"/><path d="M18.5 30h25v788h-25z"/><path d="M377 24v800"/>
+        </g>
+      </svg>
+    </div>
+
+    <div class="screen" style="gap:9px;padding:16px 36px 0 56px">
+      <div>
+        <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px">
+          <span class="t-display" style="font-size:32px">Meher Kapoor</span>
+          <span class="t-mono-s">@MEHER</span>
+        </div>
+        <div class="rule-tick" style="margin-top:8px"></div>
+      </div>
+      <div class="plate" style="padding:12px 13px 11px;opacity:.3">
+        <p class="t-mono" style="font-size:10.5px;line-height:1.65">NEW DELHI (HAUZ KHAS) ·
+          FREELANCE FASHION STYLIST + CONTENT CREATOR · SAMPLE WARDROBE</p>
+        <div class="rule-dash" style="margin:9px 0 7px"></div>
+        <p class="t-mono-s">On this device only</p>
+      </div>
+      <div class="plate" style="padding:0;opacity:.3">
+        <div class="stats">
+          <div style="border-right:1px solid var(--line);border-bottom:1px solid var(--line)">
+            <p class="t-figure">61</p><div class="capline"></div><p class="t-mono-s cap">In the closet</p></div>
+          <div style="border-bottom:1px solid var(--line)">
+            <p class="t-figure">1,106</p><div class="capline"></div><p class="t-mono-s cap">Wears recorded</p></div>
+          <div style="border-right:1px solid var(--line)">
+            <p class="t-figure">20</p><div class="capline"></div><p class="t-mono-s cap">Outfits</p></div>
+          <div><p class="t-figure">$5,608</p><div class="capline"></div><p class="t-mono-s cap">What it cost</p></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- the moment: the almirah draws itself and the padlock drops onto its hasp -->
+    <div class="moment">
+      <svg viewBox="0 0 220 260" style="width:238px;height:281px;fill:none">
+        <!-- cornice -->
+        <g class="m2" stroke-width="1.8">
+          <path d="M22 26h176l-9 14H31z"/>
+        </g>
+        <!-- carcass and the two doors -->
+        <g class="m1" stroke-width="1.8">
+          <path d="M31 40h158v186H31z"/>
+          <path d="M110 40v186"/>
+          <path d="M40 50h60v166H40zM120 50h60v166h-60z"/>
+        </g>
+        <!-- the mirror strip on the left door, drawing in top-down -->
+        <g class="m2" stroke-width="1.5" stroke-dasharray="330" stroke-dashoffset="46">
+          <path d="M48 58h44v150H48z"/>
+        </g>
+        <g class="m2" stroke-width="1.2" stroke-opacity=".8">
+          <path d="M53 104l32-38M53 150l32-38"/>
+        </g>
+        <!-- panelled right door -->
+        <g class="m1" stroke-width="1.2" stroke-opacity=".8">
+          <path d="M128 58h44v70h-44zM128 138h44v70h-44z"/>
+        </g>
+        <!-- hasp across the meeting stile, and the padlock dropped onto it -->
+        <g class="m1" stroke-width="1.6">
+          <path d="M96 128h28v11H96z"/><circle cx="118" cy="133.5" r="2.4"/>
+        </g>
+        <g class="m2" stroke-width="1.9">
+          <path d="M104 152a7 7 0 0 1 14 0v8h-14z"/>
+          <path d="M97 160h28v24H97z"/>
+          <circle cx="111" cy="169" r="3"/><path d="M111 172v6"/>
+        </g>
+        <!-- short legs and the floor rule -->
+        <g class="m1" stroke-width="1.6">
+          <path d="M31 226h158v10H31z"/><path d="M44 236v10M176 236v10"/>
+          <path d="M18 246h184" stroke-dasharray="184" stroke-dashoffset="24" stroke-opacity=".7"/>
+        </g>
+      </svg>
+      <p class="caption">The almirah draws itself · the padlock drops onto its hasp</p>
+    </div>
+
+    <div class="tabs">
+      <div class="tab"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>Today</div>
+      <div class="tab"><svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17"/><path d="M12 4v17M8.5 11h1M14.5 11h1"/></svg>Closet</div>
+      <div class="tab"><svg viewBox="0 0 24 24"><path d="M11 7a1 1 0 0 1 2 0M12 9v2M12 11 5 17h14z"/></svg>Outfits</div>
+      <div class="tab"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14"/><path d="M4 9h16M8 13h8M8 16h5"/></svg>Feed</div>
+      <div class="tab on"><svg viewBox="0 0 24 24"><circle cx="6" cy="8" r="1"/><circle cx="6" cy="12" r="1"/><circle cx="6" cy="16" r="1"/><path d="M10 8h9M10 12h9M10 16h9"/></svg>More</div>
+    </div>
+  </div>
+  <p class="caption-note"><b>Opening the profile — the almirah settles.</b> 800ms: the cornice and
+  carcass rule themselves, the mirror strip strokes in top-down, then the padlock drops onto the
+  hasp and closes. Tapping the lock afterwards swings it once and sends a strung tag reading
+  YOUR RECORDS NEVER LEAVE THIS DEVICE. Reduce Motion shows the almirah already shut.</p>
+</div>
+
+</div>
+</body>

@@ -1,0 +1,426 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Toile mobile — Calendar</title>
+<link rel="stylesheet" href="foundation.css">
+<body>
+<div style="display:flex;gap:30px;flex-wrap:wrap;justify-content:center">
+
+<!-- ========== at rest ========== -->
+<div class="stage">
+  <div class="phone" data-room="atelier">
+
+    <!-- the frieze: the armoire that owns the week, a hanging rail on finialled
+         posts, a dresser at the far end. Ground art, top band only. -->
+    <div class="art" style="padding:10px 14px 0">
+      <svg viewBox="0 0 380 56" class="art">
+        <!-- the floor line -->
+        <g class="m1" stroke-width="1.1" stroke-opacity=".8">
+          <path d="M6 50h368"/>
+        </g>
+        <!-- armoire: cornice, panelled doors with cusped arch heads, plinth -->
+        <g class="m1" stroke-width="1.1" stroke-opacity=".9">
+          <path d="M12 11h58l-3 5H15z"/>
+          <path d="M16 16h50v29H16z"/><path d="M41 16v29"/>
+          <path d="M21 20h15v21H21zM46 20h15v21H46z"/>
+          <path d="M23 27c0-5 4-7 5.5-9 1.5 2 5.5 4 5.5 9M48 27c0-5 4-7 5.5-9 1.5 2 5.5 4 5.5 9"/>
+          <circle cx="39" cy="31" r="1"/><circle cx="43" cy="31" r="1"/>
+          <path d="M14 45h54v5H14z"/>
+        </g>
+        <!-- the rail: posts, ball finials, collars, four hangers -->
+        <g class="m2" stroke-width="1" stroke-opacity=".85">
+          <path d="M122 50V21M270 50V21"/>
+          <circle cx="122" cy="18" r="2.4"/><circle cx="270" cy="18" r="2.4"/>
+          <path d="M118 47h8M266 47h8"/>
+          <path d="M122 26h148"/>
+          <path d="M127 23v6M265 23v6"/>
+          <path d="M142 26a3 3 0 0 1 6 0M145 29v3M145 32l-11 9h22zM177 26a3 3 0 0 1 6 0M180 29v3M180 32l-11 9h22zM212 26a3 3 0 0 1 6 0M215 29v3M215 32l-11 9h22zM247 26a3 3 0 0 1 6 0M250 29v3M250 32l-11 9h22z"/>
+        </g>
+        <!-- dresser: six drawers, knobs, bracket plinth -->
+        <g class="m1" stroke-width="1.1" stroke-opacity=".85">
+          <path d="M300 22h68l-2 4h-64z"/>
+          <path d="M304 26h60v19h-60z"/>
+          <path d="M304 32.3h60M304 38.6h60"/>
+          <circle cx="334" cy="29" r="1"/><circle cx="334" cy="35.4" r="1"/><circle cx="334" cy="41.8" r="1"/>
+          <path d="M302 45h64v5h-64z"/>
+        </g>
+      </svg>
+    </div>
+
+    <div class="screen" style="gap:9px">
+
+      <!-- title row -->
+      <div>
+        <div style="display:flex;align-items:baseline;justify-content:space-between">
+          <span class="t-display">Calendar</span>
+          <span class="t-mono-s">AUG 9 — AUG 15</span>
+        </div>
+        <div class="rule-double" style="margin-top:8px"></div>
+      </div>
+
+      <!-- week header: ‹ August 2026 › with the jump-back link beneath -->
+      <div style="text-align:center">
+        <div style="display:flex;align-items:center;justify-content:center;gap:18px">
+          <span class="t-serif gold" style="font-size:22px">‹</span>
+          <span class="t-display-s">August 2026</span>
+          <span class="t-serif gold" style="font-size:22px">›</span>
+        </div>
+        <p class="t-mono-s" style="margin-top:3px">This week</p>
+      </div>
+
+      <!-- the rail's own header: the density toggle, and the week's tally -->
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="tag" style="height:28px;padding:0 11px 0 9px;font-size:9.5px"><span class="eyelet" style="width:6px;height:6px"></span><span>Week ▾</span></span>
+        <div class="rule-dash" style="flex:1"></div>
+        <span class="t-mono-s" style="flex:none">4 logged · 9 planned</span>
+      </div>
+
+      <!-- THE RAIL OF DAYS — the page's signature component.
+           A hanging rail on end brackets; seven day ticks strung from it;
+           one bead per entry on each day's thread — hatched wax-dot for a
+           wear on the record, open eyelet-dot for a plan. Today is ringed
+           by hand. This is ornament AND interface, so it always survives. -->
+      <div class="art">
+        <svg viewBox="0 0 376 150" style="width:100%;height:150px">
+          <!-- rail, end brackets, scroll returns -->
+          <g class="m2" stroke-width="1.3" stroke-opacity=".95">
+            <path d="M16 24h344"/>
+            <path d="M16 14v20M360 14v20"/>
+            <path d="M16 33l11-9M360 33l-11-9"/>
+            <path d="M12 15c-5-1-8 3-6 6 2 2 6 1 6-3M364 15c5-1 8 3 6 6-2 2-6 1-6-3"/>
+          </g>
+          <!-- the seven ticks -->
+          <g class="m1" stroke-width="1.1" stroke-opacity=".85">
+            <path d="M41 24v9M90 24v9M139 24v9M188 24v9M237 24v9M286 24v9M335 24v9"/>
+          </g>
+
+          <!-- day names -->
+          <g style="font:500 10px 'Courier New',monospace;letter-spacing:.1em;fill:var(--ink-2);stroke:none" text-anchor="middle">
+            <text x="41" y="47">SUN</text><text x="90" y="47">MON</text>
+            <text x="139" y="47">TUE</text><text x="188" y="47">WED</text>
+            <text x="237" y="47">THU</text><text x="286" y="47">FRI</text>
+            <text x="335" y="47">SAT</text>
+          </g>
+          <!-- numerals -->
+          <g style="font:400 25px Georgia,serif;fill:var(--ink);stroke:none" text-anchor="middle">
+            <text x="41" y="74">9</text><text x="90" y="74">10</text>
+            <text x="139" y="74">11</text><text x="188" y="74">12</text>
+            <text x="237" y="74">13</text><text x="286" y="74">14</text>
+            <text x="335" y="74">15</text>
+          </g>
+
+          <!-- threads -->
+          <g class="m1" stroke-width="1" stroke-opacity=".8">
+            <path d="M41 82v18M90 82v18M139 82v38M188 82v58M237 82v38M286 82v38M335 82v38"/>
+          </g>
+
+          <!-- beads: SUN 1 logged -->
+          <g class="m2" stroke-width="1.2">
+            <circle cx="41" cy="103" r="5.2"/>
+            <path d="M37.4 99.6h7.2M36.1 101.8h9.8M35.8 104h10.4M36.1 106.2h9.8M37.4 108.4h7.2" stroke-width=".9"/>
+          </g>
+          <!-- MON 1 logged -->
+          <g class="m2" stroke-width="1.2">
+            <circle cx="90" cy="103" r="5.2"/>
+            <path d="M86.4 99.6h7.2M85.1 101.8h9.8M84.8 104h10.4M85.1 106.2h9.8M86.4 108.4h7.2" stroke-width=".9"/>
+          </g>
+          <!-- TUE 2 logged (today) -->
+          <g class="m2" stroke-width="1.2">
+            <circle cx="139" cy="103" r="5.2"/>
+            <path d="M135.4 99.6h7.2M134.1 101.8h9.8M133.8 104h10.4M134.1 106.2h9.8M135.4 108.4h7.2" stroke-width=".9"/>
+            <circle cx="139" cy="123" r="5.2"/>
+            <path d="M135.4 119.6h7.2M134.1 121.8h9.8M133.8 124h10.4M134.1 126.2h9.8M135.4 128.4h7.2" stroke-width=".9"/>
+          </g>
+          <!-- WED 3 planned, THU / FRI / SAT 2 planned each -->
+          <g class="m1" stroke-width="1.2" stroke-opacity=".95">
+            <circle cx="188" cy="103" r="5.2"/><circle cx="188" cy="103" r="1.9"/>
+            <circle cx="188" cy="123" r="5.2"/><circle cx="188" cy="123" r="1.9"/>
+            <circle cx="188" cy="143" r="5.2"/><circle cx="188" cy="143" r="1.9"/>
+            <circle cx="237" cy="103" r="5.2"/><circle cx="237" cy="103" r="1.9"/>
+            <circle cx="237" cy="123" r="5.2"/><circle cx="237" cy="123" r="1.9"/>
+            <circle cx="286" cy="103" r="5.2"/><circle cx="286" cy="103" r="1.9"/>
+            <circle cx="286" cy="123" r="5.2"/><circle cx="286" cy="123" r="1.9"/>
+            <circle cx="335" cy="103" r="5.2"/><circle cx="335" cy="103" r="1.9"/>
+            <circle cx="335" cy="123" r="5.2"/><circle cx="335" cy="123" r="1.9"/>
+          </g>
+
+          <!-- today, ringed by hand: one pass, overshot -->
+          <g class="m2" stroke-width="1.4" stroke-opacity=".9">
+            <path d="M122 36c-15 11-16 66-6 94 8 22 37 21 43 1 9-29 6-80-15-95-8-6-19-3-23 4"/>
+          </g>
+        </svg>
+      </div>
+
+      <!-- THE DAY DETAIL PLATE — the selected day, its entries strung as tags -->
+      <div class="plate double" style="padding:11px 13px 12px">
+        <div class="inner-rule"></div>
+
+        <div style="display:flex;align-items:center;gap:9px">
+          <div class="rule" style="flex:1"></div>
+          <span class="t-label" style="flex:none;color:var(--gold)">Tuesday 11 · Today</span>
+          <div class="rule" style="flex:1"></div>
+        </div>
+
+        <!-- entry 01 — on the record: sealed, with UNDO -->
+        <div style="display:flex;margin-top:9px">
+          <!-- the thread the entries are strung on: it runs the plate's height -->
+          <div style="width:28px;flex:none;position:relative">
+            <div style="position:absolute;left:6px;top:4px;bottom:0;width:1px;background:var(--line);opacity:.85"></div>
+            <div class="art" style="position:absolute;left:0;top:0;width:12px">
+              <svg viewBox="0 0 12 12" style="width:12px;height:12px"><g class="m1" stroke-width="1"><circle cx="6" cy="4" r="2.4"/></g></svg>
+            </div>
+            <div class="art" style="position:absolute;left:0;top:50%;transform:translateY(-50%);width:34px">
+              <svg viewBox="0 0 34 28" style="width:34px;height:28px">
+                <g class="m2" stroke-width="1.1">
+                  <path d="M6 14c5-9 12-11 15-6M6 14c3 8 11 10 15 4"/>
+                  <circle cx="22" cy="14" r="5.4"/><circle cx="22" cy="14" r="2.2"/>
+                  <path d="M27.6 14H33"/>
+                </g>
+              </svg>
+            </div>
+          </div>
+          <div class="plate" style="flex:1;padding:10px 11px">
+            <div style="display:flex;gap:9px">
+              <div style="flex:1;min-width:0">
+                <p class="t-italic" style="font-size:18px">Client Fitting Day</p>
+                <p class="t-mono-s" style="margin-top:4px">6 pieces</p>
+                <div style="display:flex;gap:5px;margin-top:8px">
+                  <span class="photo" style="width:52px;height:65px;border:1px solid var(--line-2)"><img src="photos/hm-shirt.webp" alt=""></span>
+                  <span class="photo" style="width:52px;height:65px;border:1px solid var(--line-2)"><img src="photos/levis-denim-jeans.webp" alt=""></span>
+                  <span class="photo" style="width:52px;height:65px;border:1px solid var(--line-2)"><img src="photos/loafer-penny.webp" alt=""></span>
+                  <span class="photo" style="width:52px;height:65px;border:1px solid var(--line-2)"><img src="photos/watch-dress-steel.webp" alt=""></span>
+                </div>
+              </div>
+              <div style="width:62px;flex:none;display:flex;flex-direction:column;align-items:center;gap:7px">
+                <!-- the stamped wax seal: this entry is on the record -->
+                <svg viewBox="0 0 40 40" style="width:38px;height:38px;fill:none">
+                  <g class="m2" stroke-width="1.1">
+                    <circle cx="20" cy="20" r="17" stroke-dasharray="3 2.4"/>
+                    <circle cx="20" cy="20" r="13"/><circle cx="20" cy="20" r="10"/>
+                  </g>
+                  <text x="20" y="25" text-anchor="middle" style="font:400 12px Georgia,serif;fill:var(--ink);stroke:none">T</text>
+                </svg>
+                <span class="tag" style="height:30px;padding:0 10px 0 9px"><span class="eyelet" style="width:6px;height:6px"></span><span>Undo</span></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- entry 02 -->
+        <div style="display:flex;margin-top:6px">
+          <div style="width:28px;flex:none;position:relative">
+            <div style="position:absolute;left:6px;top:0;bottom:4px;width:1px;background:var(--line);opacity:.85"></div>
+            <div class="art" style="position:absolute;left:0;bottom:0;width:12px">
+              <svg viewBox="0 0 12 12" style="width:12px;height:12px"><g class="m1" stroke-width="1"><circle cx="6" cy="8" r="2.4"/></g></svg>
+            </div>
+            <div class="art" style="position:absolute;left:0;top:50%;transform:translateY(-50%);width:34px">
+              <svg viewBox="0 0 34 28" style="width:34px;height:28px">
+                <g class="m2" stroke-width="1.1">
+                  <path d="M6 14c5-9 12-11 15-6M6 14c3 8 11 10 15 4"/>
+                  <circle cx="22" cy="14" r="5.4"/><circle cx="22" cy="14" r="2.2"/>
+                  <path d="M27.6 14H33"/>
+                </g>
+              </svg>
+            </div>
+          </div>
+          <div class="plate" style="flex:1;padding:10px 11px">
+            <div style="display:flex;gap:9px">
+              <div style="flex:1;min-width:0">
+                <p class="t-italic" style="font-size:18px">Launch Party</p>
+                <p class="t-mono-s" style="margin-top:4px">5 pieces</p>
+                <div style="display:flex;gap:5px;margin-top:8px">
+                  <span class="photo" style="width:52px;height:65px;border:1px solid var(--line-2)"><img src="photos/in-anarkali-gown.webp" alt=""></span>
+                  <span class="photo" style="width:52px;height:65px;border:1px solid var(--line-2)"><img src="photos/boot-chelsea.webp" alt=""></span>
+                  <span class="photo" style="width:52px;height:65px;border:1px solid var(--line-2)"><img src="photos/necklace-chain.webp" alt=""></span>
+                  <span class="photo" style="width:52px;height:65px;border:1px solid var(--line-2)"><img src="photos/watch-dress-steel.webp" alt=""></span>
+                </div>
+              </div>
+              <div style="width:62px;flex:none;display:flex;flex-direction:column;align-items:center;gap:7px">
+                <svg viewBox="0 0 40 40" style="width:38px;height:38px;fill:none">
+                  <g class="m2" stroke-width="1.1">
+                    <circle cx="20" cy="20" r="17" stroke-dasharray="3 2.4"/>
+                    <circle cx="20" cy="20" r="13"/><circle cx="20" cy="20" r="10"/>
+                  </g>
+                  <text x="20" y="25" text-anchor="middle" style="font:400 12px Georgia,serif;fill:var(--ink);stroke:none">T</text>
+                </svg>
+                <span class="tag" style="height:30px;padding:0 10px 0 9px"><span class="eyelet" style="width:6px;height:6px"></span><span>Undo</span></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- the day footer: today carries both actions -->
+        <div class="rule-dash" style="margin:10px 0 9px"></div>
+        <div style="display:flex;justify-content:space-between;gap:10px">
+          <span class="tag on" style="height:38px;padding:0 20px 0 17px"><span class="eyelet"></span><span>+ Log</span></span>
+          <span class="tag" style="height:38px;padding:0 20px 0 17px"><span class="eyelet"></span><span>+ Plan</span></span>
+        </div>
+      </div>
+
+      <!-- QUICK SCHEDULE — the week's standing sentence -->
+      <div class="plate" style="padding:8px 14px 9px">
+        <span class="brk tl"></span><span class="brk tr"></span>
+        <span class="brk bl"></span><span class="brk br"></span>
+        <p class="t-label" style="text-align:center">Quick schedule</p>
+        <p class="t-italic" style="margin-top:4px;text-align:center;font-size:13px">Every day left on this page has an entry. The week ahead is open.</p>
+      </div>
+
+    </div>
+
+    <!-- the shell's tab bar — Calendar lives under More -->
+    <div class="tabs">
+      <div class="tab">
+        <svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15"/><path d="M4 10h16M9 3v4M15 3v4"/><text x="12" y="18" text-anchor="middle" style="font:400 7px 'Courier New';fill:currentColor;stroke:none">11</text></svg>
+        Today
+      </div>
+      <div class="tab">
+        <svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17"/><path d="M12 4v17M8.5 11h1M14.5 11h1M5 4h14"/></svg>
+        Closet
+      </div>
+      <div class="tab">
+        <svg viewBox="0 0 24 24"><path d="M11 7a1 1 0 0 1 2 0M12 9v2M12 11 5 17h14z"/></svg>
+        Outfits
+      </div>
+      <div class="tab">
+        <svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14"/><path d="M4 9h16M8 13h8M8 16h5"/></svg>
+        Feed
+      </div>
+      <div class="tab on">
+        <svg viewBox="0 0 24 24"><circle cx="6" cy="8" r="1"/><circle cx="6" cy="12" r="1"/><circle cx="6" cy="16" r="1"/><path d="M10 8h9M10 12h9M10 16h9"/></svg>
+        More
+      </div>
+    </div>
+  </div>
+  <p class="caption-note"><b>Calendar — at rest.</b> The rail of days replaces seven stacked
+  day-cards: one bead per entry, hatched for a wear on the record and open-eyelet for a plan,
+  with Tuesday ringed by hand. Tapping a tick plucks its thread and re-inks the day plate below,
+  where each entry hangs as a strung tag with its seal and UNDO. Past days show + LOG only,
+  future days + PLAN only; today keeps both.</p>
+</div>
+
+<!-- ========== the plan moment ========== -->
+<div class="stage">
+  <div class="phone" data-room="atelier">
+    <div class="art" style="padding:10px 14px 0;opacity:.45">
+      <svg viewBox="0 0 380 56" class="art">
+        <g class="m1" stroke-width="1.1" stroke-opacity=".8"><path d="M6 50h368"/></g>
+        <g class="m2" stroke-width="1" stroke-opacity=".85">
+          <path d="M122 50V21M270 50V21"/><path d="M122 26h148"/>
+          <circle cx="122" cy="18" r="2.4"/><circle cx="270" cy="18" r="2.4"/>
+        </g>
+      </svg>
+    </div>
+
+    <div class="screen" style="gap:9px">
+      <div>
+        <div style="display:flex;align-items:baseline;justify-content:space-between">
+          <span class="t-display">Calendar</span>
+          <span class="t-mono-s">AUG 9 — AUG 15</span>
+        </div>
+        <div class="rule-double" style="margin-top:8px"></div>
+      </div>
+
+      <!-- the rail stays lit: the bead lands on it -->
+      <div class="art" style="opacity:.75">
+        <svg viewBox="0 0 376 96" style="width:100%;height:96px">
+          <g class="m2" stroke-width="1.3" stroke-opacity=".95">
+            <path d="M16 24h344"/><path d="M16 14v20M360 14v20"/>
+            <path d="M16 33l11-9M360 33l-11-9"/>
+          </g>
+          <g class="m1" stroke-width="1.1" stroke-opacity=".85">
+            <path d="M41 24v9M90 24v9M139 24v9M188 24v9M237 24v9M286 24v9M335 24v9"/>
+          </g>
+          <g style="font:500 10px 'Courier New',monospace;letter-spacing:.1em;fill:var(--ink-2);stroke:none" text-anchor="middle">
+            <text x="41" y="47">SUN</text><text x="90" y="47">MON</text>
+            <text x="139" y="47">TUE</text><text x="188" y="47">WED</text>
+            <text x="237" y="47">THU</text><text x="286" y="47">FRI</text>
+            <text x="335" y="47">SAT</text>
+          </g>
+          <g style="font:400 25px Georgia,serif;fill:var(--ink);stroke:none" text-anchor="middle">
+            <text x="41" y="74">9</text><text x="90" y="74">10</text>
+            <text x="139" y="74">11</text><text x="188" y="74">12</text>
+            <text x="237" y="74">13</text><text x="286" y="74">14</text>
+            <text x="335" y="74">15</text>
+          </g>
+          <!-- Wednesday's thread thickens: the tag is being tied to it -->
+          <g class="m2" stroke-width="1.6"><path d="M188 82v12"/></g>
+        </svg>
+      </div>
+
+      <div class="plate double" style="padding:11px 13px;opacity:.3">
+        <div class="inner-rule"></div>
+        <div style="display:flex;align-items:center;gap:9px">
+          <div class="rule" style="flex:1"></div>
+          <span class="t-label" style="flex:none">Wednesday 12 · Planned</span>
+          <div class="rule" style="flex:1"></div>
+        </div>
+        <p class="t-italic" style="margin-top:9px;font-size:18px">Reformer Pilates</p>
+        <p class="t-mono-s" style="margin-top:4px">Planned · 4 pieces</p>
+        <div class="rule-tick" style="margin:10px 0"></div>
+        <p class="t-italic" style="font-size:18px">Studio-to-Street</p>
+        <p class="t-mono-s" style="margin-top:4px">Planned · 6 pieces</p>
+        <div class="rule-tick" style="margin:10px 0"></div>
+        <p class="t-italic" style="font-size:18px">Edit-Day Home Set</p>
+        <p class="t-mono-s" style="margin-top:4px">Planned · 5 pieces</p>
+        <div class="rule-dash" style="margin:11px 0 10px"></div>
+        <div style="display:flex;justify-content:flex-end">
+          <span class="tag" style="height:36px;padding:0 18px 0 15px"><span class="eyelet"></span><span>+ Plan</span></span>
+        </div>
+      </div>
+
+      <div class="plate" style="padding:8px 14px 9px;opacity:.3">
+        <span class="brk tl"></span><span class="brk tr"></span>
+        <span class="brk bl"></span><span class="brk br"></span>
+        <p class="t-label" style="text-align:center">Quick schedule</p>
+        <p class="t-italic" style="margin-top:4px;text-align:center;font-size:13px">Every day left on this page has an entry. The week ahead is open.</p>
+      </div>
+    </div>
+
+    <!-- the page-specific moment: a tag is punched, strung, and tied to the day's thread -->
+    <div class="moment">
+      <svg viewBox="0 0 220 220" style="width:300px;height:300px;fill:none">
+        <!-- the punch: the die, its barrel, and the disc lifted out of the card -->
+        <g class="m1" stroke-width="1.2" stroke-opacity=".85">
+          <path d="M62 8h16v16H62z"/><path d="M66 24h8v10h-8z"/>
+          <circle cx="70" cy="38" r="5.2"/>
+          <circle cx="92" cy="30" r="3.2"/><path d="M88 34l-4 5"/>
+          <path d="M70 43v6"/>
+        </g>
+        <!-- the thread, spooling down to the tag's eyelet -->
+        <g class="m2" stroke-width="1.4" stroke-dasharray="150" stroke-dashoffset="12">
+          <path d="M70 49c0 18 24 14 40 22 12 6 12 14 4 18"/>
+        </g>
+        <!-- the tag: pointed ear, punched eyelet, ruled line for the outfit name -->
+        <g class="m2" stroke-width="1.8">
+          <path d="M104 92l16-14h74v52h-74l-16-14z"/>
+          <circle cx="116" cy="104" r="6.6"/><circle cx="116" cy="104" r="2.6"/>
+        </g>
+        <g class="m1" stroke-width="1.2" stroke-opacity=".85">
+          <path d="M132 98h50M132 110h34"/>
+        </g>
+        <!-- the day's thread below, and the outlined bead it has just gained -->
+        <g class="m1" stroke-width="1.4" stroke-opacity=".9">
+          <path d="M110 144v46"/>
+        </g>
+        <g class="m2" stroke-width="1.6" stroke-dasharray="60" stroke-dashoffset="6">
+          <circle cx="110" cy="176" r="9"/><circle cx="110" cy="176" r="3.4"/>
+        </g>
+      </svg>
+      <p class="caption">The tag is punched, strung, and tied on</p>
+    </div>
+
+    <div class="tabs">
+      <div class="tab"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>Today</div>
+      <div class="tab"><svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17"/><path d="M12 4v17M8.5 11h1M14.5 11h1"/></svg>Closet</div>
+      <div class="tab"><svg viewBox="0 0 24 24"><path d="M11 7a1 1 0 0 1 2 0M12 9v2M12 11 5 17h14z"/></svg>Outfits</div>
+      <div class="tab"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14"/><path d="M4 9h16M8 13h8M8 16h5"/></svg>Feed</div>
+      <div class="tab on"><svg viewBox="0 0 24 24"><circle cx="6" cy="8" r="1"/><circle cx="6" cy="12" r="1"/><circle cx="6" cy="16" r="1"/><path d="M10 8h9M10 12h9M10 16h9"/></svg>More</div>
+    </div>
+  </div>
+  <p class="caption-note"><b>+ PLAN — the tag is tied on.</b> 500ms: the punch lifts a disc,
+  thread spools down, and the tag ties to Wednesday's thread while the day tick gains an
+  outlined bead. Removing a plan runs it backwards — the tag slides off, the bead erases, and
+  a strung-tag snackbar offers UNDO. Reduce Motion swaps the travel for an instant state change.</p>
+</div>
+
+</div>
+</body>

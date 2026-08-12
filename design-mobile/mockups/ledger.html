@@ -1,0 +1,455 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Toile mobile — Ledger</title>
+<link rel="stylesheet" href="foundation.css">
+<body>
+<div style="display:flex;gap:30px;flex-wrap:wrap;justify-content:center">
+
+<!-- ========== at rest ========== -->
+<div class="stage">
+  <div class="phone" data-room="atelier">
+
+    <div class="screen" style="gap:7px">
+
+      <!-- masthead: the account book's title and how long it has been kept -->
+      <div>
+        <div style="display:flex;align-items:baseline;justify-content:space-between">
+          <span class="t-display">Ledger</span>
+          <span class="t-mono-s">182 DAYS LOGGED</span>
+        </div>
+        <div class="rule-double" style="margin-top:7px"></div>
+      </div>
+
+      <!-- THE TANSU — the merchant's chest that owns this page.
+           Iron corner brackets with nailheads, a round lock plate over the
+           centre stile, two bail handles on their round backplates.
+           Ground art: a band above the modules, never behind them. -->
+      <div class="art">
+        <svg viewBox="0 0 376 62">
+          <!-- carcase, inner rebate, and the double stiles between drawers -->
+          <g class="m1" stroke-width="1.2">
+            <path d="M4 4h368v54H4z"/>
+            <path d="M8 8h360v46H8z" stroke-opacity=".55"/>
+            <path d="M130 8v46M134 8v46M242 8v46M246 8v46"/>
+          </g>
+          <!-- the lock-plate band: one iron strap across the top, nailed home -->
+          <g class="m2" stroke-width="1.1">
+            <path d="M8 18h360"/>
+          </g>
+          <g class="m2" stroke-width="0.9">
+            <circle cx="62" cy="13" r="1.1"/><circle cx="86" cy="13" r="1.1"/><circle cx="110" cy="13" r="1.1"/>
+            <circle cx="152" cy="13" r="1.1"/><circle cx="168" cy="13" r="1.1"/>
+            <circle cx="208" cy="13" r="1.1"/><circle cx="224" cy="13" r="1.1"/>
+            <circle cx="266" cy="13" r="1.1"/><circle cx="290" cy="13" r="1.1"/><circle cx="314" cy="13" r="1.1"/>
+          </g>
+          <!-- iron corner brackets, chamfered arms, nailheads -->
+          <g class="m2" stroke-width="1.15">
+            <path d="M8 8h44v10H22v12H8z"/>
+            <path d="M368 8h-44v10h30v12h14z"/>
+            <path d="M8 54h44v-10H22V32H8z"/>
+            <path d="M368 54h-44v-10h30V32h14z"/>
+          </g>
+          <g class="m2" stroke-width="0.9">
+            <circle cx="14" cy="13" r="1.1"/><circle cx="45" cy="13" r="1.1"/><circle cx="14" cy="27" r="1.1"/>
+            <circle cx="362" cy="13" r="1.1"/><circle cx="331" cy="13" r="1.1"/><circle cx="362" cy="27" r="1.1"/>
+            <circle cx="14" cy="49" r="1.1"/><circle cx="45" cy="49" r="1.1"/><circle cx="14" cy="35" r="1.1"/>
+            <circle cx="362" cy="49" r="1.1"/><circle cx="331" cy="49" r="1.1"/><circle cx="362" cy="35" r="1.1"/>
+          </g>
+          <!-- stepped iron corbels where each stile meets the band and the rail -->
+          <g class="m1" stroke-width="1.1">
+            <path d="M116 18v5h7v5h7M148 18v5h-7v5h-7M116 54v-5h7v-5h7M148 54v-5h-7v-5h-7"/>
+            <path d="M228 18v5h7v5h7M260 18v5h-7v5h-7M228 54v-5h7v-5h7M260 54v-5h-7v-5h-7"/>
+          </g>
+          <!-- the lock plate, hung from the band over the centre drawer -->
+          <g class="m2" stroke-width="1.2">
+            <path d="M181 14h14v8h-14z"/>
+            <circle cx="188" cy="36" r="16"/>
+            <circle cx="188" cy="36" r="12.5" stroke-opacity=".7"/>
+          </g>
+          <g class="m2" stroke-width="0.9">
+            <circle cx="201.8" cy="36" r="1"/><circle cx="200" cy="29.1" r="1"/><circle cx="194.9" cy="24" r="1"/>
+            <circle cx="188" cy="22.2" r="1"/><circle cx="181.1" cy="24" r="1"/><circle cx="176" cy="29.1" r="1"/>
+            <circle cx="174.2" cy="36" r="1"/><circle cx="176" cy="42.9" r="1"/><circle cx="181.1" cy="48" r="1"/>
+            <circle cx="188" cy="49.8" r="1"/><circle cx="194.9" cy="48" r="1"/><circle cx="200" cy="42.9" r="1"/>
+          </g>
+          <g class="m2" stroke-width="1.1">
+            <circle cx="188" cy="32" r="3"/>
+            <path d="M186 35l-1.4 8h6.8L190 35"/>
+          </g>
+          <!-- bail handles: round backplates, pivot rings, the bail swinging -->
+          <g class="m2" stroke-width="1.15">
+            <circle cx="52" cy="36" r="6.5"/><circle cx="52" cy="36" r="2.4"/>
+            <circle cx="94" cy="36" r="6.5"/><circle cx="94" cy="36" r="2.4"/>
+            <path d="M52 39c6 10 36 10 42 0"/>
+            <path d="M52 36c6 11 36 11 42 0" stroke-opacity=".6"/>
+            <circle cx="284" cy="36" r="6.5"/><circle cx="284" cy="36" r="2.4"/>
+            <circle cx="326" cy="36" r="6.5"/><circle cx="326" cy="36" r="2.4"/>
+            <path d="M284 39c6 10 36 10 42 0"/>
+            <path d="M284 36c6 11 36 11 42 0" stroke-opacity=".6"/>
+          </g>
+        </svg>
+      </div>
+
+      <!-- STAT FOLIO — the four columns of the account book -->
+      <div class="plate" style="padding:0">
+        <span class="brk tl"></span><span class="brk tr"></span>
+        <span class="brk bl"></span><span class="brk br"></span>
+        <!-- the floret struck where the two rules cross -->
+        <span style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+          z-index:2;background:var(--ground);padding:0 4px;color:var(--line-2);
+          font:400 10px Georgia,serif">✦</span>
+        <div class="stats">
+          <div style="border-right:1px solid var(--line);border-bottom:1px solid var(--line);text-align:left;padding:9px 14px 8px">
+            <p class="t-figure">61</p><div class="capline" style="width:52px;margin:6px 0 0"></div>
+            <p class="t-mono-s cap">In the closet</p>
+          </div>
+          <div style="border-bottom:1px solid var(--line);text-align:left;padding:9px 14px 8px">
+            <p class="t-figure">1,106</p><div class="capline" style="width:52px;margin:6px 0 0"></div>
+            <p class="t-mono-s cap">Wears recorded</p>
+          </div>
+          <div style="border-right:1px solid var(--line);text-align:left;padding:9px 14px 8px">
+            <p class="t-figure">20</p><div class="capline" style="width:52px;margin:6px 0 0"></div>
+            <p class="t-mono-s cap">Outfits</p>
+          </div>
+          <div style="text-align:left;padding:9px 14px 8px;position:relative">
+            <p class="t-figure">6</p><div class="capline" style="width:52px;margin:6px 0 0"></div>
+            <p class="t-mono-s cap">Resting</p>
+            <!-- the sandook: lidded chest on short legs, hasp closed -->
+            <svg viewBox="0 0 26 22" style="position:absolute;right:12px;bottom:10px;width:26px;height:22px;fill:none;stroke:var(--line-2);stroke-width:1">
+              <path d="M2 8C5 2 21 2 24 8"/><path d="M1.5 8h23"/>
+              <path d="M3 8h20v9H3z"/><path d="M5 17v3M21 17v3"/>
+              <path d="M11.5 5h3v7h-3z"/><circle cx="13" cy="10.5" r="1"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- IN USE — the worn/resting rule, drawn to scale -->
+      <div class="plate" style="padding:8px 14px 9px">
+        <span style="position:absolute;left:-11px;top:50%;transform:translateY(-50%);width:22px;height:20px;z-index:2">
+          <svg viewBox="0 0 22 20" style="width:22px;height:20px;fill:none;stroke:var(--line-2);stroke-width:1.1">
+            <circle cx="13" cy="10" r="5.5"/><circle cx="13" cy="10" r="2.4"/>
+            <path d="M7.6 10 1 7M7.6 10 1 13"/>
+          </svg>
+        </span>
+        <div style="display:flex;align-items:baseline;justify-content:space-between">
+          <span class="t-label">In use</span>
+          <span class="t-mono-s">55 of 61</span>
+        </div>
+        <p class="t-italic" style="margin-top:5px;font-size:13px">55 of 61 pieces have been worn at
+          least once. 6 are still resting.</p>
+        <!-- 55 parts ruled solid; the 6 resting stand as open ticks -->
+        <svg viewBox="0 0 348 8" style="display:block;width:100%;height:8px;margin-top:6px;fill:none">
+          <g class="m2" stroke-width="1">
+            <path d="M0 6h306"/>
+            <path d="M312 2v4M319 2v4M326 2v4M333 2v4M340 2v4M347 2v4"/>
+          </g>
+        </svg>
+      </div>
+
+      <!-- BY CATEGORY — bars ruled as stacked hairlines, never filled blocks -->
+      <div class="plate" style="padding:9px 14px 9px">
+        <span class="brk tr"></span><span class="brk bl"></span>
+        <div style="display:flex;align-items:baseline;justify-content:space-between">
+          <span class="t-label">By category</span>
+          <span class="t-mono-s">Wears · Pieces</span>
+        </div>
+        <div class="rule" style="margin:6px 0 7px"></div>
+
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <div class="bar-row" style="padding:0;gap:8px">
+            <span class="t-mono-s" style="width:92px;flex:none;white-space:nowrap">Accessories</span>
+            <span class="bar-track"><span class="bar-fill" style="display:block;width:100%"></span></span>
+            <span class="t-mono-s gold" style="width:28px;flex:none;text-align:right">449</span>
+            <span class="t-mono-s" style="width:7px;flex:none;text-align:center">–</span>
+            <span class="t-mono-s" style="width:66px;flex:none;text-align:right;white-space:nowrap">14 pieces</span>
+          </div>
+          <div class="bar-row" style="padding:0;gap:8px">
+            <span class="t-mono-s" style="width:92px;flex:none;white-space:nowrap">Tops</span>
+            <span class="bar-track"><span class="bar-fill" style="display:block;width:39.4%"></span></span>
+            <span class="t-mono-s gold" style="width:28px;flex:none;text-align:right">177</span>
+            <span class="t-mono-s" style="width:7px;flex:none;text-align:center">–</span>
+            <span class="t-mono-s" style="width:66px;flex:none;text-align:right;white-space:nowrap">12 pieces</span>
+          </div>
+          <div class="bar-row" style="padding:0;gap:8px">
+            <span class="t-mono-s" style="width:92px;flex:none;white-space:nowrap">Shoes</span>
+            <span class="bar-track"><span class="bar-fill" style="display:block;width:39%"></span></span>
+            <span class="t-mono-s gold" style="width:28px;flex:none;text-align:right">175</span>
+            <span class="t-mono-s" style="width:7px;flex:none;text-align:center">–</span>
+            <span class="t-mono-s" style="width:66px;flex:none;text-align:right;white-space:nowrap">10 pieces</span>
+          </div>
+          <div class="bar-row" style="padding:0;gap:8px">
+            <span class="t-mono-s" style="width:92px;flex:none;white-space:nowrap">Bottoms</span>
+            <span class="bar-track"><span class="bar-fill" style="display:block;width:33.2%"></span></span>
+            <span class="t-mono-s gold" style="width:28px;flex:none;text-align:right">149</span>
+            <span class="t-mono-s" style="width:7px;flex:none;text-align:center">–</span>
+            <span class="t-mono-s" style="width:66px;flex:none;text-align:right;white-space:nowrap">10 pieces</span>
+          </div>
+          <div class="bar-row" style="padding:0;gap:8px">
+            <span class="t-mono-s" style="width:92px;flex:none;white-space:nowrap">Layers</span>
+            <span class="bar-track"><span class="bar-fill" style="display:block;width:20.5%"></span></span>
+            <span class="t-mono-s gold" style="width:28px;flex:none;text-align:right">92</span>
+            <span class="t-mono-s" style="width:7px;flex:none;text-align:center">–</span>
+            <span class="t-mono-s" style="width:66px;flex:none;text-align:right;white-space:nowrap">6 pieces</span>
+          </div>
+          <div class="bar-row" style="padding:0;gap:8px">
+            <span class="t-mono-s" style="width:92px;flex:none;white-space:nowrap">One-pieces</span>
+            <span class="bar-track"><span class="bar-fill" style="display:block;width:5.3%"></span></span>
+            <span class="t-mono-s gold" style="width:28px;flex:none;text-align:right">24</span>
+            <span class="t-mono-s" style="width:7px;flex:none;text-align:center">–</span>
+            <span class="t-mono-s" style="width:66px;flex:none;text-align:right;white-space:nowrap">5 pieces</span>
+          </div>
+          <div class="bar-row" style="padding:0;gap:8px">
+            <span class="t-mono-s" style="width:92px;flex:none;white-space:nowrap">Jewellery</span>
+            <span class="bar-track"><span class="bar-fill" style="display:block;width:5.1%"></span></span>
+            <span class="t-mono-s gold" style="width:28px;flex:none;text-align:right">23</span>
+            <span class="t-mono-s" style="width:7px;flex:none;text-align:center">–</span>
+            <span class="t-mono-s" style="width:66px;flex:none;text-align:right;white-space:nowrap">1 piece</span>
+          </div>
+          <div class="bar-row" style="padding:0;gap:8px">
+            <span class="t-mono-s" style="width:92px;flex:none;white-space:nowrap">Drapes &amp; sets</span>
+            <span class="bar-track"><span class="bar-fill" style="display:block;width:3.8%"></span></span>
+            <span class="t-mono-s gold" style="width:28px;flex:none;text-align:right">17</span>
+            <span class="t-mono-s" style="width:7px;flex:none;text-align:center">–</span>
+            <span class="t-mono-s" style="width:66px;flex:none;text-align:right;white-space:nowrap">3 pieces</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- MONTHLY ACTIVITY — columns as open letterpress blocks -->
+      <div class="plate" style="padding:9px 13px 8px">
+        <span class="brk tr"></span><span class="brk bl"></span>
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+          <span class="t-label" style="padding-top:2px">Monthly activity</span>
+          <span style="text-align:right">
+            <span class="t-mono-s" style="display:block">This month is still running</span>
+            <span class="t-mono-s gold" style="display:block;margin-top:2px">Busiest · Jul · 146 wears</span>
+          </span>
+        </div>
+
+        <div style="display:flex;align-items:flex-end;gap:5px;margin-top:9px;border-bottom:1px solid var(--line)">
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">
+            <span class="t-mono-s" style="font-size:9px">127</span>
+            <div style="width:100%;height:46px;border:1px solid var(--line-2);border-bottom:0"></div>
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">
+            <span class="t-mono-s" style="font-size:9px">133</span>
+            <div style="width:100%;height:56px;border:1px solid var(--line-2);border-bottom:0"></div>
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">
+            <span class="t-mono-s" style="font-size:9px">119</span>
+            <div style="width:100%;height:43px;border:1px solid var(--line-2);border-bottom:0"></div>
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">
+            <span class="t-mono-s" style="font-size:9px">127</span>
+            <div style="width:100%;height:46px;border:1px solid var(--line-2);border-bottom:0"></div>
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">
+            <span class="t-mono-s" style="font-size:9px">144</span>
+            <div style="width:100%;height:55px;border:1px solid var(--line-2);border-bottom:0"></div>
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">
+            <span class="t-mono-s" style="font-size:9px">128</span>
+            <div style="width:100%;height:47px;border:1px solid var(--line-2);border-bottom:0"></div>
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">
+            <span class="t-mono-s" style="font-size:9px">121</span>
+            <div style="width:100%;height:44px;border:1px solid var(--line-2);border-bottom:0"></div>
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">
+            <span class="t-mono-s gold" style="font-size:9px">146</span>
+            <div style="width:100%;height:56px;border:1px solid var(--line-2);border-bottom:0"></div>
+          </div>
+          <!-- August is unfinished: the block is left open, drawn dashed -->
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">
+            <span class="t-mono-s" style="font-size:9px">61</span>
+            <div style="width:100%;height:23px;border:1px dashed var(--line-2);border-bottom:0"></div>
+          </div>
+        </div>
+        <div style="display:flex;gap:5px;margin-top:4px">
+          <span class="t-mono-s" style="flex:1;text-align:center;font-size:8px">Dec'25</span>
+          <span class="t-mono-s" style="flex:1;text-align:center;font-size:8px">Jan</span>
+          <span class="t-mono-s" style="flex:1;text-align:center;font-size:8px">Feb</span>
+          <span class="t-mono-s" style="flex:1;text-align:center;font-size:8px">Mar</span>
+          <span class="t-mono-s" style="flex:1;text-align:center;font-size:8px">Apr</span>
+          <span class="t-mono-s" style="flex:1;text-align:center;font-size:8px">May</span>
+          <span class="t-mono-s" style="flex:1;text-align:center;font-size:8px">Jun</span>
+          <span class="t-mono-s" style="flex:1;text-align:center;font-size:8px">Jul</span>
+          <span class="t-mono-s" style="flex:1;text-align:center;font-size:8px">Aug</span>
+        </div>
+      </div>
+
+      <!-- COST PER WEAR — the balance carried forward, with the abacus rod -->
+      <div class="plate" style="padding:9px 14px 9px">
+        <span class="brk bl"></span>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+          <span class="t-label" style="flex:none;font-size:10px;letter-spacing:.13em">Cost per wear, over time</span>
+          <!-- the tansu abacus: rod, frame, beads counted off in line work -->
+          <svg viewBox="0 0 168 20" style="width:146px;height:18px;flex:none;fill:none">
+            <g class="m1" stroke-width="1"><path d="M1 1h166v18H1z"/><path d="M5 5v10M163 5v10"/></g>
+            <g class="m2" stroke-width="1">
+              <path d="M5 10h158"/>
+              <ellipse cx="12" cy="10" rx="3" ry="5"/><ellipse cx="19" cy="10" rx="3" ry="5"/>
+              <ellipse cx="26" cy="10" rx="3" ry="5"/>
+              <ellipse cx="48" cy="10" rx="3" ry="5"/><ellipse cx="55" cy="10" rx="3" ry="5"/>
+              <ellipse cx="80" cy="10" rx="3" ry="5"/>
+              <ellipse cx="104" cy="10" rx="3" ry="5"/>
+              <ellipse cx="128" cy="10" rx="3" ry="5"/><ellipse cx="135" cy="10" rx="3" ry="5"/>
+              <ellipse cx="142" cy="10" rx="3" ry="5"/><ellipse cx="149" cy="10" rx="3" ry="5"/>
+              <ellipse cx="156" cy="10" rx="3" ry="5"/>
+            </g>
+          </svg>
+        </div>
+        <div class="rule" style="margin:6px 0 7px"></div>
+
+        <div style="display:flex;align-items:flex-end;gap:10px">
+          <div style="flex:none">
+            <p class="t-figure" style="font-size:31px">$5.07</p>
+            <p class="t-mono-s" style="margin-top:4px">Cumulative</p>
+          </div>
+          <!-- the descending step frieze: $44.10 down to $5.07 -->
+          <div style="flex:1">
+            <svg viewBox="0 0 210 50" style="display:block;width:100%;height:auto;fill:none">
+              <g class="m1" stroke-width="1" stroke-opacity=".55">
+                <path d="M2 47h206" stroke-dasharray="2 3"/>
+              </g>
+              <g class="m2" stroke-width="1.4">
+                <path d="M2 44V6h18v7h18v6h18v6h18v5h18v4h18v3h18v3h18v2h18v2h20"/>
+              </g>
+            </svg>
+            <div style="display:flex;justify-content:space-between;margin-top:2px">
+              <span class="t-mono-s">$44.10</span>
+              <span class="t-mono-s gold">$5.07</span>
+            </div>
+          </div>
+        </div>
+        <p class="t-italic" style="margin-top:6px;font-size:11.5px;line-height:1.35">$5,608 across 1,106
+          wears of the pieces it bought. Every wear divides the same money one more way; every piece
+          added starts the sum again.</p>
+      </div>
+
+    </div>
+
+    <!-- the shell's tab bar — Ledger lives under MORE -->
+    <div class="tabs">
+      <div class="tab">
+        <svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15"/><path d="M4 10h16M9 3v4M15 3v4"/><text x="12" y="18" text-anchor="middle" style="font:400 7px 'Courier New';fill:currentColor;stroke:none">11</text></svg>
+        Today
+      </div>
+      <div class="tab">
+        <svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17"/><path d="M12 4v17M8.5 11h1M14.5 11h1M5 4h14"/></svg>
+        Closet
+      </div>
+      <div class="tab">
+        <svg viewBox="0 0 24 24"><path d="M11 7a1 1 0 0 1 2 0M12 9v2M12 11 5 17h14z"/></svg>
+        Outfits
+      </div>
+      <div class="tab">
+        <svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14"/><path d="M4 9h16M8 13h8M8 16h5"/></svg>
+        Feed
+      </div>
+      <div class="tab on">
+        <svg viewBox="0 0 24 24"><circle cx="6" cy="8" r="1"/><circle cx="6" cy="12" r="1"/><circle cx="6" cy="16" r="1"/><path d="M10 8h9M10 12h9M10 16h9"/></svg>
+        More
+      </div>
+    </div>
+  </div>
+  <p class="caption-note"><b>Ledger — at rest.</b> The tansu band rules the page: iron corner
+  brackets, lock plate, two bail handles. Under it the stat folio's four columns, the IN USE rule
+  drawn 55 solid and 6 open, BY CATEGORY bars hatched in stacked hairlines, MONTHLY ACTIVITY as
+  open letterpress blocks with August left dashed, and the cost-per-wear step down from $44.10 to
+  $5.07 under its abacus. Long-press any figure to re-rule its cell and read the derivation.</p>
+</div>
+
+<!-- ========== the abacus moment ========== -->
+<div class="stage">
+  <div class="phone" data-room="atelier">
+    <div class="screen" style="gap:8px">
+      <div>
+        <div style="display:flex;align-items:baseline;justify-content:space-between">
+          <span class="t-display">Ledger</span>
+          <span class="t-mono-s">182 DAYS LOGGED</span>
+        </div>
+        <div class="rule-double" style="margin-top:7px"></div>
+      </div>
+
+      <!-- the tansu, dimmed: the chest whose accounts are being struck -->
+      <div class="art" style="opacity:.5">
+        <svg viewBox="0 0 376 62">
+          <g class="m1" stroke-width="1.2">
+            <path d="M4 4h368v54H4z"/><path d="M130 8v46M134 8v46M242 8v46M246 8v46"/>
+          </g>
+          <g class="m2" stroke-width="1.1">
+            <path d="M8 18h360"/>
+            <circle cx="188" cy="36" r="16"/><circle cx="188" cy="32" r="3"/>
+            <path d="M186 35l-1.4 8h6.8L190 35"/>
+            <path d="M52 39c6 10 36 10 42 0M284 39c6 10 36 10 42 0"/>
+          </g>
+        </svg>
+      </div>
+
+      <div class="plate" style="padding:9px 14px 10px;opacity:.3">
+        <span class="t-label">Cost per wear</span>
+        <div class="rule" style="margin:6px 0 7px"></div>
+        <p class="t-figure" style="font-size:31px">$5.07</p>
+        <p class="t-mono-s" style="margin-top:5px">Cumulative</p>
+      </div>
+    </div>
+
+    <!-- the canonical moment: abacus beads slide, a coin edge is scored -->
+    <div class="moment">
+      <svg viewBox="0 0 240 200" style="width:250px;height:208px;fill:none">
+        <!-- the abacus frame on the tansu's edge -->
+        <g class="m1" stroke-width="1.6">
+          <path d="M20 40h200v92H20z"/>
+          <path d="M20 86h200"/>
+        </g>
+        <!-- the rods -->
+        <g class="m2" stroke-width="1.2" stroke-opacity=".8">
+          <path d="M30 63h180M30 109h180"/>
+        </g>
+        <!-- the beads: the upper rod settled left, the lower mid-slide -->
+        <g class="m2" stroke-width="1.8">
+          <ellipse cx="42" cy="63" rx="7" ry="11"/><ellipse cx="57" cy="63" rx="7" ry="11"/>
+          <ellipse cx="72" cy="63" rx="7" ry="11"/><ellipse cx="87" cy="63" rx="7" ry="11"/>
+          <ellipse cx="186" cy="63" rx="7" ry="11"/><ellipse cx="201" cy="63" rx="7" ry="11"/>
+        </g>
+        <g class="m2" stroke-width="1.8">
+          <ellipse cx="42" cy="109" rx="7" ry="11"/><ellipse cx="57" cy="109" rx="7" ry="11"/>
+          <ellipse cx="72" cy="109" rx="7" ry="11"/>
+          <ellipse cx="120" cy="109" rx="7" ry="11" stroke-dasharray="4 3"/>
+          <ellipse cx="186" cy="109" rx="7" ry="11"/><ellipse cx="201" cy="109" rx="7" ry="11"/>
+        </g>
+        <!-- the travel of the sliding bead, ruled as it goes -->
+        <g class="m2" stroke-width="1" stroke-opacity=".7">
+          <path d="M96 109h16M128 109h50" stroke-dasharray="3 4"/>
+        </g>
+        <!-- the coin, its edge scored with milling -->
+        <g class="m2" stroke-width="1.6">
+          <circle cx="120" cy="164" r="24"/><circle cx="120" cy="164" r="19"/>
+        </g>
+        <g class="m2" stroke-width="1">
+          <path d="M120 140v-5M129 142l1.9-4.6M136 146l3.5-3.5M141 155l4.6-1.9M144 164h5M141 173l4.6 1.9M136 182l3.5 3.5M129 186l1.9 4.6M120 188v5M111 186l-1.9 4.6M104 182l-3.5 3.5M99 173l-4.6 1.9M96 164h-5M99 155l-4.6-1.9M104 146l-3.5-3.5M111 142l-1.9-4.6"/>
+        </g>
+        <text x="120" y="170" text-anchor="middle"
+          style="font:400 15px Georgia,serif;fill:var(--ink)">$5</text>
+      </svg>
+      <p class="caption">Abacus beads slide · a coin edge is scored</p>
+    </div>
+
+    <div class="tabs">
+      <div class="tab"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>Today</div>
+      <div class="tab"><svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17"/><path d="M12 4v17M8.5 11h1M14.5 11h1"/></svg>Closet</div>
+      <div class="tab"><svg viewBox="0 0 24 24"><path d="M11 7a1 1 0 0 1 2 0M12 9v2M12 11 5 17h14z"/></svg>Outfits</div>
+      <div class="tab"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14"/><path d="M4 9h16M8 13h8M8 16h5"/></svg>Feed</div>
+      <div class="tab on"><svg viewBox="0 0 24 24"><circle cx="6" cy="8" r="1"/><circle cx="6" cy="12" r="1"/><circle cx="6" cy="16" r="1"/><path d="M10 8h9M10 12h9M10 16h9"/></svg>More</div>
+    </div>
+  </div>
+  <p class="caption-note"><b>Cost-per-wear milestone — the moment.</b> 700ms: a bead slides its rod
+  as $5.07 crosses a whole dollar, and beside it a coin edge is scored, milling drawn tick by tick.
+  Undo slides the bead back one. Reduce Motion settles both instantly; the native shell adds a
+  single haptic tick at the bead's stop.</p>
+</div>
+
+</div>
+</body>
