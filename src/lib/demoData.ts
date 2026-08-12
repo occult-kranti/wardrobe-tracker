@@ -495,8 +495,15 @@ function buildWearLogs(): WearLog[] {
     const season = SEASON_BY_MONTH[Number(date.slice(5, 7)) - 1];
 
     // Not every day gets catalogued. Real logs have gaps, and a chart without
-    // any looks generated.
-    if (rand('logged', day) > 0.72) continue;
+    // any looks generated. The keep-rate itself breathes with the calendar —
+    // festival autumns and wedding winters log more, the monsoon logs less —
+    // because the "seasonal swing" check anchors to today and slides its
+    // 12-month window daily: with amplitude carried only by garment seasons,
+    // the ratio dipped to 1.43x on some window positions and failed CI at
+    // midnight UTC while passing locally the evening before. Density puts a
+    // floor under the swing on every date the window can land on.
+    const KEEP_BY_MONTH = [0.74, 0.78, 0.72, 0.70, 0.68, 0.64, 0.60, 0.63, 0.70, 0.78, 0.82, 0.80];
+    if (rand('logged', day) > KEEP_BY_MONTH[Number(date.slice(5, 7)) - 1]) continue;
 
     // Roughly two days in five reach for a saved outfit rather than assembling
     // from scratch — but only one that is actually wearable that day.
