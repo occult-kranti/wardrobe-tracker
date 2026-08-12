@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { Tilt } from '../components/Glass';
 import { useWardrobe } from '../context/WardrobeContext';
 import ItemDetail from '../components/ItemDetail';
 import AddItemModal from '../components/AddItemModal';
@@ -85,16 +86,19 @@ function StatusMark({ status }: { status: LaundryStatus }) {
 function GarmentTile({ item, className = '' }: { item: ClothingItem; className?: string }) {
   return (
     <div className={`bg-mat overflow-hidden border border-transparent ${className}`}>
-      {item.imageUrl ? (
-        <img
-          src={item.imageUrl}
-          alt={item.name}
-         
-          className="w-full h-full object-cover"
-        />
-      ) : (
-        <GarmentPlate categoryId={item.category} color={item.color} name={item.name} />
-      )}
+      {/* V2: the tile is OPAQUE, so it is allowed to bend — a gentle lean
+          toward the pointer, the one rotation the glass law permits. */}
+      <Tilt max={3} className="w-full h-full">
+        {item.imageUrl ? (
+          <img
+            src={item.imageUrl}
+            alt={item.name}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <GarmentPlate categoryId={item.category} color={item.color} name={item.name} />
+        )}
+      </Tilt>
     </div>
   );
 }

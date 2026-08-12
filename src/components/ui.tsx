@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ButtonHTMLAttributes, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { IconClose, IconEyelet, IconEyeletFilled } from './icons';
-import { Tilt } from './Glass';
+import { tick, thock } from '../lib/sound';
 
 /**
  * TOILE primitives. Component law: docs/05-brand-identity.md §7.
@@ -45,9 +45,18 @@ export function buttonClass(tone: ButtonTone = 'secondary', compact = false, ext
   return `type-label whitespace-nowrap inline-flex items-center justify-center gap-2 rounded-[2px] transition-[opacity,filter,background-color] duration-150 active:translate-y-px disabled:opacity-40 disabled:pointer-events-none ${base} ${toneClasses[tone]} ${extra}`;
 }
 
-export function Button({ tone = 'secondary', compact, icon, children, className = '', ...rest }: ButtonProps) {
+export function Button({ tone = 'secondary', compact, icon, children, className = '', onPointerDown, ...rest }: ButtonProps) {
   return (
-    <button className={buttonClass(tone, compact, className)} {...rest}>
+    <button
+      className={buttonClass(tone, compact, className)}
+      // V2: controls carry mass, and mass makes a sound. The tick fires on
+      // press, not click, so the ear and the finger agree on the moment.
+      onPointerDown={e => {
+        tick();
+        onPointerDown?.(e);
+      }}
+      {...rest}
+    >
       {icon}
       {children}
     </button>
@@ -269,15 +278,15 @@ export function Card({
   className?: string;
   padded?: boolean;
 }) {
-  // V2: every plate is glass; the Tilt at max 0 drives the SHEEN only —
-  // glass doesn't bend (transforming a backdrop-filter re-samples its
-  // backdrop every frame). Rotation is reserved for opaque tiles.
+  // V2: every plate is glass and carries its sheen natively — the light is
+  // positioned by ONE delegated document listener (initGlassLight), so the
+  // card needs no wrapper and no listener of its own. Glass doesn't bend
+  // (transforming a backdrop-filter re-samples its backdrop every frame);
+  // rotation is reserved for opaque tiles.
   return (
-    <Tilt max={0}>
-      <div className={`bg-surface plate rounded-[2px] ${padded ? 'p-5' : ''} ${className}`}>
-        {children}
-      </div>
-    </Tilt>
+    <div className={`bg-surface plate rounded-[2px] ${padded ? 'p-5' : ''} ${className}`}>
+      {children}
+    </div>
   );
 }
 
@@ -396,6 +405,8 @@ export function Modal({
     document.addEventListener('keydown', onKey);
     const { overflow } = document.body.style;
     document.body.style.overflow = 'hidden';
+    // The sheet lands with a low thock — E3 glass has weight.
+    thock();
     return () => {
       document.removeEventListener('keydown', onKey);
       document.body.style.overflow = overflow;

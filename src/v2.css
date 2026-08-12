@@ -47,12 +47,19 @@
   }
 }
 
-/* Tilt wrapper: driven by --tilt-x/--tilt-y springs; carries the sheen. */
+/* Tilt wrapper: driven by --tilt-x/--tilt-y springs. Opaque tiles only —
+   glass doesn't bend. */
 .v2 .v2-tilt {
   transform: rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
   transform-style: preserve-3d;
   will-change: transform;
 }
+
+/* The specular sheen lives on the glass itself now — every plate carries the
+   light natively, positioned by ONE delegated document listener (initGlassLight)
+   instead of a listener per card. Light moves across glass; nothing bends. */
+.v2 .plate::after,
+.v2 .plate-ink::after,
 .v2 .v2-tilt::after {
   content: '';
   position: absolute;
@@ -66,6 +73,63 @@
     color-mix(in srgb, var(--color-chalk) calc(var(--sheen-strength) * 100%), transparent),
     transparent 62%
   );
+}
+
+/* ---- The elevation ladder (Vitrine E0–E3) ----
+   E0 is the page itself: no glass, the deep ground. E1 is every resting plate
+   (the defaults above). E2 floats: sheets, panes, sticky chrome. E3 is the
+   modal: the strongest blur, the most present surface. Alpha RISES with
+   elevation — the higher the glass, the more it must hold its own light. */
+.v2 .pane {
+  background: color-mix(in srgb, var(--color-surface) 78%, transparent);
+  -webkit-backdrop-filter: blur(18px) saturate(1.15);
+  backdrop-filter: blur(18px) saturate(1.15);
+}
+.v2 [role='dialog'] {
+  background: color-mix(in srgb, var(--color-surface) 84%, transparent);
+  -webkit-backdrop-filter: blur(24px) saturate(1.2);
+  backdrop-filter: blur(24px) saturate(1.2);
+}
+/* The world behind a modal recedes into the blur. */
+.v2 div:has(> [role='dialog']) {
+  -webkit-backdrop-filter: blur(5px);
+  backdrop-filter: blur(5px);
+}
+
+/* ---- Route transitions: the page arrives like a plate set on the table. */
+@keyframes v2-route {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.v2 .v2-route {
+  animation: v2-route 300ms cubic-bezier(0.22, 1.2, 0.36, 1) both;
+}
+
+/* ---- Parallax at the wall: the artwork drifts a breath against the pointer.
+   The wrapper is a fixed full-viewport box, so the transform re-roots its
+   fixed children to the same geometry — position holds, only the drift moves. */
+.v2 .v2-drift {
+  transform: translate(var(--drift-x, 0px), var(--drift-y, 0px));
+  will-change: transform;
+}
+
+/* ---- The capability gate: data-glass="off" collapses the material to the
+   solid house (weak devices, Save-Data, or a failed frame probe). */
+[data-glass='off'] .plate,
+[data-glass='off'] .plate-ink,
+[data-glass='off'] .pane,
+[data-glass='off'] [role='dialog'] {
+  background: var(--color-surface);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+[data-glass='off'] .plate::after,
+[data-glass='off'] .plate-ink::after,
+[data-glass='off'] .v2-tilt::after {
+  content: none;
+}
+[data-glass='off'] .v2-drift {
+  transform: none;
 }
 
 /* Buttons carry mass: the press compresses and the spring returns it.
@@ -114,9 +178,13 @@
 /* One law above all of it. */
 @media (prefers-reduced-motion: reduce) {
   .v2 .v2-tilt { transform: none !important; }
-  .v2 .v2-tilt::after { opacity: 0 !important; }
+  .v2 .v2-tilt::after,
+  .v2 .plate::after,
+  .v2 .plate-ink::after { opacity: 0 !important; }
   .v2 button, .v2 a { transition: none; }
   .v2 button:active, .v2 a:active { transform: none; }
   .v2 [role='dialog'] { animation: fade-in 0.01ms both; }
   .v2 .v2-rise > * { animation: fade-in 0.01ms both; }
+  .v2 .v2-route { animation: fade-in 0.01ms both; }
+  .v2 .v2-drift { transform: none !important; }
 }

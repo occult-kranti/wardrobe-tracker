@@ -1,4 +1,5 @@
 import { useRef, useState, type ButtonHTMLAttributes, type ReactNode } from 'react';
+import { soundOn, setSound, chime } from '../lib/sound';
 import { useWardrobe } from '../context/WardrobeContext';
 import { useSession } from '../context/SessionContext';
 import { SCHEMA_VERSION, displayTag, initialState, type AppState, type Theme } from '../types';
@@ -158,6 +159,7 @@ export default function Settings() {
 
   const [pending, setPending] = useState<{ state: AppState; fileName: string } | null>(null);
   const [showReset, setShowReset] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(soundOn());
   const [showDemo, setShowDemo] = useState(false);
   const [reminderOff, setReminderOff] = useState(false);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
@@ -460,6 +462,27 @@ export default function Settings() {
                   onClick={() => setTheme(opt.value)}
                 >
                   {opt.label}
+                </Toggle>
+              ))}
+            </div>
+          }
+        />
+        <Row
+          title="Sound"
+          body="A felt tick when a control is pressed, a small windchime when the record confirms. Synthesized on this device as it plays; nothing is downloaded and nothing listens."
+          control={
+            <div className="flex flex-wrap gap-2">
+              {[true, false].map(on => (
+                <Toggle
+                  key={String(on)}
+                  active={soundEnabled === on}
+                  onClick={() => {
+                    setSoundEnabled(on);
+                    setSound(on);
+                    if (on) chime();
+                  }}
+                >
+                  {on ? 'On' : 'Off'}
                 </Toggle>
               ))}
             </div>

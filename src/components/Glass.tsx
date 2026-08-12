@@ -77,3 +77,92 @@ export function Tilt({
 export function Rise({ children, className = '' }: { children: ReactNode; className?: string }) {
   return <div className={`v2-rise ${className}`}>{children}</div>;
 }
+
+/**
+ * Delegated specular lighting — the consultant's spec: ONE document listener
+ * moves the light across every plate, instead of a listener per card. Plate
+ * rects are cached and rebuilt when the page settles after scroll, resize,
+ * route change, or DOM mutation; between rebuilds the sheen is positioned
+ * from the cached box. Fine pointers only; reduced motion leaves the glass
+ * unlit. Also drives the wall parallax: --drift-x/y on the root, consumed by
+ * .v2-drift around the artwork.
+ */
+export function initGlassLight() {
+  if (!window.matchMedia('(pointer: fine)').matches) return;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  let plates: Array<{ el: HTMLElement; r: DOMRect }> = [];
+  let lit = new Set<HTMLElement>();
+  let rebuildTimer = 0;
+
+  const rebuild = () => {
+    plates = [...document.querySelectorAll<HTMLElement>('.plate, .plate-ink')].map(el => ({
+      el,
+      r: el.getBoundingClientRect(),
+    }));
+  };
+  const queueRebuild = () => {
+    window.clearTimeout(rebuildTimer);
+    rebuildTimer = window.setTimeout(rebuild, 160);
+  };
+
+  let raf = 0;
+  const onMove = (e: PointerEvent) => {
+    if (raf) return;
+    raf = requestAnimationFrame(() => {
+      raf = 0;
+      const next = new Set<HTMLElement>();
+      for (const { el, r } of plates) {
+        if (
+          e.clientX >= r.left - 40 &&
+          e.clientX <= r.right + 40 &&
+          e.clientY >= r.top - 40 &&
+          e.clientY <= r.bottom + 40
+        ) {
+          el.style.setProperty('--sheen-x', `${(((e.clientX - r.left) / r.width) * 100).toFixed(1)}%`);
+          el.style.setProperty('--sheen-y', `${(((e.clientY - r.top) / r.height) * 100).toFixed(1)}%`);
+          el.style.setProperty('--sheen-o', '1');
+          next.add(el);
+        }
+      }
+      for (const el of lit) if (!next.has(el)) el.style.setProperty('--sheen-o', '0');
+      lit = next;
+      // The wall breathes against the pointer — a few pixels, opposite hand.
+      const root = document.documentElement.style;
+      root.setProperty('--drift-x', `${((e.clientX / window.innerWidth - 0.5) * -10).toFixed(2)}px`);
+      root.setProperty('--drift-y', `${((e.clientY / window.innerHeight - 0.5) * -6).toFixed(2)}px`);
+    });
+  };
+
+  document.addEventListener('pointermove', onMove, { passive: true });
+  window.addEventListener('scroll', queueRebuild, { passive: true, capture: true });
+  window.addEventListener('resize', queueRebuild);
+  window.addEventListener('hashchange', queueRebuild);
+  new MutationObserver(queueRebuild).observe(document.body, { childList: true, subtree: true });
+  rebuild();
+}
+
+/**
+ * The capability gate: weak or data-saving devices get the solid house, not a
+ * degraded glass one. deviceMemory and Save-Data decide immediately; otherwise
+ * a twenty-frame probe measures whether this device can afford backdrop blur,
+ * and data-glass="off" collapses the material in CSS if it cannot.
+ */
+export function gateGlass() {
+  type NetNav = Navigator & { deviceMemory?: number; connection?: { saveData?: boolean } };
+  const nav = navigator as NetNav;
+  if ((nav.deviceMemory !== undefined && nav.deviceMemory <= 2) || nav.connection?.saveData) {
+    document.documentElement.dataset.glass = 'off';
+    return;
+  }
+  let last = performance.now();
+  let frames = 0;
+  let total = 0;
+  const probe = (t: number) => {
+    total += t - last;
+    last = t;
+    if (++frames < 20) requestAnimationFrame(probe);
+    else if (total / frames > 26) document.documentElement.dataset.glass = 'off';
+  };
+  requestAnimationFrame(probe);
+}

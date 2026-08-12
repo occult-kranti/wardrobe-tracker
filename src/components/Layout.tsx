@@ -73,10 +73,15 @@ export default function Layout() {
           owner's name over the larger pieces in that culture's language, and
           the rail with its hangers at the top edge. z-0 behind the content
           column, which sits at z-10 and scrolls past. */}
-      <GroundFrieze name={active?.name} page={location.pathname} />
-      <HangingRail page={location.pathname} />
-      <GutterFigure page={location.pathname} />
-      <ScatterField page={location.pathname} />
+      {/* V2: the wall gets parallax. The wrapper is a fixed full-viewport box,
+          so its transform re-roots the fixed art to identical geometry and the
+          whole hang drifts a breath against the pointer (initGlassLight). */}
+      <div aria-hidden="true" className="fixed inset-0 z-0 pointer-events-none v2-drift">
+        <GroundFrieze name={active?.name} page={location.pathname} />
+        <HangingRail page={location.pathname} />
+        <GutterFigure page={location.pathname} />
+        <ScatterField page={location.pathname} />
+      </div>
       {/* Mobile masthead */}
       <header className="lg:hidden fixed top-0 inset-x-0 z-50 bg-bg/95 backdrop-blur-sm border-b border-border">
         <div className="flex items-center justify-between h-14 px-4">
@@ -157,7 +162,8 @@ export default function Layout() {
 
       {/* Main */}
       <main className="relative z-10 flex-1 min-w-0 pt-14 lg:pt-0 pb-20 lg:pb-0">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-10 py-6 lg:py-10">
+        {/* Keyed by path: each page arrives like a plate set on the table. */}
+        <div key={location.pathname} className="v2-route max-w-5xl mx-auto px-4 sm:px-6 lg:px-10 py-6 lg:py-10">
           <Outlet />
         </div>
       </main>

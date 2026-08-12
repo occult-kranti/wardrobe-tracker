@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { chime } from '../lib/sound';
 import { IconCheck, IconEyeletFilled } from './icons';
 
 export type ToastType = 'success' | 'error' | 'info' | 'seal';
@@ -21,6 +22,9 @@ function notify() {
  * The 'seal' type is reserved for wear logging — it presses like a wax seal.
  */
 export function showToast(message: string, type: ToastType = 'info') {
+  // The house confirms in a windchime; errors stay silent — bad news does
+  // not get music.
+  if (type !== 'error') chime();
   const id = Math.random().toString(36).slice(2);
   toasts = [...toasts, { id, message, type }];
   notify();
