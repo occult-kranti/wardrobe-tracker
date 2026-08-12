@@ -68,7 +68,7 @@ export default function Layout() {
   const secondaryNav = navItems.filter(n => !mobilePrimary.includes(n.path));
 
   return (
-    <div className="flex min-h-screen bg-bg pattern-paper">
+    <div className="flex min-h-dvh bg-bg pattern-paper">
       {/* Each page hangs its own arrangement of the house's closets, with the
           owner's name over the larger pieces in that culture's language, and
           the rail with its hangers at the top edge. z-0 behind the content
@@ -83,7 +83,7 @@ export default function Layout() {
         <ScatterField page={location.pathname} />
       </div>
       {/* Mobile masthead */}
-      <header className="lg:hidden fixed top-0 inset-x-0 z-50 bg-bg/95 backdrop-blur-sm border-b border-border">
+      <header className="lg:hidden fixed top-0 inset-x-0 z-50 bg-bg/95 backdrop-blur-sm border-b border-border safe-t">
         <div className="flex items-center justify-between h-14 px-4">
           <Link to="/" className="flex items-center gap-2 text-text min-h-11 py-1" aria-label="Toile — home">
             <TagMark size={22} />
@@ -161,7 +161,7 @@ export default function Layout() {
       </aside>
 
       {/* Main */}
-      <main className="relative z-10 flex-1 min-w-0 pt-14 lg:pt-0 pb-20 lg:pb-0">
+      <main className="relative z-10 flex-1 min-w-0 pt-14 lg:pt-0 pad-rail lg:pb-0">
         {/* Keyed by path: each page arrives like a plate set on the table. */}
         <div key={location.pathname} className="v2-route max-w-5xl mx-auto px-4 sm:px-6 lg:px-10 py-6 lg:py-10">
           <Outlet />
@@ -170,7 +170,7 @@ export default function Layout() {
 
       {/* Mobile bottom rail — thumb zone */}
       <nav
-        className="lg:hidden fixed bottom-0 inset-x-0 z-50 h-14 bg-bg border-t border-border flex"
+        className="lg:hidden fixed bottom-0 inset-x-0 z-50 h-14 bg-bg border-t border-border flex safe-b box-content"
         aria-label="Main"
       >
         {primaryNav.map(item => {
@@ -209,7 +209,7 @@ export default function Layout() {
       </nav>
 
       {moreOpen && (
-        <div className="lg:hidden fixed bottom-14 inset-x-0 z-50 bg-surface border-t border-border animate-slip max-h-[60vh] pane">
+        <div className="lg:hidden fixed above-rail inset-x-0 z-50 bg-surface border-t border-border animate-slip max-h-[60vh] pane">
           {secondaryNav.map(item => {
             const Icon = item.icon;
             const active = location.pathname === item.path;

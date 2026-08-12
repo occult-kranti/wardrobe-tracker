@@ -399,6 +399,15 @@ export const IconExport = (p: IconProps) => (
   </Icon>
 );
 
+/** Copy: two leaves of paper, the top one lifted clear of the lower. */
+export const IconCopy = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M8.5 3.5h8l3 3v11h-11z" />
+    <path d="M15.5 20.5h-11v-13" />
+    <Notch x={19} y={6} />
+  </Icon>
+);
+
 export const IconImport = (p: IconProps) => (
   <Icon {...p}>
     <path d="M12 3.5v12M7.5 11l4.5 4.5L16.5 11" />

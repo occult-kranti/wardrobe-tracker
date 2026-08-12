@@ -4,12 +4,14 @@ import { useWardrobe } from '../context/WardrobeContext';
 import { showToast } from '../components/Toast';
 import { Button, Chip, Masthead, EmptyState } from '../components/ui';
 import { Basting, GarmentPlate, PlateEmptyCloset } from '../components/art';
-import { IconCheck, IconClose, IconImport } from '../components/icons';
+import { IconCheck, IconClose, IconImport, IconCopy } from '../components/icons';
 import { categoryLabel, SEASON_LABELS, type CategoryId } from '../types';
 import {
   readIntake, draftToItem, findDuplicates,
   type IntakeDraft, type IntakeRead,
 } from '../lib/intake';
+import { INTAKE_PROMPT } from '../lib/intakePrompt';
+import { INTAKE_SAMPLES, type IntakeSample } from '../lib/intakeSamples';
 
 /**
  * CATALOGUE FROM PHOTOS — the review bench.
@@ -41,6 +43,8 @@ export default function Intake() {
   const [result, setResult] = useState<IntakeRead | null>(null);
   const [ticked, setTicked] = useState<Set<string>>(new Set());
   const [edited, setEdited] = useState<Record<string, Partial<IntakeDraft>>>({});
+  const [copied, setCopied] = useState(false);
+  const [tried, setTried] = useState<IntakeSample | null>(null);
 
   const duplicates = useMemo(
     () => (result ? findDuplicates(result.drafts, activeItems) : new Set<string>()),
@@ -75,6 +79,27 @@ export default function Intake() {
       else next.add(ref);
       return next;
     });
+
+  const copyPrompt = async () => {
+    try {
+      await navigator.clipboard.writeText(INTAKE_PROMPT);
+    } catch {
+      // Clipboard permission can be refused; the prompt is still readable in
+      // docs/23, so say what happened rather than pretending it worked.
+      showToast('Could not reach the clipboard — the prompt is in docs/23.', 'error');
+      return;
+    }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2400);
+  };
+
+  const trySample = async (s: IntakeSample) => {
+    const res = await fetch(s.file);
+    const raw = await res.text();
+    setText(raw);
+    setTried(s);
+    readFile(raw);
+  };
 
   const view = (d: IntakeDraft): IntakeDraft => ({ ...d, ...edited[d.ref] });
 
@@ -120,6 +145,9 @@ export default function Intake() {
                 className="sr-only"
                 onChange={e => onFile(e.target.files?.[0])}
               />
+              <Button icon={<IconCopy size={16} />} onClick={copyPrompt}>
+                {copied ? 'Prompt copied' : 'Copy the prompt'}
+              </Button>
               <Button tone="primary" icon={<IconImport size={16} />} onClick={() => fileRef.current?.click()}>
                 Choose the file
               </Button>
@@ -149,20 +177,102 @@ export default function Intake() {
               </Button>
             </div>
           </div>
+
+          {/* ---- the sample bench ----
+               Six photographs and the file the prompt actually returned for
+               each. Two hold no clothes at all: the point of showing them is
+               that the answer "nothing here" is a real answer, and you can
+               watch this prompt give it. */}
+          <div className="bg-surface plate p-5 rounded-[2px]">
+            <p className="type-ledger text-[11px] text-text-2">Try it on a photograph</p>
+            <p className="text-[14px] text-text-2 mt-2 leading-relaxed">
+              Six real photographs, and the honest file each one produced. Open
+              any of them to see what the model found — and what it refused to
+              name.
+            </p>
+            <Basting className="my-4" />
+            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {INTAKE_SAMPLES.map(s => (
+                <li key={s.slug}>
+                  <button
+                    type="button"
+                    onClick={() => trySample(s)}
+                    className="block w-full text-left group"
+                  >
+                    <span className="block bg-mat overflow-hidden rounded-[2px] border border-border group-hover:border-text transition-colors duration-150 relative" style={{ aspectRatio: '4 / 3' }}>
+                      {s.photo ? (
+                        <img src={s.photo} alt={s.caption} loading="lazy" className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="absolute inset-0 flex flex-col items-center justify-center text-center px-4 text-text-2">
+                          <PlateEmptyCloset />
+                          <span className="type-ledger text-[10px] mt-1 leading-relaxed">{s.photoNote}</span>
+                        </span>
+                      )}
+                    </span>
+                    <span className="block text-[15px] text-text mt-2 group-hover:underline underline-offset-[3px]">
+                      {s.title}
+                    </span>
+                    <span className="block text-[13px] text-text-2 mt-1 leading-snug">{s.caption}</span>
+                    <span className="type-ledger text-[10px] text-text-2 block mt-1.5 tabular">
+                      {s.outcome}
+                      {s.credit ? ` · ${s.credit}` : ''}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       ) : drafts.length === 0 ? (
-        <EmptyState
-          plate={<PlateEmptyCloset />}
-          title="No wearable pieces in those photographs."
-          body={
-            result.skipped.length
-              ? 'The model said why below. Photograph the pieces laid out, in daylight, without stacking them.'
-              : 'Photograph the pieces laid out, in daylight, without stacking them.'
-          }
-          action={<Button onClick={() => { setResult(null); setText(''); }}>Try another file</Button>}
-        />
+        <div className="space-y-5">
+          {tried ? (
+            <div className="bg-surface plate p-4 rounded-[2px] flex items-center gap-4">
+              {tried.photo ? (
+                <span className="w-28 shrink-0 bg-mat overflow-hidden rounded-[2px] border border-border" style={{ aspectRatio: '4 / 3' }}>
+                  <img src={tried.photo} alt={tried.caption} className="w-full h-full object-cover" />
+                </span>
+              ) : null}
+              <span className="min-w-0">
+                <span className="block text-[15px] text-text">{tried.title}</span>
+                <span className="block text-[13px] text-text-2 mt-0.5 leading-snug">{tried.caption}</span>
+              </span>
+            </div>
+          ) : null}
+          <EmptyState
+            plate={<PlateEmptyCloset />}
+            title="Nothing wearable in that photograph."
+            body="The model was asked to say so rather than guess. What it looked at, and why it left each thing alone, is below."
+            action={<Button onClick={() => { setResult(null); setText(''); setTried(null); }}>Try another</Button>}
+          />
+          {result.skipped.length ? (
+            <div className="bg-surface plate p-4 rounded-[2px]">
+              <p className="type-ledger text-[11px] text-text-2">What it left alone</p>
+              <Basting className="my-3" />
+              <ul className="space-y-1.5">
+                {result.skipped.map((s, i) => (
+                  <li key={i} className="text-[13px] text-text-2 leading-snug">
+                    {s.reason}{s.note ? <span> — {s.note}</span> : null}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+        </div>
       ) : (
         <div className="space-y-5">
+          {tried ? (
+            <div className="bg-surface plate p-4 rounded-[2px] flex items-center gap-4">
+              {tried.photo ? (
+                <span className="w-24 shrink-0 bg-mat overflow-hidden rounded-[2px] border border-border" style={{ aspectRatio: '4 / 3' }}>
+                  <img src={tried.photo} alt={tried.caption} className="w-full h-full object-cover" />
+                </span>
+              ) : null}
+              <span className="min-w-0">
+                <span className="block text-[15px] text-text">{tried.title}</span>
+                <span className="block text-[13px] text-text-2 mt-0.5 leading-snug">{tried.caption}</span>
+              </span>
+            </div>
+          ) : null}
           <div className="bg-surface plate p-4 rounded-[2px] flex flex-wrap items-center gap-3">
             <p className="text-[14px] text-text-2 flex-1 min-w-[200px]">
               Every piece below is a draft. Untick anything the model got wrong —
@@ -283,7 +393,7 @@ export default function Intake() {
             <Button tone="hero" disabled={chosenCount === 0} onClick={commit}>
               {chosenCount === 1 ? 'Add 1 piece to the closet' : `Add ${chosenCount} pieces to the closet`}
             </Button>
-            <Button onClick={() => { setResult(null); setText(''); }}>Start over</Button>
+            <Button onClick={() => { setResult(null); setText(''); setTried(null); }}>Start over</Button>
           </div>
         </div>
       )}

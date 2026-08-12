@@ -36,6 +36,12 @@ const COLOR_ALLOWED = new Set([
   'src/lib/similarity.ts',
   'src/lib/garmentArt.ts', // generated garment plates; artwork, like art.tsx
   'src/lib/personaData.ts', // generated closets; the hexes are garment colours
+  // The intake prompt is instructions addressed to a vision model, not
+  // interface copy. It has to show an example hex in the JSON shape it asks
+  // for, and it has to NAME the gendered wording it forbids — a rule that
+  // cannot say the words it bans cannot be followed. Its output is checked
+  // instead, by scripts/test-intake.mjs, which is where it matters.
+  'src/lib/intakePrompt.ts',
 ]);
 
 const EMOJI = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}]/u;
@@ -117,7 +123,8 @@ for (const file of files) {
     // that enforces it is the one place those words must appear, and hiding
     // them from this check by encoding the letters would make the filter
     // unreadable to the next person who has to widen it.
-    if (BANNED_ADDRESS.test(line) && /['"`>]/.test(line) && !/scrubs-gendered/.test(line)) {
+    if (BANNED_ADDRESS.test(line) && /['"`>]/.test(line) && !/scrubs-gendered/.test(line)
+        && rel !== 'src/lib/intakePrompt.ts') {
       add(file, n, 'banned-address', line.trim().slice(0, 80));
     }
   });

@@ -52,7 +52,7 @@ export default function SignIn() {
   };
 
   return (
-    <div className="min-h-screen bg-bg pattern-paper flex items-start sm:items-center justify-center px-4 py-10">
+    <div className="min-h-dvh bg-bg pattern-paper flex items-start sm:items-center justify-center px-4 py-10">
       <div className="w-full max-w-[560px]">
         <header className="flex items-center gap-3 mb-8">
           <TagMark size={40} />

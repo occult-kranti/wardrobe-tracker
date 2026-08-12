@@ -25,7 +25,9 @@ await build({
 });
 const { readIntake, draftToItem, findDuplicates } = await import(out);
 
-const FIXTURES = new URL('./intake-fixtures/', import.meta.url).pathname;
+// The fixtures ARE the files the app ships and loads, so the suite tests
+// exactly what a user can open in the sample bench.
+const FIXTURES = new URL('../public/intake-samples/', import.meta.url).pathname;
 const read = name => readIntake(readFileSync(join(FIXTURES, name), 'utf8'));
 
 let failed = 0;
@@ -148,6 +150,41 @@ check('messy file: short hex expands', messy.drafts[1].color === '#AABBCC', mess
 check('messy file: "handbag" maps to accessories', messy.drafts[1].category === 'accessories');
 check('messy file: repairs are recorded, not hidden', messy.drafts.every(d => d.repairs.length > 0));
 check('messy file: the blank name is dropped with a reason', messy.dropped.some(d => /no name/.test(d.reason)));
+
+/* ---------- the prompt the app copies is the prompt the doc prints ---------- */
+
+{
+  const promptTs = readFileSync(new URL('../src/lib/intakePrompt.ts', import.meta.url).pathname, 'utf8');
+  const inCode = promptTs.slice(promptTs.indexOf('`') + 1, promptTs.lastIndexOf('`'))
+    .replace(/\\`/g, '`').replace(/\\\$\{/g, '${').replace(/\\\\/g, '\\');
+  const doc = readFileSync(new URL('../docs/23-photo-intake.md', import.meta.url).pathname, 'utf8');
+  const fenced = doc.match(/> ```\n([\s\S]*?)\n> ```/);
+  const inDoc = fenced
+    ? fenced[1].split('\n').map(l => (l.startsWith('> ') ? l.slice(2) : l.replace(/^>/, ''))).join('\n').trim()
+    : '';
+  check('the prompt in the app matches the prompt in docs/23', inCode.trim() === inDoc, `${inCode.trim().length} vs ${inDoc.length} chars`);
+  check('the prompt still forbids gendered wording', /never "wom/i.test(inCode));
+  check('the prompt still forbids markdown fences', /no markdown\s*\n?\s*fences/i.test(inCode));
+  check('the prompt still names all eight categories',
+    ['tops','bottoms','dresses','layers','outerwear','shoes','jewellery','accessories'].every(c => inCode.includes(c)));
+}
+
+/* ---------- every sample the bench offers has a file behind it ---------- */
+
+{
+  const samples = readFileSync(new URL('../src/lib/intakeSamples.ts', import.meta.url).pathname, 'utf8');
+  // A sample may decline to bundle its photograph (the owner's own); what it
+  // may not do is name one that isn't there.
+  const photos = [...samples.matchAll(/^\s*photo: '([^']+)'/gm)].map(m => m[1]);
+  const filesRef = [...samples.matchAll(/file: '([^']+)'/g)].map(m => m[1]);
+  const pub = new URL('../public/', import.meta.url).pathname;
+  const { existsSync } = await import('node:fs');
+  check('every sample names a file that exists', filesRef.every(f => existsSync(join(pub, f))), filesRef.filter(f => !existsSync(join(pub, f))).join(','));
+  const missingPhotos = photos.filter(f => !existsSync(join(pub, f)));
+  check('every photograph a sample names is bundled', missingPhotos.length === 0, missingPhotos.join(','));
+  check('a sample without a photograph explains itself',
+    !/photoNote/.test(samples) || /photoNote: '[^']+'/.test(samples));
+}
 
 /* ---------- every fixture parses ---------- */
 
