@@ -37,18 +37,23 @@ export function Wordmark({ className = '' }: { className?: string }) {
 
 /**
  * The identity mark: the tag that IS a wardrobe (hanger cut, judge pass
- * 2026-08-12). The gold tying thread runs through the grommet and is knotted
- * taut to both shoulders — the thread is the rail — and the flat hanger hangs
- * from the grommet, which doubles as the eye of its hook. The monogram sits in
- * a bottom panel like a label on a shop hanger. Deliberate degradation: below
- * 40px the thread has no pixels to live in, so the knot steps off and the rig
- * thickens; at favicon size (public/icon.svg) the letter steps off too.
+ * 2026-08-12). The flat hanger hangs from the grommet, which doubles as the
+ * eye of its hook, and the monogram sits in a bottom panel like a label on a
+ * shop hanger.
+ *
+ * The STRING is back (owner's call, 2026-08-12): the first mark's little
+ * curving thread read better than the taut shoulder rail that replaced it, so
+ * the thread leaves the grommet and loops above the tag the way a real swing
+ * tag hangs. The viewBox carries headroom for it — a string drawn inside the
+ * tag's own shoulders had no room to be seen. Deliberate degradation: below
+ * 40px the string has no pixels to live in, it steps off and the rig thickens;
+ * at favicon size (public/icon.svg) the letter steps off too.
  */
 export function TagMark({ size = 28 }: { size?: number }) {
   const full = size >= 40;
   const sw = full ? 2 : 2.5;
   return (
-    <svg width={size * 0.75} height={size} viewBox="0 0 48 64" fill="none" aria-hidden="true">
+    <svg width={size * 0.7} height={size} viewBox="0 -8 48 72" fill="none" aria-hidden="true">
       <path
         d="M10 12 20 2h8l10 10v46a2 2 0 0 1-2 2H12a2 2 0 0 1-2-2Z"
         stroke="currentColor"
@@ -57,9 +62,10 @@ export function TagMark({ size = 28 }: { size?: number }) {
       />
       {full && (
         <path
-          d="M10.5 15.5C15 13.8 19 12.3 21.6 10.6M37.5 15.5C33 13.8 29 12.3 26.4 10.6"
+          d="M24 4.4C24 -2 20 -5.6 14.6 -6.2"
           stroke="var(--color-gold)"
           strokeWidth="1.5"
+          strokeLinecap="butt"
         />
       )}
       <path d="M24 27V12.4" stroke="currentColor" strokeWidth={sw} />
@@ -83,8 +89,13 @@ export function TagMark({ size = 28 }: { size?: number }) {
 
 /**
  * The mark worn as a portrait, 4:5 to match photo portraits (size × 1.25).
- * Full hanger cut; the tying thread is dyed the wardrobe's own colour, so
- * identity lives in the rig itself rather than an orphan ring. Never a face.
+ * Full hanger cut with the same hanging string as the nav mark, dyed the
+ * wardrobe's own colour — identity lives in the rig itself rather than an
+ * orphan ring. Never a face.
+ *
+ * The monogram is set small on purpose: two initials at the old 10.5 crowded
+ * the panel wall to wall on the Profile header, where the mark renders at 72.
+ * The panel is a label, and a label leaves margins.
  */
 export function TagPortrait({
   monogram,
@@ -99,7 +110,7 @@ export function TagPortrait({
     <svg
       width={size}
       height={size * 1.25}
-      viewBox="0 0 40 50"
+      viewBox="0 -6 40 56"
       fill="none"
       aria-hidden="true"
       className="shrink-0 text-text"
@@ -112,9 +123,10 @@ export function TagPortrait({
         strokeLinejoin="miter"
       />
       <path
-        d="M5.5 13.5C9.2 12 12.6 10.8 16.5 9M34.5 13.5C30.8 12 27.4 10.8 23.5 9"
+        d="M20 3.3C20 -1.6 16.6 -4.4 12.2 -4.9"
         stroke={color ?? 'var(--color-gold)'}
-        strokeWidth="1.5"
+        strokeWidth="1.4"
+        strokeLinecap="butt"
       />
       <path d="M20 22.5V10.5" stroke="currentColor" strokeWidth="1.75" />
       <path d="M20 22.5 10.5 31.5h19Z" stroke="currentColor" strokeWidth="1.75" strokeLinejoin="miter" />
@@ -124,10 +136,10 @@ export function TagPortrait({
       <path d="M9.5 36.5h21" stroke="currentColor" strokeWidth="0.75" opacity="0.45" />
       <text
         x="20"
-        y="44.5"
+        y="43.6"
         textAnchor="middle"
         fill="currentColor"
-        style={{ font: '700 10.5px var(--font-display)' }}
+        style={{ font: '700 8.5px var(--font-display)', letterSpacing: '0.02em' }}
       >
         {monogram}
       </text>
