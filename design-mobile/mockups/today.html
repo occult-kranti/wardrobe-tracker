@@ -9,8 +9,9 @@
 <div class="stage">
   <div class="phone" data-room="atelier">
 
-    <!-- the frieze: a rail of hangers, the armoire, a potted plant.
-         Ground art, top band only — it never enters the plates below. -->
+    <!-- the frieze: one rail of hangers, evenly hung. The armoire and the
+         potted plant that stood here belong to the closet's room, not this
+         one — the page is named once, at the top, and then left alone. -->
     <div class="art" style="padding:12px 14px 0">
       <svg viewBox="0 0 380 62" class="art">
         <g class="m1" stroke-width="1.1" stroke-opacity=".85">
@@ -18,26 +19,13 @@
           <path d="M8 20v12M372 20v12"/>
           <circle cx="8" cy="26" r="2.4"/><circle cx="372" cy="26" r="2.4"/>
         </g>
-        <!-- hangers -->
+        <!-- five hangers, spaced across the rail -->
         <g class="m2" stroke-width="1" stroke-opacity=".8">
-          <path d="M40 26.5a3 3 0 0 1 6 0M43 30v3M43 33l-14 12h28zM76 26.5a3 3 0 0 1 6 0M79 30v3M79 33l-14 12h28zM112 26.5a3 3 0 0 1 6 0M115 30v3M115 33l-14 12h28z"/>
-          <path d="M256 26.5a3 3 0 0 1 6 0M259 30v3M259 33l-14 12h28zM292 26.5a3 3 0 0 1 6 0M295 30v3M295 33l-14 12h28z"/>
-        </g>
-        <!-- the armoire, centred: cornice, panelled doors, drawer -->
-        <g class="m1" stroke-width="1.1" stroke-opacity=".9">
-          <path d="M168 12h44l-3 5h-38z"/>
-          <path d="M170 17h40v34h-40z"/>
-          <path d="M190 17v34"/>
-          <path d="M174 21h12v26h-12zM194 21h12v26h-12z"/>
-          <circle cx="188" cy="34" r="1"/><circle cx="192" cy="34" r="1"/>
-          <path d="M170 51h40v7h-40z"/><path d="M186 54.5h8"/>
-          <path d="M173 58v3M207 58v3"/>
-        </g>
-        <!-- the potted plant -->
-        <g class="m2" stroke-width="1" stroke-opacity=".75">
-          <path d="M330 44c-9 0-13-8-11-14 6 1 10 6 11 14zM332 44c9-1 13-9 10-15-6 2-9 7-10 15z"/>
-          <path d="M331 44V27"/><path d="M331 31c-5-5-4-11-1-14 3 3 4 9 1 14z"/>
-          <path d="M322 45h18l-2.5 12h-13z"/>
+          <path d="M43 26.5a3 3 0 0 1 6 0M46 30v3M46 33l-14 12h28z"/>
+          <path d="M115 26.5a3 3 0 0 1 6 0M118 30v3M118 33l-14 12h28z"/>
+          <path d="M187 26.5a3 3 0 0 1 6 0M190 30v3M190 33l-14 12h28z"/>
+          <path d="M259 26.5a3 3 0 0 1 6 0M262 30v3M262 33l-14 12h28z"/>
+          <path d="M331 26.5a3 3 0 0 1 6 0M334 30v3M334 33l-14 12h28z"/>
         </g>
       </svg>
     </div>
@@ -84,7 +72,7 @@
           </div>
         </div>
 
-        <div class="rule-tick" style="margin:10px 0"></div>
+        <div class="rule" style="margin:10px 0"></div>
 
         <!-- entry 02 -->
         <div style="display:flex;gap:11px">
@@ -104,8 +92,7 @@
       </div>
 
       <!-- NOTED strip -->
-      <div class="plate" style="padding:9px 14px">
-        <span class="brk tl"></span><span class="brk br"></span>
+      <div class="plate quiet" style="padding:9px 14px">
         <div style="display:flex;align-items:center;gap:11px">
           <span class="t-label" style="flex:none">Noted</span>
           <span class="t-italic" style="flex:1;font-size:13.5px">6 pieces are resting — no first wear yet.</span>
@@ -113,10 +100,8 @@
         </div>
       </div>
 
-      <!-- standing stats, 2×2 -->
-      <div class="plate" style="padding:0">
-        <span class="brk tl"></span><span class="brk tr"></span>
-        <span class="brk bl"></span><span class="brk br"></span>
+      <!-- standing stats, 2×2 — figures, so the plate goes quiet -->
+      <div class="plate quiet" style="padding:0">
         <div class="stats">
           <div style="border-right:1px solid var(--line);border-bottom:1px solid var(--line)">
             <p class="t-figure">61</p><div class="capline"></div>
@@ -127,7 +112,7 @@
             <p class="t-mono-s cap">Outfits</p>
           </div>
           <div style="border-right:1px solid var(--line)">
-            <p class="t-figure">1106</p><div class="capline"></div>
+            <p class="t-figure">1,106</p><div class="capline"></div>
             <p class="t-mono-s cap">Wears recorded</p>
           </div>
           <div>
@@ -137,37 +122,28 @@
         </div>
       </div>
 
-      <!-- BY CATEGORY — flats, label, dotted leader, count -->
-      <div class="plate" style="padding:11px 14px 8px">
-        <span class="brk tr"></span><span class="brk bl"></span>
+      <!-- BY CATEGORY — label, dotted leader, count. A read list, so the
+           garment flats that stood at each row are gone with the brackets. -->
+      <div class="plate quiet" style="padding:11px 14px 8px">
         <div style="display:flex;align-items:center;gap:10px">
           <span class="t-label" style="flex:none">By category</span>
           <div class="rule-dash" style="flex:1"></div>
           <span class="t-mono-s" style="flex:none">61 pieces</span>
         </div>
 
-        <div style="margin-top:8px;display:flex;flex-direction:column;gap:5px">
-          <!-- tops -->
+        <div style="margin-top:9px;display:flex;flex-direction:column;gap:7px">
           <div style="display:flex;align-items:flex-end">
-            <svg viewBox="0 0 26 30" style="width:22px;height:26px;fill:none;stroke:var(--line-2);stroke-width:1;flex:none">
-              <path d="M8 4 3 7v6h3v13h14V13h3V7l-5-3M8 4l5 4 5-4"/></svg>
-            <span class="t-mono-s" style="margin-left:8px">Tops</span>
+            <span class="t-mono-s">Tops</span>
             <div class="leader"></div>
             <span class="t-mono-s gold">12</span>
           </div>
-          <!-- bottoms -->
           <div style="display:flex;align-items:flex-end">
-            <svg viewBox="0 0 26 30" style="width:22px;height:26px;fill:none;stroke:var(--line-2);stroke-width:1;flex:none">
-              <path d="M7 4h12v4H7zM7 8l1.5 18h4L14 15l1.5 11h4L21 8"/></svg>
-            <span class="t-mono-s" style="margin-left:8px">Bottoms</span>
+            <span class="t-mono-s">Bottoms</span>
             <div class="leader"></div>
             <span class="t-mono-s gold">10</span>
           </div>
-          <!-- one-pieces -->
           <div style="display:flex;align-items:flex-end">
-            <svg viewBox="0 0 26 30" style="width:22px;height:26px;fill:none;stroke:var(--line-2);stroke-width:1;flex:none">
-              <path d="M9 4 6 8v4l2-1v15h10V11l2 1V8l-3-4"/></svg>
-            <span class="t-mono-s" style="margin-left:8px">One-pieces</span>
+            <span class="t-mono-s">One-pieces</span>
             <div class="leader"></div>
             <span class="t-mono-s gold">5</span>
           </div>
@@ -233,7 +209,7 @@
         <div class="rule" style="margin:7px 0 10px"></div>
         <p class="t-serif">Client Fitting Day</p>
         <p class="t-mono" style="margin-top:3px;font-size:11px">Poplin shirt · Pleated trousers · +3</p>
-        <div class="rule-tick" style="margin:10px 0"></div>
+        <div class="rule" style="margin:10px 0"></div>
         <p class="t-serif">Launch Party</p>
         <p class="t-mono" style="margin-top:3px;font-size:11px">Bias slip dress · Metallic strappy heels · +2</p>
       </div>

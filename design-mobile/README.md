@@ -5,10 +5,17 @@ Fourteen screens, hand-coded to the pack's own contract: every render in
 `pages/*/render.png` and every rule in `foundation/design-system.md` is the
 target; nothing here is app code.
 
-**Browse it:** `node design-android/serve.mjs` → http://localhost:4200/ —
-this pack sits at the top of the sidebar as **Mobile revamp**, with the
-Android pack below it. ←/→ walks the screens; the room bar re-dresses any
-screen into Atelier, Pattern room, Gilding or Dye house.
+**Hosted:** https://occult-kranti.github.io/wardrobe-tracker/mobile_version_v1/
+— built by `npm run build:gallery` and published beside the app on every
+deploy. It walks the fourteen screens in the order the product is met, scales
+each phone to fit whatever it is opened on, swipes on touch, and carries a
+**See the moment** toggle so the art moments are reachable rather than buried
+below the fold.
+
+**Locally:** `node design-android/serve.mjs` → http://localhost:4200/ — this
+pack sits at the top of the sidebar as **Mobile revamp**, with the Android
+pack below it. ←/→ walks the screens; the room bar re-dresses any screen into
+Atelier, Pattern room, Gilding or Dye house.
 
 ## The house
 

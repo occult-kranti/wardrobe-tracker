@@ -29,8 +29,10 @@
       </div>
 
       <!-- THE WARDROBE HEADER: panelled doors parted on a hanging rail.
-           Shallow band, above the content, never behind a photograph. -->
-      <div class="art">
+           Drawn small and centred — a bookplate vignette, not an illustration.
+           This is a browse screen: the garments must reach the eye first, so
+           the drawing keeps its whole character at two thirds the width. -->
+      <div class="art" style="width:248px;margin:2px auto 0">
         <svg viewBox="0 0 380 180">
           <!-- cornice -->
           <g class="m2" stroke-width="1.3">
@@ -84,46 +86,41 @@
       <!-- search + FILTERS -->
       <div class="plate" style="padding:0 12px 0 13px;height:42px;display:flex;align-items:center;gap:10px">
         <svg viewBox="0 0 24 24" style="width:17px;height:17px;fill:none;stroke:var(--line-2);stroke-width:1.4;flex:none">
-          <circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/><path d="M17 4l3 3"/>
+          <circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/>
         </svg>
         <span class="t-mono" style="flex:1;color:var(--ink-3)">Search by name</span>
         <span class="tag" style="height:28px;font-size:9.5px;letter-spacing:.12em"><span class="eyelet" style="width:7px;height:7px"></span><span>Filters</span></span>
       </div>
 
       <!-- one filter rail, sectioned: KIND, then STATE. Scrolls sideways,
-           sticky under the header — the chips stay in the thumb's sweep. -->
+           sticky under the header — the chips stay in the thumb's sweep.
+           The thread twists that hung between the chips are gone: the
+           conceit is stated once, on the count at the title. -->
       <div style="display:flex;align-items:center;gap:6px;height:32px;overflow:hidden">
         <span class="t-mono-s" style="flex:none">Kind</span>
         <span style="flex:none;width:1px;height:15px;background:var(--line)"></span>
-        <svg viewBox="0 0 16 32" style="width:13px;height:32px;fill:none;stroke:var(--line-2);stroke-width:1;flex:none;margin-right:-3px"><path d="M1 5c5 5 8 8 14 11"/><path d="M2 3c5 6 9 9 13 12" opacity=".5"/></svg>
         <span class="tag on" style="flex:none;height:31px"><span class="eyelet"></span><span>Everything</span></span>
-        <svg viewBox="0 0 16 32" style="width:13px;height:32px;fill:none;stroke:var(--line-2);stroke-width:1;flex:none;margin-right:-3px"><path d="M1 5c5 5 8 8 14 11"/><path d="M2 3c5 6 9 9 13 12" opacity=".5"/></svg>
         <span class="tag" style="flex:none;height:31px"><span class="eyelet"></span><span>Tops</span></span>
-        <svg viewBox="0 0 16 32" style="width:13px;height:32px;fill:none;stroke:var(--line-2);stroke-width:1;flex:none;margin-right:-3px"><path d="M1 5c5 5 8 8 14 11"/><path d="M2 3c5 6 9 9 13 12" opacity=".5"/></svg>
         <span class="tag" style="flex:none;height:31px"><span class="eyelet"></span><span>Bottoms</span></span>
       </div>
 
       <div style="display:flex;align-items:center;gap:6px;height:32px;overflow:hidden">
         <span class="t-mono-s" style="flex:none">State</span>
         <span style="flex:none;width:1px;height:15px;background:var(--line)"></span>
-        <svg viewBox="0 0 16 32" style="width:13px;height:32px;fill:none;stroke:var(--line-2);stroke-width:1;flex:none;margin-right:-3px"><path d="M1 5c5 5 8 8 14 11"/><path d="M2 3c5 6 9 9 13 12" opacity=".5"/></svg>
         <span class="tag on" style="flex:none;height:31px"><span class="eyelet"></span><span>All 61</span></span>
-        <svg viewBox="0 0 16 32" style="width:13px;height:32px;fill:none;stroke:var(--line-2);stroke-width:1;flex:none;margin-right:-3px"><path d="M1 5c5 5 8 8 14 11"/><path d="M2 3c5 6 9 9 13 12" opacity=".5"/></svg>
         <span class="tag" style="flex:none;height:31px"><span class="eyelet"></span><span>Ready 51</span></span>
-        <svg viewBox="0 0 16 32" style="width:13px;height:32px;fill:none;stroke:var(--line-2);stroke-width:1;flex:none;margin-right:-3px"><path d="M1 5c5 5 8 8 14 11"/><path d="M2 3c5 6 9 9 13 12" opacity=".5"/></svg>
         <span class="tag" style="flex:none;height:31px"><span class="eyelet"></span><span>Needs wash 8</span></span>
       </div>
 
-      <!-- THE GRID — two columns, corner-bracketed plates. Nothing decorative
-           sits on or behind the photographs; the state tag hangs outside. -->
+      <!-- THE GRID — two columns of quiet plates. A card is read, not
+           admired: no brackets, no ticks. Nothing decorative sits on or
+           behind the photographs; the state tag hangs outside. -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
 
         <!-- 01 -->
-        <div class="plate" style="padding:0">
-          <span class="brk tl"></span><span class="brk tr"></span>
-          <span class="brk bl"></span><span class="brk br"></span>
+        <div class="plate quiet" style="padding:0">
           <div style="height:26px"></div>
-          <span class="photo" style="margin:0 8px;aspect-ratio:2/3"><img src="photos/hm-shirt.webp" alt=""></span>
+          <span class="photo" style="margin:0 8px;width:calc(100% - 16px);aspect-ratio:13/25"><img src="photos/hm-shirt.webp" alt=""></span>
           <div style="padding:9px 10px 10px">
             <p class="t-serif" style="font-size:15.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Poplin shirt</p>
             <p class="t-mono-s" style="margin-top:5px;font-size:9px">Worn 11× · $2.55/wear</p>
@@ -131,37 +128,34 @@
               <div style="position:absolute;inset:auto 0 0 0;height:1px;background:var(--line);opacity:.5"></div>
               <div class="bar-fill" style="width:22%;height:4px"></div>
             </div>
-            <div class="rule-tick" style="margin:9px 0 8px"></div>
+            <div class="rule-dash" style="margin:9px 0 8px"></div>
             <div style="display:flex;align-items:center;justify-content:space-between">
-              <svg viewBox="0 0 24 24" style="width:21px;height:21px;fill:none;stroke:var(--gold);stroke-width:1.5"><path d="M4 13l5 5L20 6"/><path d="M18 3l3 3"/></svg>
-              <svg viewBox="0 0 24 24" style="width:21px;height:21px;fill:none;stroke:var(--line-2);stroke-width:1.5"><path d="M11 7a1 1 0 0 1 2 0M12 9v2M12 11 4 18h16z"/><path d="M18.5 3l2.5 2.5"/></svg>
-              <svg viewBox="0 0 24 24" style="width:21px;height:21px;fill:none;stroke:var(--line-2);stroke-width:1.5"><rect x="4" y="6" width="16" height="14"/><path d="M4 10h16M9 4v4M15 4v4"/><path d="M18.5 2l2.5 2.5"/></svg>
-              <svg viewBox="0 0 24 24" style="width:21px;height:21px;fill:none;stroke:var(--line-2);stroke-width:1.5"><path d="M5 9h14M5 13h14M5 17h9"/><path d="M18.5 3l2.5 2.5"/></svg>
+              <svg viewBox="0 0 24 24" style="width:21px;height:21px;fill:none;stroke:var(--gold);stroke-width:1.5"><path d="M4 13l5 5L20 6"/></svg>
+              <svg viewBox="0 0 24 24" style="width:21px;height:21px;fill:none;stroke:var(--line-2);stroke-width:1.5"><path d="M11 7a1 1 0 0 1 2 0M12 9v2M12 11 4 18h16z"/></svg>
+              <svg viewBox="0 0 24 24" style="width:21px;height:21px;fill:none;stroke:var(--line-2);stroke-width:1.5"><rect x="4" y="6" width="16" height="14"/><path d="M4 10h16M9 4v4M15 4v4"/></svg>
+              <svg viewBox="0 0 24 24" style="width:21px;height:21px;fill:none;stroke:var(--line-2);stroke-width:1.5"><path d="M5 9h14M5 13h14M5 17h9"/></svg>
             </div>
           </div>
         </div>
 
-        <!-- 02 — the state tag hangs from the plate's top-left on a thread stub -->
-        <div class="plate" style="padding:0">
-          <span class="brk tl"></span><span class="brk tr"></span>
-          <span class="brk bl"></span><span class="brk br"></span>
+        <!-- 02 — the state tag sits above the photograph, never on it -->
+        <div class="plate quiet" style="padding:0">
           <div style="height:26px;display:flex;align-items:center;padding-left:6px">
-            <svg viewBox="0 0 12 24" style="width:10px;height:24px;fill:none;stroke:var(--line-2);stroke-width:1;flex:none;margin-right:-2px"><path d="M1 4c4 4 6 6 10 8"/></svg>
             <span class="tag" style="height:22px;font-size:8px;letter-spacing:.1em;padding:0 8px"><span class="eyelet" style="width:6px;height:6px;border-width:1.2px"></span><span>Never worn yet</span></span>
           </div>
-          <span class="photo" style="margin:0 8px;aspect-ratio:2/3"><img src="photos/in-anarkali-gown.webp" alt=""></span>
+          <span class="photo" style="margin:0 8px;width:calc(100% - 16px);aspect-ratio:13/25"><img src="photos/in-anarkali-gown.webp" alt=""></span>
           <div style="padding:9px 10px 10px">
             <p class="t-serif" style="font-size:15.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Bandhani silk kurta</p>
             <p class="t-mono-s" style="margin-top:5px;font-size:9px">Worn 0× · resting</p>
             <div style="margin-top:5px;height:4px;position:relative">
               <div style="position:absolute;inset:auto 0 0 0;height:1px;background:var(--line);opacity:.5"></div>
             </div>
-            <div class="rule-tick" style="margin:9px 0 8px"></div>
+            <div class="rule-dash" style="margin:9px 0 8px"></div>
             <div style="display:flex;align-items:center;justify-content:space-between">
-              <svg viewBox="0 0 24 24" style="width:21px;height:21px;fill:none;stroke:var(--gold);stroke-width:1.5"><path d="M4 13l5 5L20 6"/><path d="M18 3l3 3"/></svg>
-              <svg viewBox="0 0 24 24" style="width:21px;height:21px;fill:none;stroke:var(--line-2);stroke-width:1.5"><path d="M11 7a1 1 0 0 1 2 0M12 9v2M12 11 4 18h16z"/><path d="M18.5 3l2.5 2.5"/></svg>
-              <svg viewBox="0 0 24 24" style="width:21px;height:21px;fill:none;stroke:var(--line-2);stroke-width:1.5"><rect x="4" y="6" width="16" height="14"/><path d="M4 10h16M9 4v4M15 4v4"/><path d="M18.5 2l2.5 2.5"/></svg>
-              <svg viewBox="0 0 24 24" style="width:21px;height:21px;fill:none;stroke:var(--line-2);stroke-width:1.5"><path d="M5 9h14M5 13h14M5 17h9"/><path d="M18.5 3l2.5 2.5"/></svg>
+              <svg viewBox="0 0 24 24" style="width:21px;height:21px;fill:none;stroke:var(--gold);stroke-width:1.5"><path d="M4 13l5 5L20 6"/></svg>
+              <svg viewBox="0 0 24 24" style="width:21px;height:21px;fill:none;stroke:var(--line-2);stroke-width:1.5"><path d="M11 7a1 1 0 0 1 2 0M12 9v2M12 11 4 18h16z"/></svg>
+              <svg viewBox="0 0 24 24" style="width:21px;height:21px;fill:none;stroke:var(--line-2);stroke-width:1.5"><rect x="4" y="6" width="16" height="14"/><path d="M4 10h16M9 4v4M15 4v4"/></svg>
+              <svg viewBox="0 0 24 24" style="width:21px;height:21px;fill:none;stroke:var(--line-2);stroke-width:1.5"><path d="M5 9h14M5 13h14M5 17h9"/></svg>
             </div>
           </div>
         </div>
@@ -201,9 +195,10 @@
     </div>
   </div>
   <p class="caption-note"><b>Closet — at rest.</b> The count hangs off the title on a thread;
-  under it the wardrobe stands with its doors parted on a rail of ten hangers. Search and the
+  under it the wardrobe stands small and centred, doors parted on a rail of ten hangers — a
+  bookplate, not an illustration, so the garments reach the eye first. Search and the
   FILTERS chip share one row; KIND and STATE are a single sideways rail, sectioned by a tick and
-  sticky under the header. Cards are corner-bracketed plates: photograph, serif name, a mono
+  sticky under the header. Cards are quiet plates: photograph, serif name, a mono
   wear line over a hairline bar, and a 48dp action row — log wear, assign, plan, more. The state
   tag hangs outside the photo plate, never on it.</p>
 </div>
@@ -240,15 +235,11 @@
       </div>
       <!-- the grid is still fading up under the doors: hairline skeletons only -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;opacity:.32">
-        <div class="plate" style="padding:0;height:450px">
-          <span class="brk tl"></span><span class="brk tr"></span>
-          <span class="brk bl"></span><span class="brk br"></span>
+        <div class="plate quiet" style="padding:0;height:450px">
           <div style="height:26px"></div>
           <div style="margin:0 8px;aspect-ratio:2/3;border:1px dashed var(--line)"></div>
         </div>
-        <div class="plate" style="padding:0;height:450px">
-          <span class="brk tl"></span><span class="brk tr"></span>
-          <span class="brk bl"></span><span class="brk br"></span>
+        <div class="plate quiet" style="padding:0;height:450px">
           <div style="height:26px"></div>
           <div style="margin:0 8px;aspect-ratio:2/3;border:1px dashed var(--line)"></div>
         </div>
