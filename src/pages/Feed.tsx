@@ -28,7 +28,7 @@ export default function Feed() {
       .filter(p => postVisibleTo(p, activeId, community.conversations, community.households))
       .slice()
       .sort((a, b) => b.date.localeCompare(a.date) || a.id.localeCompare(b.id)),
-    [community.posts, community.conversations, activeId]
+    [community.posts, community.conversations, community.households, activeId]
   );
 
   const mine = posts.filter(p => p.authorId === activeId).length;

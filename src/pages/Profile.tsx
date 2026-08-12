@@ -31,11 +31,19 @@ export default function Profile() {
   const isMe = targetId === activeId;
   const persona = targetId ? personaById(targetId) : undefined;
 
+  // Hooks before any early return — a conditional hook reorders on the render
+  // where `account` resolves, which is a crash, and exactly what the lint gate
+  // stopped from deploying.
+  const [roofOpen, setRoofOpen] = useState(false);
+  const [roofKind, setRoofKind] = useState<HouseholdKind>('roommates');
+  const [roofName, setRoofName] = useState('');
+  const [roofInvites, setRoofInvites] = useState<string[]>([]);
+
   const shared = useMemo(
     () => community.posts
       .filter(p => p.authorId === targetId && postVisibleTo(p, activeId, community.conversations, community.households))
       .sort((a, b) => b.date.localeCompare(a.date)),
-    [community.posts, community.conversations, targetId, activeId]
+    [community.posts, community.conversations, community.households, targetId, activeId]
   );
 
   if (!account) {
@@ -54,10 +62,6 @@ export default function Profile() {
     );
   }
 
-  const [roofOpen, setRoofOpen] = useState(false);
-  const [roofKind, setRoofKind] = useState<HouseholdKind>('roommates');
-  const [roofName, setRoofName] = useState('');
-  const [roofInvites, setRoofInvites] = useState<string[]>([]);
 
   const myHouseholds = community.households.filter(h =>
     h.members.some(m => m.accountId === activeId)
