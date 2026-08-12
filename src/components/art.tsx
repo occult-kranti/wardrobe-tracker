@@ -41,33 +41,37 @@ export function Wordmark({ className = '' }: { className?: string }) {
  * eye of its hook, and the monogram sits in a bottom panel like a label on a
  * shop hanger.
  *
- * The STRING is back (owner's call, 2026-08-12): the first mark's little
- * curving thread read better than the taut shoulder rail that replaced it, so
- * the thread leaves the grommet and loops above the tag the way a real swing
- * tag hangs. The viewBox carries headroom for it — a string drawn inside the
- * tag's own shoulders had no room to be seen. Deliberate degradation: below
- * 40px the string has no pixels to live in, it steps off and the rig thickens;
- * at favicon size (public/icon.svg) the letter steps off too.
+ * The STRING is back, and it hangs OUTSIDE (owner's call, 2026-08-12): a real
+ * cloth tag's thread leaves the eyelet and twirls in the air above it, so this
+ * one rises off the grommet in a long S and finishes in a curl. The viewBox
+ * carries the headroom the twirl needs — a string drawn inside the tag's own
+ * shoulders had nowhere to be seen. It stays drawn at every size; only the
+ * favicon (public/icon.svg), which has 16 pixels to work with, does without.
  */
 export function TagMark({ size = 28 }: { size?: number }) {
   const full = size >= 40;
   const sw = full ? 2 : 2.5;
   return (
-    <svg width={size * 0.7} height={size} viewBox="0 -8 48 72" fill="none" aria-hidden="true">
+    <svg
+      width={size * 0.75}
+      height={size * 1.3125}
+      viewBox="0 -20 48 84"
+      fill="none"
+      aria-hidden="true"
+      className="shrink-0"
+    >
       <path
         d="M10 12 20 2h8l10 10v46a2 2 0 0 1-2 2H12a2 2 0 0 1-2-2Z"
         stroke="currentColor"
         strokeWidth={sw}
         strokeLinejoin="miter"
       />
-      {full && (
-        <path
-          d="M24 4.4C24 -2 20 -5.6 14.6 -6.2"
-          stroke="var(--color-gold)"
-          strokeWidth="1.5"
-          strokeLinecap="butt"
-        />
-      )}
+      <path
+        d="M24 4.4C24 -2 19 -4.8 14.6 -7.8 9.8 -11 10 -16.6 14.8 -17.8c4.4-1 7.4 2.8 6.2 6.2"
+        stroke="var(--color-gold)"
+        strokeWidth={full ? 1.5 : 1.9}
+        strokeLinecap="butt"
+      />
       <path d="M24 27V12.4" stroke="currentColor" strokeWidth={sw} />
       <path d="M24 27 12.5 38h23Z" stroke="currentColor" strokeWidth={sw} strokeLinejoin="miter" />
       {/* the ink rim keeps the gold from sinking into light grounds */}
@@ -109,8 +113,8 @@ export function TagPortrait({
   return (
     <svg
       width={size}
-      height={size * 1.25}
-      viewBox="0 -6 40 56"
+      height={size * 1.625}
+      viewBox="0 -15 40 65"
       fill="none"
       aria-hidden="true"
       className="shrink-0 text-text"
@@ -122,10 +126,11 @@ export function TagPortrait({
         strokeWidth="1.5"
         strokeLinejoin="miter"
       />
+      {/* the same twirl as the nav mark, in this wardrobe's own thread */}
       <path
-        d="M20 3.3C20 -1.6 16.6 -4.4 12.2 -4.9"
+        d="M20 3.3C20 -1.2 16.1 -3.2 13.4 -5.5 9.3 -7.9 9.5 -11.9 13 -12.8c3.2-.8 5.4 2 4.6 4.6"
         stroke={color ?? 'var(--color-gold)'}
-        strokeWidth="1.4"
+        strokeWidth="1.3"
         strokeLinecap="butt"
       />
       <path d="M20 22.5V10.5" stroke="currentColor" strokeWidth="1.75" />
