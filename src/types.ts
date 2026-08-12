@@ -418,7 +418,7 @@ export const EMPTY_COMMUNITY: CommunityState = {
  * screen, not to a wardrobe — three closets on one device should not each drag
  * the interface to a different palette when opened. Stored device-level.
  */
-export type Theme = 'light' | 'dark' | 'salon' | 'gilt' | 'dyehouse' | 'system';
+export type Theme = 'light' | 'dark' | 'salon' | 'gilt' | 'dyehouse' | 'obsidian' | 'system';
 
 export const THEME_LABELS: Record<Theme, string> = {
   light: 'The pattern room',
@@ -426,6 +426,7 @@ export const THEME_LABELS: Record<Theme, string> = {
   salon: 'The salon',
   gilt: 'The gilding room',
   dyehouse: 'The dye house',
+  obsidian: 'The obsidian',
   system: 'Follow the device',
 };
 

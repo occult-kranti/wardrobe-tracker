@@ -52,3 +52,15 @@ Tightest gate in the room: the wax on the vat wall at 3.21:1 against WCAG
 Five rooms now: pattern room (cut) · salon (shown) · gilding room (finished) ·
 dye house (coloured) · atelier at night (closed). One hundred gated contrast
 pairs across the house.
+
+## Intensified 2026-08-12, and the obsidian joins
+
+The owner asked the dye house's shades to go deeper — all of them. The vat wall
+now sits at chroma 0.050 (was 0.032), the wells at 0.064, the wax at full heat
+(`#D6183B`), the bronze hotter, the rose chalk brighter. Every pair remeasured;
+tightest is the chalk T on the wax at 4.73:1.
+
+And a sixth room: **the obsidian** — volcanic glass, not black paint. Blue-black
+ground at hue 265, metals gone COLD (silver first, pale cold gold second), blued
+chalk, the wax cooled one step so it reads as a lacquer drop on dark glass.
+Tightest pair 4.85:1; 120 gated pairs across the six rooms, all passing.

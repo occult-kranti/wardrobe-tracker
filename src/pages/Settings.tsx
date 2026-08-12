@@ -132,6 +132,7 @@ const THEMES: { value: Theme; label: string }[] = [
   { value: 'salon', label: 'Salon' },
   { value: 'gilt', label: 'Gilding room' },
   { value: 'dyehouse', label: 'Dye house' },
+  { value: 'obsidian', label: 'Obsidian' },
   { value: 'dark', label: 'Atelier' },
   { value: 'system', label: 'System' },
 ];
@@ -449,7 +450,7 @@ export default function Settings() {
         <SectionTitle>Appearance</SectionTitle>
         <Row
           title="Paper"
-          body="Five rooms in the same building: the pattern room where cloth is cut, the salon where a collection is shown, the gilding room where the gold leaf is laid, the dye house where the madder vats stain the walls rose, and the atelier at night. System follows the device. The choice belongs to this screen, not to a wardrobe, so it holds when you open a different one."
+          body="Six rooms in the same building: the pattern room where cloth is cut, the salon where a collection is shown, the gilding room where the gold leaf is laid, the dye house where the madder vats stain the walls rose, the obsidian where the glass reflects, and the atelier at night. System follows the device. The choice belongs to this screen, not to a wardrobe, so it holds when you open a different one."
           control={
             <div className="flex flex-wrap gap-2">
               {THEMES.map(opt => (

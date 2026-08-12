@@ -168,6 +168,7 @@ for (const file of files) {
     ['data-theme="salon"', ':root[data-theme="salon"]'],
     ['data-theme="gilt"', ':root[data-theme="gilt"]'],
     ['data-theme="dyehouse"', ':root[data-theme="dyehouse"]'],
+    ['data-theme="obsidian"', ':root[data-theme="obsidian"]'],
   ];
   for (const [name, selector] of rooms) {
     const body = blockOf(selector);

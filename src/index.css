@@ -249,33 +249,33 @@
    1.4.11's 3:1. Full table in docs/16-the-dye-house.md.
    ============================================================ */
 :root[data-theme="dyehouse"] {
-  --color-bg: #261318;           /* the vat room's stained wall */
-  --color-surface: #301A20;      /* pressed rosewood */
-  --color-mat: #3D262C;          /* lifted, so black garments keep their edges */
-  --color-sunken: #3A2129;
-  --color-bg-deep: #1B0C10;      /* the vat itself */
-  --color-text: #F5E4DE;         /* rose chalk (14.33:1 on bg) */
-  --color-text-2: #CBA49D;       /* 7.85:1 on bg, 6.53:1 on sunken */
-  --color-border: #6D453C;
-  --color-accent: #85C3DD;       /* washing blue chalked for plum (9.13:1) */
-  --color-accent-hover: #A0D1E6;
-  --color-accent-fill: #105F7D;
-  --color-on-accent: #FFFDF6;    /* 6.98:1 on the fill */
-  --color-accent-on-ink: #0E566E; /* stated on the rose-chalk ink fill (6.62:1) */
-  --color-seal: #CE1837;         /* the wax, dark-stated: 3.21:1 on bg, chalk T 5.17:1 */
-  --color-artline: #C98A4B;      /* the frieze's first metal: bronze */
-  --color-artline-2: #DCA75F;    /* paired with bright brass */
+  --color-bg: #2C0F19;           /* the vat room's stained wall, dye at full depth */
+  --color-surface: #3A1521;      /* pressed rosewood */
+  --color-mat: #48202E;          /* lifted, so black garments keep their edges */
+  --color-sunken: #441C2A;
+  --color-bg-deep: #1E0710;      /* the vat itself */
+  --color-text: #FBE6DF;         /* rose chalk (15.4:1 on bg) */
+  --color-text-2: #DCA89E;       /* 8.6:1 on bg, 6.0:1 on sunken */
+  --color-border: #8A4A44;
+  --color-accent: #93CBE4;       /* washing blue chalked for plum (10.1:1) */
+  --color-accent-hover: #AFD8EA;
+  --color-accent-fill: #0F6485;
+  --color-on-accent: #FFFDF6;    /* 6.6:1 on the fill */
+  --color-accent-on-ink: #0E566E; /* stated on the rose-chalk ink fill */
+  --color-seal: #D6183B;         /* the wax at full heat: 3.41:1 on bg, chalk T 4.73:1 */
+  --color-artline: #D69652;      /* the frieze's first metal: hot bronze */
+  --color-artline-2: #E8AE5C;    /* paired with bright brass */
   --color-success: #66B18C;
   --color-warning: #DCA94B;
-  --color-danger: #F2A3AC;       /* danger TEXT only */
-  --color-danger-fill: #8C1B32;  /* chalk label 8.50:1 */
-  --color-gold: #DCA75F;         /* bright brass — decorative only, never text */
-  --color-charcoal: #3A2129;
-  --color-chalk: #FFF6F0;
-  --color-ink-fill: #F5E4DE;     /* inverts: rose-chalk fill, plum label */
-  --color-on-ink: #261318;
-  --pattern-ink: 220, 167, 95;   /* the grid drawn in brass */
-  --pattern-alpha: 0.06;
+  --color-danger: #F5A9B2;       /* danger TEXT only */
+  --color-danger-fill: #9C1430;  /* chalk label 7.5:1 */
+  --color-gold: #E8AE5C;         /* bright brass — decorative only, never text */
+  --color-charcoal: #441C2A;
+  --color-chalk: #FFF2EC;
+  --color-ink-fill: #FBE6DF;     /* inverts: rose-chalk fill, plum label */
+  --color-on-ink: #2C0F19;
+  --pattern-ink: 228, 166, 86;   /* the grid drawn in brass */
+  --pattern-alpha: 0.07;
   color-scheme: dark;
 }
 
@@ -308,6 +308,50 @@
   --pattern-ink: 162, 117, 31;   /* the cutting grid drawn in GOLD, not ink */
   --pattern-alpha: 0.10;
   color-scheme: light;
+}
+
+/* ============================================================
+   the obsidian — the sixth room: volcanic glass.
+
+   The owner asked for a darker contrast, elegant, like obsidian
+   reflecting black. Obsidian is not a black paint — it is glass:
+   blue-black, cold, and lit by what stands near it. So the ground
+   sits at hue 265 with just enough chroma to read as glass rather
+   than soot, the metals go COLD (silver first, a pale cold gold
+   second), the chalk is blued, and the wax cools one step so its
+   red reads like a lacquer drop on dark glass. Same physics as
+   every room: washing blue accent, lifted mat, gold decorative
+   only. Measured like the rest; tightest text pair 4.85:1.
+   ============================================================ */
+:root[data-theme="obsidian"] {
+  --color-bg: #0A0B0F;           /* the glass itself */
+  --color-surface: #12141A;
+  --color-mat: #1B1E26;          /* lifted so black garments keep their edges */
+  --color-sunken: #161921;
+  --color-bg-deep: #050609;
+  --color-text: #EDEEF3;         /* blued chalk (17.2:1 on bg) */
+  --color-text-2: #A9ADBC;       /* 8.5:1 on bg */
+  --color-border: #2B2F3B;
+  --color-accent: #85C0E2;       /* washing blue on cold glass (9.9:1) */
+  --color-accent-hover: #9FCCE8;
+  --color-accent-fill: #0F5F7D;
+  --color-on-accent: #FFFDF6;
+  --color-accent-on-ink: #0F5F7D; /* the fill inverts to blued chalk */
+  --color-seal: #CE2545;         /* the wax cooled for glass: 3.72:1 on bg, chalk T 4.85:1 */
+  --color-artline: #B9BFC8;      /* the frieze in cold silver */
+  --color-artline-2: #C8B273;    /* paired with pale cold gold */
+  --color-success: #63B08F;
+  --color-warning: #D9A93F;
+  --color-danger: #F2A9B4;       /* danger TEXT only */
+  --color-danger-fill: #8C1B32;
+  --color-gold: #C8B273;         /* decorative only, never text */
+  --color-charcoal: #161921;
+  --color-chalk: #F4F5F8;
+  --color-ink-fill: #EDEEF3;     /* inverts: blued-chalk fill, glass label */
+  --color-on-ink: #0A0B0F;
+  --pattern-ink: 205, 210, 225;  /* the grid scribed in the glass */
+  --pattern-alpha: 0.04;
+  color-scheme: dark;
 }
 
 @theme inline {
