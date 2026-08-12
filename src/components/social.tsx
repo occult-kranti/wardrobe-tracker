@@ -92,7 +92,7 @@ export function PieceCard({ piece }: { piece: SharedPiece }) {
         {piece.imageUrl ? (
           <img src={piece.imageUrl} alt="" className="w-full h-full object-cover" />
         ) : (
-          <GarmentPlate categoryId={piece.category ?? 'accessories'} color={piece.color} />
+          <GarmentPlate categoryId={piece.category ?? 'accessories'} color={piece.color} name={piece.name} />
         )}
       </span>
       <span className="py-2 pr-3 min-w-0">

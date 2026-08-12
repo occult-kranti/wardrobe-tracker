@@ -2973,7 +2973,7 @@ export const PERSONAS: PersonaSeed[] = [
    {
     "id": "VS-A08",
     "name": "Cufflinks",
-    "category": "accessories",
+    "category": "jewellery",
     "color": "#C9CDD1",
     "colour": "silver",
     "fabric": "sterling, onyx face",
@@ -4665,7 +4665,7 @@ export const PERSONAS: PersonaSeed[] = [
    {
     "id": "MK-B08",
     "name": "Swim one-piece",
-    "category": "bottoms",
+    "category": "dresses",
     "color": "#B4552F",
     "colour": "terracotta",
     "fabric": "220gsm recycled nylon-lycra",
@@ -5021,7 +5021,7 @@ export const PERSONAS: PersonaSeed[] = [
    {
     "id": "MK-A04",
     "name": "Jhumkas",
-    "category": "accessories",
+    "category": "jewellery",
     "color": "#C7CBCF",
     "colour": "silver-toned",
     "fabric": "oxidised silver, medium drop",
@@ -5042,7 +5042,7 @@ export const PERSONAS: PersonaSeed[] = [
    {
     "id": "MK-A05",
     "name": "Gold hoops",
-    "category": "accessories",
+    "category": "jewellery",
     "color": "#C9A24B",
     "colour": "gold-toned",
     "fabric": "brass gold-plate, 3cm",
@@ -5093,7 +5093,7 @@ export const PERSONAS: PersonaSeed[] = [
    {
     "id": "MK-A07",
     "name": "Pearl studs",
-    "category": "accessories",
+    "category": "jewellery",
     "color": "#F2EFE9",
     "colour": "white",
     "fabric": "freshwater pearl, 8mm",
@@ -5207,7 +5207,7 @@ export const PERSONAS: PersonaSeed[] = [
    {
     "id": "MK-A12",
     "name": "Anklets (pair)",
-    "category": "accessories",
+    "category": "jewellery",
     "color": "#C7CBCF",
     "colour": "silver",
     "fabric": "silver, fine chain + bells",
@@ -5280,7 +5280,7 @@ export const PERSONAS: PersonaSeed[] = [
    {
     "id": "MK-A15",
     "name": "Bangles stack",
-    "category": "accessories",
+    "category": "jewellery",
     "color": "#C9A24B",
     "colour": "gold-toned",
     "fabric": "brass, set of 7",

@@ -183,11 +183,16 @@ for (const persona of PERSONAS) {
     // Not "has a custom category" — Aarav's closet legitimately uses only the
     // defaults. What must hold is that no piece references a category the
     // wardrobe's own taxonomy does not define, which is what would orphan it.
-    // Every tile should be a photograph of the actual garment. A rule that
-    // references a slug no source provides fails silently as a blank tile, and
-    // a stray escape once turned /\btie\b/ into a regex containing a literal
-    // backspace, which could never match anything.
-    [`${persona.id}: every piece has a photograph`, st.items.every(i => i.imageUrl), st.items.filter(i => !i.imageUrl).map(i => i.name).slice(0, 3).join(', ')],
+    // Most tiles should be a photograph of the actual garment — but not every
+    // tile: where no honest photo exists (heels, juttis, polos, swim), the
+    // rule now returns the drawn flat on purpose, because a wrong-category or
+    // wrong-register photo reads as a filing error while the flat reads as a
+    // choice. So the check is a floor, not a total: photographs stay the
+    // strong majority, and a rule that silently loses its sources still trips
+    // it. (A stray escape once turned /\btie\b/ into a regex containing a
+    // literal backspace, which could never match anything — that class of bug
+    // still lands well below the floor.)
+    [`${persona.id}: photographs are the strong majority`, st.items.filter(i => i.imageUrl).length >= st.items.length * 0.75, `${st.items.filter(i => i.imageUrl).length}/${st.items.length}`],
     [`${persona.id}: photographs resolve to files`, st.items.every(i => !i.imageUrl || /^wardrobe\//.test(i.imageUrl)), ''],
     [`${persona.id}: every piece has a category`, st.items.every(i => st.settings.categories.some(c => c.id === i.category)), st.settings.categories.length],
     // The bench states are lived-in: a closet where every piece reads "Ready"

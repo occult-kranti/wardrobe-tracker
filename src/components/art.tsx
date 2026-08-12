@@ -90,7 +90,7 @@ export function WaxSeal({ size = 44, label = 'T' }: { size?: number; label?: str
 
 /* ---------------- the ground frieze ---------------- */
 
-import { FRIEZE_PIECES, FRIEZE_RAIL } from '../lib/friezeArt';
+import { FRIEZE_PIECES, FRIEZE_RAIL, FRIEZE_RAIL_DROPS } from '../lib/friezeArt';
 
 /**
  * The closets of the house, standing behind the paper — remade after the first
@@ -121,24 +121,27 @@ const FRIEZE_CAPTIONS: Record<string, { native: (n: string) => string; roman: st
   dresser: { native: n => `${n}s Kommode`, roman: null },
 };
 
-/** Which pieces each page hangs, in order. Small motifs sit between furniture. */
+/** Which pieces each page hangs, in order. Small motifs sit between furniture.
+    The dressing-room wing (cheval, vanity, dressform, screen, jewelstand,
+    beach; jhumka and handmirror as small motifs) fills the hangs out to five
+    or six pieces — the house was asked to leave less wall bare. */
 const PAGE_SETS: Record<string, string[]> = {
-  '/': ['coatstand', 'flower', 'almirah', 'bird', 'wardrobe'],
-  '/closet': ['almirah', 'flower', 'yigui', 'coatstand'],
-  '/outfits': ['armoire', 'bird', 'tansu', 'flower'],
-  '/calendar': ['flower', 'sandook', 'bird', 'coatstand'],
-  '/ledger': ['dresser', 'flower', 'yigui'],
-  '/wishlist': ['sandook', 'bird', 'wardrobe', 'flower'],
-  '/compare': ['bandaji', 'flower', 'armoire'],
-  '/events': ['coatstand', 'bird', 'sandook', 'flower'],
-  '/feed': ['tansu', 'flower', 'bandaji', 'bird'],
-  '/chats': ['dresser', 'bird', 'armoire'],
-  '/profile': ['wardrobe', 'flower', 'tansu'],
-  '/settings': ['yigui', 'bird', 'dresser', 'flower'],
+  '/': ['coatstand', 'flower', 'almirah', 'bird', 'wardrobe', 'handmirror'],
+  '/closet': ['almirah', 'flower', 'yigui', 'handmirror', 'coatstand'],
+  '/outfits': ['dressform', 'bird', 'armoire', 'flower', 'tansu'],
+  '/calendar': ['flower', 'sandook', 'bird', 'coatstand', 'jhumka'],
+  '/ledger': ['dresser', 'flower', 'yigui', 'jewelstand'],
+  '/wishlist': ['sandook', 'jhumka', 'wardrobe', 'flower', 'bird'],
+  '/compare': ['cheval', 'flower', 'bandaji', 'armoire'],
+  '/events': ['screen', 'bird', 'sandook', 'flower', 'beach'],
+  '/feed': ['tansu', 'jhumka', 'bandaji', 'bird', 'flower'],
+  '/chats': ['dresser', 'bird', 'armoire', 'handmirror'],
+  '/profile': ['vanity', 'flower', 'wardrobe', 'tansu'],
+  '/settings': ['yigui', 'bird', 'dresser', 'flower', 'jhumka'],
 };
 const DEFAULT_SET = ['almirah', 'flower', 'bandaji', 'bird'];
 
-const SMALL = new Set(['flower', 'bird']);
+const SMALL = new Set(['flower', 'bird', 'jhumka', 'handmirror']);
 
 /** Deterministic 0..1 per (page, slot) — the hang must not reshuffle per render. */
 function jitter(...parts: Array<string | number>): number {
@@ -160,13 +163,22 @@ function escapeXml(value: string): string {
     .replace(/'/g, '&#39;');
 }
 
+/** Layout's fixed sidebar and content column, which the caption gate below
+    must stay clear of. */
+const SIDEBAR_W = 220;
+const CONTENT_W = 1024; // max-w-5xl
+
 export function GroundFrieze({ name, page = '/' }: { name?: string; page?: string }) {
   const first = escapeXml((name ?? 'Toile').trim().split(/\s+/)[0] || 'Toile');
   const key = '/' + (page.split('/')[1] ?? '');
   const set = PAGE_SETS[key] ?? DEFAULT_SET;
+  // Alternate the frieze's side per page, so the house does not hang every
+  // picture on the same wall. Decided before the hang: the caption gate needs
+  // to know where the composition will stand.
+  const side = jitter(key, 'side') < 0.5 ? 'justify-end' : 'justify-start';
   const parts: string[] = [];
+  const captions: Array<{ cx: number; metal: string; native: string; roman: string | null }> = [];
   let x = 30 + Math.round(jitter(key, 'start') * 120);
-  let captioned = 0;
   set.forEach((piece, i) => {
     const small = SMALL.has(piece);
     // Furniture staggers between 0.52 and 0.72; motifs sit small and high.
@@ -176,34 +188,69 @@ export function GroundFrieze({ name, page = '/' }: { name?: string; page?: strin
     const metal = i % 2 === 1 ? " style='--color-artline: var(--color-artline-2)'" : '';
     parts.push(`<g transform='translate(${Math.round(x)} ${Math.round(ty)}) scale(${scale.toFixed(2)})'${metal}>${FRIEZE_PIECES[piece]}</g>`);
     const caption = FRIEZE_CAPTIONS[piece];
-    if (caption && !small && captioned < 2) {
-      captioned += 1;
-      const cx = Math.round(x + w / 2);
-      const cy = Math.round(470 - 560 * scale - 18);
-      parts.push(
-        `<text x='${cx}' y='${cy}' text-anchor='middle' font-family='serif' font-size='23'` +
-          `${metal} fill='var(--color-artline)' fill-opacity='0.30'>${caption.native(first)}</text>`
-      );
-      if (caption.roman) {
-        parts.push(
-          `<text x='${cx}' y='${cy + 26}' text-anchor='middle' font-family='Georgia, serif' font-size='16' ` +
-            `letter-spacing='4'${metal} fill='var(--color-artline)' fill-opacity='0.22'>${caption.roman}</text>`
-        );
-      }
+    if (caption && !small) {
+      captions.push({
+        cx: Math.round(x + w / 2),
+        metal,
+        native: caption.native(first),
+        roman: caption.roman,
+      });
     }
     x += w - 30 - jitter(key, i, 'gap') * 40;
   });
   const width = Math.max(900, Math.round(x + 60));
+  // The furniture may clip behind the sidebar or the content column — wall art
+  // reads as intentional when cropped. A serif word cut mid-glyph does not: it
+  // reads as a rendering fault (both sparse and dense closets showed stray
+  // fragments — "s Kommode", "di Sam" — floating in the gutters). So the
+  // owner's name is written LOW on the wall, small type near the floor line
+  // under the crown fade, and only where the whole line lands in an open
+  // margin — it may slide toward the nearest gutter to get there, but never so
+  // far it leaves its furniture behind. On mid-width desktops the gutters are
+  // too narrow and the name simply stays unwritten; the furniture speaks.
+  // Decorative text; a stale innerWidth until the next route change is fine.
+  const vw = typeof window === 'undefined' ? 1440 : window.innerWidth;
+  const mainW = Math.max(0, vw - SIDEBAR_W);
+  const contentLeft = SIDEBAR_W + Math.max(0, (mainW - CONTENT_W) / 2);
+  const contentRight = Math.min(vw, contentLeft + CONTENT_W);
+  const x0 = side === 'justify-start' ? SIDEBAR_W : vw - width;
+  let captioned = 0;
+  for (const c of captions) {
+    if (captioned >= 2) break;
+    const halfW = Math.max(c.native.length * 10, (c.roman?.length ?? 0) * 10) / 2 + 14;
+    const fits = (at: number) =>
+      (at - halfW >= SIDEBAR_W + 12 && at + halfW <= contentLeft - 12) ||
+      (at - halfW >= contentRight + 12 && at + halfW <= vw - 12);
+    const candidates = [x0 + c.cx, (SIDEBAR_W + contentLeft) / 2, (contentRight + vw) / 2];
+    const at = candidates.find(a => fits(a) && Math.abs(a - (x0 + c.cx)) < 320);
+    if (at === undefined) continue;
+    const cx = Math.round(at - x0);
+    captioned += 1;
+    parts.push(
+      `<text x='${cx}' y='446' text-anchor='middle' font-family='serif' font-size='17'` +
+        `${c.metal} fill='var(--color-artline)' fill-opacity='0.32'>${c.native}</text>`
+    );
+    if (c.roman) {
+      parts.push(
+        `<text x='${cx}' y='465' text-anchor='middle' font-family='Georgia, serif' font-size='12' ` +
+          `letter-spacing='3'${c.metal} fill='var(--color-artline)' fill-opacity='0.24'>${c.roman}</text>`
+      );
+    }
+  }
   const svg =
     `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 ${width} 470' width='${width}' height='470' ` +
     `style='display:block'>${parts.join('')}</svg>`;
-  // Alternate the frieze's side per page, so the house does not hang every
-  // picture on the same wall.
-  const side = jitter(key, 'side') < 0.5 ? 'justify-end' : 'justify-start';
+  // The crown fade: the tall pieces' upper reaches dissolve, so strokes
+  // standing behind the content column stop surfacing through the thin gaps
+  // between cards as disembodied slivers (worst in the Calendar's grid seams).
+  // The floor band, where the composition lives, stays full strength — pieces
+  // emerge from the same mist the tansu's cloud band already speaks.
+  const mask = 'linear-gradient(to bottom, transparent 0, rgba(0,0,0,0.22) 30%, black 54%)';
   return (
     <div
       aria-hidden="true"
-      className={`hidden lg:flex fixed bottom-0 inset-x-0 z-0 pointer-events-none overflow-hidden ${side}`}
+      className={`hidden lg:flex fixed bottom-0 left-[220px] right-0 z-0 pointer-events-none overflow-hidden ${side}`}
+      style={{ maskImage: mask, WebkitMaskImage: mask }}
       dangerouslySetInnerHTML={{ __html: svg }}
     />
   );
@@ -214,15 +261,135 @@ export function HangingRail({ page = '/' }: { page?: string }) {
   const key = '/' + (page.split('/')[1] ?? '');
   // Opposite side from the ground frieze below it.
   const side = jitter(key, 'side') < 0.5 ? 'justify-start' : 'justify-end';
+  // Most pages hang a keepsake past the rod's end — the rod grows an arm and a
+  // pair of jhumkas or the hand mirror hangs from it. Page-keyed like the
+  // frieze; a few pages keep the rod bare.
+  const r = jitter(key, 'drop');
+  const drop = r < 0.45 ? FRIEZE_RAIL_DROPS.jhumka : r < 0.9 ? FRIEZE_RAIL_DROPS.handmirror : null;
+  const inner = drop
+    ? `${FRIEZE_RAIL}<path d='M700 40h150' fill='none' stroke='var(--color-artline)' stroke-width='2.5' stroke-opacity='0.30'/><g transform='translate(185 0)'>${drop}</g>`
+    : FRIEZE_RAIL;
+  const w = drop ? 880 : 720;
   const svg =
-    `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 720 190' width='720' height='190' ` +
-    `style='display:block; --color-artline: var(--color-artline-2)'>${FRIEZE_RAIL}</svg>`;
+    `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 ${w} 190' width='${w}' height='190' ` +
+    `style='display:block; --color-artline: var(--color-artline-2)'>${inner}</svg>`;
   return (
     <div
       aria-hidden="true"
-      className={`hidden lg:flex fixed top-0 inset-x-0 z-0 pointer-events-none overflow-hidden ${side}`}
+      className={`hidden lg:flex fixed top-0 left-[220px] right-0 z-0 pointer-events-none overflow-hidden ${side}`}
       dangerouslySetInnerHTML={{ __html: svg }}
     />
+  );
+}
+
+/** Which piece stands mid-wall in each page's open gutter. Furniture only —
+    the small motifs vanish at this crop — and always DISJOINT from that
+    page's frieze set: the same drawing twice on one wall reads as a wallpaper
+    repeat, not a hang (Events stacked two beach still-lifes before this). */
+const GUTTER_PIECES: Record<string, string> = {
+  '/': 'cheval',
+  '/closet': 'screen',
+  '/outfits': 'cheval',
+  '/calendar': 'jewelstand',
+  '/ledger': 'vanity',
+  '/wishlist': 'jewelstand',
+  '/compare': 'dressform',
+  '/events': 'vanity',
+  '/feed': 'coatstand',
+  '/chats': 'jewelstand',
+  '/profile': 'cheval',
+  '/settings': 'dressform',
+};
+const GUTTER_FALLBACKS = ['cheval', 'screen', 'dressform', 'vanity', 'jewelstand', 'coatstand'];
+
+/**
+ * One piece standing at mid-height in the gutter the content column leaves
+ * open — the side the ground frieze is NOT on, so the two never crowd one
+ * wall. The middle of every page was the emptiest stretch of the house: the
+ * frieze holds the floor and the rail holds the ceiling, but a tall page
+ * scrolled past nothing at eye level. The figure is sized from the ACTUAL
+ * gutter — at mid widths it stands small and whole; when the gutter closes it
+ * steps out entirely rather than hide behind the column and surface through
+ * card gaps as slivers.
+ */
+export function GutterFigure({ page = '/' }: { page?: string }) {
+  const key = '/' + (page.split('/')[1] ?? '');
+  const set = new Set(PAGE_SETS[key] ?? DEFAULT_SET);
+  const piece =
+    [GUTTER_PIECES[key] ?? 'cheval', ...GUTTER_FALLBACKS].find(k => !set.has(k) && FRIEZE_PIECES[k]) ?? 'cheval';
+  // GroundFrieze stands justify-end when jitter < 0.5 — take the other wall.
+  const left = jitter(key, 'side') < 0.5;
+  const vw = typeof window === 'undefined' ? 1440 : window.innerWidth;
+  const gutter = Math.max(0, (vw - SIDEBAR_W - CONTENT_W) / 2);
+  if (gutter < 72) return null;
+  const w = Math.min(200, Math.round(gutter - 16));
+  const h = Math.round((w * 380) / 420);
+  const svg =
+    `<svg xmlns='http://www.w3.org/2000/svg' viewBox='20 130 420 380' width='${w}' height='${h}' ` +
+    `style='display:block'>${FRIEZE_PIECES[piece]}</svg>`;
+  return (
+    <div
+      aria-hidden="true"
+      className={`hidden lg:block fixed top-1/2 -translate-y-1/2 z-0 pointer-events-none ${left ? 'left-[232px]' : 'right-3'}`}
+      dangerouslySetInnerHTML={{ __html: svg }}
+    />
+  );
+}
+
+/** The scatter pool: shoes and keepsakes set down in the open margins. */
+const SCATTER_POOL = ['heels', 'boot', 'sneaker', 'jutti', 'sandal', 'watch', 'rings', 'bangles', 'pearls'];
+/** Slots keep clear of the rail (top band), the frieze (bottom band), and the
+    gutter figure's mid-height stand. Jitter nudges each a few percent so no
+    two pages shelve their things identically. */
+const SCATTER_SLOTS = [
+  { side: 'L', top: 26 },
+  { side: 'R', top: 32 },
+  { side: 'L', top: 71 },
+  { side: 'R', top: 65 },
+];
+
+/**
+ * Small artwork across the background: three or four little drawings — a
+ * tipped heel, a coiled watch, a strand of pearls — set down in the gutters
+ * the way real things collect on a dresser top. Page-keyed and deterministic,
+ * like every hang in the house: random once, then it stays where it was put.
+ */
+export function ScatterField({ page = '/' }: { page?: string }) {
+  const key = '/' + (page.split('/')[1] ?? '');
+  const used = new Set<number>();
+  const n = 3 + (jitter(key, 'scatter-n') < 0.4 ? 1 : 0);
+  const items: Array<{ piece: string; side: string; top: number; size: number; second: boolean }> = [];
+  for (let i = 0; i < n; i++) {
+    let pick = Math.floor(jitter(key, 'scatter', i) * SCATTER_POOL.length);
+    while (used.has(pick)) pick = (pick + 1) % SCATTER_POOL.length;
+    used.add(pick);
+    if (!FRIEZE_PIECES[SCATTER_POOL[pick]]) continue;
+    const slot = SCATTER_SLOTS[i % SCATTER_SLOTS.length];
+    items.push({
+      piece: SCATTER_POOL[pick],
+      side: slot.side,
+      top: slot.top + Math.round(jitter(key, 'sl', i) * 8) - 4,
+      size: 64 + Math.round(jitter(key, 'sz', i) * 28),
+      second: jitter(key, 'metal', i) < 0.5,
+    });
+  }
+  return (
+    <div aria-hidden="true" className="hidden lg:block">
+      {items.map((it, i) => (
+        <div
+          key={i}
+          className={`fixed z-0 pointer-events-none ${it.side === 'L' ? 'left-[234px]' : 'right-2'}`}
+          style={{ top: `${it.top}%` }}
+          dangerouslySetInnerHTML={{
+            __html:
+              `<svg xmlns='http://www.w3.org/2000/svg' viewBox='140 360 190 150' width='${it.size}' ` +
+              `height='${Math.round((it.size * 150) / 190)}' style='display:block${
+                it.second ? '; --color-artline: var(--color-artline-2)' : ''
+              }'>${FRIEZE_PIECES[it.piece]}</svg>`,
+          }}
+        />
+      ))}
+    </div>
   );
 }
 
@@ -377,7 +544,7 @@ export function PlateWashline() {
  * First-class no-photo state: a drawn flat on a muslin tile. Photo-free use is a
  * privacy choice, so it must look intentional rather than broken.
  */
-export function GarmentPlate({ categoryId, color }: { categoryId: string; color?: string }) {
+export function GarmentPlate({ categoryId, color, name }: { categoryId: string; color?: string; name?: string }) {
   const flats: Record<string, React.ReactNode> = {
     tops: <path d="M30 18L14 28v16h8v42h36V44h8V28L50 18" />,
     bottoms: <path d="M22 16h36v10H22zM22 26l4 60h12l4-34 4 34h12l4-60" />,
@@ -387,8 +554,36 @@ export function GarmentPlate({ categoryId, color }: { categoryId: string; color?
     shoes: <path d="M10 70h68v12H10zM10 70V48h16l12 10h24c8 0 16 4 16 12" />,
     jewellery: <path d="M18 22c0 26 10 38 22 38s22-12 22-38M40 60v10M40 70l9 9-9 9-9-9z" />,
     accessories: <path d="M16 34h48v52H16zM30 34V22a10 10 0 0120 0v12M16 50h48" />,
+    skirt: <path d="M26 20h28v8H26zM24 28L14 82h52L56 28" />,
+    scarf: <path d="M18 32h44v20H18zM18 52l4 26M29 52l3 26M40 52l3 26M51 52l3 26M62 52l2 26M18 32l44 20" />,
+    sunglasses: (
+      <>
+        <circle cx="24" cy="54" r="13" />
+        <circle cx="56" cy="54" r="13" />
+        <path d="M37 52c1-4 5-4 6 0M11 50L4 42M69 50l7-8" />
+      </>
+    ),
+    socks: (
+      <>
+        <path d="M20 22h14v28c0 10-4 13-9 17-4 4-2 10 4 10s11-5 11-13" />
+        <path d="M20 28h14" />
+        <path d="M42 28h14v28c0 10-4 13-9 17-4 4-2 10 4 10s11-5 11-13" />
+        <path d="M42 34h14" />
+      </>
+    ),
   };
-  const flat = flats[categoryId] ?? flats.accessories;
+  // The category flat asserts what a piece IS, so a Wool skirt must not wear
+  // the trouser drawing and a scarf must not wear the tote — that broke the
+  // "photo-free is first-class" contract four cells in a row. The name gets
+  // first say; the category remains the fallback.
+  const NAME_FLATS: Array<[RegExp, string]> = [
+    [/\bskirts?\b/i, 'skirt'],
+    [/scarf|shawl|pashmina|stole|dupatta|bandana/i, 'scarf'],
+    [/sunglass|spectacle|glasses|shades/i, 'sunglasses'],
+    [/\bsocks?\b/i, 'socks'],
+  ];
+  const byName = name ? NAME_FLATS.find(([re]) => re.test(name))?.[1] : undefined;
+  const flat = (byName && flats[byName]) ?? flats[categoryId] ?? flats.accessories;
   return (
     <div className="w-full h-full flex items-center justify-center bg-sunken text-text-2">
       <svg viewBox="0 0 80 100" className="w-3/5 h-3/5" aria-hidden="true">

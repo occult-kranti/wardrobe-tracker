@@ -241,7 +241,7 @@ export function Rail() {
                     {item?.imageUrl ? (
                       <img src={item.imageUrl} alt="" className="w-full h-full object-cover" />
                     ) : (
-                      <GarmentPlate categoryId={item?.category ?? 'accessories'} color={item?.color} />
+                      <GarmentPlate categoryId={item?.category ?? 'accessories'} color={item?.color} name={item?.name} />
                     )}
                   </span>
                   <span className="min-w-0 flex-1">
@@ -328,7 +328,7 @@ export function RailProfile() {
                     {item?.imageUrl ? (
                       <img src={item.imageUrl} alt="" className="w-full h-full object-cover" />
                     ) : (
-                      <GarmentPlate categoryId={piece.category ?? 'accessories'} color={item?.color} />
+                      <GarmentPlate categoryId={piece.category ?? 'accessories'} color={item?.color} name={piece.name ?? item?.name} />
                     )}
                   </span>
                   <span className="min-w-0 flex-1">
@@ -368,7 +368,7 @@ export function RailProfile() {
                         {item.imageUrl ? (
                           <img src={item.imageUrl} alt="" className="w-full h-full object-cover" />
                         ) : (
-                          <GarmentPlate categoryId={item.category} color={item.color} />
+                          <GarmentPlate categoryId={item.category} color={item.color} name={item.name} />
                         )}
                       </span>
                     );

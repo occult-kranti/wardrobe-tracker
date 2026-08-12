@@ -43,9 +43,10 @@ export default function Feed() {
             title="Nothing is on show yet."
             body="Looks you choose to share appear here, alongside those from the other wardrobes on this device. Sharing is per look, and you can stop at any time."
             action={
-              outfits.length > 0 ? (
-                <LinkButton to="/outfits" tone="primary">Choose a look to share</LinkButton>
-              ) : undefined
+              // With no looks saved, the first step is making one, not choosing one.
+              <LinkButton to="/outfits" tone="primary">
+                {outfits.length > 0 ? 'Choose a look to share' : 'Build a look to share'}
+              </LinkButton>
             }
           />
         </Card>

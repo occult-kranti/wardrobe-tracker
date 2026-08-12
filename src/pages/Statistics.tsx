@@ -2,7 +2,7 @@ import { useMemo, type CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
 import { useWardrobe } from '../context/WardrobeContext';
 import { categoryLabel, isPlannedLog, SOURCE_LABELS, type ClothingItem, type ItemSource } from '../types';
-import { isFutureDate, todayLocal } from '../lib/dates';
+import { daysSince, isFutureDate, todayLocal } from '../lib/dates';
 import { aggregateCostPerWear, costPerWear, formatMoney, formatPerWear } from '../lib/cost';
 import { Card, EmptyState, Masthead, SectionTitle, Stat, TableRail } from '../components/ui';
 import { Basting, GarmentPlate, LeaderLine, PlateEmptyLedger } from '../components/art';
@@ -44,6 +44,10 @@ function monthLabel(dateStr: string): string {
   return d.toLocaleDateString('en-US', sameYear ? { month: 'long' } : { month: 'long', year: 'numeric' });
 }
 
+/** Brand-group sentinels — pieces with no maker to rank. Never real makers. */
+const SELF_MADE = '\u0000self-made';
+const NO_LABEL = '\u0000no-label';
+
 /** Photo tile, or the drawn flat when there's no photo. The no-photo state is first-class. */
 function Thumb({ item, className = '' }: { item: ClothingItem; className?: string }) {
   return (
@@ -51,7 +55,7 @@ function Thumb({ item, className = '' }: { item: ClothingItem; className?: strin
       {item.imageUrl ? (
         <img src={item.imageUrl} alt="" loading="lazy" className="w-full h-full object-cover" />
       ) : (
-        <GarmentPlate categoryId={item.category} color={item.color} />
+        <GarmentPlate categoryId={item.category} color={item.color} name={item.name} />
       )}
     </span>
   );
@@ -277,10 +281,15 @@ export default function Statistics() {
 
   const mostWorn = useMemo(() => getMostWorn(5).filter(i => i.wearCount > 0), [getMostWorn]);
 
+  // Quiet means worn once and then a month untouched. Never-worn pieces are
+  // Resting's story, told once, directly below — without the wearCount guard
+  // this card degenerated into an exact copy of Resting whenever five
+  // never-worn pieces crossed thirty days. A week-one closet has nothing
+  // quiet in it yet.
   const quietLately = useMemo(
     () =>
       activeItems
-        .filter(i => i.wearCount > 0)
+        .filter(i => i.wearCount > 0 && daysSince(i.lastWorn ?? i.dateAdded) >= 30)
         .sort(
           (a, b) =>
             a.wearCount - b.wearCount ||
@@ -293,8 +302,6 @@ export default function Statistics() {
   /* ---------- brands: a plain ranked table, never a collection ---------- */
 
   const brands = useMemo(() => {
-    const SELF_MADE = '\u0000self-made';
-    const NO_LABEL = '\u0000no-label';
     const groups = new Map<
       string,
       { casings: Map<string, number>; pieces: number; wears: number; cost: number; costedWears: number }
@@ -433,15 +440,17 @@ export default function Statistics() {
       ) : null}
 
       {/* Monthly activity — ink columns on a hairline baseline, the peak marked
-          with a basting-dash leader rather than a colour. */}
-      {months.length > 0 ? (
+          with a basting-dash leader rather than a colour. Two months minimum:
+          a single flex-1 column at full height is a slab, not a chart, and the
+          column cap keeps short histories reading as columns too. */}
+      {months.length >= 2 ? (
         <Card>
-          <SectionTitle aside={`${months.length} months`}>Monthly activity</SectionTitle>
+          <SectionTitle aside={`${months.length} ${months.length === 1 ? 'month' : 'months'}`}>Monthly activity</SectionTitle>
           <div className="flex items-end gap-1.5 sm:gap-2 h-32 border-b border-border">
             {months.map(row => {
               const pct = monthlyMax > 0 ? (row.wears / monthlyMax) * 100 : 0;
               return (
-                <div key={row.key} className="flex-1 h-full flex flex-col justify-end items-center gap-1.5 min-h-0">
+                <div key={row.key} className="flex-1 max-w-16 h-full flex flex-col justify-end items-center gap-1.5 min-h-0">
                   <span className="type-ledger text-[11px] text-text-2 tabular">{row.wears}</span>
                   {/* The bar lives in its own track so `height: %` resolves
                       against the PLOT AREA. It used to resolve against the flex
@@ -469,7 +478,7 @@ export default function Statistics() {
             {months.map(row => (
               <span
                 key={row.key}
-                className="type-ledger text-[10px] text-text-2 flex-1 text-center truncate"
+                className="type-ledger text-[10px] text-text-2 flex-1 max-w-16 text-center truncate"
               >
                 {monthTick(row.key)}
               </span>
@@ -481,12 +490,14 @@ export default function Statistics() {
                was withdrawn, and it was pointing at whichever month came first. */
             <div
               className="flex items-center gap-2 mt-3"
-              // Capped so a late-year peak cannot push the caption off the card.
-              style={{ marginInlineStart: `min(${(monthlyPeak / months.length) * 100}%, calc(100% - 230px))` }}
+              // Capped three ways: by the column stride once capped columns stop
+              // filling the row, and by the card edge so a late-year peak cannot
+              // push the caption off it.
+              style={{ marginInlineStart: `min(${(monthlyPeak / months.length) * 100}%, ${monthlyPeak * 72}px, calc(100% - 230px))` }}
             >
               <LeaderLine width={40} />
               <span className="type-ledger text-[11px] text-text-2 whitespace-nowrap">
-                Busiest · {monthTick(months[monthlyPeak].key)} · {monthlyMax} wears
+                Busiest · {monthTick(months[monthlyPeak].key)} · {monthlyMax} {monthlyMax === 1 ? 'wear' : 'wears'}
               </span>
             </div>
           ) : null}
@@ -543,7 +554,7 @@ export default function Statistics() {
           nothing is wrong is a verdict wearing a lab coat. */}
       {rewear !== null && rewear.rows.length > 1 ? (
         <Card>
-          <SectionTitle aside={`${rewear.monthsCounted} whole months`}>Re-wear rate</SectionTitle>
+          <SectionTitle aside={`${rewear.monthsCounted} whole ${rewear.monthsCounted === 1 ? 'month' : 'months'}`}>Re-wear rate</SectionTitle>
           <div className="flex items-end gap-5">
             <p className="type-masthead text-[40px] sm:text-[48px] leading-none tabular shrink-0">
               {rewear.average.toFixed(1)}
@@ -597,7 +608,7 @@ export default function Statistics() {
                     {item.name}
                   </p>
                   <p className="type-ledger text-[11px] text-text-2 tabular mt-0.5">
-                    {item.wearCount} wears
+                    {item.wearCount} {item.wearCount === 1 ? 'wear' : 'wears'}
                     {costPerWear(item).reason === 'ok'
                       ? ` · ${formatPerWear(costPerWear(item).value)}`
                       : ''}
@@ -681,8 +692,10 @@ export default function Statistics() {
         </Card>
       ) : null}
 
-      {/* Brands — one plain ranked table. No logos, no imagery, nothing to complete. */}
-      {brands.length > 0 ? (
+      {/* Brands — one plain ranked table. No logos, no imagery, nothing to
+          complete. Only once a real named maker is on the books: a lone
+          "No label" row is the totals card restated. */}
+      {brands.some(b => b.key !== SELF_MADE && b.key !== NO_LABEL) ? (
         <Card>
           <SectionTitle aside={`${brands.length} ${brands.length === 1 ? 'maker' : 'makers'}`}>
             By maker

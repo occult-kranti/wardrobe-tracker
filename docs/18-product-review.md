@@ -61,3 +61,28 @@ is polished. Subscription fatigue hardened (~41% report it). **"The record is
 yours" is an open lane, and this is the only finished, designed product in
 it** — which is why the honesty fix shipped first: the differentiator is only
 worth owning if the record is true.
+
+## Continued planning, 2026-08-12: the three closets every feature must serve
+
+Every feature above was reviewed against ONE closet — the best one. The plan
+now runs on three fixtures (scripts/fill-states.mjs + snap-states.mjs):
+
+- **Starting** (~4 pieces, 3 logs, week one) — the §8.4 cold-start promise:
+  value at item #1, ghost cards, one CTA per empty screen.
+- **Average** (~32 pieces, 40% photo-less, 55% costed, 8 gappy weeks) — the
+  honest middle where most real users live; drawn flats beside photos,
+  sparse-data analytics, partial records everywhere.
+- **Complete** (the three personas, 53–61 pieces) — density, and
+  cross-wardrobe consistency across three different data shapes.
+
+**The rule this adds to the backlog:** every item in the ranked list ships
+with all three states screenshotted, or it is not done. Sort must be useful at
+4 pieces (it disables), at 32 (it earns its place), and at 61 (it is why it
+exists). The packing surface must degrade to "hold a look" when there are no
+saved outfits. Lending needs the average closet's reality — a piece with no
+photo still lends.
+
+The fixture generator itself enforces two house rules the first draft broke:
+photo paths must be files that exist, and wearCount/lastWorn are derived from
+the logs, never asserted beside them — both caught by the first snapshot run
+before any reviewer saw them.

@@ -70,7 +70,7 @@ function Thumb({ item, className = '', alt = '' }: { item: ClothingItem; classNa
       {item.imageUrl ? (
         <img src={item.imageUrl} alt={alt} className="w-full h-full object-cover" />
       ) : (
-        <GarmentPlate categoryId={item.category} color={item.color} />
+        <GarmentPlate categoryId={item.category} color={item.color} name={item.name} />
       )}
     </span>
   );

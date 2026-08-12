@@ -58,7 +58,7 @@ function Thumb({ item, className = '' }: { item: ClothingItem; className?: strin
           className="w-full h-full object-cover"
         />
       ) : (
-        <GarmentPlate categoryId={item.category} color={item.color} />
+        <GarmentPlate categoryId={item.category} color={item.color} name={item.name} />
       )}
     </div>
   );

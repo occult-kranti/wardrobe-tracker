@@ -44,7 +44,10 @@ function parseCsv(text) {
    context tag. Both are remapped onto the app's model, where categories are
    user-owned data and occasions are free-form. */
 
-const JEWELLERY = /\b(ring|earring|stud|hoop|necklace|chain|pendant|bracelet|bangle|cufflink|jhumka|choker|brooch|watch|kada)\b/i;
+// Plural-tolerant: the closets write "Jhumkas", "Pearl studs", "Cufflinks",
+// and a regex that only knew the singular filed five pieces of jewellery
+// under bags and scarves.
+const JEWELLERY = /\b(rings?|earrings?|studs?|hoops?|necklaces?|chains?|pendants?|bracelets?|bangles?|anklets?|cufflinks?|jhumkas?|chokers?|brooch(es)?|watch(es)?|kadas?)\b/i;
 
 const CATEGORY_MAP = {
   top: 'tops', shirt: 'tops', knit: 'layers', layer: 'layers',
@@ -70,6 +73,9 @@ const OCCASION_FROM_SEASON = {
 
 function mapCategory(row) {
   if (row.category === 'accessory' && JEWELLERY.test(row.garment)) return 'jewellery';
+  // The source files a swim one-piece under bottoms; the app has a category
+  // for exactly this — 'dresses', which the UI labels "One-pieces".
+  if (/swim/i.test(row.garment) && /one-piece/i.test(row.garment)) return 'dresses';
   return CATEGORY_MAP[row.category] ?? 'accessories';
 }
 

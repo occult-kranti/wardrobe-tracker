@@ -238,7 +238,7 @@ export default function AddItemModal({ open, onClose, editItem }: Props) {
               <div className="flex items-start gap-4">
                 {/* The stand-in, live: exactly what the closet will show. */}
                 <div className="w-[104px] aspect-[4/5] bg-mat rounded-[2px] overflow-hidden shrink-0">
-                  <GarmentPlate categoryId={category} color={color} />
+                  <GarmentPlate categoryId={category} color={color} name={name} />
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="type-ledger text-[11px] text-text-2">Drawn stand-in</p>
