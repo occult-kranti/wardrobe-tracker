@@ -5,7 +5,7 @@ import {
   IconWishlist, IconCompare, IconRail, IconSettings, IconPlus, IconTheme, IconMenu, IconClose,
   IconEvents, IconFeed, IconChats, IconProfile,
 } from './icons';
-import { GroundFrieze, HangingRail, Wordmark, TagMark } from './art';
+import { GroundFrieze, HangingRail, GutterFigure, ScatterField, Wordmark, TagMark } from './art';
 import { useWardrobe } from '../context/WardrobeContext';
 import { useSession } from '../context/SessionContext';
 import AddItemModal from './AddItemModal';
@@ -75,6 +75,8 @@ export default function Layout() {
           column, which sits at z-10 and scrolls past. */}
       <GroundFrieze name={active?.name} page={location.pathname} />
       <HangingRail page={location.pathname} />
+      <GutterFigure page={location.pathname} />
+      <ScatterField page={location.pathname} />
       {/* Mobile masthead */}
       <header className="lg:hidden fixed top-0 inset-x-0 z-50 bg-bg/95 backdrop-blur-sm border-b border-border">
         <div className="flex items-center justify-between h-14 px-4">

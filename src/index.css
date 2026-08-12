@@ -331,25 +331,25 @@
   --color-bg-deep: #050609;
   --color-text: #EDEEF3;         /* blued chalk (17.2:1 on bg) */
   --color-text-2: #A9ADBC;       /* 8.5:1 on bg */
-  --color-border: #2B2F3B;
+  --color-border: #4A343A;       /* the hairlines struck in rose gold, cooled to near-black */
   --color-accent: #85C0E2;       /* washing blue on cold glass (9.9:1) */
   --color-accent-hover: #9FCCE8;
   --color-accent-fill: #0F5F7D;
   --color-on-accent: #FFFDF6;
   --color-accent-on-ink: #0F5F7D; /* the fill inverts to blued chalk */
   --color-seal: #CE2545;         /* the wax cooled for glass: 3.72:1 on bg, chalk T 4.85:1 */
-  --color-artline: #B9BFC8;      /* the frieze in cold silver */
-  --color-artline-2: #C8B273;    /* paired with pale cold gold */
+  --color-artline: #D39A85;      /* the frieze in rose gold — the dye house's warmth on glass */
+  --color-artline-2: #E9C0AC;    /* paired with pale rose gold */
   --color-success: #63B08F;
   --color-warning: #D9A93F;
   --color-danger: #F2A9B4;       /* danger TEXT only */
   --color-danger-fill: #8C1B32;
-  --color-gold: #C8B273;         /* decorative only, never text */
+  --color-gold: #D5A08A;         /* rose gold; decorative only, never text */
   --color-charcoal: #161921;
   --color-chalk: #F4F5F8;
   --color-ink-fill: #EDEEF3;     /* inverts: blued-chalk fill, glass label */
   --color-on-ink: #0A0B0F;
-  --pattern-ink: 205, 210, 225;  /* the grid scribed in the glass */
+  --pattern-ink: 224, 205, 200;  /* the grid scribed in the glass, warmed rose */
   --pattern-alpha: 0.04;
   color-scheme: dark;
 }
@@ -568,6 +568,14 @@
     background-size: 40px 40px;
     background-repeat: no-repeat;
   }
+  /* The obsidian takes the dye house's ornament, struck in rose gold on the
+     glass — warm metal against the coldest room in the house. */
+  :root[data-theme="obsidian"] .plate {
+    background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2048%2048'%3E%3Cg%20fill='none'%20stroke='%23D39A85'%20stroke-width='1.75'%20stroke-opacity='0.42'%20stroke-linecap='butt'%20transform='rotate(90%2024%2024)'%3E%3Cpath%20d='M3%2045V16Q3%203%2016%203h29'/%3E%3Cpath%20d='M10%2042V26a6%206%200%20016-6%206%206%200%20016-6%206%206%200%20016-6h14'/%3E%3C/g%3E%3C/svg%3E"), url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2048%2048'%3E%3Cg%20fill='none'%20stroke='%23D39A85'%20stroke-width='1.75'%20stroke-opacity='0.42'%20stroke-linecap='butt'%20transform='rotate(270%2024%2024)'%3E%3Cpath%20d='M3%2045V16Q3%203%2016%203h29'/%3E%3Cpath%20d='M10%2042V26a6%206%200%20016-6%206%206%200%20016-6%206%206%200%20016-6h14'/%3E%3C/g%3E%3C/svg%3E");
+    background-position: right 5px top 5px, left 5px bottom 5px;
+    background-size: 40px 40px;
+    background-repeat: no-repeat;
+  }
 
   /* Kakemono mounting: a hanging scroll is framed twice, the work inside a
      brocade border inside an outer mount. In this room every plate takes that
@@ -587,8 +595,8 @@
     background: color-mix(in srgb, var(--color-gold) 75%, transparent);
   }
 
-  /* The dye house takes the same mounting, struck in brass on plum. The two
-     bold rooms carry the double frame; the quiet rooms stay plain. */
+  /* The dye house takes the same mounting, struck in brass on plum. The bold
+     rooms carry the double frame; the quiet rooms stay plain. */
   :root[data-theme="dyehouse"] .plate {
     outline: 1px solid color-mix(in srgb, var(--color-gold) 30%, transparent);
     outline-offset: 3px;
@@ -599,6 +607,14 @@
   }
   :root[data-theme="dyehouse"] .rule-double::after {
     background: color-mix(in srgb, var(--color-gold) 60%, transparent);
+  }
+
+  /* The obsidian does NOT take the double mounting — tried, and beside the
+     rose-gold border every card wore four lines at each edge. On glass the
+     frame is a single stringy hairline: the border itself, tight to the card,
+     with only the masthead's thin second rule struck in the rose. */
+  :root[data-theme="obsidian"] .rule-double::after {
+    background: color-mix(in srgb, var(--color-gold) 65%, transparent);
   }
 
   /* Basting stitch divider with bar-tack ends. */
