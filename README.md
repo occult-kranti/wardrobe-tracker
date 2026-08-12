@@ -16,8 +16,8 @@ subscription, no shop links. Everything lives on your device.
 ![Three beats from the film: the glass closet under its moving light, a day logged in two taps, and the rooms changing](docs/media/demo.gif)
 
 *The film, shot on the V2 glass build:*
-*[**demo.mp4**](https://occult-kranti.github.io/wardrobe-tracker/demo.mp4) (86s, 1080p) — a wardrobe begun empty, the two-tap log, three sample closets, the ledger, the cooling-off, the honest calendar, and the rooms.*
-*[**demo-vertical.mp4**](https://occult-kranti.github.io/wardrobe-tracker/demo-vertical.mp4) (48s, 9:16) — the same argument cut for a phone.*
+*[**demo.mp4**](https://occult-kranti.github.io/wardrobe-tracker/demo.mp4) (96s, 1080p) — a wardrobe begun empty, the two-tap log, three sample closets, the ledger, the cooling-off, the honest calendar, and the rooms.*
+*[**demo-vertical.mp4**](https://occult-kranti.github.io/wardrobe-tracker/demo-vertical.mp4) (54s, 9:16) — the same argument cut for a phone.*
 
 ---
 

@@ -16,6 +16,10 @@ const DUR = Number(process.argv[3] ?? 100);
 const CREST = Number(process.argv[4] ?? 82);
 const DROP0 = Number(process.argv[5] ?? 85);
 const DROP1 = Number(process.argv[6] ?? 91);
+// The calm tempo: longer chord bars, sparser chimes, a gentler crest.
+const BAR = Number(process.argv[7] ?? 16);
+const SWELL = Number(process.argv[8] ?? 0.95);
+const GAPX = Number(process.argv[9] ?? 1);
 const N = Math.round(SR * DUR);
 const L = new Float64Array(N);
 const R = new Float64Array(N);
@@ -31,8 +35,8 @@ const rand = () => {
 function master(t) {
   if (t < 3) return 0.5 * (t / 3);
   if (t < CREST - 10) return 0.5;
-  if (t < CREST) return 0.5 + 0.45 * ((t - (CREST - 10)) / 10);
-  if (t < CREST + 8) return 0.95 - 0.42 * ((t - CREST) / 8);
+  if (t < CREST) return 0.5 + (SWELL - 0.5) * ((t - (CREST - 10)) / 10);
+  if (t < CREST + 8) return SWELL - (SWELL - 0.53) * ((t - CREST) / 8);
   const tail = DUR - 8;
   if (t < tail) return 0.5 - 0.15 * ((t - (CREST + 8)) / Math.max(1, tail - CREST - 8));
   return Math.max(0, 0.35 * (1 - (t - tail) / 8));
@@ -49,7 +53,7 @@ const CHORDS = [
 
 for (let i = 0; i < N; i++) {
   const t = i / SR;
-  const bar = t / 16;
+  const bar = t / BAR;
   const idx = Math.floor(bar) % CHORDS.length;
   const next = (idx + 1) % CHORDS.length;
   const frac = bar - Math.floor(bar);
@@ -77,11 +81,12 @@ for (let i = 0; i < N; i++) {
 const NOTES = [440.0, 523.25, 587.33, 659.25, 783.99, 880.0];
 
 function gapAt(t) {
-  if (t < 14) return 4.0;
-  if (t < CREST - 12) return 5.0;
-  if (t < CREST + 4) return 2.0;
-  if (t < DUR - 12) return 5.5;
-  return 99;
+  const base =
+    t < 14 ? 4.0 :
+    t < CREST - 12 ? 5.0 :
+    t < CREST + 4 ? 2.0 :
+    t < DUR - 12 ? 5.5 : 99;
+  return base * GAPX;
 }
 
 const events = [];
@@ -141,4 +146,4 @@ header.writeUInt32LE(data.length, 40);
 
 const out = process.argv[2] ?? './score.wav';
 writeFileSync(out, Buffer.concat([header, data]));
-console.log('score written to', out, `(${DUR}s, crest ${CREST}s, ${events.length} chimes)`);
+console.log('score written to', out, `(${DUR}s, crest ${CREST}s, bar ${BAR}s, ${events.length} chimes)`);
