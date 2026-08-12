@@ -16,7 +16,7 @@
 :root {
   --glass-blur: 14px;
   --glass-alpha: 0.72;
-  --sheen-strength: 0.10;
+  --sheen-strength: 0.16;
 }
 
 /* The page becomes a stage: content floats over the deep ground. */
@@ -68,9 +68,12 @@
   border-radius: 2px;
   opacity: var(--sheen-o, 0);
   transition: opacity 350ms ease-out;
+  /* The light is the ROOM'S metal, not white — rose gold moves across the
+     obsidian, brass across the dye house, gold across the gilding room. A
+     white highlight read as glare; the metal reads as the room reflecting. */
   background: radial-gradient(
     420px circle at var(--sheen-x, 50%) var(--sheen-y, 50%),
-    color-mix(in srgb, var(--color-chalk) calc(var(--sheen-strength) * 100%), transparent),
+    color-mix(in srgb, var(--color-gold) calc(var(--sheen-strength) * 100%), transparent),
     transparent 62%
   );
 }
