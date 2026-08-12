@@ -48,57 +48,93 @@ const page = (files) => `<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Toile — mobile design, v1</title>
-<meta name="theme-color" content="#100E0B">
+<meta name="theme-color" content="#0B0A08">
 <style>
-  *{margin:0;box-sizing:border-box}
+  *{margin:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   :root{--ink:#EAE2D0;--ink-2:#9C9179;--line:#3A322A;--gold:#C79B4A;--seal:#BE1231;--bg:#0B0A08}
+  html,body{height:100%;overscroll-behavior:none}
   body{background:var(--bg);color:var(--ink);font:15px/1.5 Georgia,serif;
-       display:flex;flex-direction:column;min-height:100svh;overflow:hidden}
+       display:flex;flex-direction:column;overflow:hidden}
 
-  header{flex:none;display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line)}
-  header h1{font:700 14px Georgia,serif;letter-spacing:.28em;flex:none}
-  header .rule{width:44px;height:2px;background:var(--seal)}
-  header .count{margin-left:auto;font:500 10px 'Courier New',monospace;letter-spacing:.14em;color:var(--ink-2)}
+  /* ---- chrome: one compact line top, one bar bottom. Both retract. ---- */
+  header{flex:none;display:flex;align-items:center;gap:10px;
+    padding:calc(8px + env(safe-area-inset-top,0px)) 14px 8px;border-bottom:1px solid var(--line)}
+  header .mark{font:700 12px Georgia,serif;letter-spacing:.26em;flex:none}
+  header .rule{width:26px;height:2px;background:var(--seal);flex:none}
+  header h2{font:400 16px Georgia,serif;flex:1;min-width:0;overflow:hidden;
+    text-overflow:ellipsis;white-space:nowrap;text-align:center}
+  header .count{font:500 10px 'Courier New',monospace;letter-spacing:.1em;color:var(--ink-2);flex:none}
 
-  main{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;
-       justify-content:flex-start;overflow:hidden;padding:12px 10px 0}
-  .frame{transform-origin:top center}
-  iframe{width:412px;height:1060px;border:0;background:transparent;display:block}
+  main{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;
+       overflow:hidden;position:relative}
+  .frame{transform-origin:center center}
+  iframe{width:412px;height:935px;border:0;background:transparent;display:block}
 
-  .meta{flex:none;text-align:center;padding:10px 18px 4px;max-width:620px;margin:0 auto}
-  @media (max-height:760px){ .meta p{display:none} .meta{padding:6px 18px 2px} }
-  .meta h2{font:400 21px Georgia,serif}
-  .meta p{font:italic 400 14px Georgia,serif;color:var(--ink-2);margin-top:3px}
-
-  nav.bar{flex:none;display:flex;flex-wrap:wrap;align-items:center;gap:8px;
-      padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px));
+  nav.bar{flex:none;display:flex;flex-wrap:wrap;align-items:center;gap:7px;
+      padding:8px 10px calc(8px + env(safe-area-inset-bottom,0px));
       border-top:1px solid var(--line);background:var(--bg)}
-  /* Row one is always the walk: back, where you are, next. Anything else
-     wraps beneath it rather than shouldering Next off a narrow screen. */
-  .walk{display:flex;align-items:center;gap:8px;width:100%}
+  .walk{display:flex;align-items:center;gap:7px;width:100%}
   .walk #pick{flex:1;min-width:0}
-  .extras{display:flex;align-items:center;gap:8px;width:100%}
-  button{font:600 10px 'Courier New',monospace;letter-spacing:.12em;text-transform:uppercase;
-         background:none;border:1px solid #4A4036;color:var(--ink);padding:11px 13px;border-radius:2px;cursor:pointer;min-height:44px}
-  button:disabled{opacity:.35}
+  .extras{display:flex;align-items:center;gap:7px;width:100%}
+  button{font:600 10px 'Courier New',monospace;letter-spacing:.1em;text-transform:uppercase;
+         background:none;border:1px solid #4A4036;color:var(--ink);padding:10px 12px;
+         border-radius:2px;cursor:pointer;min-height:44px}
+  button:disabled{opacity:.3}
   button.on{background:var(--ink);color:var(--bg);border-color:transparent}
   .spread{flex:1}
-  select{font:600 10px 'Courier New',monospace;letter-spacing:.1em;text-transform:uppercase;background:#17130F;
-         color:var(--ink);border:1px solid #4A4036;border-radius:2px;padding:11px 8px;min-height:44px}
+  select{font:600 10px 'Courier New',monospace;letter-spacing:.1em;text-transform:uppercase;
+    background:#17130F;color:var(--ink);border:1px solid #4A4036;border-radius:2px;
+    padding:10px 6px;min-height:44px}
   .rooms{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
   .rooms::-webkit-scrollbar{display:none}
-  @media (max-width:640px){ .rooms{display:none} }
-  @media (min-width:641px){ select.roomsel{display:none} }
+  @media (max-width:700px){ .rooms{display:none} }
+  @media (min-width:701px){ select.roomsel{display:none} }
+
+  /* ---- immersive: the screen and nothing else ----
+     The mockups are 412x915. On a phone the chrome around them was taking
+     nearly half the height, so the design was being read at 55%. Immersive
+     drops every bar, and a tap anywhere brings them back. */
+  body.immersive header, body.immersive nav.bar{display:none}
+  .exit{position:fixed;top:calc(8px + env(safe-area-inset-top,0px));right:8px;z-index:20;
+    display:none;background:rgba(11,10,8,.55);border-color:rgba(90,79,66,.6);color:var(--ink-2);
+    min-height:36px;padding:7px 10px;font-size:12px;line-height:1;opacity:.75}
+  .exit:active{opacity:1}
+  /* A click inside an iframe never reaches this document, so immersive mode
+     needs its own surface to be tapped on — without it, full screen is a
+     one-way door on a touch device. */
+  .tapcatch{position:fixed;inset:0;z-index:15;display:none}
+  body.immersive .tapcatch{display:block}
+  body.immersive .exit{display:block}
+  .hint{position:fixed;left:50%;transform:translateX(-50%);top:calc(10px + env(safe-area-inset-top,0px));
+    z-index:20;display:none;font:500 9px 'Courier New',monospace;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--ink-2);background:rgba(11,10,8,.82);padding:7px 12px;
+    border:1px solid var(--line);border-radius:2px;pointer-events:none;transition:opacity .5s}
+  body.immersive .hint{display:block}
+
+  /* ---- the notes drawer: the caption lifted out of the frame ---- */
+  .notes{position:fixed;left:0;right:0;bottom:0;z-index:30;background:#12100C;
+    border-top:1px solid var(--line);padding:16px 18px calc(18px + env(safe-area-inset-bottom,0px));
+    transform:translateY(101%);transition:transform .28s ease-out;max-height:62svh;overflow:auto}
+  .notes.open{transform:none}
+  .notes p{font:400 14px/1.6 Georgia,serif;color:var(--ink-2)}
+  .notes b{color:var(--ink)}
+  .notes .close{margin-top:14px}
 </style>
 <body>
+
 <header>
-  <h1>TOILE</h1><span class="rule"></span>
+  <span class="mark">TOILE</span><span class="rule"></span>
+  <h2 id="title"></h2>
   <span class="count" id="count"></span>
 </header>
 
-<div class="meta"><h2 id="title"></h2><p id="blurb"></p></div>
+<main id="stage">
+  <div class="frame" id="frame"><iframe id="f" title="screen"></iframe></div>
+</main>
 
-<main id="stage"><div class="frame" id="frame"><iframe id="f" title="screen"></iframe></div></main>
+<div class="tapcatch" id="tapcatch"></div>
+<button class="exit" id="exit" aria-label="Leave full screen" title="Leave full screen">✕</button>
+<div class="hint" id="hint">Tap to show the controls</div>
 
 <nav class="bar">
   <div class="walk">
@@ -108,24 +144,27 @@ const page = (files) => `<!doctype html>
   </div>
   <div class="extras">
     <button id="stagebtn" hidden aria-pressed="false">See the moment</button>
+    <button id="notesbtn" aria-expanded="false">Notes</button>
     <span class="spread"></span>
     <div class="rooms" id="rooms"></div>
     <select class="roomsel" id="roomsel" aria-label="Room"></select>
+    <button id="full" aria-label="Full screen">Full screen</button>
   </div>
 </nav>
+
+<div class="notes" id="notes"><p id="notetext"></p>
+  <button class="close" id="notesclose">Close</button></div>
 
 <script>
 const FLOW = ${JSON.stringify(files)};
 const ROOMS = ${JSON.stringify(ROOMS)};
-let i = 0, room = '', stageIdx = 0, contentH = 1060;
+let i = 0, room = '', stageIdx = 0, contentH = 935;
 
 const f = document.getElementById('f');
 const pick = document.getElementById('pick');
 const roomsel = document.getElementById('roomsel');
 
-for (const [n, [slug, title]] of FLOW.entries()) {
-  pick.append(new Option(title, String(n)));
-}
+for (const [n, [slug, title]] of FLOW.entries()) pick.append(new Option(title, String(n)));
 for (const [value, label] of ROOMS) {
   roomsel.append(new Option(label, value));
   const b = document.createElement('button');
@@ -134,34 +173,11 @@ for (const [value, label] of ROOMS) {
   document.getElementById('rooms').append(b);
 }
 
-/* The mockups are drawn at 412px; a phone is often narrower and always
-   shorter. Scale the whole frame to fit rather than letting it clip. */
-function fit() {
-  /* Measure the room that is genuinely left: the viewport minus the chrome
-     above and below. Measuring the stage itself is circular — it is a flex
-     box sized around a 975px iframe, so it always claims to be big enough
-     and pushes the nav off the screen. */
-  const head = document.querySelector('header').getBoundingClientRect().height;
-  const meta = document.querySelector('.meta').getBoundingClientRect().height;
-  const bar = document.querySelector('nav.bar').getBoundingClientRect().height;
-  const stage = document.getElementById('stage');
-  /* visualViewport is the part actually on screen — innerHeight still counts
-     the strip behind a phone's retracting toolbar, and sizing to it puts this
-     viewer's own buttons under the browser chrome. */
-  const vh = Math.min(window.innerHeight, window.visualViewport ? window.visualViewport.height : Infinity);
-  const availH = Math.max(160, vh - head - meta - bar - 18);
-  const availW = stage.clientWidth - 16;
-  const s = Math.min(availW / 412, availH / contentH, 1);
-  const frame = document.getElementById('frame');
-  frame.style.transform = 'scale(' + s.toFixed(3) + ')';
-  frame.style.height = Math.round(contentH * s) + 'px';
-  frame.style.width = '412px';
-  f.style.height = contentH + 'px';
-}
-
 /* The mockup files lay their stages — the screen at rest, and the screen
-   mid-art-moment — side by side, which at phone width means the second one
-   sits below the fold and is never seen. Show exactly one at a time. */
+   mid-art-moment — side by side, which at phone width means the second sits
+   below the fold and is never seen. Show exactly one, and lift its caption
+   out of the frame: a paragraph of prose inside the scaled iframe was
+   costing the design a third of its height. */
 function showStage() {
   const d = f.contentDocument;
   if (!d || !d.body) return;
@@ -172,10 +188,33 @@ function showStage() {
   btn.textContent = stageIdx === 0 ? 'See the moment' : 'Back to rest';
   btn.setAttribute('aria-pressed', String(stageIdx === 1));
   stages.forEach((st, n) => { st.style.display = n === stageIdx ? 'flex' : 'none'; });
-  d.body.style.padding = '0';
-  d.body.style.display = 'block';
+  d.body.style.cssText += ';padding:0;display:block;background:transparent';
   const shown = stages[stageIdx];
-  if (shown) contentH = Math.max(940, Math.ceil(shown.getBoundingClientRect().height) + 24);
+  if (!shown) return;
+  const cap = shown.querySelector('.caption-note');
+  document.getElementById('notetext').innerHTML = cap ? cap.innerHTML : '';
+  if (cap) cap.style.display = 'none';
+  const phone = shown.querySelector('.phone');
+  contentH = phone ? Math.ceil(phone.getBoundingClientRect().height) + 20 : 935;
+}
+
+function fit() {
+  /* visualViewport is the part actually on screen — innerHeight still counts
+     the strip behind a phone's retracting toolbar. */
+  const vv = window.visualViewport;
+  const vh = Math.min(window.innerHeight, vv ? vv.height : Infinity);
+  const vw = Math.min(window.innerWidth, vv ? vv.width : Infinity);
+  const imm = document.body.classList.contains('immersive');
+  const head = imm ? 0 : document.querySelector('header').getBoundingClientRect().height;
+  const bar = imm ? 0 : document.querySelector('nav.bar').getBoundingClientRect().height;
+  const availH = Math.max(200, vh - head - bar - (imm ? 8 : 14));
+  const availW = vw - (imm ? 6 : 14);
+  const s = Math.min(availW / 412, availH / contentH);
+  const frame = document.getElementById('frame');
+  frame.style.transform = 'scale(' + s.toFixed(3) + ')';
+  frame.style.width = '412px';
+  frame.style.height = contentH + 'px';
+  f.style.height = contentH + 'px';
 }
 
 function applyRoom() {
@@ -190,43 +229,90 @@ function applyRoom() {
 }
 
 function paint() {
-  const [slug, title, blurb] = FLOW[i];
+  const [slug, title] = FLOW[i];
   document.getElementById('title').textContent = title;
-  document.getElementById('blurb').textContent = blurb;
-  document.getElementById('count').textContent = (i + 1) + ' / ' + FLOW.length;
+  document.getElementById('count').textContent = (i + 1) + '/' + FLOW.length;
   pick.value = String(i);
   roomsel.value = room;
   [...document.querySelectorAll('.rooms button')].forEach(b => b.classList.toggle('on', b.dataset.room === room));
   document.getElementById('prev').disabled = i === 0;
   document.getElementById('next').disabled = i === FLOW.length - 1;
   const want = slug + '.html';
-  if (!f.src.endsWith(want)) {
-    f.src = want;
-    f.onload = () => { showStage(); applyRoom(); fit(); };
-  } else { showStage(); applyRoom(); fit(); }
+  if (!f.src.endsWith(want)) { f.src = want; f.onload = () => { showStage(); applyRoom(); fit(); }; }
+  else { showStage(); applyRoom(); fit(); }
   location.hash = slug;
 }
 
 const go = n => { i = Math.min(FLOW.length - 1, Math.max(0, n)); stageIdx = 0; paint(); };
-document.getElementById('stagebtn').onclick = () => { stageIdx = stageIdx === 0 ? 1 : 0; paint(); };
 document.getElementById('prev').onclick = () => go(i - 1);
 document.getElementById('next').onclick = () => go(i + 1);
 pick.onchange = e => go(Number(e.target.value));
 roomsel.onchange = e => { room = e.target.value; paint(); };
+document.getElementById('stagebtn').onclick = () => { stageIdx = stageIdx === 0 ? 1 : 0; paint(); };
+
+/* notes */
+const notes = document.getElementById('notes');
+const toggleNotes = on => {
+  notes.classList.toggle('open', on);
+  document.getElementById('notesbtn').setAttribute('aria-expanded', String(on));
+};
+document.getElementById('notesbtn').onclick = () => toggleNotes(!notes.classList.contains('open'));
+document.getElementById('notesclose').onclick = () => toggleNotes(false);
+
+/* immersive */
+const hint = document.getElementById('hint');
+function setImmersive(on) {
+  document.body.classList.toggle('immersive', on);
+  if (on) {
+    toggleNotes(false);
+    hint.style.opacity = '1';
+    setTimeout(() => { hint.style.opacity = '0'; }, 2200);
+    if (document.documentElement.requestFullscreen) {
+      document.documentElement.requestFullscreen().catch(() => {});
+    }
+  } else if (document.fullscreenElement && document.exitFullscreen) {
+    document.exitFullscreen().catch(() => {});
+  }
+  requestAnimationFrame(fit);
+}
+document.getElementById('full').onclick = () => setImmersive(true);
+document.getElementById('exit').onclick = e => { e.stopPropagation(); setImmersive(false); };
+document.addEventListener('fullscreenchange', () => {
+  if (!document.fullscreenElement && document.body.classList.contains('immersive')) setImmersive(false);
+  else requestAnimationFrame(fit);
+});
+/* A tap on the screen itself leaves immersive — the mockups are pictures,
+   not controls, so a tap has nothing else to mean. The catcher sits over the
+   iframe because iframe clicks do not bubble out to this document; swipes
+   still work, so it forwards those to the walk. */
+const catcher = document.getElementById('tapcatch');
+let moved = false;
+catcher.addEventListener('click', () => { if (!moved) setImmersive(false); moved = false; });
+catcher.addEventListener('touchstart', e => { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; moved = false; }, { passive: true });
+catcher.addEventListener('touchend', e => {
+  if (x0 === null) return;
+  const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0;
+  if (Math.abs(dx) > 55 && Math.abs(dx) > Math.abs(dy)) { moved = true; go(i + (dx < 0 ? 1 : -1)); }
+  x0 = null;
+}, { passive: true });
+
 addEventListener('keydown', e => {
   if (e.key === 'ArrowRight') go(i + 1);
   if (e.key === 'ArrowLeft') go(i - 1);
+  if (e.key === 'f') setImmersive(!document.body.classList.contains('immersive'));
+  if (e.key === 'Escape') { toggleNotes(false); setImmersive(false); }
 });
 addEventListener('resize', fit);
 if (window.visualViewport) window.visualViewport.addEventListener('resize', fit);
 
 /* Swipe, because this is meant to be read on a phone. */
-let x0 = null;
-document.getElementById('stage').addEventListener('touchstart', e => { x0 = e.touches[0].clientX; }, { passive: true });
-document.getElementById('stage').addEventListener('touchend', e => {
+let x0 = null, y0 = null;
+const st = document.getElementById('stage');
+st.addEventListener('touchstart', e => { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; }, { passive: true });
+st.addEventListener('touchend', e => {
   if (x0 === null) return;
-  const dx = e.changedTouches[0].clientX - x0;
-  if (Math.abs(dx) > 60) go(i + (dx < 0 ? 1 : -1));
+  const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0;
+  if (Math.abs(dx) > 55 && Math.abs(dx) > Math.abs(dy)) go(i + (dx < 0 ? 1 : -1));
   x0 = null;
 }, { passive: true });
 
