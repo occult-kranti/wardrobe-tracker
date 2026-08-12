@@ -105,6 +105,11 @@ export function findSimilarItems(items: ClothingItem[], query: SimilarityQuery, 
       if (shared.length > 0) reasons.push(`described alike ("${shared.join('", "')}")`);
     }
 
+    // A color echo alone can't vault categories — a greige belt is not a camel
+    // coat. Crossing categories takes a second signal: near-identical color or
+    // a shared name word. Same-category matches keep the old bar.
+    if (query.category && !sameCategory && closeness <= 0.75 && nameOverlap === 0) continue;
+
     // Category is one signal among several — never a gate. Requiring at least
     // one stated reason keeps every match explainable.
     const score =

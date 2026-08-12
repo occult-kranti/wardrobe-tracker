@@ -287,9 +287,13 @@ export function Masthead({
 }) {
   return (
     <header className="mb-6">
-      <div className="flex items-end justify-between gap-4 pb-2 rule-double">
+      {/* The row wraps and the right block may shrink: on a narrow phone the
+          action drops below the title instead of pushing past the viewport
+          edge. Wrap only engages when space runs out, so wider layouts are
+          untouched. */}
+      <div className="flex flex-wrap items-end justify-between gap-4 pb-2 rule-double">
         <h1 className="type-masthead text-[28px] sm:text-[34px]">{title}</h1>
-        <div className="flex items-center gap-3 pb-1 shrink-0">
+        <div className="flex items-center gap-3 pb-1 min-w-0">
           {meta ? <span className="type-ledger text-[11px] text-text-2 whitespace-nowrap">{meta}</span> : null}
           {action}
         </div>

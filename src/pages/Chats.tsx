@@ -85,30 +85,34 @@ export default function Chats() {
       .sort((a, b) => (b.last?.date ?? '').localeCompare(a.last?.date ?? ''));
   }, [community, activeId]);
 
-  if (threads.length === 0) {
-    return (
-      <>
-        <Masthead title="Conversations" />
+  // The new-conversation modal has to be reachable from the empty screen too —
+  // the first thread starts from exactly there — so both branches share one tree.
+  return (
+    <div className="space-y-6">
+      <Masthead
+        title="Conversations"
+        meta={threads.length > 0 ? `${threads.length} open` : undefined}
+        action={threads.length > 0 && others.length > 0 ? (
+          <Button tone="primary" icon={<IconPlus size={16} />} onClick={() => setStarting(true)}>New</Button>
+        ) : undefined}
+      />
+      {threads.length === 0 ? (
         <Card>
           <EmptyState
             plate={<PlateEmptyWishlist />}
             title="No conversations yet."
             body="Threads between the wardrobes on this device — for asking after a piece, sending a look, and saying when it came home. All of it stays on this device."
+            action={
+              // Alone on the device there is no one to write to; the way in is a household.
+              others.length > 0 ? (
+                <Button tone="primary" onClick={() => setStarting(true)}>Start one</Button>
+              ) : (
+                <LinkButton to="/profile" tone="primary">Join wardrobes under a roof</LinkButton>
+              )
+            }
           />
         </Card>
-      </>
-    );
-  }
-
-  return (
-    <div className="space-y-6">
-      <Masthead
-        title="Conversations"
-        meta={`${threads.length} open`}
-        action={others.length > 0 ? (
-          <Button tone="primary" icon={<IconPlus size={16} />} onClick={() => setStarting(true)}>New</Button>
-        ) : undefined}
-      />
+      ) : (
       <Card>
         <SectionTitle aside="most recent first">Threads</SectionTitle>
         <ul>
@@ -143,6 +147,7 @@ export default function Chats() {
           })}
         </ul>
       </Card>
+      )}
 
       <Modal open={starting} onClose={() => setStarting(false)} title="New conversation">
         <p className="text-[13px] text-text-2 leading-relaxed">

@@ -93,7 +93,7 @@ function GarmentTile({ item, className = '' }: { item: ClothingItem; className?:
           className="w-full h-full object-cover"
         />
       ) : (
-        <GarmentPlate categoryId={item.category} color={item.color} />
+        <GarmentPlate categoryId={item.category} color={item.color} name={item.name} />
       )}
     </div>
   );
@@ -357,6 +357,16 @@ export default function Closet() {
     return counts;
   }, [browsable]);
 
+  // A state chip at zero is a dead end — it earns its place with a count, or by
+  // being the filter currently held. When every piece is Ready, "All N" already
+  // says so, and the rail has nothing to add.
+  const stateChipStatuses = LAUNDRY_ORDER.filter(
+    status => (benchCounts[status] ?? 0) > 0 || benchFilter === status
+  );
+  const showMendingChip = benchCounts.mending > 0 || benchFilter === 'mending';
+  const showStateRail =
+    benchFilter !== '' || showMendingChip || stateChipStatuses.some(s => s !== 'clean');
+
   /** Colors actually present in the closet — a palette, not a picker. */
   const paletteColors = useMemo(() => {
     const tally = new Map<string, number>();
@@ -527,13 +537,14 @@ export default function Closet() {
 
             {/* Bench states — ready through the mending pile. The two rails read
                 as two questions only if each says which question it is. */}
+            {showStateRail ? (
             <div className="flex items-center gap-2">
               <span className="type-ledger text-[11px] text-text-2 w-10 shrink-0" aria-hidden="true">State</span>
               <TagRail label="Filter by state" className="flex-1">
               <Chip selected={benchFilter === ''} onClick={() => setBenchFilter('')}>
                 All {browsable.length}
               </Chip>
-              {LAUNDRY_ORDER.map(status => (
+              {stateChipStatuses.map(status => (
                 <Chip
                   key={status}
                   selected={benchFilter === status}
@@ -542,15 +553,18 @@ export default function Closet() {
                   {LAUNDRY_LABELS[status]} {benchCounts[status] ?? 0}
                 </Chip>
               ))}
-              <Chip
-                selected={benchFilter === 'mending'}
-                onClick={() => setBenchFilter(benchFilter === 'mending' ? '' : 'mending')}
-                title="Needs repair and at the tailor"
-              >
-                Mending pile {benchCounts.mending}
-              </Chip>
+              {showMendingChip ? (
+                <Chip
+                  selected={benchFilter === 'mending'}
+                  onClick={() => setBenchFilter(benchFilter === 'mending' ? '' : 'mending')}
+                  title="Needs repair and at the tailor"
+                >
+                  Mending pile {benchCounts.mending}
+                </Chip>
+              ) : null}
               </TagRail>
             </div>
+            ) : null}
           </div>
 
           {/* Wash day used to be sixty taps — the State rail could show

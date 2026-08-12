@@ -32,7 +32,7 @@ function Thumb({ item, className = '' }: { item: ClothingItem; className?: strin
       {item.imageUrl ? (
         <img src={item.imageUrl} alt="" className="w-full h-full object-cover" />
       ) : (
-        <GarmentPlate categoryId={item.category} color={item.color} />
+        <GarmentPlate categoryId={item.category} color={item.color} name={item.name} />
       )}
     </span>
   );

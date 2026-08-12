@@ -5,7 +5,7 @@ import { categoryLabel, isQuietCategory, type ClothingItem, type Outfit, type We
 import { todayLocal, isFutureDate, daysSince } from '../lib/dates';
 import { isPlannedLog } from '../types';
 import { costPerWear, formatPerWear } from '../lib/cost';
-import { Button, Card, EmptyState, Masthead, Modal, SectionTitle, Stat, Chip } from '../components/ui';
+import { Button, Card, EmptyState, Masthead, Modal, SectionTitle, Stat } from '../components/ui';
 import { IconArrowRight, IconCheck, IconEyeletFilled } from '../components/icons';
 import { Basting, GarmentPlate, PlateEmptyCloset, WaxSeal } from '../components/art';
 import { showToast } from '../components/Toast';
@@ -69,7 +69,7 @@ function Thumb({ item, className = '' }: { item: ClothingItem; className?: strin
       {item.imageUrl ? (
         <img src={item.imageUrl} alt="" className="w-full h-full object-cover" />
       ) : (
-        <GarmentPlate categoryId={item.category} color={item.color} />
+        <GarmentPlate categoryId={item.category} color={item.color} name={item.name} />
       )}
     </span>
   );
@@ -204,8 +204,10 @@ export default function Dashboard() {
 
   /* ---------- recent ledger entries ---------- */
 
+  // Real wears only. Plans sort by date like anything else, so a far-future
+  // plan would otherwise sit above every entry that actually happened.
   const recent = useMemo(
-    () => [...wearLogs].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5),
+    () => wearLogs.filter(l => !isPlannedLog(l)).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5),
     [wearLogs]
   );
 
@@ -397,6 +399,17 @@ export default function Dashboard() {
                 Log another
               </Button>
             </div>
+            {/* The natural next step for a closet with no outfits yet — an
+                aside, not a second call. Today already has its accent. */}
+            {outfits.length === 0 ? (
+              <Link
+                to="/outfits"
+                className="mt-2 inline-flex items-center gap-1.5 min-h-11 text-[13px] text-text-2 hover:text-text transition-colors duration-150"
+              >
+                Save today's look as an outfit — one tap to log it next time.
+                <IconArrowRight size={14} />
+              </Link>
+            ) : null}
           </div>
         ) : (
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-5">
@@ -479,7 +492,7 @@ export default function Dashboard() {
         </div>
       </Card>
 
-      {/* Recent entries. Future dates are plans, not wears. */}
+      {/* Recent entries — wears on the record. Plans wait on the Calendar. */}
       {recent.length > 0 ? (
         <Card>
           <SectionTitle
@@ -492,31 +505,22 @@ export default function Dashboard() {
             Recent entries
           </SectionTitle>
           <div>
-            {recent.map(log => {
-              const planned = isPlannedLog(log);
-              return (
-                <div
-                  key={log.id}
-                  className="flex items-center gap-3 py-2.5 border-b border-border last:border-0"
-                >
-                  <span className="type-ledger text-[11px] text-text-2 w-[84px] shrink-0">
-                    {shortDate(log.date)}
-                  </span>
-                  <span className="text-[14px] text-text flex-1 min-w-0 truncate">
-                    {describeLog(log)}
-                  </span>
-                  {planned ? (
-                    <Chip as="span" title="Planned, not yet worn">
-                      Plan
-                    </Chip>
-                  ) : (
-                    <span className="type-ledger text-[11px] text-text-2 shrink-0">
-                      {log.itemIds.length} {log.itemIds.length === 1 ? 'piece' : 'pieces'}
-                    </span>
-                  )}
-                </div>
-              );
-            })}
+            {recent.map(log => (
+              <div
+                key={log.id}
+                className="flex items-center gap-3 py-2.5 border-b border-border last:border-0"
+              >
+                <span className="type-ledger text-[11px] text-text-2 w-[84px] shrink-0">
+                  {shortDate(log.date)}
+                </span>
+                <span className="text-[14px] text-text flex-1 min-w-0 truncate">
+                  {describeLog(log)}
+                </span>
+                <span className="type-ledger text-[11px] text-text-2 shrink-0">
+                  {log.itemIds.length} {log.itemIds.length === 1 ? 'piece' : 'pieces'}
+                </span>
+              </div>
+            ))}
           </div>
         </Card>
       ) : null}

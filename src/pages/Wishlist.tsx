@@ -93,7 +93,7 @@ function Thumb({
   item,
   className = '',
 }: {
-  item: Pick<ClothingItem, 'category' | 'color'> & { imageUrl?: string };
+  item: Pick<ClothingItem, 'category' | 'color'> & { imageUrl?: string; name?: string };
   className?: string;
 }) {
   return (
@@ -101,7 +101,7 @@ function Thumb({
       {item.imageUrl ? (
         <img src={item.imageUrl} alt="" className="w-full h-full object-cover" />
       ) : (
-        <GarmentPlate categoryId={item.category} color={item.color} />
+        <GarmentPlate categoryId={item.category} color={item.color} name={item.name} />
       )}
     </span>
   );
@@ -143,6 +143,10 @@ function AlreadyOwned({ item, pool }: { item: WishlistItem; pool: ClothingItem[]
             <p className="text-[13px] text-text mt-1.5 leading-tight">{match.item.name}</p>
             <p className="type-ledger text-[10px] text-text-2 tabular mt-0.5">
               {wearContext(match.item)}
+            </p>
+            {/* The engine's own reasons, so every match explains itself. */}
+            <p className="text-[11px] text-text-2 mt-0.5 leading-snug">
+              {match.reasons.join(' · ')}
             </p>
           </li>
         ))}
@@ -622,7 +626,12 @@ export default function Wishlist() {
       {openItems.length > 0 ? (
         <Card>
           <div className="flex items-end justify-between gap-6">
-            <Stat value={money(openTotal)} label="Still on the list" />
+            {/* No prices on file means no sum to state — "$0" would assert one. */}
+            {openTotal > 0 ? (
+              <Stat value={money(openTotal)} label="Still on the list" />
+            ) : (
+              <p className="type-ledger text-[11px] text-text-2">No prices noted</p>
+            )}
             <Stat value={openItems.length} label={openItems.length === 1 ? 'Piece' : 'Pieces'} />
           </div>
         </Card>

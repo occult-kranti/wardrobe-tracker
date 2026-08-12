@@ -112,17 +112,17 @@ function Row({
   body: string;
   control: ReactNode;
 }) {
-  // Stacks below `sm`. `shrink-0` on the control was unconditional, so the
-  // widest control in the app — the theme row, 513px of chips that do not
-  // wrap — pushed the DOCUMENT 206px wider than a 360px screen, and every card
-  // on the page rendered 566px wide to match.
+  // Stacks below `sm`. The control side must be able to shrink (`min-w-0`,
+  // never `shrink-0`): a shrink-proof control as wide as seven theme chips
+  // means its flex-wrap can never engage, and the text column pays for it —
+  // one word per line, fifteen hundred pixels tall.
   return (
     <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-4 py-1">
-      <div className="min-w-0">
+      <div className="min-w-0 sm:max-w-[52ch]">
         <p className="text-[15px] text-text leading-tight">{title}</p>
         <p className="text-[13px] text-text-2 leading-snug mt-1">{body}</p>
       </div>
-      <div className="sm:shrink-0">{control}</div>
+      <div className="sm:min-w-0">{control}</div>
     </div>
   );
 }

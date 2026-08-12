@@ -54,7 +54,7 @@ const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Frida
  * Bumped whenever the generated wardrobes change shape — photographs, bench
  * states, costs. Samples recording an older number are rebuilt at boot.
  */
-export const PERSONA_SEED_VERSION = 3;
+export const PERSONA_SEED_VERSION = 5;
 
 /** How far back the generated rotation runs, in days. */
 const HISTORY_DAYS = 250;
@@ -85,9 +85,15 @@ function occasionsFor(persona: PersonaSeed): string[] {
  *
  * Matched on what the piece actually is, most specific pattern first — "silk
  * camisole" must not be caught by the generic shirt rule. Each rule offers
- * SEVERAL photographs and the piece picks one by hash, so a closet with three
+ * SEVERAL photographs and its pieces take them in turn, so a closet with three
  * camisoles does not show the same picture three times; with 40 photographs
- * across 174 pieces some repetition is unavoidable, but it should not cluster.
+ * across 174 pieces some repetition is unavoidable, but the rotation spaces
+ * repeats as far apart as a pool allows instead of seating them side by side.
+ *
+ * Some pieces have no honest photograph in the pack at all — earrings, heels,
+ * swimwear. Those rules keep an EMPTY pool on purpose: the drawn flat is a
+ * first-class state, and a wrong photograph (a necklace on a pair of jhumkas)
+ * is a bug the grid repeats six cells wide.
  *
  * Sources: the Indian outfit pack (`in-*`, photorealistic, no real person or
  * brand depicted), openly-licensed Wikimedia photographs, and the brand
@@ -96,7 +102,7 @@ function occasionsFor(persona: PersonaSeed): string[] {
  */
 const PHOTO_RULES: Array<[RegExp, string[]]> = [
   // ---- Indian garments first: the most specific names in these closets
-  [/saree|sari/i, ['in-banarasi-silk-saree', 'in-mekhela-chador']],
+  [/saree(?! blouse)|\bsari\b/i, ['in-banarasi-silk-saree', 'in-mekhela-chador']],
   [/mekhela/i, ['in-mekhela-chador']],
   [/lehenga|ghagra/i, ['in-lehenga-choli', 'in-ghagra-choli']],
   [/sharara/i, ['in-sharara-set']],
@@ -111,72 +117,129 @@ const PHOTO_RULES: Array<[RegExp, string[]]> = [
   [/pathani/i, ['in-pathani-suit']],
   [/palazzo/i, ['in-kurti-palazzo-set']],
   [/kurta|kurti/i, ['in-kurta-pajama', 'in-churidar-kurta', 'in-pathani-suit', 'in-kurti-palazzo-set']],
-  [/kantha|organza|handloom|ajrakh|block-print/i, ['in-indo-western-jacket-set', 'in-ghagra-choli']],
   [/dupatta|pashmina|shawl|stole/i, ['pashmina-shawl']],
 
   // ---- shoes
-  [/jutti|mojari|kolhapuri/i, ['slip-on-suede', 'sandal-leather']],
-  [/chelsea|ankle.*boot|rain boot/i, ['boot-chelsea']],
+  // The suede shot is a pair of men's lace-up dress shoes; standing in for
+  // kolhapuris and juttis it reads as a filing error, not a photograph.
+  [/jutti|mojari|kolhapuri/i, []],
+  [/chelsea|\bboots?\b/i, ['boot-chelsea']],
   [/loafer/i, ['loafer-penny', 'slip-on-suede']],
-  [/oxford(?!.*shirt)|cap-toe/i, ['oxford-captoe', 'derby-plain']],
+  [/\boxfords\b|cap-toe/i, ['oxford-captoe', 'derby-plain']],
   [/derb(y|ies)|plain-toe/i, ['derby-plain', 'oxford-captoe']],
   [/slip-on|espadrille|suede/i, ['slip-on-suede']],
-  [/trail|trek|hiking|running|runner/i, ['trail-runner']],
-  [/sneaker|trainer/i, ['sneaker-white', 'trail-runner']],
-  [/pump|mule|heel|sandal|flats\b/i, ['boot-chelsea', 'slip-on-suede']],
+  // Footwear nouns only: a loose /trail|running/ once put shoe close-ups on
+  // the running shorts and the trail pants, which are bottoms.
+  [/\brunners?\b|\brunning shoes?\b|\btrainers?\b/i, ['trail-runner']],
+  [/sneaker/i, ['sneaker-white', 'trail-runner']],
+  // Same verdict for sandals and flats: no open shoe exists in the pack, and
+  // laced men's suede on a strappy flat sandal is a wrong photo, not a stand-in.
+  [/sandal|flats\b/i, []],
+  // No heel photograph exists; three heels sharing one men's shoe is worse
+  // than three drawn flats.
+  [/pumps?\b|\bmules?\b|\bheels?\b|heeled|stiletto/i, []],
 
   // ---- jewellery
   [/watch/i, ['watch-dress-steel']],
-  [/jhumka|choker|chain|necklace|hoop|stud|pearl|bangle|anklet|cufflink|ring/i, ['necklace-chain']],
+  [/\bchain\b|necklace|choker/i, ['necklace-chain']],
+  // Word-bounded: a bare /ring/ once hung a necklace on the drawstring shorts.
+  // The pack has no earring, bangle or cufflink photograph — drawn flat.
+  [/jhumka|earring|\bhoops?\b|\bstuds?\b|bangle|anklet|cufflink|\bring\b/i, []],
 
   // ---- accessories
   [/daypack|backpack|rucksack/i, ['backpack-daypack']],
-  [/duffle|duffel|weekender|briefcase|camera bag|sling|potli|shoulder bag|clutch|tote|raffia/i, ['duffle-weekender', 'backpack-daypack']],
+  [/duffle|duffel|weekender|briefcase|camera bag|sling|shoulder bag|clutch|tote|raffia/i, ['duffle-weekender']],
+  // A potli is a drawstring pouch; neither the duffle nor the army daypack
+  // resembles one.
+  [/potli/i, []],
   [/belt|brace(s)?/i, ['belt-leather']],
   [/scarf|bandana/i, ['pashmina-shawl']],
   [/sunglass|wayfarer|cat-eye/i, ['sunglasses-wayfarer']],
   [/beanie|hat|cap\b/i, ['beanie-rib']],
   [/sock/i, ['socks-crew']],
-  [/\btie\b|bow tie|pocket square|scrunchie|umbrella/i, ['suit-jacket']],
+  // The suit-jacket shot is styled with a tie and a pocket square, so both
+  // read honestly there; a scrunchie and an umbrella do not.
+  [/\btie\b|bow tie|pocket square/i, ['suit-jacket']],
+  [/scrunchie|umbrella/i, []],
 
   // ---- tailoring and layers
-  [/dinner jacket|tuxedo|marcella|suit jacket|flannel suit|two-piece|blazer/i, ['suit-jacket', 'waistcoat']],
-  [/waistcoat|bandi|gilet|quilted|liner|field jacket|waxed|rain shell|shell|ripstop/i, ['gilet-quilted', 'waistcoat']],
-  [/trench|overcoat|wool coat|longline/i, ['suit-jacket', 'gilet-quilted']],
+  [/dinner jacket|tuxedo|suit jacket|flannel suit|two-piece|blazer/i, ['suit-jacket']],
+  [/waistcoat|bandi/i, ['waistcoat']],
+  [/gilet|quilted|liner|field jacket|waxed|rain shell|\bshell\b/i, ['gilet-quilted']],
+  [/trench|overcoat|wool coat|longline/i, ['suit-jacket']],
   [/hoodie|sweatshirt|quarter-zip/i, ['hoodie-oversized']],
   [/denim jacket|trucker/i, ['trucker-jacket']],
-  [/cable|cricket|cashmere|merino|crew(neck)?|v-neck|knit|thermal|henley/i, ['sweater', 'hoodie-oversized']],
+  [/cable|cricket|merino|crew(neck)?|v-neck|thermal|henley/i, ['sweater', 'hoodie-oversized']],
   [/cape/i, ['pashmina-shawl']],
 
   // ---- tops and one-pieces
-  [/camisole|tank|turtleneck|sleep|pyjama/i, ['camisole-silk', 'blouse', 'sweater']],
+  // No sweater here: a men's crewneck standing in for a ribbed tank or a silk
+  // camisole is a register crossing, and the knit rule below owns the sweater.
+  [/camisole|tank|turtleneck/i, ['camisole-silk', 'blouse']],
   [/blouse/i, ['blouse', 'camisole-silk']],
-  [/polo|tee|t-shirt/i, ['t-shirt']],
+  // The tee shots split by cut. The women's-cut pair (named shot by shot) only
+  // honestly depicts the training crop tee; the straight-cut tees carry the
+  // rest. A polo has a collar none of them show — drawn flat.
+  [/crop tee/i, ['adidas-t-shirt', 'gap-t-shirt']],
+  [/polo/i, []],
+  [/\btees?\b|t-shirt/i, ['levis-t-shirt', 'nike-t-shirt', 'uniqlo-t-shirt']],
   [/dress|gown/i, ['dress', 'in-anarkali-gown']],
-  [/shirt/i, ['shirt', 'blouse']],
+  // Shirts only: the ruffle-tie blouse once rotated onto a pinpoint dress
+  // shirt, and it belongs to the blouse and camisole rules above.
+  [/shirt|button-down/i, ['shirt']],
 
   // ---- bottoms
   [/selvedge|jeans/i, ['denim-jeans', 'jeans']],
   [/legging/i, ['leggings-yoga', 'leggings']],
-  [/cargo|track pants|loopback|lounge|shorts|swim|joggers/i, ['joggers']],
+  // Swimwear has no photograph; grey joggers on the swim one-piece read as a
+  // filing error.
+  [/swim/i, []],
+  [/cargo|track pants|loopback|lounge|shorts|joggers/i, ['joggers']],
   [/chino/i, ['chinos']],
   [/trouser|pants/i, ['trousers', 'chinos']],
+
+  // ---- fabric and craft words, LAST: these once ran before the garment nouns
+  // and put a lehenga on the block-print bandana. Only a piece no other rule
+  // names falls through to here.
+  [/kantha|organza|handloom|ajrakh|block-print/i, ['in-indo-western-jacket-set']],
 ];
 
-function photoFor(itemName: string, personaId: string, itemId: string): string {
-  for (const [pattern, slugs] of PHOTO_RULES) {
+/**
+ * One rotation cursor per rule, reset before each persona builds. A hash pick
+ * once seated the same photograph in adjacent grid cells — three matching
+ * blouses in a row, one anarkali four times — because thin pools collide
+ * constantly. Cycling each rule's pool in build order instead pushes repeats
+ * as far apart as the pool allows, and item order is fixed, so a piece still
+ * keeps the same photograph across reloads.
+ */
+const ruleTurns = new Map<number, number>();
+
+function resetPhotoTurns(): void {
+  ruleTurns.clear();
+}
+
+function photoFor(itemName: string): string {
+  for (let index = 0; index < PHOTO_RULES.length; index++) {
+    const [pattern, slugs] = PHOTO_RULES[index];
     if (!pattern.test(itemName)) continue;
+    // An empty pool is a verdict, not an omission: nothing in the pack
+    // honestly depicts this piece, and the drawn flat beats a wrong photo.
+    if (slugs.length === 0) return '';
     // Gather every photograph this rule can offer, from both sources.
     const options: string[] = [];
     for (const slug of slugs) {
       const photo = GARMENT_PHOTOS.find(p => p.slug === slug);
       if (photo) options.push(photo.path);
-      // The brand pack indexes by garment type rather than by slug.
-      for (const shot of BRAND_SHOTS.filter(s => s.category === slug)) options.push(shot.path);
+      // The brand pack indexes by garment type; a rule may name the type, or
+      // one exact shot by its slug where the type mixes cuts.
+      for (const shot of BRAND_SHOTS.filter(s => s.category === slug || s.slug === slug)) {
+        options.push(shot.path);
+      }
     }
     if (options.length === 0) continue; // rule matched but nothing to show; try the next
-    // Stable pick, so a piece keeps the same photograph across reloads.
-    return options[Math.floor(rand(personaId, itemId, 'shot') * options.length)];
+    const turn = ruleTurns.get(index) ?? 0;
+    ruleTurns.set(index, turn + 1);
+    return options[turn % options.length];
   }
   return '';
 }
@@ -437,6 +500,8 @@ export function buildPersonaState(persona: PersonaSeed): AppState {
     return 'clean';
   };
 
+  // Each closet's photo rotation starts from the top of every pool.
+  resetPhotoTurns();
   const items: ClothingItem[] = persona.items.map(seed => ({
     id: seed.id,
     name: seed.name,
@@ -448,7 +513,7 @@ export function buildPersonaState(persona: PersonaSeed): AppState {
     material: seed.fabric && seed.fabric !== '-' ? seed.fabric : undefined,
     season: seed.season as Season[],
     occasion: seed.occasion,
-    imageUrl: photoFor(seed.name, persona.id, seed.id),
+    imageUrl: photoFor(seed.name),
     dateAdded: addDays(firstLog, -Math.floor(rand(seed.id, 'added') * 400) - 10),
     lastWorn: lastWorn.get(seed.id),
     wearCount: wears.get(seed.id) ?? 0,
