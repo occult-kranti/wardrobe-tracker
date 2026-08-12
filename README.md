@@ -13,10 +13,11 @@ subscription, no shop links. Everything lives on your device.
 
 ## See it move
 
-![A ninety-second tour: a wardrobe started from nothing, the first pieces catalogued and worn, then the sample closets walked through every tool and all six rooms](docs/media/demo.gif)
+![Three beats from the film: the glass closet under its moving light, a day logged in two taps, and the rooms changing](docs/media/demo.gif)
 
-*The same tour at full speed and resolution:*
-*[**demo.mp4**](https://occult-kranti.github.io/wardrobe-tracker/demo.mp4) — starting a wardrobe, adding pieces, logging the first wear, outfits, calendar, ledger, wishlist, before-you-buy, events, feed, conversations, households, and the six rooms.*
+*The film, shot on the V2 glass build:*
+*[**demo.mp4**](https://occult-kranti.github.io/wardrobe-tracker/demo.mp4) (96s, 1080p) — a wardrobe begun empty, the two-tap log, three sample closets, the ledger, the cooling-off, the honest calendar, and the rooms.*
+*[**demo-vertical.mp4**](https://occult-kranti.github.io/wardrobe-tracker/demo-vertical.mp4) (54s, 9:16) — the same argument cut for a phone.*
 
 ---
 

@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { useWardrobe } from '../context/WardrobeContext';
 import { categoryLabel, type BorrowStatus, type CircleMessage, type CircleProfile } from '../types';
 import { Button, Card, Chip, EmptyState, LinkButton, Masthead, SectionTitle, inputClass } from '../components/ui';
-import { Basting, GarmentPlate, PlateEmptyWishlist } from '../components/art';
+import { Basting, GarmentPlate, PlateEmptyWishlist, TagPortrait } from '../components/art';
 import { IconChevronLeft } from '../components/icons';
 
 /**
@@ -19,34 +19,9 @@ import { IconChevronLeft } from '../components/icons';
  * verdict on anyone.
  */
 
-/** The brand's garment tag as an avatar: clipped corners, eyelet, monogram — never a face. */
+/** The brand's tag-portrait as an avatar — monogram on the hanger rig, never a face. */
 function TagAvatar({ profile, size = 40 }: { profile: CircleProfile; size?: number }) {
-  return (
-    <svg
-      width={size}
-      height={size * 1.2}
-      viewBox="0 0 40 48"
-      aria-hidden="true"
-      className="shrink-0"
-    >
-      <path
-        d="M6 1h28l5 5v41H1V6z"
-        fill="var(--color-sunken)"
-        stroke="var(--color-border)"
-        strokeWidth="1"
-      />
-      <circle cx="20" cy="9" r="3" fill="none" stroke={profile.color} strokeWidth="1.5" />
-      <text
-        x="20"
-        y="34"
-        textAnchor="middle"
-        fill="var(--color-text)"
-        style={{ font: '600 16px var(--font-display)' }}
-      >
-        {profile.monogram}
-      </text>
-    </svg>
-  );
+  return <TagPortrait monogram={profile.monogram} color={profile.color} size={size} />;
 }
 
 const STATUS_LABELS: Record<BorrowStatus, string> = {

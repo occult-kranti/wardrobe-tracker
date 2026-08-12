@@ -35,27 +35,113 @@ export function Wordmark({ className = '' }: { className?: string }) {
   );
 }
 
-/** The monogram: a garment tag with an eyelet, string, and a display "T". */
+/**
+ * The identity mark: the tag that IS a wardrobe (hanger cut, judge pass
+ * 2026-08-12). The flat hanger hangs from the grommet, which doubles as the
+ * eye of its hook, and the monogram sits in a bottom panel like a label on a
+ * shop hanger.
+ *
+ * The STRING is back (owner's call, 2026-08-12): the first mark's little
+ * curving thread read better than the taut shoulder rail that replaced it, so
+ * the thread leaves the grommet and loops above the tag the way a real swing
+ * tag hangs. The viewBox carries headroom for it — a string drawn inside the
+ * tag's own shoulders had no room to be seen. Deliberate degradation: below
+ * 40px the string has no pixels to live in, it steps off and the rig thickens;
+ * at favicon size (public/icon.svg) the letter steps off too.
+ */
 export function TagMark({ size = 28 }: { size?: number }) {
+  const full = size >= 40;
+  const sw = full ? 2 : 2.5;
   return (
-    <svg width={size * 0.75} height={size} viewBox="0 0 48 64" fill="none" aria-hidden="true">
+    <svg width={size * 0.7} height={size} viewBox="0 -8 48 72" fill="none" aria-hidden="true">
       <path
-        d="M12 2h24a2 2 0 012 2v56a2 2 0 01-2 2H12a2 2 0 01-2-2V12z"
+        d="M10 12 20 2h8l10 10v46a2 2 0 0 1-2 2H12a2 2 0 0 1-2-2Z"
         stroke="currentColor"
-        strokeWidth="2"
+        strokeWidth={sw}
         strokeLinejoin="miter"
       />
-      <path d="M10 12L20 2" stroke="currentColor" strokeWidth="2" />
-      <circle cx="24" cy="18" r="3" stroke="currentColor" strokeWidth="2" />
-      <path d="M24 15C24 9 20 7 16 4" stroke="currentColor" strokeWidth="1.5" fill="none" />
+      {full && (
+        <path
+          d="M24 4.4C24 -2 20 -5.6 14.6 -6.2"
+          stroke="var(--color-gold)"
+          strokeWidth="1.5"
+          strokeLinecap="butt"
+        />
+      )}
+      <path d="M24 27V12.4" stroke="currentColor" strokeWidth={sw} />
+      <path d="M24 27 12.5 38h23Z" stroke="currentColor" strokeWidth={sw} strokeLinejoin="miter" />
+      {/* the ink rim keeps the gold from sinking into light grounds */}
+      <circle cx="24" cy="9" r={full ? 4.5 : 4.9} stroke="currentColor" strokeWidth={full ? 1 : 1.25} />
+      <circle cx="24" cy="9" r="3" stroke="var(--color-gold)" strokeWidth={full ? 2 : 2.5} />
+      {full && <path d="M14.5 44.5h19" stroke="currentColor" strokeWidth="0.75" opacity="0.45" />}
       <text
         x="24"
-        y="46"
+        y="55"
         textAnchor="middle"
         fill="currentColor"
-        style={{ font: '700 22px var(--font-display)' }}
+        style={{ font: full ? '700 14px var(--font-display)' : '700 16px var(--font-display)' }}
       >
         T
+      </text>
+    </svg>
+  );
+}
+
+/**
+ * The mark worn as a portrait, 4:5 to match photo portraits (size × 1.25).
+ * Full hanger cut with the same hanging string as the nav mark, dyed the
+ * wardrobe's own colour — identity lives in the rig itself rather than an
+ * orphan ring. Never a face.
+ *
+ * The monogram is set small on purpose: two initials at the old 10.5 crowded
+ * the panel wall to wall on the Profile header, where the mark renders at 72.
+ * The panel is a label, and a label leaves margins.
+ */
+export function TagPortrait({
+  monogram,
+  color,
+  size = 40,
+}: {
+  monogram: string;
+  color?: string;
+  size?: number;
+}) {
+  return (
+    <svg
+      width={size}
+      height={size * 1.25}
+      viewBox="0 -6 40 56"
+      fill="none"
+      aria-hidden="true"
+      className="shrink-0 text-text"
+    >
+      <path
+        d="M5 10.5 13.5 2h13L35 10.5v34.5a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2Z"
+        fill="var(--color-sunken)"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinejoin="miter"
+      />
+      <path
+        d="M20 3.3C20 -1.6 16.6 -4.4 12.2 -4.9"
+        stroke={color ?? 'var(--color-gold)'}
+        strokeWidth="1.4"
+        strokeLinecap="butt"
+      />
+      <path d="M20 22.5V10.5" stroke="currentColor" strokeWidth="1.75" />
+      <path d="M20 22.5 10.5 31.5h19Z" stroke="currentColor" strokeWidth="1.75" strokeLinejoin="miter" />
+      {/* the ink rim keeps the gold from sinking into light grounds */}
+      <circle cx="20" cy="7.5" r="4" stroke="currentColor" strokeWidth="1" />
+      <circle cx="20" cy="7.5" r="2.75" stroke="var(--color-gold)" strokeWidth="1.75" />
+      <path d="M9.5 36.5h21" stroke="currentColor" strokeWidth="0.75" opacity="0.45" />
+      <text
+        x="20"
+        y="43.6"
+        textAnchor="middle"
+        fill="currentColor"
+        style={{ font: '700 8.5px var(--font-display)', letterSpacing: '0.02em' }}
+      >
+        {monogram}
       </text>
     </svg>
   );

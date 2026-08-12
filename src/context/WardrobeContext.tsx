@@ -206,7 +206,11 @@ export function WardrobeProvider({ accountId, children }: { accountId: string; c
                 ...item,
                 wearCount: item.wearCount + 1,
                 lastWorn: !item.lastWorn || logDate > item.lastWorn ? logDate : item.lastWorn,
-                laundryStatus: 'worn' as const,
+                // The bench is about NOW. A wear logged for today moves the
+                // piece to the bench; a backfilled wear from last week cannot
+                // know what the laundry has done since, so it leaves the
+                // bench alone and moves only the count and the date.
+                laundryStatus: logDate === todayLocal() ? ('worn' as const) : item.laundryStatus,
               }
             : item
         ),

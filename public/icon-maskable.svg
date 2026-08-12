@@ -1,8 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
-  <!-- Maskable: art stays inside the 80% safe zone. -->
+  <!-- Maskable: the safe zone is a CIRCLE of r=40% about the centre, so the
+       hanger's mitred base corners are what set the scale, not the sides. -->
   <rect width="192" height="192" fill="#BE1231"/>
-  <circle cx="96" cy="72" r="11" fill="none" stroke="#FFFDF6" stroke-width="5"/>
-  <path d="M96 61c0-16-10-22-20-28" fill="none" stroke="#FFFDF6" stroke-width="4" opacity="0.7"/>
-  <text x="96" y="146" text-anchor="middle" fill="#FFFDF6"
-        font-family="Georgia, 'Times New Roman', serif" font-weight="700" font-size="72">T</text>
+  <circle cx="96" cy="70" r="15" fill="none" stroke="#FFFDF6" stroke-width="11"/>
+  <path d="M96 85v18M96 103 49 137h94Z" fill="none" stroke="#FFFDF6" stroke-width="11" stroke-linejoin="miter"/>
 </svg>

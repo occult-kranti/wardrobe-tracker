@@ -2,7 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useWardrobe } from '../context/WardrobeContext';
 import { categoryLabel, isQuietCategory, type ClothingItem, type Outfit, type WearLog } from '../types';
-import { todayLocal, isFutureDate, daysSince } from '../lib/dates';
+import { todayLocal, isFutureDate, daysSince, addDays } from '../lib/dates';
 import { isPlannedLog } from '../types';
 import { costPerWear, formatPerWear } from '../lib/cost';
 import { Button, Card, EmptyState, Masthead, Modal, SectionTitle, Stat } from '../components/ui';
@@ -108,6 +108,26 @@ export default function Dashboard() {
     [wearLogs, today]
   );
   const loggedToday = todayLogs.length > 0;
+
+  // Yesterday's REAL wears — the fuel for "Same as yesterday". Plans for
+  // yesterday that never got their answer don't count; repeating a day that
+  // didn't happen would be the exact lie the planned flag exists to prevent.
+  const yesterdaysLogs = useMemo(
+    () => wearLogs.filter(l => l.date === addDays(today, -1) && !isPlannedLog(l)),
+    [wearLogs, today]
+  );
+
+  const repeatYesterday = () => {
+    const pieces = new Set<string>();
+    for (const log of yesterdaysLogs) {
+      logWear(log.itemIds, log.outfitId);
+      log.itemIds.forEach(id => pieces.add(id));
+    }
+    showToast(
+      `Logged, same as yesterday. ${pieces.size} ${pieces.size === 1 ? 'piece' : 'pieces'}.`,
+      'seal'
+    );
+  };
 
   /* ---------- the six choices ---------- */
 
@@ -422,14 +442,25 @@ export default function Dashboard() {
                 Two taps and it's on the record for good.
               </p>
             </div>
-            <Button
-              tone="hero"
-              onClick={openSheet}
-              icon={<IconEyeletFilled size={10} />}
-              className="w-full sm:w-auto shrink-0"
-            >
-              Log today's wear
-            </Button>
+            <div className="flex flex-col sm:items-end gap-1 w-full sm:w-auto shrink-0">
+              <Button
+                tone="hero"
+                onClick={openSheet}
+                icon={<IconEyeletFilled size={10} />}
+                className="w-full sm:w-auto"
+              >
+                Log today's wear
+              </Button>
+              {/* The single highest-leverage reduction of the logging cost the
+                  product will ever ship (docs/21 §4): most days repeat, and a
+                  repeated day should cost one tap, not a picker. Only offered
+                  while today is blank and yesterday really happened. */}
+              {yesterdaysLogs.length > 0 ? (
+                <Button tone="tertiary" onClick={repeatYesterday}>
+                  Same as yesterday
+                </Button>
+              ) : null}
+            </div>
           </div>
         )}
       </Card>

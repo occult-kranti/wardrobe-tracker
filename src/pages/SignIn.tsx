@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useSession } from '../context/SessionContext';
 import { Button, Card, Field, inputClass } from '../components/ui';
-import { Basting, TagMark, Wordmark } from '../components/art';
+import { Basting, TagMark, TagPortrait, Wordmark } from '../components/art';
 import { IconPlus } from '../components/icons';
 import type { Account } from '../types';
 
@@ -26,15 +26,7 @@ function Portrait({ account, size = 56 }: { account: Account; size?: number }) {
       </span>
     );
   }
-  return (
-    <svg width={size} height={size * 1.25} viewBox="0 0 40 50" aria-hidden="true" className="shrink-0">
-      <path d="M6 1h28l5 5v43H1V6z" fill="var(--color-sunken)" stroke="var(--color-border)" strokeWidth="1" />
-      <circle cx="20" cy="9" r="3" fill="none" stroke={account.color} strokeWidth="1.5" />
-      <text x="20" y="35" textAnchor="middle" fill="var(--color-text)" style={{ font: '600 15px var(--font-display)' }}>
-        {account.monogram}
-      </text>
-    </svg>
-  );
+  return <TagPortrait monogram={account.monogram} color={account.color} size={size} />;
 }
 
 export default function SignIn() {
