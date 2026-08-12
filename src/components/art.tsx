@@ -36,57 +36,80 @@ export function Wordmark({ className = '' }: { className?: string }) {
 }
 
 /**
- * The identity mark: the tag that IS a wardrobe (hanger cut, judge pass
- * 2026-08-12). The flat hanger hangs from the grommet, which doubles as the
- * eye of its hook, and the monogram sits in a bottom panel like a label on a
- * shop hanger.
+ * The identity mark: a PAIR of tags on one long thread (owner's call,
+ * 2026-08-12). Garments arrive wearing two — the maker's tag and the little
+ * care tag behind it — so the mark wears two: the second sits back and to the
+ * left, tilted the way a tag hangs when it isn't being held, and the thread
+ * runs out of its eyelet, disappears behind the front tag, and comes back out
+ * of the front grommet to twirl in the air above them.
  *
- * The STRING is back, and it hangs OUTSIDE (owner's call, 2026-08-12): a real
- * cloth tag's thread leaves the eyelet and twirls in the air above it, so this
- * one rises off the grommet in a long S and finishes in a curl. The viewBox
- * carries the headroom the twirl needs — a string drawn inside the tag's own
- * shoulders had nowhere to be seen. It stays drawn at every size; only the
- * favicon (public/icon.svg), which has 16 pixels to work with, does without.
+ * The face is bare on purpose. The hanger that used to hang inside it read as
+ * clutter at every size; a tag says what it is by being a tag, so the only
+ * thing printed on it is the letter.
+ *
+ * Order matters here: back tag, then the thread that joins them, then the
+ * front tag (filled, so it occludes the joining thread), then the twirl.
  */
 export function TagMark({ size = 28 }: { size?: number }) {
   const full = size >= 40;
-  const sw = full ? 2 : 2.5;
+  const sw = full ? 2 : 2.4;
   return (
     <svg
-      width={size * 0.75}
+      width={size * 0.875}
       height={size * 1.3125}
-      viewBox="0 -20 48 84"
+      viewBox="-4 -20 56 84"
       fill="none"
       aria-hidden="true"
       className="shrink-0"
     >
+      {/* the care tag, behind and tilted */}
+      <g transform="translate(-10 2) rotate(-9 24 30) scale(0.8)" transform-origin="24 30">
+        <path
+          d="M10 12 20 2h8l10 10v46a2 2 0 0 1-2 2H12a2 2 0 0 1-2-2Z"
+          fill="var(--color-sunken)"
+          stroke="currentColor"
+          strokeWidth={sw * 1.1}
+          strokeLinejoin="miter"
+        />
+        <circle cx="24" cy="9" r="4.2" stroke="currentColor" strokeWidth="1.1" />
+        <circle cx="24" cy="9" r="2.8" stroke="var(--color-gold)" strokeWidth="2.1" />
+      </g>
+
+      {/* the thread from the care tag's eyelet, running behind the front tag */}
+      <path
+        d="M11.4 15.4C13.6 9.6 17.4 6.2 24 4.4"
+        stroke="var(--color-gold)"
+        strokeWidth={full ? 1.5 : 1.8}
+        strokeLinecap="butt"
+      />
+
+      {/* the maker's tag, in front */}
       <path
         d="M10 12 20 2h8l10 10v46a2 2 0 0 1-2 2H12a2 2 0 0 1-2-2Z"
+        fill="var(--color-bg)"
         stroke="currentColor"
         strokeWidth={sw}
         strokeLinejoin="miter"
       />
+      <circle cx="24" cy="9" r={full ? 4.5 : 4.9} stroke="currentColor" strokeWidth={full ? 1 : 1.25} />
+      <circle cx="24" cy="9" r="3" stroke="var(--color-gold)" strokeWidth={full ? 2 : 2.5} />
+      <text
+        x="24"
+        y="44"
+        textAnchor="middle"
+        fill="currentColor"
+        style={{ font: full ? '700 22px var(--font-display)' : '700 24px var(--font-display)' }}
+      >
+        T
+      </text>
+
+      {/* and out of the front grommet, the long twirl */}
       <path
-        d="M24 4.4C24 -2 19 -4.8 14.6 -7.8 9.8 -11 10 -16.6 14.8 -17.8c4.4-1 7.4 2.8 6.2 6.2"
+        d="M24 4.4C24 -2.6 20.6 -7 16.4 -10.6 11 -15.2 12 -22.4 18 -23.2c5.2-.7 8.2 4.2 6 8.2"
         stroke="var(--color-gold)"
         strokeWidth={full ? 1.5 : 1.9}
         strokeLinecap="butt"
       />
-      <path d="M24 27V12.4" stroke="currentColor" strokeWidth={sw} />
-      <path d="M24 27 12.5 38h23Z" stroke="currentColor" strokeWidth={sw} strokeLinejoin="miter" />
-      {/* the ink rim keeps the gold from sinking into light grounds */}
-      <circle cx="24" cy="9" r={full ? 4.5 : 4.9} stroke="currentColor" strokeWidth={full ? 1 : 1.25} />
-      <circle cx="24" cy="9" r="3" stroke="var(--color-gold)" strokeWidth={full ? 2 : 2.5} />
-      {full && <path d="M14.5 44.5h19" stroke="currentColor" strokeWidth="0.75" opacity="0.45" />}
-      <text
-        x="24"
-        y="55"
-        textAnchor="middle"
-        fill="currentColor"
-        style={{ font: full ? '700 14px var(--font-display)' : '700 16px var(--font-display)' }}
-      >
-        T
-      </text>
     </svg>
   );
 }
@@ -112,13 +135,35 @@ export function TagPortrait({
 }) {
   return (
     <svg
-      width={size}
-      height={size * 1.625}
-      viewBox="0 -15 40 65"
+      width={size * 1.325}
+      height={size * 1.55}
+      viewBox="-11 -14 53 62"
       fill="none"
       aria-hidden="true"
       className="shrink-0 text-text"
     >
+      {/* the care tag behind, tilted */}
+      <g transform="translate(-8 2) rotate(-9 20 25) scale(0.8)" transform-origin="20 25">
+        <path
+          d="M5 10.5 13.5 2h13L35 10.5v34.5a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2Z"
+          fill="var(--color-bg)"
+          stroke="currentColor"
+          strokeWidth="1.7"
+          strokeLinejoin="miter"
+        />
+        <circle cx="20" cy="7.5" r="3.6" stroke="currentColor" strokeWidth="1.1" />
+        <circle cx="20" cy="7.5" r="2.4" stroke="var(--color-gold)" strokeWidth="1.8" />
+      </g>
+
+      {/* the thread joining them, running behind the front tag */}
+      <path
+        d="M8.6 12.6C10.4 7.6 14.2 4.8 20 3.3"
+        stroke={color ?? 'var(--color-gold)'}
+        strokeWidth="1.3"
+        strokeLinecap="butt"
+      />
+
+      {/* the wardrobe's own tag, in front */}
       <path
         d="M5 10.5 13.5 2h13L35 10.5v34.5a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2Z"
         fill="var(--color-sunken)"
@@ -126,28 +171,26 @@ export function TagPortrait({
         strokeWidth="1.5"
         strokeLinejoin="miter"
       />
-      {/* the same twirl as the nav mark, in this wardrobe's own thread */}
+      {/* the ink rim keeps the gold from sinking into light grounds */}
+      <circle cx="20" cy="7.5" r="4" stroke="currentColor" strokeWidth="1" />
+      <circle cx="20" cy="7.5" r="2.75" stroke="var(--color-gold)" strokeWidth="1.75" />
+      <text
+        x="20"
+        y="32"
+        textAnchor="middle"
+        fill="currentColor"
+        style={{ font: '700 13px var(--font-display)', letterSpacing: '0.02em' }}
+      >
+        {monogram}
+      </text>
+
+      {/* the twirl, in this wardrobe's own thread */}
       <path
         d="M20 3.3C20 -1.2 16.1 -3.2 13.4 -5.5 9.3 -7.9 9.5 -11.9 13 -12.8c3.2-.8 5.4 2 4.6 4.6"
         stroke={color ?? 'var(--color-gold)'}
         strokeWidth="1.3"
         strokeLinecap="butt"
       />
-      <path d="M20 22.5V10.5" stroke="currentColor" strokeWidth="1.75" />
-      <path d="M20 22.5 10.5 31.5h19Z" stroke="currentColor" strokeWidth="1.75" strokeLinejoin="miter" />
-      {/* the ink rim keeps the gold from sinking into light grounds */}
-      <circle cx="20" cy="7.5" r="4" stroke="currentColor" strokeWidth="1" />
-      <circle cx="20" cy="7.5" r="2.75" stroke="var(--color-gold)" strokeWidth="1.75" />
-      <path d="M9.5 36.5h21" stroke="currentColor" strokeWidth="0.75" opacity="0.45" />
-      <text
-        x="20"
-        y="43.6"
-        textAnchor="middle"
-        fill="currentColor"
-        style={{ font: '700 8.5px var(--font-display)', letterSpacing: '0.02em' }}
-      >
-        {monogram}
-      </text>
     </svg>
   );
 }

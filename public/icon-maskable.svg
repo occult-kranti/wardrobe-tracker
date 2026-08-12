@@ -1,7 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
   <!-- Maskable: the safe zone is a CIRCLE of r=40% about the centre, so the
-       hanger's mitred base corners are what set the scale, not the sides. -->
+       tag's mitred base corners are what set the scale, not the sides. -->
   <rect width="192" height="192" fill="#BE1231"/>
-  <circle cx="96" cy="70" r="15" fill="none" stroke="#FFFDF6" stroke-width="11"/>
-  <path d="M96 85v18M96 103 49 137h94Z" fill="none" stroke="#FFFDF6" stroke-width="11" stroke-linejoin="miter"/>
+  <path d="M69.5 76.5 87.5 58.5h17l18 18v56a5 5 0 0 1-5 5h-43a5 5 0 0 1-5-5Z"
+    fill="none" stroke="#FFFDF6" stroke-width="8" stroke-linejoin="miter"/>
+  <circle cx="96" cy="78" r="6.5" fill="none" stroke="#FFFDF6" stroke-width="6"/>
+  <text x="96" y="124" text-anchor="middle" fill="#FFFDF6"
+    style="font:700 40px Georgia,'Times New Roman',serif">T</text>
 </svg>
