@@ -496,6 +496,34 @@
      The gutter is reserved so the list does not jump sideways the moment it
      becomes long enough to scroll, and chaining is contained so flicking to the
      end of the list does not then start scrolling the page behind the sheet. */
+  /* ---------------- the safe areas ----------------
+
+     index.html asks for `viewport-fit=cover` and the manifest asks for
+     `standalone`, which together mean the app is drawn edge to edge behind
+     the phone's own furniture: the notch at the top, the home indicator at
+     the bottom. Nothing read those insets, so on every phone with a home bar
+     the tab rail was drawn UNDERNEATH it — the labels vanished and the taps
+     landed on the system gesture instead of the tab. That is the "the bottom
+     bar disappears" report, and it is not conditional on the page: it is
+     conditional on the handset.
+
+     Every fixed edge of the chrome now pads itself by its own inset. The
+     values are 0 on hardware without insets, so nothing moves on a desktop
+     or an older phone. */
+
+  .safe-b { padding-bottom: env(safe-area-inset-bottom, 0px); }
+  .safe-t { padding-top: env(safe-area-inset-top, 0px); }
+  /* Content has to clear the rail AND the inset under it. */
+  .pad-rail { padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px)); }
+  /* Sheets and toasts sit above the rail, so they clear both too. */
+  .above-rail { bottom: calc(3.5rem + env(safe-area-inset-bottom, 0px)); }
+  .above-rail-toast { bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px)); }
+
+  /* 100dvh, not 100vh: a mobile browser's retracting toolbar changes the
+     visual viewport, and a screen measured against the LARGE viewport hides
+     its own last row behind the chrome until the user scrolls. */
+  .min-h-dvh { min-height: 100vh; min-height: 100dvh; }
+
   .pane {
     overflow-y: auto;
     scrollbar-gutter: stable;

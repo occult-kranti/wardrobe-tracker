@@ -135,7 +135,24 @@ The importer never writes `wearCount`, `lastWorn`, or `cost` — a piece that
 has just been catalogued has no history, and the ledger derives those from
 logs. `source` defaults to `new` and is the user's to correct.
 
-## 3. What the app does with it
+## 3. Trying it without a model
+
+The app ships the bench: **Settings → Catalogue from photos** carries a
+**Copy the prompt** button and six real photographs, each with the honest file
+the prompt returned for it. Open any of them to watch the whole flow without
+running anything.
+
+Three of the six hold no clothes: a cupboard of shampoo, a linen closet, and a
+street with a heap of fabric forty feet away. They are in the bench on purpose.
+A prompt that cannot answer "nothing here" will invent a wardrobe, and the only
+convincing way to show that this one doesn't is to let anyone point it at a
+cupboard full of soap and watch it decline.
+
+The photographs live in `public/intake-samples/` beside their `.json`, which
+are the very files `npm run test:intake` runs its assertions over — the sample
+you can open is the fixture the suite checks.
+
+## 4. What the app does with it
 
 1. **Settings → Catalogue from photos** takes the file (or pasted JSON).
 2. Every piece arrives as a **draft** on a review screen: name, category,
@@ -150,7 +167,7 @@ The review step is not a formality. A vision model is a fast, confident
 stranger who has never seen your clothes before; the record is yours, so the
 last word is too.
 
-## 4. Testing the prompt
+## 5. Testing the prompt
 
 `scripts/test-intake.mjs` validates handoff files against the importer's own
 parser and reports what it would drop. Three real photographs were catalogued
