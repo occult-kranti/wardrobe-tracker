@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Toile Android — Mughal room — Item detail in the cusped arch</title>
+<link rel="stylesheet" href="foundation.css">
+<style>
+  .tagchip { display:inline-block; border:1px solid var(--border); background:var(--sunken); padding:2px 6px; border-radius:2px; }
+  .hashiya { border:1px solid var(--artline); outline:1px solid var(--artline-2); outline-offset:-4px; border-radius:2px; }
+  /* the muslin plate keeps pietra dura corners instead of the default bracket */
+  .plate.mihrab::after { display:none; }
+</style>
+</head>
+<body>
+<div style="display:flex;gap:28px">
+
+  <!-- ============ STAGE 1 · THE DETAIL SHEET AT REST ============ -->
+  <div class="stage">
+    <div class="phone" data-theme="mughal">
+      <div class="statusbar"><span>9:41</span><span>▂▄▆█ · ▮▮▮▯ 82</span></div>
+
+      <div class="screen">
+        <!-- the closet ground behind -->
+        <div style="display:flex;align-items:flex-end;justify-content:space-between;flex:none;margin-top:4px">
+          <div style="display:flex;align-items:baseline;gap:8px">
+            <span class="t-masthead">Closet</span>
+            <span class="t-ledger">41 PIECES</span>
+          </div>
+          <div class="t-label" style="width:34px;height:34px;border:1px solid var(--ink);border-radius:2px;display:flex;align-items:center;justify-content:center">A</div>
+        </div>
+        <svg width="376" height="12" viewBox="0 0 376 12" style="flex:none;margin-top:4px">
+          <g fill="none" style="stroke:var(--artline)" stroke-width="2" stroke-opacity="0.20" stroke-linecap="butt" stroke-linejoin="miter">
+            <path d="M0 10h376"/><path d="M14 10V4h348v6"/>
+          </g>
+        </svg>
+        <div style="position:relative;flex:none;height:150px;margin-top:10px;background:var(--sunken);border:1px solid var(--border);border-radius:2px;overflow:hidden">
+          <svg width="374" height="148" viewBox="0 0 374 148" style="position:absolute;inset:0">
+            <defs>
+              <pattern id="jaali-d" width="34.6" height="60" patternUnits="userSpaceOnUse">
+                <g fill="none" style="stroke:var(--artline)" stroke-width="2" stroke-opacity="0.11" stroke-linecap="butt" stroke-linejoin="miter">
+                  <g transform="translate(17.3,15)"><path d="M0 -20L17.3 -10L17.3 10L0 20L-17.3 10L-17.3 -10Z M0 -20L17.3 10L-17.3 10Z M0 20L17.3 -10L-17.3 -10Z"/></g>
+                  <g transform="translate(0,45)"><path d="M0 -20L17.3 -10L17.3 10L0 20L-17.3 10L-17.3 -10Z M0 -20L17.3 10L-17.3 10Z M0 20L17.3 -10L-17.3 -10Z"/></g>
+                  <g transform="translate(34.6,45)"><path d="M0 -20L17.3 -10L17.3 10L0 20L-17.3 10L-17.3 -10Z M0 -20L17.3 10L-17.3 10Z M0 20L17.3 -10L-17.3 -10Z"/></g>
+                </g>
+              </pattern>
+            </defs>
+            <rect width="374" height="148" fill="url(#jaali-d)"/>
+            <g fill="none" style="stroke:var(--artline)" stroke-width="2.5" stroke-opacity="0.30" stroke-linecap="butt" stroke-linejoin="miter">
+              <path d="M8 24h358"/><path d="M26 0v24M348 0v24"/>
+            </g>
+            <g fill="none" style="stroke:var(--artline)" stroke-width="2" stroke-opacity="0.38" stroke-linecap="butt" stroke-linejoin="miter">
+              <path d="M113 31a7 7 0 0114 0"/><path d="M120 31v6"/><path d="M120 37l-38 20c-3 22-2 40 1 58 24 4 50 4 74 0 3-18 4-36 1-58z"/>
+              <path d="M247 31a7 7 0 0114 0"/><path d="M254 31v6"/><path d="M254 37l-36 18h72z"/>
+              <path d="M254 55c-10 26-11 54-7 82"/><path d="M266 55c8 24 9 48 6 74"/>
+            </g>
+          </svg>
+        </div>
+      </div>
+
+      <div class="bottomnav">
+        <div class="slot"><svg viewBox="0 0 22 22"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="butt" stroke-linejoin="miter"><path d="M7 2.5h8V15H7z"/><path d="M7 15l-3.5 5M15 15l3.5 5M11 15v5"/></g></svg>TODAY</div>
+        <div class="slot on"><svg viewBox="0 0 22 22"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="butt" stroke-linejoin="miter"><path d="M3 3h16M4 3h14v15H4z"/><path d="M11 3v15M6 18v2M16 18v2M8.5 10h1.5M12 10h1.5"/></g></svg>CLOSET</div>
+        <div class="slot"><svg viewBox="0 0 22 22"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="butt" stroke-linejoin="miter"><circle cx="11" cy="3.5" r="1.4"/><path d="M11 5v1.6M8 6.6c-1.8 3-1.4 6 1 8h4c2.4-2 2.8-5 1-8z"/><path d="M11 14.6v3.4M8 20h6"/></g></svg>OUTFITS</div>
+        <div class="slot"><svg viewBox="0 0 22 22"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="butt" stroke-linejoin="miter"><path d="M4.5 20V4h13v16M4.5 20h13M13.5 4v16M10.8 12h1.4"/></g></svg>FEED</div>
+        <div class="slot"><svg viewBox="0 0 22 22"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="butt" stroke-linejoin="miter"><path d="M4 4h6v6H4zM12 4h6v6h-6zM4 12h6v6H4zM12 12h6v6h-6z"/></g></svg>MORE</div>
+      </div>
+
+      <div class="scrim"></div>
+
+      <!-- THE DETAIL SHEET — a sheet, not a page -->
+      <div class="sheet" style="padding:10px 16px 20px">
+        <!-- the cusped arch crowns the sheet: border profile, never a mask -->
+        <svg width="320" height="38" viewBox="0 0 320 38" style="display:block;margin:0 auto">
+          <g fill="none" stroke-linecap="butt" stroke-linejoin="miter">
+            <g style="stroke:var(--artline)" stroke-width="2.5" stroke-opacity="0.30">
+              <path d="M20 36 A18 18 0 0 1 52 29 A18 18 0 0 1 82 21 A17 17 0 0 1 112 13 A15 15 0 0 1 140 8 A12 12 0 0 1 160 6 A12 12 0 0 1 180 8 A15 15 0 0 1 208 13 A17 17 0 0 1 238 21 A18 18 0 0 1 268 29 A18 18 0 0 1 300 36"/>
+              <path d="M4 36h16M300 36h16"/>
+            </g>
+            <g style="stroke:var(--artline-2)" stroke-width="2" stroke-opacity="0.38" transform="translate(160 36) scale(0.93) translate(-160 -36)">
+              <path d="M20 36 A18 18 0 0 1 52 29 A18 18 0 0 1 82 21 A17 17 0 0 1 112 13 A15 15 0 0 1 140 8 A12 12 0 0 1 160 6 A12 12 0 0 1 180 8 A15 15 0 0 1 208 13 A17 17 0 0 1 238 21 A18 18 0 0 1 268 29 A18 18 0 0 1 300 36"/>
+            </g>
+          </g>
+        </svg>
+
+        <div class="t-masthead" style="text-align:center;margin-top:4px">Chikankari Kurta</div>
+        <div class="t-ledger" style="text-align:center;margin-top:3px">TOPS · GIFTED · CLEAN · A FAVOURITE</div>
+
+        <!-- the muslin plate: hashiya double rule, pietra dura corners -->
+        <div class="plate mihrab hashiya" style="margin-top:10px;padding:8px;text-align:center">
+          <svg width="26" height="26" viewBox="0 0 30 30" style="position:absolute;top:5px;left:5px">
+            <g fill="none" stroke-linecap="butt" stroke-linejoin="miter" stroke-width="2" stroke-opacity="0.38">
+              <path style="stroke:var(--artline)" d="M4 4c12 3 20 11 23 23"/>
+              <path style="stroke:var(--accent)" d="M14 4c6 1 9 5 9 11-6-1-9-5-9-11z"/>
+              <path style="stroke:var(--artline)" d="M4 14c5 0 8 3 8 8-5 0-8-3-8-8z"/>
+              <circle style="stroke:var(--seal)" cx="8" cy="8" r="2"/>
+            </g>
+          </svg>
+          <svg width="26" height="26" viewBox="0 0 30 30" style="position:absolute;top:5px;right:5px;transform:scaleX(-1)">
+            <g fill="none" stroke-linecap="butt" stroke-linejoin="miter" stroke-width="2" stroke-opacity="0.38">
+              <path style="stroke:var(--artline)" d="M4 4c12 3 20 11 23 23"/>
+              <path style="stroke:var(--accent)" d="M14 4c6 1 9 5 9 11-6-1-9-5-9-11z"/>
+              <path style="stroke:var(--artline)" d="M4 14c5 0 8 3 8 8-5 0-8-3-8-8z"/>
+              <circle style="stroke:var(--seal)" cx="8" cy="8" r="2"/>
+            </g>
+          </svg>
+          <svg width="26" height="26" viewBox="0 0 30 30" style="position:absolute;bottom:5px;left:5px;transform:scaleY(-1)">
+            <g fill="none" stroke-linecap="butt" stroke-linejoin="miter" stroke-width="2" stroke-opacity="0.38">
+              <path style="stroke:var(--artline)" d="M4 4c12 3 20 11 23 23"/>
+              <path style="stroke:var(--accent)" d="M14 4c6 1 9 5 9 11-6-1-9-5-9-11z"/>
+              <path style="stroke:var(--artline)" d="M4 14c5 0 8 3 8 8-5 0-8-3-8-8z"/>
+              <circle style="stroke:var(--seal)" cx="8" cy="8" r="2"/>
+            </g>
+          </svg>
+          <svg width="26" height="26" viewBox="0 0 30 30" style="position:absolute;bottom:5px;right:5px;transform:scale(-1)">
+            <g fill="none" stroke-linecap="butt" stroke-linejoin="miter" stroke-width="2" stroke-opacity="0.38">
+              <path style="stroke:var(--artline)" d="M4 4c12 3 20 11 23 23"/>
+              <path style="stroke:var(--accent)" d="M14 4c6 1 9 5 9 11-6-1-9-5-9-11z"/>
+              <path style="stroke:var(--artline)" d="M4 14c5 0 8 3 8 8-5 0-8-3-8-8z"/>
+              <circle style="stroke:var(--seal)" cx="8" cy="8" r="2"/>
+            </g>
+          </svg>
+
+          <!-- the drawn flat on flat muslin: ornament surrounds, never underlies -->
+          <svg width="220" height="176" viewBox="0 0 220 190" style="display:block;margin:0 auto">
+            <g fill="none" stroke-linecap="butt" stroke-linejoin="miter">
+              <g style="stroke:var(--artline)" stroke-width="2.5" stroke-opacity="0.30">
+                <path d="M74 24L38 40l10 30 20-9v106h84V61l20 9 10-30-36-16"/>
+                <path d="M74 24c8 6 56 6 64 0"/>
+              </g>
+              <g style="stroke:var(--artline)" stroke-width="2" stroke-opacity="0.38">
+                <path d="M96 24c2-8 26-8 28 0"/><path d="M100 24c2-5 18-5 20 0"/>
+                <path d="M104 32v56M116 32v56"/>
+                <circle cx="110" cy="44" r="2"/><circle cx="110" cy="58" r="2"/><circle cx="110" cy="72" r="2"/>
+                <path d="M45 66l21-10M175 66l-21-10"/>
+                <path d="M68 132h6M152 132h-6"/>
+              </g>
+              <g style="stroke:var(--artline-2)" stroke-width="2" stroke-opacity="0.20">
+                <path d="M134 66c6 10 4 22-2 30"/>
+                <path d="M134 74c8-2 12 2 11 10-8 2-12-2-11-10z"/>
+                <path d="M132 92c-8 0-12-5-10-12 8-1 12 4 10 12z"/>
+                <circle cx="140" cy="64" r="1.5"/><circle cx="146" cy="70" r="1.5"/>
+                <path d="M84 128c-4 8-3 16 2 22"/>
+                <path d="M84 136c-7-1-10-6-8-12 7 0 10 5 8 12z"/>
+                <path d="M72 160h76"/>
+                <path d="M64 136v31M156 136v31"/>
+              </g>
+            </g>
+          </svg>
+        </div>
+
+        <div class="t-ledger" style="text-align:center;margin-top:8px">WORN 18 TIMES · LAST 9 DAYS AGO · A GIFT</div>
+
+        <!-- provenance: the hand-me-down line -->
+        <div style="margin-top:8px;background:var(--sunken);border:1px solid var(--border);border-radius:2px;padding:8px 12px">
+          <div class="t-ledger">PROVENANCE — CAME AS A HAND-ME-DOWN</div>
+          <div class="t-body" style="font-style:italic;margin-top:3px">From Meera Aunty, March 2025 — 41 wears in her record before these. White-on-white shadow work from Lucknow; she insisted it be worn, not kept.</div>
+        </div>
+
+        <!-- the buta: the one drawing allowed to interrupt a list -->
+        <svg width="60" height="34" viewBox="0 0 60 40" style="display:block;margin:4px auto 0">
+          <g fill="none" stroke-linecap="butt" stroke-linejoin="miter" stroke-width="2" stroke-opacity="0.38">
+            <path style="stroke:var(--artline)" d="M30 36c-2-8-1-16 2-22"/>
+            <path style="stroke:var(--artline)" d="M32 14c-4-8 0-13 6-13 2 6-1 11-6 13z"/>
+            <path style="stroke:var(--artline)" d="M32 14c-8-2-10-8-6-13 6 2 8 7 6 13z"/>
+            <path style="stroke:var(--artline-2)" d="M28 28c-6 0-9-4-8-9 6 0 9 4 8 9z"/>
+            <path style="stroke:var(--artline-2)" d="M34 26c6-1 9-5 8-10-6 1-9 5-8 10z"/>
+          </g>
+        </svg>
+
+        <!-- the action row: reading above, writing below -->
+        <span class="btn hero" style="width:100%;margin-top:6px">LOG A WEAR — TODAY</span>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <span class="btn secondary" style="flex:1">WASH</span>
+          <span class="btn secondary" style="flex:1">AMEND</span>
+          <span class="btn secondary" style="flex:1">LEND</span>
+        </div>
+        <div style="display:flex;justify-content:center;gap:24px;margin-top:4px">
+          <span class="btn tertiary">RETIRE</span>
+          <span class="btn tertiary">PASS ON</span>
+        </div>
+      </div>
+
+      <div class="gesturebar" style="z-index:40"></div>
+    </div>
+
+    <p class="caption">Item detail at rest — a sheet, not a page, crowned by the cusped jharokha arch as a border profile with the title beneath it, never inside it. The Chikankari Kurta's drawn flat rests on the flat muslin plate inside hashiya double rules, pietra dura petal corners inlaid in lapis and carnelian, the shadow-work sprigs at whisper in the second metal. The provenance line records the hand-me-down — Meera Aunty's 41 wears before these 18 — and the buta divider is the one drawing that interrupts the list. Log a wear leads the action row at the thumb; wash, amend, lend beside it; retire and pass on wait as quiet links, one confirm behind. Predictive back dismisses the sheet, unguarded.</p>
+  </div>
+
+  <!-- ============ STAGE 2 · RETIRING — THE SANDOOK CLOSES ============ -->
+  <div class="stage">
+    <div class="phone" data-theme="mughal">
+      <div class="statusbar"><span>9:41</span><span>▂▄▆█ · ▮▮▮▯ 82</span></div>
+
+      <div class="screen">
+        <div style="display:flex;align-items:flex-end;justify-content:space-between;flex:none;margin-top:4px">
+          <div style="display:flex;align-items:baseline;gap:8px">
+            <span class="t-masthead">Closet</span>
+            <span class="t-ledger">41 PIECES</span>
+          </div>
+          <div class="t-label" style="width:34px;height:34px;border:1px solid var(--ink);border-radius:2px;display:flex;align-items:center;justify-content:center">A</div>
+        </div>
+        <svg width="376" height="12" viewBox="0 0 376 12" style="flex:none;margin-top:4px">
+          <g fill="none" style="stroke:var(--artline)" stroke-width="2" stroke-opacity="0.20" stroke-linecap="butt" stroke-linejoin="miter">
+            <path d="M0 10h376"/><path d="M14 10V4h348v6"/>
+          </g>
+        </svg>
+        <div style="position:relative;flex:none;height:150px;margin-top:10px;background:var(--sunken);border:1px solid var(--border);border-radius:2px;overflow:hidden">
+          <svg width="374" height="148" viewBox="0 0 374 148" style="position:absolute;inset:0">
+            <defs>
+              <pattern id="jaali-e" width="34.6" height="60" patternUnits="userSpaceOnUse">
+                <g fill="none" style="stroke:var(--artline)" stroke-width="2" stroke-opacity="0.11" stroke-linecap="butt" stroke-linejoin="miter">
+                  <g transform="translate(17.3,15)"><path d="M0 -20L17.3 -10L17.3 10L0 20L-17.3 10L-17.3 -10Z M0 -20L17.3 10L-17.3 10Z M0 20L17.3 -10L-17.3 -10Z"/></g>
+                  <g transform="translate(0,45)"><path d="M0 -20L17.3 -10L17.3 10L0 20L-17.3 10L-17.3 -10Z M0 -20L17.3 10L-17.3 10Z M0 20L17.3 -10L-17.3 -10Z"/></g>
+                  <g transform="translate(34.6,45)"><path d="M0 -20L17.3 -10L17.3 10L0 20L-17.3 10L-17.3 -10Z M0 -20L17.3 10L-17.3 10Z M0 20L17.3 -10L-17.3 -10Z"/></g>
+                </g>
+              </pattern>
+            </defs>
+            <rect width="374" height="148" fill="url(#jaali-e)"/>
+            <g fill="none" style="stroke:var(--artline)" stroke-width="2.5" stroke-opacity="0.30" stroke-linecap="butt" stroke-linejoin="miter">
+              <path d="M8 24h358"/><path d="M26 0v24M348 0v24"/>
+            </g>
+            <g fill="none" style="stroke:var(--artline)" stroke-width="2" stroke-opacity="0.38" stroke-linecap="butt" stroke-linejoin="miter">
+              <path d="M113 31a7 7 0 0114 0"/><path d="M120 31v6"/><path d="M120 37l-38 20c-3 22-2 40 1 58 24 4 50 4 74 0 3-18 4-36 1-58z"/>
+              <path d="M247 31a7 7 0 0114 0"/><path d="M254 31v6"/><path d="M254 37l-36 18h72z"/>
+              <path d="M254 55c-10 26-11 54-7 82"/><path d="M266 55c8 24 9 48 6 74"/>
+            </g>
+          </svg>
+        </div>
+      </div>
+
+      <div class="bottomnav">
+        <div class="slot"><svg viewBox="0 0 22 22"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="butt" stroke-linejoin="miter"><path d="M7 2.5h8V15H7z"/><path d="M7 15l-3.5 5M15 15l3.5 5M11 15v5"/></g></svg>TODAY</div>
+        <div class="slot on"><svg viewBox="0 0 22 22"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="butt" stroke-linejoin="miter"><path d="M3 3h16M4 3h14v15H4z"/><path d="M11 3v15M6 18v2M16 18v2M8.5 10h1.5M12 10h1.5"/></g></svg>CLOSET</div>
+        <div class="slot"><svg viewBox="0 0 22 22"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="butt" stroke-linejoin="miter"><circle cx="11" cy="3.5" r="1.4"/><path d="M11 5v1.6M8 6.6c-1.8 3-1.4 6 1 8h4c2.4-2 2.8-5 1-8z"/><path d="M11 14.6v3.4M8 20h6"/></g></svg>OUTFITS</div>
+        <div class="slot"><svg viewBox="0 0 22 22"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="butt" stroke-linejoin="miter"><path d="M4.5 20V4h13v16M4.5 20h13M13.5 4v16M10.8 12h1.4"/></g></svg>FEED</div>
+        <div class="slot"><svg viewBox="0 0 22 22"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="butt" stroke-linejoin="miter"><path d="M4 4h6v6H4zM12 4h6v6h-6zM4 12h6v6H4zM12 12h6v6h-6z"/></g></svg>MORE</div>
+      </div>
+
+      <!-- ART MOMENT · retire: the sandook closes without hurry, straps unbuckled -->
+      <div class="art-moment">
+        <svg width="340" height="250" viewBox="0 0 340 250" style="margin-bottom:170px">
+          <g fill="none" stroke-linecap="butt" stroke-linejoin="miter">
+            <g style="stroke:var(--artline)" stroke-width="2.5" stroke-opacity="0.30">
+              <path d="M50 122h240v96H50z"/>
+              <path d="M64 218v14h14v-14M262 218v14h14v-14"/>
+              <path d="M46 110c10-38 72-54 124-54s114 18 122 50"/>
+              <path d="M46 110l244-6"/>
+            </g>
+            <g style="stroke:var(--artline)" stroke-width="2" stroke-opacity="0.38">
+              <path d="M124 122v96M138 122v96M222 122v96M236 122v96"/>
+              <path d="M124 104c0-10 5-16 12-18"/>
+              <path d="M236 102c0-10-5-16-12-18"/>
+              <circle cx="42" cy="166" r="9"/><circle cx="298" cy="164" r="9"/>
+            </g>
+            <g style="stroke:var(--artline)" stroke-width="2" stroke-opacity="0.20">
+              <path d="M110 60c-6 16-8 32-6 48"/><path d="M230 60c6 16 8 32 6 48"/>
+              <path d="M80 240h180"/>
+            </g>
+            <g style="stroke:var(--artline-2)" stroke-width="2" stroke-opacity="0.38">
+              <path d="M84 118c40-6 152-8 196-2"/>
+              <path d="M120 118c3-5 10-7 15-4"/>
+              <path d="M168 116c3-4 9-5 13-2"/>
+            </g>
+          </g>
+        </svg>
+      </div>
+
+      <!-- the one confirm, at the thumb -->
+      <div class="sheet">
+        <div class="t-editorial">To the lower cabinet</div>
+        <div class="t-body" style="margin-top:6px">The kurta keeps its history — 18 wears here, and Meera Aunty's 41 before them. It rests behind the plinth door and comes back the day you ask.</div>
+        <div class="t-ledger" style="margin-top:8px">RETIRED, NEVER THROWN OUT — STRAPS UNBUCKLED</div>
+        <div style="display:flex;gap:10px;margin-top:14px">
+          <span class="btn primary" style="flex:1">RETIRE IT</span>
+          <span class="btn secondary" style="flex:1.2">KEEP IT HANGING</span>
+        </div>
+      </div>
+
+      <div class="gesturebar" style="z-index:40"></div>
+    </div>
+
+    <p class="caption">Item detail, retiring — tapping Retire trades the tall sheet for one confirm at the thumb; the closet and its rail wait behind. Art moment: the sandook's domed lid closes without hurry over the folded kurta, its cloth edge-line still visible at the join in the second metal, the strap bands left unbuckled and the ring handles at rest — kept, not sealed away. The copy stays "retired"; nothing is thrown out of this house, and Keep it hanging or predictive back returns the piece to the rail untouched.</p>
+  </div>
+
+</div>
+</body>
+</html>

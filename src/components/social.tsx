@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import type { Account, SharedLook, SharedPiece } from '../types';
-import { GarmentPlate } from './art';
+import { GarmentPlate, TagPortrait } from './art';
 
 /**
  * The pieces every social surface shares, so a look shown in the feed, in a
@@ -19,15 +19,7 @@ export function AccountMark({ account, size = 36 }: { account: Account; size?: n
       </span>
     );
   }
-  return (
-    <svg width={size} height={size * 1.25} viewBox="0 0 40 50" aria-hidden="true" className="shrink-0">
-      <path d="M6 1h28l5 5v43H1V6z" fill="var(--color-sunken)" stroke="var(--color-border)" strokeWidth="1" />
-      <circle cx="20" cy="9" r="3" fill="none" stroke={account.color} strokeWidth="1.5" />
-      <text x="20" y="35" textAnchor="middle" fill="var(--color-text)" style={{ font: `600 ${Math.round(size * 0.34)}px var(--font-display)` }}>
-        {account.monogram}
-      </text>
-    </svg>
-  );
+  return <TagPortrait monogram={account.monogram} color={account.color} size={size} />;
 }
 
 export function AccountLine({ account, meta }: { account: Account; meta?: string }) {

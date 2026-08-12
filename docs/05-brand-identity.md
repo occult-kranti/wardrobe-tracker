@@ -149,7 +149,9 @@ except the single "log wear" action, which may fill with the accent.
 3. **Logo:** wordmark TOILE, Bodoni 700 caps tracked +0.18em, over a hand-wavered
    2-segment chalk underline in `--color-seal`. Monogram: a vertical garment tag
    (clipped top corners, 6px eyelet, S-curve string) bearing a Bodoni "T".
-   Favicon: eyelet + T on the seal colour.
+   Favicon: eyelet + T on the seal colour. **Amended 2026-08-12** (judge pass):
+   the favicon is now the hanger-only cut of the tag mark — eyelet kept as the
+   hook's eye, the T replaced by the flat hanger — chalk on the seal colour.
 4. **Wax seal:** flat `--color-seal` circle, chalk T, rotated **−3°** (hand-pressed
    graft), used on the exported recap card and seal-press confirmations.
    `src/components/art.tsx` contains no hex at all — it paints in tokens — so

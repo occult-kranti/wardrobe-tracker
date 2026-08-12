@@ -1,0 +1,354 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Toile Android — the Gothic room — Calendar</title>
+<link rel="stylesheet" href="foundation.css">
+<body>
+<div style="display:flex;gap:28px">
+
+  <!-- ============ STAGE 1 · THE WEEK, AT REST ============ -->
+  <div class="stage">
+    <div class="phone" data-theme="gothic">
+      <div class="statusbar"><span>9:41</span><span>▰▰▰▱ 86%</span></div>
+
+      <div class="screen">
+        <!-- top line: wordmark + wardrobe monogram -->
+        <div style="display:flex;justify-content:space-between;align-items:center;margin:2px 0 8px">
+          <span class="t-ledger">TOILE · THE GOTHIC ROOM</span>
+          <span style="width:32px;height:32px;border:1.5px solid var(--ink);border-radius:2px;display:inline-flex;align-items:center;justify-content:center;font:700 15px Georgia,serif">A</span>
+        </div>
+
+        <!-- masthead -->
+        <div class="rule-double" style="margin-bottom:10px">
+          <div class="t-masthead">Calendar</div>
+          <div class="t-ledger" style="margin-top:5px">WEEK OF 10 – 16 AUGUST · TWO DAYS ON THE RECORD</div>
+        </div>
+
+        <!-- the arcade: seven day-bays under lancet arches, one rod through all -->
+        <svg width="376" height="152" viewBox="0 0 376 152" style="flex:none;display:block">
+          <g fill="none" stroke="var(--artline)" stroke-linecap="butt" stroke-linejoin="miter">
+            <!-- structure 2.5/0.30 — arches, the one rod, the plinth -->
+            <g stroke-width="2.5" stroke-opacity="0.30">
+              <path d="M7 145V55A34 34 0 0 1 26.9 20A34 34 0 0 1 46.7 55V145"/>
+              <path d="M60.7 145V55A34 34 0 0 1 80.6 20A34 34 0 0 1 100.4 55V145"/>
+              <path d="M114.4 145V55A34 34 0 0 1 134.3 20A34 34 0 0 1 154.1 55V145"/>
+              <path d="M168.1 145V55A34 34 0 0 1 188 20A34 34 0 0 1 207.8 55V145"/>
+              <path d="M221.9 145V55A34 34 0 0 1 241.7 20A34 34 0 0 1 261.6 55V145"/>
+              <path d="M275.6 145V55A34 34 0 0 1 295.4 20A34 34 0 0 1 315.3 55V145"/>
+              <path d="M329.3 145V55A34 34 0 0 1 349.1 20A34 34 0 0 1 369 55V145"/>
+              <path d="M6 74H370"/>
+              <path d="M0 145H376"/>
+            </g>
+            <!-- detail 2/0.38 — the dressed hangers of the record, today's bare hanger -->
+            <g stroke-width="2" stroke-opacity="0.38">
+              <path d="M21.9 74a5 5 0 0 1 10 0M26.9 84v-5M26.9 84l-13 9h26z"/>
+              <path d="M15.9 93L14.4 118Q26.9 125 39.4 118L37.9 93"/>
+              <path d="M75.6 74a5 5 0 0 1 10 0M80.6 84v-5M80.6 84l-13 9h26z"/>
+              <path d="M69.6 93L68.1 118Q80.6 125 93.1 118L91.6 93"/>
+              <path d="M129.3 74a5 5 0 0 1 10 0M134.3 84v-5M134.3 84l-13 9h26z"/>
+            </g>
+            <!-- today's bay: an inner arch line in the second metal -->
+            <g stroke-width="2" stroke-opacity="0.38" style="stroke:var(--gold)">
+              <path d="M119.4 55A30 30 0 0 1 134.3 25A30 30 0 0 1 149.1 55"/>
+            </g>
+            <!-- whisper 2/0.20 — plan hangers in ghost dress, capitals, the second plinth line -->
+            <g stroke-width="2" stroke-opacity="0.20">
+              <path d="M183 74a5 5 0 0 1 10 0M188 84v-5M188 84l-13 9h26z"/>
+              <path d="M177 93L175.5 118Q188 125 200.5 118L199 93"/>
+              <path d="M344.1 74a5 5 0 0 1 10 0M349.1 84v-5M349.1 84l-13 9h26z"/>
+              <path d="M338.1 93L336.6 118Q349.1 125 361.6 118L360.1 93"/>
+              <path d="M4 55h6M43.7 55h6M57.7 55h6M97.4 55h6M111.4 55h6M151.1 55h6M165.1 55h6M204.8 55h6M218.9 55h6M258.6 55h6M272.6 55h6M312.3 55h6M326.3 55h6M366 55h6"/>
+              <path d="M0 150H376"/>
+            </g>
+            <!-- the paper tags on the plan hangers — gold, they never count -->
+            <g stroke-width="2" stroke-opacity="0.38" style="stroke:var(--gold)">
+              <path d="M196 88q3 5 2 9M192 99l11 -3 2.5 9 -11 3z"/>
+              <circle cx="196.5" cy="100.5" r="1.3"/>
+              <path d="M357.1 88q3 5 2 9M353.1 99l11 -3 2.5 9 -11 3z"/>
+              <circle cx="357.6" cy="100.5" r="1.3"/>
+            </g>
+            <!-- Saturday's sandook: the event day packs a chest -->
+            <g stroke-width="2" stroke-opacity="0.34" style="stroke:var(--gold)">
+              <path d="M282.4 108h26v16h-26zM282.4 108c3 -8 23 -8 26 0M290.4 108v16M300.4 108v16"/>
+              <circle cx="295.4" cy="100" r="2"/>
+            </g>
+          </g>
+        </svg>
+
+        <!-- the plinth labels: day and date, today ringed in a quatrefoil -->
+        <div style="display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:10px">
+          <div style="text-align:center"><div class="t-ledger">MON</div><div class="t-body" style="font-size:12.5px">10</div></div>
+          <div style="text-align:center"><div class="t-ledger">TUE</div><div class="t-body" style="font-size:12.5px">11</div></div>
+          <div style="text-align:center"><div class="t-ledger" style="color:var(--gold)">WED</div>
+            <div style="position:relative;display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px">
+              <svg width="28" height="28" viewBox="0 0 26 26" style="position:absolute;inset:0">
+                <path d="M8.1 8.1A5 5 0 1 1 17.9 8.1A5 5 0 1 1 17.9 17.9A5 5 0 1 1 8.1 17.9A5 5 0 1 1 8.1 8.1Z" fill="none" style="stroke:var(--gold)" stroke-width="1.5" stroke-opacity="0.9" stroke-linecap="butt" stroke-linejoin="miter"/>
+              </svg>
+              <span class="t-body" style="font-size:12.5px;position:relative">12</span>
+            </div>
+          </div>
+          <div style="text-align:center"><div class="t-ledger">THU</div><div class="t-body" style="font-size:12.5px;color:var(--ink-2)">13</div></div>
+          <div style="text-align:center"><div class="t-ledger">FRI</div><div class="t-body" style="font-size:12.5px;color:var(--ink-2)">14</div></div>
+          <div style="text-align:center"><div class="t-ledger">SAT</div><div class="t-body" style="font-size:12.5px;color:var(--ink-2)">15</div></div>
+          <div style="text-align:center"><div class="t-ledger">SUN</div><div class="t-body" style="font-size:12.5px;color:var(--ink-2)">16</div></div>
+        </div>
+
+        <!-- the week, hanger by hanger -->
+        <div class="plate" style="padding:12px 14px;margin-bottom:8px">
+          <div class="t-label" style="margin-bottom:9px">The week's record</div>
+
+          <div style="display:flex;gap:9px;align-items:flex-start;margin-bottom:8px">
+            <svg width="13" height="13" viewBox="0 0 26 26" style="flex:none;margin-top:3px"><path d="M8.1 8.1A5 5 0 1 1 17.9 8.1A5 5 0 1 1 17.9 17.9A5 5 0 1 1 8.1 17.9A5 5 0 1 1 8.1 8.1Z" fill="none" style="stroke:var(--gold)" stroke-width="2.4" stroke-opacity="0.85" stroke-linecap="butt" stroke-linejoin="miter"/></svg>
+            <div>
+              <div class="t-ledger">MONDAY 10 · WORN</div>
+              <div class="t-body" style="font-size:13px">Chikankari kurta · cavalry twill trousers · driving loafers</div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:9px;align-items:flex-start;margin-bottom:8px">
+            <svg width="13" height="13" viewBox="0 0 26 26" style="flex:none;margin-top:3px"><path d="M8.1 8.1A5 5 0 1 1 17.9 8.1A5 5 0 1 1 17.9 17.9A5 5 0 1 1 8.1 17.9A5 5 0 1 1 8.1 8.1Z" fill="none" style="stroke:var(--gold)" stroke-width="2.4" stroke-opacity="0.85" stroke-linecap="butt" stroke-linejoin="miter"/></svg>
+            <div>
+              <div class="t-ledger">TUESDAY 11 · WORN</div>
+              <div class="t-body" style="font-size:13px">Ajrakh block-print camp shirt · handloom drawstring trousers · Kolhapuri sandals</div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:9px;align-items:flex-start;border:1px dashed var(--border);border-radius:2px;padding:7px 9px;margin-bottom:8px">
+            <svg width="14" height="14" viewBox="0 0 16 16" style="flex:none;margin-top:3px"><g fill="none" style="stroke:var(--gold)" stroke-width="1.5" stroke-opacity="0.8" stroke-linecap="butt" stroke-linejoin="miter"><path d="M2 9L9 2h5v5l-7 7z"/><circle cx="11" cy="5" r="1.2"/><path d="M2 9q-1.5 2 0 4"/></g></svg>
+            <div style="color:var(--ink-2)">
+              <div class="t-ledger">THURSDAY 13 · A TAG, NOT A WEAR</div>
+              <div class="t-body" style="font-size:13px;color:var(--ink-2)">Ikat handloom overshirt · heavyweight boxy tee · carpenter trousers</div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:9px;align-items:flex-start">
+            <svg width="15" height="13" viewBox="0 0 18 15" style="flex:none;margin-top:3px"><g fill="none" style="stroke:var(--gold)" stroke-width="1.5" stroke-opacity="0.8" stroke-linecap="butt" stroke-linejoin="miter"><path d="M2 6h14v7H2zM2 6c1.5-4.5 12.5-4.5 14 0M6.5 6v7M11.5 6v7"/></g></svg>
+            <div>
+              <div class="t-ledger">SATURDAY 15 · SANGEET — GOA</div>
+              <div class="t-body" style="font-size:13px">Six pieces spoken for; the sandook packs Friday evening.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- rib-vault divider -->
+        <svg width="150" height="20" viewBox="0 0 150 20" style="align-self:center;flex:none">
+          <g fill="none" stroke="var(--artline)" stroke-width="2" stroke-opacity="0.20" stroke-linecap="butt" stroke-linejoin="miter">
+            <path d="M75 18V3M75 18Q45 13 12 3M75 18Q105 13 138 3"/>
+          </g>
+        </svg>
+
+        <div style="flex:1"></div>
+
+        <!-- the selected day, bottom-anchored at the thumb -->
+        <div class="plate" style="padding:14px;margin-bottom:12px">
+          <div class="t-label" style="margin-bottom:6px">Wednesday — today</div>
+          <p class="t-body" style="font-size:13.5px;margin-bottom:12px">A set from Sunday waits on the rod, tagged. The tag counts for nothing until you answer it.</p>
+          <button class="btn hero" style="width:100%">Add what you wore</button>
+        </div>
+      </div>
+
+      <!-- bottom rail -->
+      <div class="bottomnav" style="margin:0">
+        <div class="slot on">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-linecap="butt" stroke-linejoin="miter"><path stroke-width="3" d="M17 6h14v28H17z"/><path stroke-width="2.2" d="M20 9h8v22h-8z"/><path stroke-width="3" d="M17 34l-7 8M31 34l7 8M24 34v8"/></svg>
+          <span>TODAY</span>
+        </div>
+        <div class="slot">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-linecap="butt" stroke-linejoin="miter"><path stroke-width="3" d="M8 10h32v28H8z"/><path stroke-width="3" d="M8 24h32M24 24v14"/><circle stroke-width="2.2" cx="24" cy="17" r="2.5"/><circle stroke-width="2.2" cx="16" cy="31" r="2.5"/><circle stroke-width="2.2" cx="32" cy="31" r="2.5"/></svg>
+          <span>CLOSET</span>
+        </div>
+        <div class="slot">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-linecap="butt" stroke-linejoin="miter"><path stroke-width="3" d="M21 6h6M24 6v5"/><path stroke-width="3" d="M17 11c-3 9-1 16 7 16s10-7 7-16z"/><path stroke-width="2.2" d="M24 27v9M17 40h14M24 36v4"/></svg>
+          <span>OUTFITS</span>
+        </div>
+        <div class="slot">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-linecap="butt" stroke-linejoin="miter"><path stroke-width="3" d="M14 40V10h20v30"/><path stroke-width="3" d="M8 40h32"/><circle stroke-width="2.2" cx="29" cy="26" r="1.8"/></svg>
+          <span>FEED</span>
+        </div>
+        <div class="slot">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-linecap="butt" stroke-linejoin="miter"><path stroke-width="3" d="M10 42V20l14-10 14 10v22z"/><path stroke-width="2.2" d="M10 30h28M24 30v12"/></svg>
+          <span>MORE</span>
+        </div>
+      </div>
+      <div class="gesturebar"></div>
+    </div>
+
+    <p class="caption">Calendar, at rest — the week as a tracery arcade: seven day-bays under lancet arches, one rod through all. Monday and Tuesday hang dressed at detail weight; Wednesday's bare hanger stands under a gold inner arch, its date ringed in a quatrefoil; Thursday and Sunday hang plans in ghost dress — whisper-weight cloth with a gold paper tag that never counts; Friday's bay waits empty; Saturday carries the sandook for the Goa sangeet. Tapping any past bay opens the log sheet for that day; the selected day's card and Add what you wore sit at the thumb. The strip's edges stay padded — the screen edge belongs to predictive back, which returns to Today.</p>
+  </div>
+
+  <!-- ============ STAGE 2 · THE PLAN MATURES ============ -->
+  <div class="stage">
+    <div class="phone" data-theme="gothic">
+      <div class="statusbar"><span>9:41</span><span>▰▰▰▱ 86%</span></div>
+
+      <div class="screen">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin:2px 0 8px">
+          <span class="t-ledger">TOILE · THE GOTHIC ROOM</span>
+          <span style="width:32px;height:32px;border:1.5px solid var(--ink);border-radius:2px;display:inline-flex;align-items:center;justify-content:center;font:700 15px Georgia,serif">A</span>
+        </div>
+
+        <div class="rule-double" style="margin-bottom:10px">
+          <div class="t-masthead">Calendar</div>
+          <div class="t-ledger" style="margin-top:5px">WEEK OF 10 – 16 AUGUST · TWO DAYS ON THE RECORD</div>
+        </div>
+
+        <svg width="376" height="152" viewBox="0 0 376 152" style="flex:none;display:block">
+          <g fill="none" stroke="var(--artline)" stroke-linecap="butt" stroke-linejoin="miter">
+            <g stroke-width="2.5" stroke-opacity="0.30">
+              <path d="M7 145V55A34 34 0 0 1 26.9 20A34 34 0 0 1 46.7 55V145"/>
+              <path d="M60.7 145V55A34 34 0 0 1 80.6 20A34 34 0 0 1 100.4 55V145"/>
+              <path d="M114.4 145V55A34 34 0 0 1 134.3 20A34 34 0 0 1 154.1 55V145"/>
+              <path d="M168.1 145V55A34 34 0 0 1 188 20A34 34 0 0 1 207.8 55V145"/>
+              <path d="M221.9 145V55A34 34 0 0 1 241.7 20A34 34 0 0 1 261.6 55V145"/>
+              <path d="M275.6 145V55A34 34 0 0 1 295.4 20A34 34 0 0 1 315.3 55V145"/>
+              <path d="M329.3 145V55A34 34 0 0 1 349.1 20A34 34 0 0 1 369 55V145"/>
+              <path d="M6 74H370"/>
+              <path d="M0 145H376"/>
+            </g>
+            <g stroke-width="2" stroke-opacity="0.38">
+              <path d="M21.9 74a5 5 0 0 1 10 0M26.9 84v-5M26.9 84l-13 9h26z"/>
+              <path d="M15.9 93L14.4 118Q26.9 125 39.4 118L37.9 93"/>
+              <path d="M75.6 74a5 5 0 0 1 10 0M80.6 84v-5M80.6 84l-13 9h26z"/>
+              <path d="M69.6 93L68.1 118Q80.6 125 93.1 118L91.6 93"/>
+              <path d="M129.3 74a5 5 0 0 1 10 0M134.3 84v-5M134.3 84l-13 9h26z"/>
+            </g>
+            <g stroke-width="2" stroke-opacity="0.38" style="stroke:var(--gold)">
+              <path d="M119.4 55A30 30 0 0 1 134.3 25A30 30 0 0 1 149.1 55"/>
+            </g>
+            <g stroke-width="2" stroke-opacity="0.20">
+              <path d="M183 74a5 5 0 0 1 10 0M188 84v-5M188 84l-13 9h26z"/>
+              <path d="M177 93L175.5 118Q188 125 200.5 118L199 93"/>
+              <path d="M344.1 74a5 5 0 0 1 10 0M349.1 84v-5M349.1 84l-13 9h26z"/>
+              <path d="M338.1 93L336.6 118Q349.1 125 361.6 118L360.1 93"/>
+              <path d="M4 55h6M43.7 55h6M57.7 55h6M97.4 55h6M111.4 55h6M151.1 55h6M165.1 55h6M204.8 55h6M218.9 55h6M258.6 55h6M272.6 55h6M312.3 55h6M326.3 55h6M366 55h6"/>
+              <path d="M0 150H376"/>
+            </g>
+            <g stroke-width="2" stroke-opacity="0.38" style="stroke:var(--gold)">
+              <path d="M196 88q3 5 2 9M192 99l11 -3 2.5 9 -11 3z"/>
+              <circle cx="196.5" cy="100.5" r="1.3"/>
+              <path d="M357.1 88q3 5 2 9M353.1 99l11 -3 2.5 9 -11 3z"/>
+              <circle cx="357.6" cy="100.5" r="1.3"/>
+            </g>
+            <g stroke-width="2" stroke-opacity="0.34" style="stroke:var(--gold)">
+              <path d="M282.4 108h26v16h-26zM282.4 108c3 -8 23 -8 26 0M290.4 108v16M300.4 108v16"/>
+              <circle cx="295.4" cy="100" r="2"/>
+            </g>
+          </g>
+        </svg>
+
+        <div style="display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:10px">
+          <div style="text-align:center"><div class="t-ledger">MON</div><div class="t-body" style="font-size:12.5px">10</div></div>
+          <div style="text-align:center"><div class="t-ledger">TUE</div><div class="t-body" style="font-size:12.5px">11</div></div>
+          <div style="text-align:center"><div class="t-ledger" style="color:var(--gold)">WED</div>
+            <div style="position:relative;display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px">
+              <svg width="28" height="28" viewBox="0 0 26 26" style="position:absolute;inset:0">
+                <path d="M8.1 8.1A5 5 0 1 1 17.9 8.1A5 5 0 1 1 17.9 17.9A5 5 0 1 1 8.1 17.9A5 5 0 1 1 8.1 8.1Z" fill="none" style="stroke:var(--gold)" stroke-width="1.5" stroke-opacity="0.9" stroke-linecap="butt" stroke-linejoin="miter"/>
+              </svg>
+              <span class="t-body" style="font-size:12.5px;position:relative">12</span>
+            </div>
+          </div>
+          <div style="text-align:center"><div class="t-ledger">THU</div><div class="t-body" style="font-size:12.5px;color:var(--ink-2)">13</div></div>
+          <div style="text-align:center"><div class="t-ledger">FRI</div><div class="t-body" style="font-size:12.5px;color:var(--ink-2)">14</div></div>
+          <div style="text-align:center"><div class="t-ledger">SAT</div><div class="t-body" style="font-size:12.5px;color:var(--ink-2)">15</div></div>
+          <div style="text-align:center"><div class="t-ledger">SUN</div><div class="t-body" style="font-size:12.5px;color:var(--ink-2)">16</div></div>
+        </div>
+
+        <div class="plate" style="padding:12px 14px;margin-bottom:8px">
+          <div class="t-label" style="margin-bottom:9px">The week's record</div>
+          <div style="display:flex;gap:9px;align-items:flex-start">
+            <svg width="13" height="13" viewBox="0 0 26 26" style="flex:none;margin-top:3px"><path d="M8.1 8.1A5 5 0 1 1 17.9 8.1A5 5 0 1 1 17.9 17.9A5 5 0 1 1 8.1 17.9A5 5 0 1 1 8.1 8.1Z" fill="none" style="stroke:var(--gold)" stroke-width="2.4" stroke-opacity="0.85" stroke-linecap="butt" stroke-linejoin="miter"/></svg>
+            <div>
+              <div class="t-ledger">TUESDAY 11 · WORN</div>
+              <div class="t-body" style="font-size:13px">Ajrakh block-print camp shirt · handloom drawstring trousers · Kolhapuri sandals</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="flex:1"></div>
+
+        <div class="plate" style="padding:14px;margin-bottom:12px">
+          <div class="t-label" style="margin-bottom:6px">Wednesday — today</div>
+          <p class="t-body" style="font-size:13.5px;margin-bottom:12px">A set from Sunday waits on the rod, tagged. The tag counts for nothing until you answer it.</p>
+          <button class="btn hero" style="width:100%">Add what you wore</button>
+        </div>
+      </div>
+
+      <div class="bottomnav" style="margin:0">
+        <div class="slot on">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-linecap="butt" stroke-linejoin="miter"><path stroke-width="3" d="M17 6h14v28H17z"/><path stroke-width="2.2" d="M20 9h8v22h-8z"/><path stroke-width="3" d="M17 34l-7 8M31 34l7 8M24 34v8"/></svg>
+          <span>TODAY</span>
+        </div>
+        <div class="slot">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-linecap="butt" stroke-linejoin="miter"><path stroke-width="3" d="M8 10h32v28H8z"/><path stroke-width="3" d="M8 24h32M24 24v14"/><circle stroke-width="2.2" cx="24" cy="17" r="2.5"/><circle stroke-width="2.2" cx="16" cy="31" r="2.5"/><circle stroke-width="2.2" cx="32" cy="31" r="2.5"/></svg>
+          <span>CLOSET</span>
+        </div>
+        <div class="slot">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-linecap="butt" stroke-linejoin="miter"><path stroke-width="3" d="M21 6h6M24 6v5"/><path stroke-width="3" d="M17 11c-3 9-1 16 7 16s10-7 7-16z"/><path stroke-width="2.2" d="M24 27v9M17 40h14M24 36v4"/></svg>
+          <span>OUTFITS</span>
+        </div>
+        <div class="slot">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-linecap="butt" stroke-linejoin="miter"><path stroke-width="3" d="M14 40V10h20v30"/><path stroke-width="3" d="M8 40h32"/><circle stroke-width="2.2" cx="29" cy="26" r="1.8"/></svg>
+          <span>FEED</span>
+        </div>
+        <div class="slot">
+          <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-linecap="butt" stroke-linejoin="miter"><path stroke-width="3" d="M10 42V20l14-10 14 10v22z"/><path stroke-width="2.2" d="M10 30h28M24 30v12"/></svg>
+          <span>MORE</span>
+        </div>
+      </div>
+      <div class="gesturebar"></div>
+
+      <!-- scrim under the sheet -->
+      <div class="scrim"></div>
+
+      <!-- art moment 4: the plan matures — the tag lifts off the dressed hanger -->
+      <div class="art-moment" style="z-index:25;align-items:flex-start;padding-top:96px">
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:2px;padding:16px 18px">
+          <svg width="300" height="168" viewBox="0 0 300 168">
+            <g stroke-width="2.5" stroke-opacity="0.30">
+              <path d="M14 40h272"/>
+              <path d="M40 12v28M260 12v28"/>
+            </g>
+            <g stroke-width="2" stroke-opacity="0.38">
+              <path d="M143 40a7 7 0 0 1 14 0"/>
+              <path d="M150 54v-8"/>
+              <path d="M150 54l-34 20h68z"/>
+              <path d="M124 74l-2 46q28 11 56 0l-2 -46"/>
+            </g>
+            <g stroke-width="2" stroke-opacity="0.20">
+              <path d="M176 66q4 8 2 14"/>
+              <path d="M170 82l16 -5 3.5 12 -16 5z"/>
+              <circle cx="175" cy="83.5" r="1.6"/>
+            </g>
+            <g stroke-width="2" stroke-opacity="0.38" style="stroke:var(--gold)">
+              <path d="M176 66q14 -8 22 -22"/>
+              <path d="M194 36l17 -6 4.5 13 -17 6z"/>
+              <circle cx="199.5" cy="38.5" r="1.6"/>
+            </g>
+          </svg>
+        </div>
+      </div>
+
+      <!-- the matured-plan sheet -->
+      <div class="sheet">
+        <div class="t-label" style="margin-bottom:12px">Wednesday 12 August — the plan, set on Sunday</div>
+
+        <div style="display:flex;gap:10px;align-items:center;border:1px dashed var(--border);border-radius:2px;background:var(--sunken);padding:10px 12px;min-height:52px;margin-bottom:14px">
+          <svg width="16" height="16" viewBox="0 0 16 16" style="flex:none"><g fill="none" style="stroke:var(--gold)" stroke-width="1.5" stroke-opacity="0.8" stroke-linecap="butt" stroke-linejoin="miter"><path d="M2 9L9 2h5v5l-7 7z"/><circle cx="11" cy="5" r="1.2"/><path d="M2 9q-1.5 2 0 4"/></g></svg>
+          <div>
+            <div class="t-body" style="font-size:14px">Ikat handloom overshirt · heavyweight boxy tee · carpenter trousers</div>
+            <div class="t-ledger">TAGGED SUNDAY EVENING · THE TAG NEVER COUNTED ITSELF</div>
+          </div>
+        </div>
+
+        <p class="t-editorial" style="font-size:21px;margin-bottom:14px">You had this down for today —</p>
+
+        <button class="btn hero" style="width:100%;margin-bottom:10px">Wore it</button>
+        <button class="btn secondary" style="width:100%;margin-bottom:12px">It didn't happen</button>
+        <div class="t-ledger" style="text-align:center">ONLY YOUR ANSWER MOVES THE RECORD · UNDO WAITS IN THE SNACKBAR</div>
+      </div>
+    </div>
+
+    <p class="caption">Calendar, mid-answer — the matured-plan sheet asks the one question: Wore it, or It didn't happen, both at the thumb, neither guarded. Over the arcade, the art moment for a maturing plan: the hanger hangs dressed at detail weight, the tag's old place a whisper ghost at its shoulder, and the gold tag lifts away on a slack thread — the record moves only because the person did. Answering It didn't happen would draw the hanger returning to the rod bare. One still drawing, gone in a breath; a plain fade under reduced motion; back dismisses the sheet with the system's predictive preview.</p>
+  </div>
+
+</div>
+</body>

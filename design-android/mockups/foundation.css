@@ -1,0 +1,258 @@
+/* ============================================================
+   TOILE ANDROID — mockup foundation.
+   The law every screen mockup follows: one phone frame, four
+   rooms (Mughal, Rajput, Gothic, Japanese), the house type
+   registers, and the shared furniture components. Mockups are
+   design artifacts — production re-measures every contrast pair.
+   ============================================================ */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: #17130F;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 24px;
+  font-family: Georgia, 'Times New Roman', serif;
+}
+
+/* ---------------- the rooms ---------------- */
+
+/* MUGHAL — ivory marble, lapis, carnelian; the jharokha room. */
+.phone[data-theme='mughal'] {
+  --bg: #F3ECDC; --surface: #FAF5E9; --sunken: #ECE2CC; --deep: #E5D9BE;
+  --ink: #2A2118; --ink-2: #6E6152;
+  --accent: #26619C; --accent-fill: #1D4E80; --on-accent: #FAF5E9;
+  --seal: #B03A2E; --gold: #B08D3E; --artline: #B08D3E; --artline-2: #8C9A7E;
+  --border: #D8CBAE;
+  --pattern: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='36' height='36'%3E%3Cg fill='none' stroke='%23B08D3E' stroke-opacity='0.10'%3E%3Cpath d='M18 2l7 7-7 7-7-7zM18 20l7 7-7 7-7-7z'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+/* RAJPUT — haveli sandstone, vermillion, indigo; the miniature room. */
+.phone[data-theme='rajput'] {
+  --bg: #F2E3C8; --surface: #F9EFDC; --sunken: #EAD8B6; --deep: #E2CDA5;
+  --ink: #3A2214; --ink-2: #7A5F49;
+  --accent: #34548A; --accent-fill: #2A4674; --on-accent: #F9EFDC;
+  --seal: #C03516; --gold: #C08A2D; --artline: #B4652F; --artline-2: #C08A2D;
+  --border: #D9C39A;
+  --pattern: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28'%3E%3Cg fill='%23B4652F' fill-opacity='0.08'%3E%3Ccircle cx='7' cy='7' r='1.6'/%3E%3Ccircle cx='21' cy='7' r='1.6'/%3E%3Ccircle cx='14' cy='14' r='1.6'/%3E%3Ccircle cx='7' cy='21' r='1.6'/%3E%3Ccircle cx='21' cy='21' r='1.6'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+/* GOTHIC — near-black stone, stained-glass blue, old gold; the cathedral room. */
+.phone[data-theme='gothic'] {
+  --bg: #121014; --surface: #1B171F; --sunken: #241E29; --deep: #0B090D;
+  --ink: #EFE9DA; --ink-2: #A79FB0;
+  --accent: #7FA3D8; --accent-fill: #2E4A76; --on-accent: #F2EDE0;
+  --seal: #9E1B2E; --gold: #A98C4B; --artline: #8E8798; --artline-2: #A98C4B;
+  --border: #3A3242;
+  --pattern: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='44'%3E%3Cg fill='none' stroke='%23A98C4B' stroke-opacity='0.08'%3E%3Cpath d='M22 4c6 8 12 10 12 20a12 12 0 01-24 0c0-10 6-12 12-20z'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+/* JAPANESE — washi, sumi ink, the vermilion hanko; the tansu room. */
+.phone[data-theme='japanese'] {
+  --bg: #F5F0E6; --surface: #FBF7EE; --sunken: #EDE6D6; --deep: #E6DEC9;
+  --ink: #26221C; --ink-2: #6C665A;
+  --accent: #33586B; --accent-fill: #274653; --on-accent: #FBF7EE;
+  --seal: #C73E2D; --gold: #B8933F; --artline: #8A8578; --artline-2: #B8933F;
+  --border: #D9D0BB;
+  --pattern: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Cg fill='none' stroke='%238A8578' stroke-opacity='0.09'%3E%3Cpath d='M20 0v40M0 20h40M20 20L0 0M20 20L40 0M20 20L0 40M20 20l20 20'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+/* ---------------- the phone ---------------- */
+
+.phone {
+  width: 412px;
+  height: 915px;
+  background: var(--bg);
+  background-image: var(--pattern);
+  border-radius: 24px;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  color: var(--ink);
+  box-shadow: 0 0 0 8px #26201A, 0 0 0 9px #3A322A;
+}
+
+.statusbar {
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 22px;
+  font: 600 12px 'Courier New', monospace;
+  letter-spacing: 0.08em;
+  color: var(--ink-2);
+  flex: none;
+}
+
+.gesturebar {
+  position: absolute;
+  bottom: 7px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--ink-2);
+  opacity: 0.5;
+}
+
+.screen {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 10px 18px 0;
+}
+
+/* ---------------- type registers ---------------- */
+
+.t-masthead { font: 700 30px Georgia, serif; letter-spacing: 0.01em; }
+.t-editorial { font: italic 400 19px Georgia, serif; }
+.t-label { font: 600 12px 'Courier New', monospace; letter-spacing: 0.14em; text-transform: uppercase; }
+.t-ledger { font: 500 10.5px 'Courier New', monospace; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-2); }
+.t-body { font: 400 14.5px Georgia, serif; line-height: 1.5; }
+
+/* ---------------- shared furniture ---------------- */
+
+.plate {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  padding: 16px;
+  position: relative;
+}
+/* every room's plate corners carry its arch — builders may override */
+.plate::after {
+  content: '';
+  position: absolute;
+  top: 4px; right: 4px;
+  width: 26px; height: 26px;
+  border-top: 1.5px solid var(--gold);
+  border-right: 1.5px solid var(--gold);
+  opacity: 0.5;
+  border-top-right-radius: 10px;
+}
+
+.rule-double { border-bottom: 2px solid var(--ink); position: relative; padding-bottom: 7px; }
+.rule-double::after { content: ''; position: absolute; left: 0; right: 0; bottom: -4px; height: 1px; background: var(--gold); }
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 12px 0 9px;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  background: var(--sunken);
+  font: 500 10.5px 'Courier New', monospace;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+.chip.on { background: var(--ink); color: var(--bg); border-color: transparent; }
+.chip::before { content: '◦'; font-size: 12px; }
+.chip.on::before { content: '•'; color: var(--accent); }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 46px;
+  padding: 0 20px;
+  border-radius: 2px;
+  font: 600 12px 'Courier New', monospace;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  border: none;
+}
+.btn.primary { background: var(--ink); color: var(--bg); }
+.btn.hero { background: var(--accent-fill); color: var(--on-accent); }
+.btn.secondary { background: none; border: 1px solid var(--ink); color: var(--ink); }
+.btn.tertiary { background: none; color: var(--accent); text-decoration: underline; text-underline-offset: 3px; height: auto; padding: 4px; }
+
+/* the bottom rail: five slots, the room's arch over the active one */
+.bottomnav {
+  flex: none;
+  height: 74px;
+  margin: 0 -18px;
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  display: flex;
+  padding-bottom: 10px;
+}
+.bottomnav .slot {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  font: 600 9.5px 'Courier New', monospace;
+  letter-spacing: 0.1em;
+  color: var(--ink-2);
+  position: relative;
+}
+.bottomnav .slot.on { color: var(--ink); }
+.bottomnav .slot.on::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  width: 34px;
+  height: 3px;
+  background: var(--accent);
+  border-radius: 0 0 3px 3px;
+}
+.bottomnav .slot svg { width: 22px; height: 22px; }
+
+/* the sheet: modal bottom sheet with a grab handle */
+.sheet {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  border-radius: 14px 14px 0 0;
+  padding: 10px 20px 26px;
+  z-index: 30;
+}
+.sheet::before {
+  content: '';
+  display: block;
+  width: 44px; height: 4px;
+  border-radius: 2px;
+  background: var(--border);
+  margin: 0 auto 14px;
+}
+.scrim { position: absolute; inset: 0; background: rgba(20, 15, 10, 0.45); z-index: 20; }
+
+/* the art moment layer: line artwork that appears DURING an action.
+   Builders draw the moment's SVG inside this; it sits over content,
+   under sheets. aria-note: production ties these to real events. */
+.art-moment {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.art-moment svg { stroke: var(--artline); fill: none; stroke-linecap: butt; stroke-linejoin: miter; }
+
+/* annotation strip below each phone, for the README screenshots */
+.caption {
+  margin-top: 14px;
+  max-width: 412px;
+  color: #B9AE9C;
+  font: 400 13px Georgia, serif;
+  line-height: 1.55;
+  text-align: center;
+}
+.stage { display: flex; flex-direction: column; align-items: center; }

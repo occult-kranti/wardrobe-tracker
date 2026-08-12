@@ -1,44 +1,51 @@
-// Synthesizes the product film's score — a windchime-and-pad piece, ~130s,
-// rendered straight to WAV with no dependencies and no randomness that isn't
-// seeded. The brief (docs: film-plan §4): unhurried aeolian chimes over a soft
-// pad at felt-60bpm, flat low dynamics through the walkthrough, ONE swell
-// cresting at ~86s (the theme montage), thinning after, near-silence and a
-// single final chime left to decay over the end card.
+// Synthesizes the product film's score — windchimes over a soft pad, rendered
+// straight to WAV, no dependencies, seeded (same piece every render).
 //
-// Usage: node scripts/make-score.mjs <out.wav>
+// v2, the glass score: a felt 55Hz pulse under the pad (dropped for the V1
+// provenance cameo so the score itself states the handover), struck-GLASS
+// chime partials (slightly inharmonic overtones), one swell cresting where
+// the film looks without speaking, near-silence and a final chime at the end.
+//
+// Usage: node scripts/make-score.mjs <out.wav> [durS] [crestS] [dropStartS] [dropEndS]
+//   defaults: 100s, crest 82s, pulse-drop 85..91 (the widescreen v3 cut)
+//   vertical: node scripts/make-score.mjs vert.wav 52 40 99 99
 import { writeFileSync } from 'node:fs';
 
 const SR = 44100;
-const DUR = 130;
-const N = SR * DUR;
+const DUR = Number(process.argv[3] ?? 100);
+const CREST = Number(process.argv[4] ?? 82);
+const DROP0 = Number(process.argv[5] ?? 85);
+const DROP1 = Number(process.argv[6] ?? 91);
+const N = Math.round(SR * DUR);
 const L = new Float64Array(N);
 const R = new Float64Array(N);
 
-// Seeded PRNG — the score is the same piece every render.
 let seed = 0x5eed;
 const rand = () => {
   seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
   return seed / 4294967296;
 };
 
+/* ---------- master dynamics ---------- */
+
+function master(t) {
+  if (t < 3) return 0.5 * (t / 3);
+  if (t < CREST - 10) return 0.5;
+  if (t < CREST) return 0.5 + 0.45 * ((t - (CREST - 10)) / 10);
+  if (t < CREST + 8) return 0.95 - 0.42 * ((t - CREST) / 8);
+  const tail = DUR - 8;
+  if (t < tail) return 0.5 - 0.15 * ((t - (CREST + 8)) / Math.max(1, tail - CREST - 8));
+  return Math.max(0, 0.35 * (1 - (t - tail) / 8));
+}
+
 /* ---------- the pad: A aeolian, chords crossfading every 16s ---------- */
 
 const CHORDS = [
-  [110.0, 164.81, 220.0],    // A
-  [87.31, 130.81, 174.61],   // F
-  [98.0, 146.83, 196.0],     // G
-  [82.41, 123.47, 164.81],   // Em
+  [110.0, 164.81, 220.0],
+  [87.31, 130.81, 174.61],
+  [98.0, 146.83, 196.0],
+  [82.41, 123.47, 164.81],
 ];
-
-function padGain(t) {
-  // Master dynamics: flat and low, one swell 75→86s, settle, thin to the end.
-  if (t < 4) return 0.5 * (t / 4);
-  if (t < 75) return 0.5;
-  if (t < 86) return 0.5 + 0.45 * ((t - 75) / 11);
-  if (t < 95) return 0.95 - 0.4 * ((t - 86) / 9);
-  if (t < 108) return 0.55 - 0.2 * ((t - 95) / 13);
-  return Math.max(0, 0.35 * (1 - (t - 108) / 20));
-}
 
 for (let i = 0; i < N; i++) {
   const t = i / SR;
@@ -46,42 +53,45 @@ for (let i = 0; i < N; i++) {
   const idx = Math.floor(bar) % CHORDS.length;
   const next = (idx + 1) % CHORDS.length;
   const frac = bar - Math.floor(bar);
-  // 2s crossfade at each chord turn.
   const x = frac > 0.875 ? (frac - 0.875) / 0.125 : 0;
   const lfo = 0.85 + 0.15 * Math.sin(2 * Math.PI * 0.05 * t);
   let s = 0;
   for (let v = 0; v < 3; v++) {
-    const a = Math.sin(2 * Math.PI * CHORDS[idx][v] * t) * (1 - x);
-    const b = Math.sin(2 * Math.PI * CHORDS[next][v] * t) * x;
-    s += (a + b) * (v === 0 ? 1 : 0.6);
+    s +=
+      (Math.sin(2 * Math.PI * CHORDS[idx][v] * t) * (1 - x) +
+        Math.sin(2 * Math.PI * CHORDS[next][v] * t) * x) *
+      (v === 0 ? 1 : 0.6);
   }
-  const g = 0.028 * lfo * padGain(t);
-  L[i] += s * g;
-  R[i] += s * g * 0.96;
+  const g = 0.026 * lfo * master(t);
+  // The felt pulse: 55Hz breathing at 0.5Hz under everything — the glass has
+  // a floor. It leaves the room entirely during the provenance cameo.
+  const inDrop = t >= DROP0 && t < DROP1;
+  const edge = inDrop ? 0 : Math.min(1, Math.abs(t - DROP0) / 1.2, Math.abs(t - DROP1) / 1.2);
+  const pulse = Math.sin(2 * Math.PI * 55 * t) * (0.55 + 0.45 * Math.sin(2 * Math.PI * 0.5 * t)) * 0.018 * master(t) * edge;
+  L[i] += s * g + pulse;
+  R[i] += s * g * 0.96 + pulse;
 }
 
-/* ---------- the chimes: sparse, aeolian, panned, seeded ---------- */
+/* ---------- the chimes: struck glass, sparse, panned, seeded ---------- */
 
 const NOTES = [440.0, 523.25, 587.33, 659.25, 783.99, 880.0];
 
-/** Density per section: seconds between chimes (average). */
 function gapAt(t) {
-  if (t < 20) return 4.2;   // the open: sparse, setting the voice
-  if (t < 70) return 5.0;   // the walkthrough: stays out of the way
-  if (t < 90) return 2.2;   // the swell: the chimes gather
-  if (t < 108) return 5.5;  // mobile: thinning
-  return 99;                // end card: silence except the final chime
+  if (t < 14) return 4.0;
+  if (t < CREST - 12) return 5.0;
+  if (t < CREST + 4) return 2.0;
+  if (t < DUR - 12) return 5.5;
+  return 99;
 }
 
 const events = [];
-let t = 2.5;
-while (t < 112) {
-  events.push({ at: t, f: NOTES[Math.floor(rand() * NOTES.length)], pan: rand() * 2 - 1, g: 0.05 + rand() * 0.03 });
+let t = 2.2;
+while (t < DUR - 10) {
+  events.push({ at: t, f: NOTES[Math.floor(rand() * NOTES.length)], pan: rand() * 2 - 1, g: 0.05 + rand() * 0.028 });
   t += gapAt(t) * (0.7 + rand() * 0.6);
 }
-// The last word: one chime at 117.5, louder, left to decay entirely.
-events.push({ at: 117.5, f: 659.25, pan: 0, g: 0.085 });
-events.push({ at: 117.53, f: 880.0, pan: 0.2, g: 0.045 });
+events.push({ at: DUR - 8.5, f: 659.25, pan: 0, g: 0.085 });
+events.push({ at: DUR - 8.46, f: 880.0, pan: 0.2, g: 0.045 });
 
 for (const e of events) {
   const start = Math.floor(e.at * SR);
@@ -90,8 +100,14 @@ for (const e of events) {
   const rg = (1 + Math.min(0, e.pan)) * e.g;
   for (let i = 0; i < tail; i++) {
     const tt = i / SR;
-    const env = Math.exp(-tt / 1.6) * Math.min(1, tt / 0.008);
-    const s = (Math.sin(2 * Math.PI * e.f * tt) + 0.28 * Math.sin(2 * Math.PI * e.f * 2.01 * tt) + 0.1 * Math.sin(2 * Math.PI * e.f * 2.99 * tt)) * env;
+    const env = Math.exp(-tt / 1.7) * Math.min(1, tt / 0.006);
+    // Struck glass: slightly inharmonic overtones (x2.32, x3.76) where the
+    // old score rang harmonically — the difference between wood and glass.
+    const s =
+      (Math.sin(2 * Math.PI * e.f * tt) +
+        0.24 * Math.sin(2 * Math.PI * e.f * 2.32 * tt) +
+        0.09 * Math.sin(2 * Math.PI * e.f * 3.76 * tt)) *
+      env;
     L[start + i] += s * lg;
     R[start + i] += s * rg;
   }
@@ -125,4 +141,4 @@ header.writeUInt32LE(data.length, 40);
 
 const out = process.argv[2] ?? './score.wav';
 writeFileSync(out, Buffer.concat([header, data]));
-console.log('score written to', out, `(${DUR}s, ${events.length} chimes)`);
+console.log('score written to', out, `(${DUR}s, crest ${CREST}s, ${events.length} chimes)`);

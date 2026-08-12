@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Toile Android — Mughal room — Add a piece, the intake ledger</title>
+<link rel="stylesheet" href="foundation.css">
+<style>
+  .tagchip { display:inline-block; border:1px solid var(--border); background:var(--sunken); padding:2px 6px; border-radius:2px; }
+  .hashiya { border:1px solid var(--artline); outline:1px solid var(--artline-2); outline-offset:-4px; border-radius:2px; }
+  .fieldrow { border-bottom:1px solid var(--border); padding:6px 0 8px; }
+</style>
+</head>
+<body>
+<div style="display:flex;gap:28px">
+
+  <!-- ============ STAGE 1 · THE INTAKE SHEET AT REST ============ -->
+  <div class="stage">
+    <div class="phone" data-theme="mughal">
+      <div class="statusbar"><span>9:41</span><span>▂▄▆█ · ▮▮▮▯ 82</span></div>
+
+      <div class="screen">
+        <!-- the closet ground, waiting behind the sheet -->
+        <div style="display:flex;align-items:flex-end;justify-content:space-between;flex:none;margin-top:4px">
+          <div style="display:flex;align-items:baseline;gap:8px">
+            <span class="t-masthead">Closet</span>
+            <span class="t-ledger">41 PIECES</span>
+          </div>
+          <div class="t-label" style="width:34px;height:34px;border:1px solid var(--ink);border-radius:2px;display:flex;align-items:center;justify-content:center">A</div>
+        </div>
+        <svg width="376" height="12" viewBox="0 0 376 12" style="flex:none;margin-top:4px">
+          <g fill="none" style="stroke:var(--artline)" stroke-width="2" stroke-opacity="0.20" stroke-linecap="butt" stroke-linejoin="miter">
+            <path d="M0 10h376"/><path d="M14 10V4h348v6"/>
+          </g>
+        </svg>
+
+        <div style="position:relative;flex:none;height:172px;margin-top:10px;background:var(--sunken);border:1px solid var(--border);border-radius:2px;overflow:hidden">
+          <svg width="374" height="170" viewBox="0 0 374 170" style="position:absolute;inset:0">
+            <defs>
+              <pattern id="jaali-b" width="34.6" height="60" patternUnits="userSpaceOnUse">
+                <g fill="none" style="stroke:var(--artline)" stroke-width="2" stroke-opacity="0.11" stroke-linecap="butt" stroke-linejoin="miter">
+                  <g transform="translate(17.3,15)"><path d="M0 -20L17.3 -10L17.3 10L0 20L-17.3 10L-17.3 -10Z M0 -20L17.3 10L-17.3 10Z M0 20L17.3 -10L-17.3 -10Z"/></g>
+                  <g transform="translate(0,45)"><path d="M0 -20L17.3 -10L17.3 10L0 20L-17.3 10L-17.3 -10Z M0 -20L17.3 10L-17.3 10Z M0 20L17.3 -10L-17.3 -10Z"/></g>
+                  <g transform="translate(34.6,45)"><path d="M0 -20L17.3 -10L17.3 10L0 20L-17.3 10L-17.3 -10Z M0 -20L17.3 10L-17.3 10Z M0 20L17.3 -10L-17.3 -10Z"/></g>
+                </g>
+              </pattern>
+            </defs>
+            <rect width="374" height="170" fill="url(#jaali-b)"/>
+            <g fill="none" style="stroke:var(--artline)" stroke-width="2.5" stroke-opacity="0.30" stroke-linecap="butt" stroke-linejoin="miter">
+              <path d="M8 24h358"/><path d="M26 0v24M348 0v24"/>
+            </g>
+          </svg>
+          <div style="position:absolute;left:6px;top:50px;display:flex;gap:8px">
+            <div class="plate" style="width:116px;padding:6px;text-align:center">
+              <svg width="100" height="28" viewBox="0 0 100 30" style="position:absolute;top:-27px;left:50%;transform:translateX(-50%)">
+                <g fill="none" style="stroke:var(--artline)" stroke-width="2" stroke-opacity="0.38" stroke-linecap="butt" stroke-linejoin="miter">
+                  <path d="M43 8a7 7 0 0114 0"/><path d="M50 8v5"/><path d="M50 13L16 29M50 13l34 16M16 29h68"/>
+                </g>
+              </svg>
+              <svg width="84" height="58" viewBox="0 0 84 62" style="display:block;margin:0 auto">
+                <g fill="none" style="stroke:var(--artline)" stroke-width="2" stroke-opacity="0.34" stroke-linecap="butt" stroke-linejoin="miter">
+                  <path d="M34 12L18 56M50 12l16 44"/><path d="M34 12c2-3 14-3 16 0"/><path d="M38 12c0-4 8-4 8 0"/><path d="M42 16v12"/><path d="M18 56c14 5 34 5 48 0"/><path d="M34 13L20 24M50 13l14 11"/>
+                </g>
+              </svg>
+              <div class="t-label" style="margin-top:3px">Embroidered Kaftan</div>
+            </div>
+            <div class="plate" style="width:116px;padding:6px;text-align:center">
+              <svg width="100" height="28" viewBox="0 0 100 30" style="position:absolute;top:-27px;left:50%;transform:translateX(-50%)">
+                <g fill="none" style="stroke:var(--artline)" stroke-width="2" stroke-opacity="0.38" stroke-linecap="butt" stroke-linejoin="miter">
+                  <path d="M43 8a7 7 0 0114 0"/><path d="M50 8v5"/><path d="M50 13L16 29M50 13l34 16M16 29h68"/>
+                </g>
+              </svg>
+              <svg width="84" height="58" viewBox="0 0 84 62" style="display:block;margin:0 auto">
+                <g fill="none" style="stroke:var(--artline)" stroke-width="2" stroke-opacity="0.18" stroke-linecap="butt" stroke-linejoin="miter">
+                  <path d="M26 12v38h32V12"/><path d="M26 12c4-4 28-4 32 0"/><path d="M39 12v38M45 12v38"/><path d="M26 14l-12 5v22l12-3"/><path d="M58 14l12 5v22l-12-3"/>
+                </g>
+              </svg>
+              <div class="t-label" style="margin-top:3px">Silk Haori Jacket</div>
+            </div>
+            <div class="plate" style="width:116px;padding:6px;text-align:center">
+              <svg width="100" height="28" viewBox="0 0 100 30" style="position:absolute;top:-27px;left:50%;transform:translateX(-50%)">
+                <g fill="none" style="stroke:var(--artline)" stroke-width="2" stroke-opacity="0.38" stroke-linecap="butt" stroke-linejoin="miter">
+                  <path d="M43 8a7 7 0 0114 0"/><path d="M50 8v5"/><path d="M50 13L16 29M50 13l34 16M16 29h68"/>
+                </g>
+              </svg>
+              <svg width="84" height="58" viewBox="0 0 84 62" style="display:block;margin:0 auto">
+                <g fill="none" style="stroke:var(--artline)" stroke-width="2" stroke-opacity="0.34" stroke-linecap="butt" stroke-linejoin="miter">
+                  <path d="M28 8L15 14l4 11 6-3v32h34V22l6 3 4-11-13-6"/><path d="M28 8c4 4 24 4 28 0"/><path d="M38 8l4 5 4-5"/><path d="M25 36h34"/><path d="M50 33h6v6h-6"/>
+                </g>
+              </svg>
+              <div class="t-label" style="margin-top:3px">Stone Trench</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;flex:none;margin-top:10px">
+          <div style="position:relative;height:40px;flex:1">
+            <svg width="183" height="40" viewBox="0 0 183 40" style="position:absolute;inset:0">
+              <g fill="none" stroke-linecap="butt" stroke-linejoin="miter">
+                <g style="stroke:var(--artline)" stroke-width="2.5" stroke-opacity="0.30"><rect x="1.5" y="2" width="180" height="36"/></g>
+                <g style="stroke:var(--artline-2)" stroke-width="2" stroke-opacity="0.38"><circle cx="91" cy="14" r="2.5"/><path d="M84 16a7 7 0 0014 0"/></g>
+              </g>
+            </svg>
+            <span class="t-ledger" style="position:absolute;left:0;right:0;bottom:4px;text-align:center">TOPS · 7</span>
+          </div>
+          <div style="position:relative;height:40px;flex:1">
+            <svg width="183" height="40" viewBox="0 0 183 40" style="position:absolute;inset:0">
+              <g fill="none" stroke-linecap="butt" stroke-linejoin="miter">
+                <g style="stroke:var(--artline)" stroke-width="2.5" stroke-opacity="0.30"><rect x="1.5" y="2" width="180" height="36"/></g>
+                <g style="stroke:var(--artline-2)" stroke-width="2" stroke-opacity="0.38"><circle cx="91" cy="14" r="2.5"/><path d="M84 16a7 7 0 0014 0"/></g>
+              </g>
+            </svg>
+            <span class="t-ledger" style="position:absolute;left:0;right:0;bottom:4px;text-align:center">BOTTOMS · 5</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="bottomnav">
+        <div class="slot"><svg viewBox="0 0 22 22"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="butt" stroke-linejoin="miter"><path d="M7 2.5h8V15H7z"/><path d="M7 15l-3.5 5M15 15l3.5 5M11 15v5"/></g></svg>TODAY</div>
+        <div class="slot on"><svg viewBox="0 0 22 22"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="butt" stroke-linejoin="miter"><path d="M3 3h16M4 3h14v15H4z"/><path d="M11 3v15M6 18v2M16 18v2M8.5 10h1.5M12 10h1.5"/></g></svg>CLOSET</div>
+        <div class="slot"><svg viewBox="0 0 22 22"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="butt" stroke-linejoin="miter"><circle cx="11" cy="3.5" r="1.4"/><path d="M11 5v1.6M8 6.6c-1.8 3-1.4 6 1 8h4c2.4-2 2.8-5 1-8z"/><path d="M11 14.6v3.4M8 20h6"/></g></svg>OUTFITS</div>
+        <div class="slot"><svg viewBox="0 0 22 22"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="butt" stroke-linejoin="miter"><path d="M4.5 20V4h13v16M4.5 20h13M13.5 4v16M10.8 12h1.4"/></g></svg>FEED</div>
+        <div class="slot"><svg viewBox="0 0 22 22"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="butt" stroke-linejoin="miter"><path d="M4 4h6v6H4zM12 4h6v6h-6zM4 12h6v6H4zM12 12h6v6h-6z"/></g></svg>MORE</div>
+      </div>
+
+      <div class="scrim"></div>
+
+      <!-- THE INTAKE SHEET — jharokha-framed -->
+      <div class="sheet" style="padding:10px 16px 22px">
+        <!-- the cusped arch: a border profile above the fields, never a container -->
+        <svg width="300" height="36" viewBox="0 0 300 36" style="display:block;margin:0 auto">
+          <g fill="none" stroke-linecap="butt" stroke-linejoin="miter">
+            <g style="stroke:var(--artline)" stroke-width="2.5" stroke-opacity="0.30">
+              <path d="M18 34 A17 17 0 0 1 48 27 A17 17 0 0 1 76 20 A16 16 0 0 1 104 13 A14 14 0 0 1 130 8 A11 11 0 0 1 150 6 A11 11 0 0 1 170 8 A14 14 0 0 1 196 13 A16 16 0 0 1 224 20 A17 17 0 0 1 252 27 A17 17 0 0 1 282 34"/>
+              <path d="M4 34h14M282 34h14"/>
+            </g>
+            <g style="stroke:var(--artline-2)" stroke-width="2" stroke-opacity="0.38" transform="translate(150 34) scale(0.93) translate(-150 -34)">
+              <path d="M18 34 A17 17 0 0 1 48 27 A17 17 0 0 1 76 20 A16 16 0 0 1 104 13 A14 14 0 0 1 130 8 A11 11 0 0 1 150 6 A11 11 0 0 1 170 8 A14 14 0 0 1 196 13 A16 16 0 0 1 224 20 A17 17 0 0 1 252 27 A17 17 0 0 1 282 34"/>
+            </g>
+          </g>
+        </svg>
+        <div class="t-editorial" style="text-align:center;margin-top:6px">A new piece comes to the closet</div>
+        <div class="t-ledger" style="text-align:center;margin-top:2px">THE INTAKE LEDGER · PIECE 42</div>
+
+        <!-- hashiya double rule: metal one outside, metal two inside -->
+        <div class="hashiya" style="margin-top:10px;padding:10px 12px 14px;background:var(--surface)">
+
+          <div class="fieldrow">
+            <div class="t-ledger">NAME</div>
+            <div class="t-body">Sanganeri Block-print Kurta</div>
+          </div>
+
+          <div class="t-ledger" style="margin-top:10px">CATEGORY — WHERE IT LIVES</div>
+          <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
+            <span class="chip on">TOPS <svg width="12" height="12" viewBox="0 0 12 12"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="miter"><circle cx="6" cy="3.5" r="2"/><path d="M2.5 6a3.5 3.5 0 007 0"/></g></svg></span>
+            <span class="chip">BOTTOMS <svg width="12" height="12" viewBox="0 0 12 12"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="miter"><circle cx="6" cy="3.5" r="2"/><path d="M2.5 6a3.5 3.5 0 007 0"/></g></svg></span>
+            <span class="chip">ONE-PIECES <svg width="12" height="12" viewBox="0 0 12 12"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="miter"><path d="M4.5 3a1.5 1.5 0 013 0M6 3v2M6 5L2 9M6 5l4 4M2 9h8"/></g></svg></span>
+            <span class="chip">MORE ▾</span>
+          </div>
+
+          <div class="t-ledger" style="margin-top:10px">SOURCE</div>
+          <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
+            <span class="chip on">NEW</span>
+            <span class="chip">SECONDHAND</span>
+            <span class="chip">GIFTED</span>
+            <span class="chip">INHERITED</span>
+            <span class="chip">SELF-MADE</span>
+          </div>
+
+          <div style="display:flex;gap:14px">
+            <div class="fieldrow" style="flex:1;margin-top:8px">
+              <div class="t-ledger">COST</div>
+              <div class="t-body">₹ 2,450</div>
+            </div>
+            <div class="fieldrow" style="flex:1.4;margin-top:8px">
+              <div class="t-ledger">WHERE</div>
+              <div class="t-body">Bapu Bazar, Jaipur</div>
+            </div>
+          </div>
+
+          <div class="fieldrow">
+            <div class="t-ledger">FITS LIKE</div>
+            <div class="t-body">straight cut, generous through the shoulder</div>
+          </div>
+
+          <div class="t-ledger" style="margin-top:10px">THE PLATE</div>
+          <div style="display:flex;gap:8px;margin-top:6px">
+            <div class="plate" style="flex:1;text-align:center;padding:8px 6px">
+              <div class="t-ledger" style="margin-top:14px">A PHOTO</div>
+              <div class="t-ledger" style="margin-top:2px;opacity:0.7">FROM THE PICKER</div>
+            </div>
+            <div class="plate" style="flex:1;text-align:center;padding:8px 6px;border-color:var(--ink)">
+              <svg width="52" height="38" viewBox="0 0 84 64" style="display:block;margin:0 auto">
+                <g fill="none" style="stroke:var(--artline)" stroke-width="2.5" stroke-opacity="0.5" stroke-linecap="butt" stroke-linejoin="miter">
+                  <path d="M28 8L14 15l4 10 7-3v34h34V22l7 3 4-10-14-7"/><path d="M28 8c5 4 23 4 28 0"/><path d="M38 8c1-4 7-4 8 0"/><path d="M42 14v18"/>
+                </g>
+              </svg>
+              <div class="t-ledger">THE DRAWN FLAT · CHOSEN</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:12px;margin-top:12px">
+          <span class="btn hero" style="flex:1">ADD IT TO THE CLOSET</span>
+          <span class="btn tertiary">NOT TODAY</span>
+        </div>
+      </div>
+
+      <div class="gesturebar" style="z-index:40"></div>
+    </div>
+
+    <p class="caption">Add a piece at rest — the intake ledger as a jharokha-framed sheet over the closet. The cusped arch is a border profile above the fields, never a container; hashiya double rules — first metal outside, second inside — frame the form. Name, category chips carrying their furniture tells (drop-ring pulls for the folded drawers, a hanger for the hung), source, cost and where, fits-like, and the drawn flat chosen over a photo. Both commit buttons sit in the bottom third at the thumb; the sheet dismisses on predictive back with no guard.</p>
+  </div>
+
+  <!-- ============ STAGE 2 · COMMITTED — THE TAG IS TIED ============ -->
+  <div class="stage">
+    <div class="phone" data-theme="mughal">
+      <div class="statusbar"><span>9:41</span><span>▂▄▆█ · ▮▮▮▯ 82</span></div>
+
+      <div class="screen">
+        <div style="display:flex;align-items:flex-end;justify-content:space-between;flex:none;margin-top:4px">
+          <div style="display:flex;align-items:baseline;gap:8px">
+            <span class="t-masthead">Closet</span>
+            <span class="t-ledger">42 PIECES</span>
+          </div>
+          <div class="t-label" style="width:34px;height:34px;border:1px solid var(--ink);border-radius:2px;display:flex;align-items:center;justify-content:center">A</div>
+        </div>
+        <svg width="376" height="12" viewBox="0 0 376 12" style="flex:none;margin-top:4px">
+          <g fill="none" style="stroke:var(--artline)" stroke-width="2" stroke-opacity="0.20" stroke-linecap="butt" stroke-linejoin="miter">
+            <path d="M0 10h376"/><path d="M14 10V4h348v6"/>
+          </g>
+        </svg>
+
+        <div style="position:relative;flex:none;height:172px;margin-top:10px;background:var(--sunken);border:1px solid var(--border);border-radius:2px;overflow:hidden">
+          <svg width="374" height="170" viewBox="0 0 374 170" style="position:absolute;inset:0">
+            <defs>
+              <pattern id="jaali-c" width="34.6" height="60" patternUnits="userSpaceOnUse">
+                <g fill="none" style="stroke:var(--artline)" stroke-width="2" stroke-opacity="0.11" stroke-linecap="butt" stroke-linejoin="miter">
+                  <g transform="translate(17.3,15)"><path d="M0 -20L17.3 -10L17.3 10L0 20L-17.3 10L-17.3 -10Z M0 -20L17.3 10L-17.3 10Z M0 20L17.3 -10L-17.3 -10Z"/></g>
+                  <g transform="translate(0,45)"><path d="M0 -20L17.3 -10L17.3 10L0 20L-17.3 10L-17.3 -10Z M0 -20L17.3 10L-17.3 10Z M0 20L17.3 -10L-17.3 -10Z"/></g>
+                  <g transform="translate(34.6,45)"><path d="M0 -20L17.3 -10L17.3 10L0 20L-17.3 10L-17.3 -10Z M0 -20L17.3 10L-17.3 10Z M0 20L17.3 -10L-17.3 -10Z"/></g>
+                </g>
+              </pattern>
+            </defs>
+            <rect width="374" height="170" fill="url(#jaali-c)"/>
+            <g fill="none" style="stroke:var(--artline)" stroke-width="2.5" stroke-opacity="0.30" stroke-linecap="butt" stroke-linejoin="miter">
+              <path d="M8 24h358"/><path d="M26 0v24M348 0v24"/>
+            </g>
+          </svg>
+          <div style="position:absolute;left:6px;top:50px;display:flex;gap:8px">
+            <div class="plate" style="width:116px;padding:6px;text-align:center">
+              <svg width="100" height="28" viewBox="0 0 100 30" style="position:absolute;top:-27px;left:50%;transform:translateX(-50%)">
+                <g fill="none" style="stroke:var(--artline)" stroke-width="2" stroke-opacity="0.38" stroke-linecap="butt" stroke-linejoin="miter">
+                  <path d="M43 8a7 7 0 0114 0"/><path d="M50 8v5"/><path d="M50 13L16 29M50 13l34 16M16 29h68"/>
+                </g>
+              </svg>
+              <svg width="84" height="58" viewBox="0 0 84 62" style="display:block;margin:0 auto">
+                <g fill="none" style="stroke:var(--artline)" stroke-width="2" stroke-opacity="0.34" stroke-linecap="butt" stroke-linejoin="miter">
+                  <path d="M34 12L18 56M50 12l16 44"/><path d="M34 12c2-3 14-3 16 0"/><path d="M38 12c0-4 8-4 8 0"/><path d="M42 16v12"/><path d="M18 56c14 5 34 5 48 0"/><path d="M34 13L20 24M50 13l14 11"/>
+                </g>
+              </svg>
+              <div class="t-label" style="margin-top:3px">Embroidered Kaftan</div>
+            </div>
+            <div class="plate" style="width:116px;padding:6px;text-align:center">
+              <svg width="100" height="28" viewBox="0 0 100 30" style="position:absolute;top:-27px;left:50%;transform:translateX(-50%)">
+                <g fill="none" style="stroke:var(--artline)" stroke-width="2" stroke-opacity="0.38" stroke-linecap="butt" stroke-linejoin="miter">
+                  <path d="M43 8a7 7 0 0114 0"/><path d="M50 8v5"/><path d="M50 13L16 29M50 13l34 16M16 29h68"/>
+                </g>
+              </svg>
+              <svg width="84" height="58" viewBox="0 0 84 62" style="display:block;margin:0 auto">
+                <g fill="none" style="stroke:var(--artline)" stroke-width="2" stroke-opacity="0.18" stroke-linecap="butt" stroke-linejoin="miter">
+                  <path d="M26 12v38h32V12"/><path d="M26 12c4-4 28-4 32 0"/><path d="M39 12v38M45 12v38"/><path d="M26 14l-12 5v22l12-3"/><path d="M58 14l12 5v22l-12-3"/>
+                </g>
+              </svg>
+              <div class="t-label" style="margin-top:3px">Silk Haori Jacket</div>
+            </div>
+            <div class="plate" style="width:116px;padding:6px;text-align:center">
+              <svg width="100" height="28" viewBox="0 0 100 30" style="position:absolute;top:-27px;left:50%;transform:translateX(-50%)">
+                <g fill="none" style="stroke:var(--artline)" stroke-width="2" stroke-opacity="0.38" stroke-linecap="butt" stroke-linejoin="miter">
+                  <path d="M43 8a7 7 0 0114 0"/><path d="M50 8v5"/><path d="M50 13L16 29M50 13l34 16M16 29h68"/>
+                </g>
+              </svg>
+              <svg width="84" height="58" viewBox="0 0 84 62" style="display:block;margin:0 auto">
+                <g fill="none" style="stroke:var(--artline)" stroke-width="2" stroke-opacity="0.34" stroke-linecap="butt" stroke-linejoin="miter">
+                  <path d="M28 8L15 14l4 11 6-3v32h34V22l6 3 4-11-13-6"/><path d="M28 8c4 4 24 4 28 0"/><path d="M38 8l4 5 4-5"/><path d="M25 36h34"/><path d="M50 33h6v6h-6"/>
+                </g>
+              </svg>
+              <div class="t-label" style="margin-top:3px">Stone Trench</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;flex:none;margin-top:10px">
+          <div style="position:relative;height:40px;flex:1">
+            <svg width="183" height="40" viewBox="0 0 183 40" style="position:absolute;inset:0">
+              <g fill="none" stroke-linecap="butt" stroke-linejoin="miter">
+                <g style="stroke:var(--artline)" stroke-width="2.5" stroke-opacity="0.30"><rect x="1.5" y="2" width="180" height="36"/></g>
+                <g style="stroke:var(--artline-2)" stroke-width="2" stroke-opacity="0.38"><circle cx="91" cy="14" r="2.5"/><path d="M84 16a7 7 0 0014 0"/></g>
+              </g>
+            </svg>
+            <span class="t-ledger" style="position:absolute;left:0;right:0;bottom:4px;text-align:center">TOPS · 8</span>
+          </div>
+          <div style="position:relative;height:40px;flex:1">
+            <svg width="183" height="40" viewBox="0 0 183 40" style="position:absolute;inset:0">
+              <g fill="none" stroke-linecap="butt" stroke-linejoin="miter">
+                <g style="stroke:var(--artline)" stroke-width="2.5" stroke-opacity="0.30"><rect x="1.5" y="2" width="180" height="36"/></g>
+                <g style="stroke:var(--artline-2)" stroke-width="2" stroke-opacity="0.38"><circle cx="91" cy="14" r="2.5"/><path d="M84 16a7 7 0 0014 0"/></g>
+              </g>
+            </svg>
+            <span class="t-ledger" style="position:absolute;left:0;right:0;bottom:4px;text-align:center">BOTTOMS · 5</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="bottomnav">
+        <div class="slot"><svg viewBox="0 0 22 22"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="butt" stroke-linejoin="miter"><path d="M7 2.5h8V15H7z"/><path d="M7 15l-3.5 5M15 15l3.5 5M11 15v5"/></g></svg>TODAY</div>
+        <div class="slot on"><svg viewBox="0 0 22 22"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="butt" stroke-linejoin="miter"><path d="M3 3h16M4 3h14v15H4z"/><path d="M11 3v15M6 18v2M16 18v2M8.5 10h1.5M12 10h1.5"/></g></svg>CLOSET</div>
+        <div class="slot"><svg viewBox="0 0 22 22"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="butt" stroke-linejoin="miter"><circle cx="11" cy="3.5" r="1.4"/><path d="M11 5v1.6M8 6.6c-1.8 3-1.4 6 1 8h4c2.4-2 2.8-5 1-8z"/><path d="M11 14.6v3.4M8 20h6"/></g></svg>OUTFITS</div>
+        <div class="slot"><svg viewBox="0 0 22 22"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="butt" stroke-linejoin="miter"><path d="M4.5 20V4h13v16M4.5 20h13M13.5 4v16M10.8 12h1.4"/></g></svg>FEED</div>
+        <div class="slot"><svg viewBox="0 0 22 22"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="butt" stroke-linejoin="miter"><path d="M4 4h6v6H4zM12 4h6v6h-6zM4 12h6v6H4zM12 12h6v6h-6z"/></g></svg>MORE</div>
+      </div>
+
+      <!-- ART MOMENT · the tag is tied: thread looping once through the eyelet -->
+      <div class="art-moment">
+        <svg width="320" height="230" viewBox="0 0 320 230" style="margin-bottom:110px">
+          <g fill="none" stroke-linecap="butt" stroke-linejoin="miter">
+            <g style="stroke:var(--artline)" stroke-width="2.5" stroke-opacity="0.30">
+              <path d="M56 168v-34c0-12 30-16 92-16s92 4 92 16v34"/>
+              <path d="M56 168h184"/>
+            </g>
+            <g style="stroke:var(--artline)" stroke-width="2" stroke-opacity="0.38">
+              <path d="M70 140c24-8 132-8 160 0"/>
+              <path d="M138 124c2-6 18-6 20 0"/>
+              <path d="M236 84l52 14-6 22-52-14z"/>
+              <circle cx="244" cy="92" r="4"/>
+            </g>
+            <g style="stroke:var(--artline)" stroke-width="2" stroke-opacity="0.20">
+              <path d="M78 152c22-6 118-6 142 0"/>
+            </g>
+            <g style="stroke:var(--artline-2)" stroke-width="2" stroke-opacity="0.38">
+              <path d="M244 96c12-10 26-4 22 8c-3 10-18 10-22-2"/>
+              <path d="M244 96c-14 2-28 10-36 22"/>
+              <circle cx="208" cy="118" r="2"/>
+              <path d="M266 104c8 2 14 8 16 16"/>
+            </g>
+          </g>
+        </svg>
+      </div>
+
+      <!-- the quiet confirmation -->
+      <div class="sheet">
+        <div class="t-editorial">Tied into the record</div>
+        <div class="t-body" style="margin-top:4px">Sanganeri Block-print Kurta is folded in with Tops. The closet holds 42.</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px">
+          <span class="t-ledger">THE DRAWER EASES SHUT</span>
+          <span class="btn tertiary">UNDO</span>
+        </div>
+      </div>
+
+      <div class="gesturebar" style="z-index:40"></div>
+    </div>
+
+    <p class="caption">Add a piece, committed — the masthead already counts 42 and the Tops drawer front reads 8. Art moment: the paper tag tied to the new kurta — the folded piece drawn in the first metal, the thread looping once through the eyelet in the second, the fold-lines the only curves on the screen. Drawn once, still, gone within a breath; reduced-motion gets a fade and loses nothing. A quiet sheet names the piece and offers Undo — regret is a snackbar verb here, never a guard on the back gesture.</p>
+  </div>
+
+</div>
+</body>
+</html>
