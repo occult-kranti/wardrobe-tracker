@@ -162,8 +162,10 @@ export default function Calendar() {
     logWear(outfit.itemIds, outfit.id, dateStr);
     if (isFutureDate(dateStr)) {
       showToast(`Planned. "${outfit.name}" is down for ${shortDate(dateStr)}.`, 'info');
-    } else {
+    } else if (dateStr === today) {
       showToast(`Logged. "${outfit.name}" ${wearsPhrase(outfit.wearCount + 1)}.`, 'seal');
+    } else {
+      showToast(`Logged for ${shortDate(dateStr)}. "${outfit.name}" ${wearsPhrase(outfit.wearCount + 1)}.`, 'seal');
     }
     setPlanFor(null);
   };
@@ -305,19 +307,24 @@ export default function Calendar() {
                 ) : null}
               </div>
 
-              {!past && outfits.length > 0 ? (
+              {outfits.length > 0 ? (
                 <button
                   type="button"
                   onClick={() => setPlanFor(date)}
                   aria-label={
                     isToday
                       ? "Log today's wear"
-                      : `Plan an outfit for ${longDate(date)}`
+                      : past
+                        ? `Add what you wore on ${longDate(date)}`
+                        : `Plan an outfit for ${longDate(date)}`
                   }
                   className="type-label text-[13px] text-text-2 hover:text-text hover:bg-sunken transition-colors duration-150 h-11 w-full mt-2 inline-flex items-center gap-1.5 px-1 rounded-[2px]"
                 >
                   <IconPlus size={14} />
-                  {isToday ? 'Log' : 'Plan'}
+                  {/* The calendar can finally WRITE a past day, not only show
+                      it blank — a remembered wear is still a wear (docs/21 §4).
+                      Stored without the planned flag, so nothing matures. */}
+                  {isToday ? 'Log' : past ? 'Add' : 'Plan'}
                 </button>
               ) : null}
             </div>
@@ -388,7 +395,15 @@ export default function Calendar() {
       <Modal
         open={planFor !== null}
         onClose={() => setPlanFor(null)}
-        title={planFor === today ? "Log today's wear" : planFor ? `Plan ${longDate(planFor)}` : ''}
+        title={
+          planFor === today
+            ? "Log today's wear"
+            : planFor && !isFutureDate(planFor)
+              ? `What you wore — ${longDate(planFor)}`
+              : planFor
+                ? `Plan ${longDate(planFor)}`
+                : ''
+        }
       >
         {planFor ? (
           <div>
