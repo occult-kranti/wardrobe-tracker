@@ -269,10 +269,11 @@ export function Card({
   className?: string;
   padded?: boolean;
 }) {
-  // V2: every plate is glass on a spring — the Tilt drives --tilt-x/--tilt-y
-  // and the sheen vars; v2.css turns them into material.
+  // V2: every plate is glass; the Tilt at max 0 drives the SHEEN only —
+  // glass doesn't bend (transforming a backdrop-filter re-samples its
+  // backdrop every frame). Rotation is reserved for opaque tiles.
   return (
-    <Tilt>
+    <Tilt max={0}>
       <div className={`bg-surface plate rounded-[2px] ${padded ? 'p-5' : ''} ${className}`}>
         {children}
       </div>

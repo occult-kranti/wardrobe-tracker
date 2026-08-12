@@ -51,3 +51,18 @@ Hand-rolled, dependency-free, on top of the working app:
 
 Deploys to `gh-pages/v2/` (base `/wardrobe-tracker/v2/`), so v1 stays the root
 and v2 is a parallel world at `/v2/`.
+
+## The consultant spec (delivered after first implementation)
+
+The design pair delivered a fuller spec — "The Vitrine": a four-level elevation
+model (E0 ground / E1 resting / E2 floating / E3 modal, alpha and blur per
+level), delegated single-listener specular lighting with rect caching, a
+capability gate (deviceMemory / Save-Data / frame probe → data-glass="off"),
+composite-contrast test cases (text vs blend(fill, ground) and vs artline
+strokes at stated weights), and the governing law already adopted: **glass
+doesn't bend; objects do** — a transforming backdrop-filter re-samples every
+frame, so rotation belongs to opaque tiles only. First implementation was
+corrected to it (Card runs sheen-only, max 0). Remaining spec items — the
+elevation ladder, delegated specular, capability gate, composite contrast
+gates, opaque-tile tilt, parallax frieze layers — are v2's phase 2, recorded
+here as the build sheet.
