@@ -13,8 +13,7 @@ import {
   IconButton,
   Masthead,
   SectionTitle,
-  inputClass,
-} from '../components/ui';
+  inputClass, LinkButton } from '../components/ui';
 import { Basting } from '../components/art';
 import {
   IconClose,
@@ -464,6 +463,16 @@ export default function Settings() {
               ))}
             </div>
           }
+        />
+      </Card>
+
+      {/* ---------- cataloguing from photographs ---------- */}
+      <Card>
+        <SectionTitle aside="the first hour">Catalogue from photos</SectionTitle>
+        <Row
+          title="From a photograph"
+          body="Lay the clothes out, photograph them, and hand the photograph to whatever vision model you already use with the prompt from docs/23. Drop the file it writes here and every piece arrives as a draft to check. The photograph never passes through us."
+          control={<LinkButton to="/intake">Open the bench</LinkButton>}
         />
       </Card>
 

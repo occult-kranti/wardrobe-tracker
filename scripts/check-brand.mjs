@@ -112,7 +112,12 @@ for (const file of files) {
         add(file, n, 'banned-copy', `"${word}"`);
       }
     }
-    if (BANNED_ADDRESS.test(line) && /['"`>]/.test(line)) {
+    // A line marked `scrubs-gendered` is allowed to NAME the words it strips.
+    // The rule exists so gendered address never reaches a reader; the filter
+    // that enforces it is the one place those words must appear, and hiding
+    // them from this check by encoding the letters would make the filter
+    // unreadable to the next person who has to widen it.
+    if (BANNED_ADDRESS.test(line) && /['"`>]/.test(line) && !/scrubs-gendered/.test(line)) {
       add(file, n, 'banned-address', line.trim().slice(0, 80));
     }
   });

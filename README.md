@@ -56,6 +56,11 @@ and never make the record hostage. There is no server to hold it.
 - **Mending** — `needs repair` and `at the tailor` are bench states; a torn shirt is
   neither clean nor dirty. Empty pile reads *"Your needle rests."*
 - **Retire, don't delete** — a piece can leave the closet with its full history kept.
+- **Catalogue from photos** — the first hour is the slowest thing about a wardrobe app,
+  so hand a photograph of the clothes to whatever vision model you already use, with
+  [the prompt](docs/23-photo-intake.md), and drop the file it writes into the app. Every
+  piece arrives as a draft with its doubts stated; nothing is written until you say so.
+  The photograph never passes through us — there is nothing here to pass through.
 
 ## Design
 

@@ -17,6 +17,7 @@ import Chats, { ChatThread } from './pages/Chats';
 import Profile from './pages/Profile';
 import SwitchWardrobe from './pages/SwitchWardrobe';
 import Settings from './pages/Settings';
+import Intake from './pages/Intake';
 
 /**
  * Which wardrobe is open decides everything below it.
@@ -56,6 +57,7 @@ function Session() {
             <Route path="/rail" element={<Rail />} />
             <Route path="/rail/:id" element={<RailProfile />} />
             <Route path="/open" element={<SwitchWardrobe />} />
+            <Route path="/intake" element={<Intake />} />
             <Route path="/settings" element={<Settings />} />
           </Route>
         </Routes>
