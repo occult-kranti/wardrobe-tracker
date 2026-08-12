@@ -615,7 +615,7 @@ export default function Outfits() {
 
       {/* ---------- saved outfits ---------- */}
       {sortedOutfits.length > 0 ? (
-        <div className="bg-surface plate rounded-[2px] p-4 sm:p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="bg-surface plate rounded-[2px] p-4 sm:p-5 grid grid-cols-1 sm:grid-cols-2 gap-4 v2-rise">
           {sortedOutfits.map(outfit => {
             const members = outfit.itemIds
               .map(id => byId.get(id))

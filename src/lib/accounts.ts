@@ -73,7 +73,8 @@ export function loadTheme(): Theme {
   const stored = read<{ theme?: Theme }>(THEME_KEY, {}).theme;
   return stored === 'light' || stored === 'dark' || stored === 'salon' || stored === 'gilt' || stored === 'dyehouse' || stored === 'obsidian' || stored === 'system'
     ? stored
-    : 'dark';
+    // V2 wakes up in the obsidian — the room the glass was cut for.
+    : 'obsidian';
 }
 
 export function saveTheme(theme: Theme): void {

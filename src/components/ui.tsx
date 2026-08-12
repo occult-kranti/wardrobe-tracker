@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ButtonHTMLAttributes, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { IconClose, IconEyelet, IconEyeletFilled } from './icons';
+import { Tilt } from './Glass';
 
 /**
  * TOILE primitives. Component law: docs/05-brand-identity.md §7.
@@ -268,10 +269,14 @@ export function Card({
   className?: string;
   padded?: boolean;
 }) {
+  // V2: every plate is glass on a spring — the Tilt drives --tilt-x/--tilt-y
+  // and the sheen vars; v2.css turns them into material.
   return (
-    <div className={`bg-surface plate rounded-[2px] ${padded ? 'p-5' : ''} ${className}`}>
-      {children}
-    </div>
+    <Tilt>
+      <div className={`bg-surface plate rounded-[2px] ${padded ? 'p-5' : ''} ${className}`}>
+        {children}
+      </div>
+    </Tilt>
   );
 }
 

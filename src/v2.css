@@ -1,0 +1,122 @@
+/* ============================================================
+   V2 — obsidian glass over the working house.
+
+   The same app, the same six measured rooms, a new material: every
+   plate becomes translucent glass with depth, lit by a pointer-
+   tracked specular sheen; buttons carry mass; lists rise into
+   place. Everything reads the existing tokens, so all 120 measured
+   contrast pairs still govern — the glass changes how surfaces sit,
+   never what they say.
+
+   Physics live in src/lib/springs.ts and src/components/Glass.tsx;
+   this file is the material. Reduced motion collapses every effect;
+   no backdrop-filter support collapses to solid surfaces.
+   ============================================================ */
+
+:root {
+  --glass-blur: 14px;
+  --glass-alpha: 0.72;
+  --sheen-strength: 0.10;
+}
+
+/* The page becomes a stage: content floats over the deep ground. */
+.v2 body,
+.v2 .pattern-paper {
+  perspective: 1200px;
+}
+
+/* Glass plates: the token surface at partial alpha over blur, a top-lit
+   1px light edge, and room for the sheen layer. */
+.v2 .plate,
+.v2 .plate-ink {
+  position: relative;
+  background:
+    color-mix(in srgb, var(--color-surface) calc(var(--glass-alpha) * 100%), transparent);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.15);
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.15);
+  border-color: color-mix(in srgb, var(--color-chalk) 14%, var(--color-border));
+  box-shadow:
+    inset 0 1px 0 0 color-mix(in srgb, var(--color-chalk) 18%, transparent),
+    1px 1px 0 0 var(--color-border);
+  transition: border-color 200ms ease-out;
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .v2 .plate,
+  .v2 .plate-ink {
+    background: var(--color-surface);
+  }
+}
+
+/* Tilt wrapper: driven by --tilt-x/--tilt-y springs; carries the sheen. */
+.v2 .v2-tilt {
+  transform: rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+.v2 .v2-tilt::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: 2px;
+  opacity: var(--sheen-o, 0);
+  transition: opacity 350ms ease-out;
+  background: radial-gradient(
+    420px circle at var(--sheen-x, 50%) var(--sheen-y, 50%),
+    color-mix(in srgb, var(--color-chalk) calc(var(--sheen-strength) * 100%), transparent),
+    transparent 62%
+  );
+}
+
+/* Buttons carry mass: the press compresses and the spring returns it.
+   (The transition is the return spring for pointers that leave mid-press;
+   the active state is the compression.) */
+.v2 button:active,
+.v2 a:active {
+  transform: translateY(1px) scale(0.97);
+}
+.v2 button,
+.v2 a {
+  transition: transform 240ms cubic-bezier(0.22, 1.6, 0.36, 1);
+}
+
+/* Modal pop: one visible overshoot, then rest. */
+@keyframes v2-pop {
+  0% { transform: scale(0.94); opacity: 0; }
+  60% { transform: scale(1.015); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.v2 [role='dialog'] {
+  animation: v2-pop 260ms cubic-bezier(0.22, 1.2, 0.36, 1) both;
+}
+
+/* Lists rise into place, staggered by index. */
+@keyframes v2-rise {
+  from { transform: translateY(14px) translateZ(-40px); opacity: 0; }
+  to { transform: translateY(0) translateZ(0); opacity: 1; }
+}
+.v2 .v2-rise > * {
+  animation: v2-rise 420ms cubic-bezier(0.22, 1.2, 0.36, 1) both;
+}
+.v2 .v2-rise > *:nth-child(1) { animation-delay: 0ms; }
+.v2 .v2-rise > *:nth-child(2) { animation-delay: 40ms; }
+.v2 .v2-rise > *:nth-child(3) { animation-delay: 80ms; }
+.v2 .v2-rise > *:nth-child(4) { animation-delay: 120ms; }
+.v2 .v2-rise > *:nth-child(5) { animation-delay: 160ms; }
+.v2 .v2-rise > *:nth-child(6) { animation-delay: 200ms; }
+.v2 .v2-rise > *:nth-child(n + 7) { animation-delay: 240ms; }
+
+/* The frieze gains depth: three layers drifting at different rates is done by
+   the springs; here they get their planes. */
+.v2 .v2-depth-back { transform: translateZ(-120px) scale(1.1); }
+.v2 .v2-depth-mid { transform: translateZ(-60px) scale(1.05); }
+
+/* One law above all of it. */
+@media (prefers-reduced-motion: reduce) {
+  .v2 .v2-tilt { transform: none !important; }
+  .v2 .v2-tilt::after { opacity: 0 !important; }
+  .v2 button, .v2 a { transition: none; }
+  .v2 button:active, .v2 a:active { transform: none; }
+  .v2 [role='dialog'] { animation: fade-in 0.01ms both; }
+  .v2 .v2-rise > * { animation: fade-in 0.01ms both; }
+}
