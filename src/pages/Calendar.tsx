@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useWardrobe } from '../context/WardrobeContext';
 import { addDays, formatLocalDate, isFutureDate, todayLocal } from '../lib/dates';
-import type { ClothingItem, Outfit, WearLog } from '../types';
+import { isPlannedLog, type ClothingItem, type Outfit, type WearLog } from '../types';
 import { Button, Card, EmptyState, IconButton, Masthead, Modal, SectionTitle, TagRail } from '../components/ui';
 import {
   IconArrowRight, IconChevronLeft, IconChevronRight, IconEyelet, IconEyeletFilled, IconPlus,
@@ -169,7 +169,7 @@ export default function Calendar() {
   };
 
   const remove = (log: WearLog) => {
-    const planned = isFutureDate(log.date);
+    const planned = isPlannedLog(log);
     removeWearLog(log.id);
     showToast(
       planned ? 'Removed. That plan is off the page.' : 'Undone. That wear is off the record.',
@@ -240,7 +240,7 @@ export default function Calendar() {
           const logs = logsByDate.get(date) ?? [];
           const isToday = date === today;
           const past = date < today;
-          const recorded = logs.some(l => !isFutureDate(l.date));
+          const recorded = logs.some(l => !isPlannedLog(l) && !isFutureDate(l.date));
 
           return (
             <div
@@ -266,7 +266,7 @@ export default function Calendar() {
 
               <div className="flex-1">
                 {logs.map(log => {
-                  const planned = isFutureDate(log.date);
+                  const planned = isPlannedLog(log);
                   const members = log.itemIds
                     .map(id => byId.get(id))
                     .filter((i): i is ClothingItem => Boolean(i));

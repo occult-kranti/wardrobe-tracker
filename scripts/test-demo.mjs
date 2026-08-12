@@ -202,6 +202,14 @@ for (const persona of PERSONAS) {
       st.items.filter(i => i.laundryStatus === 'clean').length],
     [`${persona.id}: nothing unworn queues for the wash`,
       st.items.filter(i => ['worn', 'washing'].includes(i.laundryStatus)).every(i => i.wearCount > 0), ''],
+    // The honest ledger: an intention carries its stored flag, a wear never
+    // does. Derived-from-date let every plan silently read as a wear the
+    // morning its day arrived.
+    [`${persona.id}: plans carry the stored flag`,
+      st.wearLogs.filter(l => l.date > today).every(l => l.planned === true),
+      st.wearLogs.filter(l => l.date > today && l.planned !== true).length],
+    [`${persona.id}: wears never carry the flag`,
+      st.wearLogs.filter(l => l.date <= today).every(l => l.planned !== true), ''],
   ];
   for (const [n, ok, d] of checks) { console.log(ok ? 'PASS' : 'FAIL', '-', n, d !== '' ? `(${d})` : ''); if (!ok) pfail++; }
 }

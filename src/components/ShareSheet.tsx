@@ -3,7 +3,7 @@ import { useSession } from '../context/SessionContext';
 import { Button, Field, Modal, inputClass, selectClass } from './ui';
 import { Basting } from './art';
 import { LookCard } from './social';
-import { SCOPE_LABELS, type ShareScope, type SharedLook } from '../types';
+import { HOUSEHOLD_KIND_LABELS, SCOPE_LABELS, type ShareScope, type SharedLook } from '../types';
 
 /**
  * Putting a look on the feed, and saying who it is for.
@@ -18,6 +18,7 @@ const SCOPE_HINTS: Record<ShareScope['kind'], string> = {
   everyone: 'Every wardrobe on this device.',
   conversation: 'The people in one thread.',
   person: 'One wardrobe, and no other.',
+  household: 'The people under this roof, and no one else.',
   self: 'It stays on your own profile and nowhere else.',
 };
 
@@ -42,24 +43,31 @@ export function ShareSheet({
 
   const others = accounts.filter(a => a.id !== activeId);
   const threads = community.conversations.filter(c => c.memberIds.includes(activeId ?? ''));
+  // Joined households only — an unanswered invitation gives a scope nobody can see.
+  const roofs = community.households.filter(h =>
+    h.members.some(m => m.accountId === activeId && m.joined)
+  );
 
   if (!look) return null;
 
-  const kinds: ShareScope['kind'][] = ['everyone', 'conversation', 'person', 'self'];
+  const kinds: ShareScope['kind'][] = ['everyone', 'household', 'conversation', 'person', 'self'];
 
   const pick = (kind: ShareScope['kind']) => {
     if (kind === 'everyone') setScope({ kind: 'everyone' });
     else if (kind === 'self') setScope({ kind: 'self' });
     else if (kind === 'conversation') setScope({ kind: 'conversation', conversationId: threads[0]?.id ?? '' });
+    else if (kind === 'household') setScope({ kind: 'household', householdId: roofs[0]?.id ?? '' });
     else setScope({ kind: 'person', accountId: others[0]?.id ?? '' });
   };
 
   const ready =
-    scope.kind !== 'conversation' && scope.kind !== 'person'
-      ? true
-      : scope.kind === 'conversation'
-        ? Boolean(scope.conversationId)
-        : Boolean(scope.accountId);
+    scope.kind === 'conversation'
+      ? Boolean(scope.conversationId)
+      : scope.kind === 'person'
+        ? Boolean(scope.accountId)
+        : scope.kind === 'household'
+          ? Boolean(scope.householdId)
+          : true;
 
   return (
     <Modal open={open} onClose={onClose} title="Put this on the feed">
@@ -76,6 +84,7 @@ export function ShareSheet({
             // A scope with nobody to point at is not offered.
             if (kind === 'conversation' && threads.length === 0) return null;
             if (kind === 'person' && others.length === 0) return null;
+            if (kind === 'household' && roofs.length === 0) return null;
             const active = scope.kind === kind;
             return (
               <button
@@ -106,6 +115,25 @@ export function ShareSheet({
             >
               {others.map(a => (
                 <option key={a.id} value={a.id}>{a.name}</option>
+              ))}
+            </select>
+          </Field>
+        </div>
+      ) : null}
+
+      {scope.kind === 'household' && roofs.length > 1 ? (
+        <div className="mt-4">
+          <Field label="Which roof" htmlFor="share-roof">
+            <select
+              id="share-roof"
+              className={selectClass}
+              value={scope.householdId}
+              onChange={e => setScope({ kind: 'household', householdId: e.target.value })}
+            >
+              {roofs.map(h => (
+                <option key={h.id} value={h.id}>
+                  {h.name ?? HOUSEHOLD_KIND_LABELS[h.kind]}
+                </option>
               ))}
             </select>
           </Field>

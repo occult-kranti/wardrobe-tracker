@@ -14,11 +14,13 @@ import {
   Basting, GarmentPlate, PlateEmptyCloset, PlateEmptyMending, PlateRetired,
 } from '../components/art';
 import {
-  BENCHED_STATUSES, LAUNDRY_LABELS, RETIRE_REASONS, SEASON_LABELS, SOURCE_LABELS,
+  BENCHED_STATUSES, LAUNDRY_LABELS, PRESET_COLORS, RETIRE_REASONS, SEASON_LABELS, SOURCE_LABELS,
   categoryLabel, displayTag,
   type AppSettings, type ClothingItem, type LaundryStatus, type Season,
 } from '../types';
 import { wearContext } from '../lib/similarity';
+import { useSession } from '../context/SessionContext';
+import { offerPass, passRecipients, settlePass } from '../lib/household';
 import { costPerWear } from '../lib/cost';
 
 /**
@@ -262,7 +264,7 @@ function RetiredRow({
 export default function Closet() {
   const {
     items, activeItems, settings,
-    toggleFavoriteItem, deleteItem, logWear, setLaundryStatus, retireItem, unretireItem,
+    addItem, toggleFavoriteItem, deleteItem, logWear, setLaundryStatus, advanceLaundry, retireItem, unretireItem,
   } = useWardrobe();
 
   const [searchParams, setSearchParams] = useSearchParams();
@@ -278,9 +280,16 @@ export default function Closet() {
   const [showQuiet, setShowQuiet] = useState(false);
 
   const [detailId, setDetailId] = useState<string | null>(null);
+  const [amendId, setAmendId] = useState<string | null>(null);
   const [menuItemId, setMenuItemId] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [retiring, setRetiring] = useState<ClothingItem | null>(null);
+  const [passTo, setPassTo] = useState<string>('');
+  const { accounts, activeId, active, community, setCommunity } = useSession();
+  // Family under the same roof, if any — what makes "pass it on" appear.
+  const familyIds = passRecipients(community, activeId);
+  const myOffers = community.passes.filter(p => p.toId === activeId && p.status === 'offered');
+  const nameOf = (id: string) => accounts.find(a => a.id === id)?.name ?? 'A wardrobe';
   const [retireReason, setRetireReason] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [retiredOpen, setRetiredOpen] = useState(false);
@@ -399,6 +408,53 @@ export default function Closet() {
         />
       ) : (
         <div className="space-y-5">
+          {/* The tray: hand-me-downs mid-air. Pull-only — no badge, no bubble —
+              and nothing lands until the yes is said from in here, because a
+              closet something can appear in uninvited is not your closet. */}
+          {myOffers.map(offer => (
+            <div key={offer.id} className="bg-surface plate rounded-[2px] px-4 py-3">
+              <p className="type-ledger text-[11px] text-text-2">A piece has been passed to you</p>
+              <p className="text-[15px] text-text mt-1">
+                {offer.piece.name}
+                <span className="text-text-2"> — a hand-me-down from {offer.provenance.from}
+                {offer.provenance.wearsInTheirRecord
+                  ? `, ${offer.provenance.wearsInTheirRecord} wears in their record`
+                  : ''}.</span>
+              </p>
+              <div className="flex items-center gap-3 mt-3">
+                <Button
+                  compact
+                  onClick={() => {
+                    addItem({
+                      name: offer.piece.name,
+                      category: offer.piece.category ?? settings.categories[0]?.id ?? 'tops',
+                      color: offer.piece.color ?? PRESET_COLORS[0],
+                      season: [],
+                      occasion: [],
+                      imageUrl: offer.piece.imageUrl ?? '',
+                      source: 'inherited',
+                      favorite: false,
+                      provenance: offer.provenance,
+                    });
+                    setCommunity(prev => settlePass(prev, offer.id, 'accepted'));
+                    showToast(`Taken in. It starts at 0 wears — ${offer.provenance.from}'s stay theirs.`, 'success');
+                  }}
+                >
+                  Take it in
+                </Button>
+                <Button
+                  tone="tertiary"
+                  onClick={() => {
+                    setCommunity(prev => settlePass(prev, offer.id, 'declined'));
+                    showToast('Declined. It stays where it is.', 'info');
+                  }}
+                >
+                  Not for me
+                </Button>
+              </div>
+            </div>
+          ))}
+
           {/* Search — the one boxed input, with the filter drawer beside it. */}
           <div className="flex gap-2">
             <div className="relative flex-1">
@@ -496,6 +552,42 @@ export default function Closet() {
               </TagRail>
             </div>
           </div>
+
+          {/* Wash day used to be sixty taps — the State rail could show
+              "Needs a wash 12" but could do nothing about it. With the filter
+              active, the filter becomes the verb. */}
+          {benchFilter === 'worn' && benchCounts.worn > 0 ? (
+            <div className="flex items-center justify-between gap-3 bg-surface plate rounded-[2px] px-4 py-3">
+              <p className="text-[13px] text-text-2">
+                {benchCounts.worn} {benchCounts.worn === 1 ? 'piece is' : 'pieces are'} waiting on the basket.
+              </p>
+              <Button
+                compact
+                onClick={() => {
+                  const n = advanceLaundry('worn', 'washing');
+                  showToast(`In the wash. ${n} ${n === 1 ? 'piece' : 'pieces'}.`, 'info');
+                }}
+              >
+                Send them all to the wash
+              </Button>
+            </div>
+          ) : null}
+          {benchFilter === 'washing' && benchCounts.washing > 0 ? (
+            <div className="flex items-center justify-between gap-3 bg-surface plate rounded-[2px] px-4 py-3">
+              <p className="text-[13px] text-text-2">
+                {benchCounts.washing} {benchCounts.washing === 1 ? 'piece is' : 'pieces are'} in the machine.
+              </p>
+              <Button
+                compact
+                onClick={() => {
+                  const n = advanceLaundry('washing', 'clean');
+                  showToast(`Done and folded. ${n} back on the rail.`, 'info');
+                }}
+              >
+                The wash is done
+              </Button>
+            </div>
+          ) : null}
 
           {showFilters && (
             <div id="closet-filters" className="bg-surface plate rounded-[2px] p-4 sm:p-5 space-y-4 animate-slip">
@@ -723,16 +815,49 @@ export default function Closet() {
               </div>
             </div>
 
+            {familyIds.length > 0 ? (
+              <div className="mt-5">
+                <p className="type-ledger text-[11px] text-text-2 mb-2">Or pass it on</p>
+                <div className="flex flex-wrap gap-2">
+                  {familyIds.map(id => (
+                    <Chip key={id} selected={passTo === id} onClick={() => setPassTo(passTo === id ? '' : id)}>
+                      To {nameOf(id)}
+                    </Chip>
+                  ))}
+                </div>
+                <p className="text-[13px] text-text-2 mt-2 leading-snug">
+                  A hand-me-down: it appears in their tray with its story attached, and it
+                  lands only when they accept. Your {retiring.wearCount}{' '}
+                  {retiring.wearCount === 1 ? 'wear stays' : 'wears stay'} in your own record.
+                </p>
+              </div>
+            ) : null}
+
             <div className="mt-6 flex items-center gap-3">
               <Button
                 tone="primary"
                 onClick={() => {
-                  retireItem(retiring.id, retireReason || undefined);
-                  showToast('Retired. Its history stays in the ledger.', 'success');
+                  if (passTo) {
+                    setCommunity(prev =>
+                      offerPass(prev, activeId ?? '', active?.name ?? 'A wardrobe', passTo, {
+                        itemId: retiring.id,
+                        name: retiring.name,
+                        imageUrl: retiring.imageUrl,
+                        category: retiring.category,
+                        color: retiring.color,
+                      }, retiring.wearCount || undefined)
+                    );
+                    retireItem(retiring.id, 'Passed on');
+                    showToast(`Offered. It waits in ${nameOf(passTo)}'s tray.`, 'success');
+                  } else {
+                    retireItem(retiring.id, retireReason || undefined);
+                    showToast('Retired. Its history stays in the ledger.', 'success');
+                  }
+                  setPassTo('');
                   closeRetire();
                 }}
               >
-                Retire it
+                {passTo ? `Pass it to ${nameOf(passTo)}` : 'Retire it'}
               </Button>
               <Button tone="tertiary" onClick={closeRetire}>Keep it</Button>
             </div>
@@ -769,7 +894,23 @@ export default function Closet() {
         )}
       </Modal>
 
-      {detailId && <ItemDetail itemId={detailId} onClose={() => setDetailId(null)} />}
+      {detailId && (
+        <ItemDetail
+          itemId={detailId}
+          onClose={() => setDetailId(null)}
+          onAmend={() => {
+            setAmendId(detailId);
+            setDetailId(null);
+          }}
+        />
+      )}
+      {amendId && (
+        <AddItemModal
+          open
+          editItem={items.find(i => i.id === amendId)}
+          onClose={() => setAmendId(null)}
+        />
+      )}
       <AddItemModal open={addOpen} onClose={() => setAddOpen(false)} />
     </div>
   );

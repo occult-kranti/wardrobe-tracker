@@ -86,6 +86,8 @@ export function loadCommunity(): CommunityState {
     posts: Array.isArray(raw.posts) ? raw.posts : [],
     conversations: Array.isArray(raw.conversations) ? raw.conversations : [],
     messages: Array.isArray(raw.messages) ? raw.messages : [],
+    households: Array.isArray(raw.households) ? raw.households : [],
+    passes: Array.isArray(raw.passes) ? raw.passes : [],
   };
 }
 

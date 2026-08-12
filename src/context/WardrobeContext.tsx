@@ -30,11 +30,14 @@ interface WardrobeContextType extends AppState {
   unretireItem: (id: string) => void;
   toggleFavoriteItem: (id: string) => void;
   setLaundryStatus: (id: string, status: ClothingItem['laundryStatus']) => void;
+  /** Wash day in one motion: every piece currently in `from` moves to `to`. */
+  advanceLaundry: (from: ClothingItem['laundryStatus'], to: ClothingItem['laundryStatus']) => number;
   addOutfit: (outfit: Omit<Outfit, 'id' | 'dateCreated' | 'wearCount'>) => void;
   deleteOutfit: (id: string) => void;
   toggleFavoriteOutfit: (id: string) => void;
   logWear: (itemIds: string[], outfitId?: string, date?: string) => void;
   removeWearLog: (id: string) => void;
+  confirmPlan: (logId: string) => void;
   addWishlistItem: (item: Omit<WishlistItem, 'id' | 'dateAdded'>) => void;
   updateWishlistItem: (id: string, updates: Partial<WishlistItem>) => void;
   deleteWishlistItem: (id: string) => void;
@@ -133,6 +136,19 @@ export function WardrobeProvider({ accountId, children }: { accountId: string; c
     }));
   }, [setState]);
 
+  const advanceLaundry = useCallback((from: ClothingItem['laundryStatus'], to: ClothingItem['laundryStatus']) => {
+    let moved = 0;
+    setState(prev => {
+      const items = prev.items.map(item => {
+        if (item.retired || item.laundryStatus !== from) return item;
+        moved += 1;
+        return { ...item, laundryStatus: to };
+      });
+      return moved === 0 ? prev : { ...prev, items };
+    });
+    return moved;
+  }, [setState]);
+
   const setLaundryStatus = useCallback((id: string, status: ClothingItem['laundryStatus']) => {
     setState(prev => ({
       ...prev,
@@ -171,9 +187,13 @@ export function WardrobeProvider({ accountId, children }: { accountId: string; c
       const creditedIds = outfitId
         ? Array.from(new Set([...itemIds, ...(prev.outfits.find(o => o.id === outfitId)?.itemIds ?? [])]))
         : itemIds;
-      const newLog: WearLog = { id: crypto.randomUUID(), date: logDate, itemIds: creditedIds, outfitId };
       // Future dates are plans: recorded, but they don't move wear counts or
-      // laundry until the day actually arrives.
+      // laundry until the person confirms the day actually happened. The flag
+      // is STORED — derived-from-date let every plan silently read as a wear
+      // the morning its date arrived.
+      const newLog: WearLog = planned
+        ? { id: crypto.randomUUID(), date: logDate, itemIds: creditedIds, outfitId, planned: true }
+        : { id: crypto.randomUUID(), date: logDate, itemIds: creditedIds, outfitId };
       if (planned) {
         return { ...prev, wearLogs: [...prev.wearLogs, newLog] };
       }
@@ -203,17 +223,64 @@ export function WardrobeProvider({ accountId, children }: { accountId: string; c
     setState(prev => {
       const log = prev.wearLogs.find(l => l.id === id);
       if (!log) return prev;
-      const wasPlanned = isFutureDate(log.date);
+      // The STORED flag, never the date: deriving it here meant a plan whose
+      // day had arrived read as a wear, and undoing it decremented counts that
+      // had never been incremented.
+      const wasPlanned = log.planned === true;
+      const remaining = prev.wearLogs.filter(l => l.id !== id);
+      // lastWorn is recomputed from the surviving record, not left pointing at
+      // a date that is no longer on it — "quiet lately" and the suggestions
+      // both read that date.
+      const lastFor = (itemId: string): string | undefined => {
+        let last: string | undefined;
+        for (const l of remaining) {
+          if (l.planned === true || isFutureDate(l.date)) continue;
+          if (!l.itemIds.includes(itemId)) continue;
+          if (!last || l.date > last) last = l.date;
+        }
+        return last;
+      };
       return {
         ...prev,
-        wearLogs: prev.wearLogs.filter(l => l.id !== id),
+        wearLogs: remaining,
         items: wasPlanned ? prev.items : prev.items.map(item =>
           log.itemIds.includes(item.id)
-            ? { ...item, wearCount: Math.max(0, item.wearCount - 1) }
+            ? { ...item, wearCount: Math.max(0, item.wearCount - 1), lastWorn: lastFor(item.id) }
             : item
         ),
         outfits: wasPlanned || !log.outfitId ? prev.outfits : prev.outfits.map(o =>
           o.id === log.outfitId ? { ...o, wearCount: Math.max(0, o.wearCount - 1) } : o
+        ),
+      };
+    });
+  }, [setState]);
+
+  /**
+   * A plan whose day has arrived is a QUESTION, not a fact. This is the yes:
+   * the flag clears, and only now do the counts, lastWorn and the laundry
+   * basket move — exactly as if the wear had been logged fresh.
+   */
+  const confirmPlan = useCallback((logId: string) => {
+    setState(prev => {
+      const log = prev.wearLogs.find(l => l.id === logId);
+      if (!log || log.planned !== true) return prev;
+      return {
+        ...prev,
+        wearLogs: prev.wearLogs.map(l => l.id === logId ? { ...l, planned: undefined } : l),
+        items: prev.items.map(item =>
+          log.itemIds.includes(item.id)
+            ? {
+                ...item,
+                wearCount: item.wearCount + 1,
+                lastWorn: !item.lastWorn || log.date > item.lastWorn ? log.date : item.lastWorn,
+                laundryStatus: 'worn' as const,
+              }
+            : item
+        ),
+        outfits: prev.outfits.map(o =>
+          o.id === log.outfitId
+            ? { ...o, wearCount: o.wearCount + 1, lastWorn: !o.lastWorn || log.date > o.lastWorn ? log.date : o.lastWorn }
+            : o
         ),
       };
     });
@@ -488,8 +555,8 @@ export function WardrobeProvider({ accountId, children }: { accountId: string; c
       ...state,
       activeItems,
       addItem, updateItem, deleteItem, retireItem, unretireItem,
-      toggleFavoriteItem, setLaundryStatus,
-      addOutfit, deleteOutfit, toggleFavoriteOutfit, logWear, removeWearLog,
+      toggleFavoriteItem, setLaundryStatus, advanceLaundry,
+      addOutfit, deleteOutfit, toggleFavoriteOutfit, logWear, removeWearLog, confirmPlan,
       addWishlistItem, updateWishlistItem, deleteWishlistItem, moveWishlistToCloset,
       releaseWishlistItem, keepWishlistItem,
       addEvent, updateEvent, removeEvent,

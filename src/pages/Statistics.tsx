@@ -1,7 +1,7 @@
 import { useMemo, type CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
 import { useWardrobe } from '../context/WardrobeContext';
-import { categoryLabel, SOURCE_LABELS, type ClothingItem, type ItemSource } from '../types';
+import { categoryLabel, isPlannedLog, SOURCE_LABELS, type ClothingItem, type ItemSource } from '../types';
 import { isFutureDate, todayLocal } from '../lib/dates';
 import { aggregateCostPerWear, costPerWear, formatMoney, formatPerWear } from '../lib/cost';
 import { Card, EmptyState, Masthead, SectionTitle, Stat, TableRail } from '../components/ui';
@@ -120,7 +120,7 @@ export default function Statistics() {
 
   // Two quantities that used to share the label "wears recorded", 24× apart.
   const daysLogged = useMemo(
-    () => wearLogs.filter(l => !isFutureDate(l.date)).length,
+    () => wearLogs.filter(l => !isPlannedLog(l) && !isFutureDate(l.date)).length,
     [wearLogs]
   );
   const itemWears = useMemo(
@@ -130,7 +130,7 @@ export default function Statistics() {
 
   /** Every non-future log, oldest first. The spine of every series below. */
   const history = useMemo(
-    () => wearLogs.filter(l => !isFutureDate(l.date)).sort((a, b) => a.date.localeCompare(b.date)),
+    () => wearLogs.filter(l => !isPlannedLog(l) && !isFutureDate(l.date)).sort((a, b) => a.date.localeCompare(b.date)),
     [wearLogs]
   );
 

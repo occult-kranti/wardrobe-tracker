@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useWardrobe } from '../context/WardrobeContext';
 import { categoryLabel, isQuietCategory, type ClothingItem, type Outfit, type WearLog } from '../types';
 import { todayLocal, isFutureDate, daysSince } from '../lib/dates';
+import { isPlannedLog } from '../types';
 import { costPerWear, formatPerWear } from '../lib/cost';
 import { Button, Card, EmptyState, Masthead, Modal, SectionTitle, Stat, Chip } from '../components/ui';
 import { IconArrowRight, IconCheck, IconEyeletFilled } from '../components/icons';
@@ -77,7 +78,7 @@ function Thumb({ item, className = '' }: { item: ClothingItem; className?: strin
 export default function Dashboard() {
   const {
     items, activeItems, outfits, wearLogs, settings,
-    getOutfitSuggestions, getWearablePool, logWear, removeWearLog,
+    getOutfitSuggestions, getWearablePool, logWear, removeWearLog, confirmPlan,
   } = useWardrobe();
 
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -95,8 +96,15 @@ export default function Dashboard() {
 
   /* ---------- today's page ---------- */
 
+  // A plan whose day has arrived is a QUESTION, not a fact. Only confirmed
+  // wears count as "logged today"; matured plans queue for their answer, and
+  // must never suppress the log prompt or claim the day is on the record.
   const todayLogs = useMemo(
-    () => wearLogs.filter(l => l.date === today),
+    () => wearLogs.filter(l => l.date === today && !isPlannedLog(l)),
+    [wearLogs, today]
+  );
+  const maturedPlans = useMemo(
+    () => wearLogs.filter(l => isPlannedLog(l) && l.date <= today),
     [wearLogs, today]
   );
   const loggedToday = todayLogs.length > 0;
@@ -160,7 +168,7 @@ export default function Dashboard() {
 
     if (itemWears > 0) {
       const first = wearLogs
-        .filter(l => !isFutureDate(l.date))
+        .filter(l => !isPlannedLog(l) && !isFutureDate(l.date))
         .reduce<string | null>((min, l) => (min === null || l.date < min ? l.date : min), null);
       lines.push(`${itemWears} wears recorded${first ? ` since ${monthLabel(first)}` : ''}.`);
     }
@@ -309,6 +317,42 @@ export default function Dashboard() {
     <div className="space-y-6">
       <Masthead title={greetingFor(new Date().getHours())} meta={dateMeta} />
 
+      {/* A matured plan asks its question before anything else on the page.
+          Saying yes is the fastest log in the app — the outfit was already
+          chosen; the seal presses onto something true. Saying no removes the
+          intention without touching a single count, which is the entire point
+          of the stored flag. */}
+      {maturedPlans.map(plan => (
+        <Card key={plan.id}>
+          <p className="type-ledger text-[11px] text-text-2">Held for {plan.date === today ? 'today' : shortDate(plan.date)}</p>
+          <p className="type-editorial text-[20px] mt-1.5 leading-snug">
+            You had {describeLog(plan)} down{plan.date === today ? ' for today' : ''}.
+          </p>
+          <div className="flex items-center gap-3 mt-4">
+            <Button
+              tone="primary"
+              compact
+              icon={<IconEyeletFilled size={10} />}
+              onClick={() => {
+                confirmPlan(plan.id);
+                showToast('Sealed. It happened.', 'seal');
+              }}
+            >
+              Wore it
+            </Button>
+            <Button
+              tone="tertiary"
+              onClick={() => {
+                removeWearLog(plan.id);
+                showToast('Removed. The day stays open.', 'info');
+              }}
+            >
+              It didn't happen
+            </Button>
+          </div>
+        </Card>
+      ))}
+
       {/* HERO — the whole point of the page, above the fold, two taps deep. */}
       <Card className="plate-ink">
         {loggedToday ? (
@@ -449,7 +493,7 @@ export default function Dashboard() {
           </SectionTitle>
           <div>
             {recent.map(log => {
-              const planned = isFutureDate(log.date);
+              const planned = isPlannedLog(log);
               return (
                 <div
                   key={log.id}

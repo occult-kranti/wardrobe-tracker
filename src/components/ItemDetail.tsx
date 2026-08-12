@@ -67,9 +67,11 @@ function Thumb({ item, className = '' }: { item: ClothingItem; className?: strin
 interface Props {
   itemId: string;
   onClose: () => void;
+  /** Opens the intake form prefilled on this piece — amend, not re-enter. */
+  onAmend: () => void;
 }
 
-export default function ItemDetail({ itemId, onClose }: Props) {
+export default function ItemDetail({ itemId, onClose, onAmend }: Props) {
   const {
     getItem,
     activeItems,
@@ -379,10 +381,16 @@ export default function ItemDetail({ itemId, onClose }: Props) {
             <Basting />
             {step === 'none' ? (
               <div>
-                <Button onClick={() => setStep('retire')}>Retire this piece</Button>
+                <div className="flex flex-wrap items-center gap-3">
+                  {/* The add form has promised "fill it in later" since it
+                      shipped; this is the later. Name, photo, cost, all of it —
+                      the wear history stays untouched. */}
+                  <Button onClick={onAmend}>Amend the record</Button>
+                  <Button onClick={() => setStep('retire')}>Retire this piece</Button>
+                </div>
                 <p className="text-[13px] text-text-2 mt-2.5 leading-snug">
-                  Retiring takes it out of browsing, outfits and comparisons, and keeps every
-                  wear it earned.
+                  Amending edits what the record says; retiring takes it out of browsing,
+                  outfits and comparisons, and keeps every wear it earned.
                 </p>
               </div>
             ) : (

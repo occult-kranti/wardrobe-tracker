@@ -25,7 +25,7 @@ export default function Feed() {
   const byId = useMemo(() => new Map(accounts.map(a => [a.id, a])), [accounts]);
   const posts = useMemo(
     () => community.posts
-      .filter(p => postVisibleTo(p, activeId, community.conversations))
+      .filter(p => postVisibleTo(p, activeId, community.conversations, community.households))
       .slice()
       .sort((a, b) => b.date.localeCompare(a.date) || a.id.localeCompare(b.id)),
     [community.posts, community.conversations, activeId]

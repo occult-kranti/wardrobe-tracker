@@ -54,7 +54,7 @@ const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Frida
  * Bumped whenever the generated wardrobes change shape — photographs, bench
  * states, costs. Samples recording an older number are rebuilt at boot.
  */
-export const PERSONA_SEED_VERSION = 2;
+export const PERSONA_SEED_VERSION = 3;
 
 /** How far back the generated rotation runs, in days. */
 const HISTORY_DAYS = 250;
@@ -343,6 +343,8 @@ export function buildPersonaState(persona: PersonaSeed): AppState {
         itemIds: [...outfit.itemIds],
         outfitId,
         notes: day.schedule || undefined,
+        // The stored flag, same as logWear writes: days still ahead are plans.
+        planned: date > today ? true : undefined,
       });
     }
   }

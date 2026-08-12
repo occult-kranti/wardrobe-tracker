@@ -37,6 +37,10 @@ export interface ClothingItem {
   laundryStatus: LaundryStatus;
   /** Present means the piece has left the active closet but keeps its history. */
   retired?: { date: string; reason?: string };
+  /** A hand-me-down's frozen record of where it came from — captured at the
+      moment it was offered, never a live link into the giver's wardrobe. The
+      giver keeps their own wears; this is the memory that travels. */
+  provenance?: { from: string; wearsInTheirRecord?: number; passedOn: string };
 }
 
 export interface WishlistItem {
@@ -80,6 +84,18 @@ export interface WearLog {
   outfitId?: string;
   itemIds: string[];
   notes?: string;
+  /** True while this entry is an INTENTION, not a fact. A plan used to be
+      recognised by its date being in the future, which meant every plan
+      silently became a "wear" the morning its day arrived — counted by the
+      Ledger, sealed by the Calendar, never reflected in any wearCount — and
+      Undo on that fiction decremented counts that had never moved. The flag
+      is cleared only by confirmPlan, when the person says it happened. */
+  planned?: boolean;
+}
+
+/** The one honest question about a log: is it still an intention? */
+export function isPlannedLog(log: WearLog): boolean {
+  return log.planned === true;
 }
 
 /* ---------- the Shared Rail ----------
@@ -262,12 +278,14 @@ export type ShareScope =
   | { kind: 'everyone' }
   | { kind: 'conversation'; conversationId: string }
   | { kind: 'person'; accountId: string }
+  | { kind: 'household'; householdId: string }
   | { kind: 'self' };
 
 export const SCOPE_LABELS: Record<ShareScope['kind'], string> = {
   everyone: 'Everyone here',
   conversation: 'One conversation',
   person: 'One person',
+  household: 'Just the household',
   self: 'Only this wardrobe',
 };
 
@@ -286,7 +304,8 @@ export interface FeedPost {
 export function postVisibleTo(
   post: FeedPost,
   viewerId: string | null,
-  conversations: Conversation[]
+  conversations: Conversation[],
+  households: Household[] = []
 ): boolean {
   if (post.authorId === viewerId) return true;
   const scope = post.scope;
@@ -300,6 +319,12 @@ export function postVisibleTo(
       const target = conversations.find(c => c.id === scope.conversationId);
       return target !== undefined && target.memberIds.includes(viewerId);
     }
+    case 'household': {
+      if (!viewerId) return false;
+      const target = households.find(h => h.id === scope.householdId);
+      // Joined members only — an invitation you have not answered shows you nothing.
+      return target !== undefined && target.members.some(m => m.accountId === viewerId && m.joined);
+    }
     case 'self':
       return false;
   }
@@ -312,6 +337,8 @@ export interface Conversation {
   memberIds: string[];
   isGroup: boolean;
   about?: string;
+  /** Set when this thread IS a household's room; membership follows the roof. */
+  householdId?: string;
 }
 
 export interface ChatMessage {
@@ -330,16 +357,60 @@ export interface ChatMessage {
   request?: { pieceName: string; status: BorrowStatus; ownerId?: string };
 }
 
+/**
+ * Wardrobes on this device joined under one roof. The kind describes the ROOM,
+ * not what any two members are to each other — one person can belong to a
+ * partners household, a housemates household and a family household at once,
+ * because those are three rooms, not three labels on one edge. A household
+ * stores ids and a kind and nothing else: no roles, no shape, no size checks
+ * (docs/06 §2.7 — no field anywhere can encode couple-shape). Membership is
+ * flat; a member without `joined` is an invitation still waiting for its yes.
+ */
+export type HouseholdKind = 'roommates' | 'partners' | 'family';
+
+export const HOUSEHOLD_KIND_LABELS: Record<HouseholdKind, string> = {
+  roommates: 'Housemates',
+  partners: 'Partners',
+  family: 'Family',
+};
+
+export interface Household {
+  id: string;
+  name?: string;
+  kind: HouseholdKind;
+  members: Array<{ accountId: string; joined?: string }>;
+}
+
+/**
+ * A hand-me-down mid-air. The offer is a SNAPSHOT — no code path ever writes
+ * into a wardrobe that is not open, so the piece appears in the receiver's
+ * tray and is accepted from inside, or it never lands at all. "If a thing can
+ * appear in my closet because someone else pressed a button, it isn't my
+ * closet."
+ */
+export interface PassOffer {
+  id: string;
+  fromId: string;
+  toId: string;
+  piece: SharedPiece;
+  provenance: { from: string; wearsInTheirRecord?: number; passedOn: string };
+  status: 'offered' | 'accepted' | 'declined';
+}
+
 export interface CommunityState {
   posts: FeedPost[];
   conversations: Conversation[];
   messages: ChatMessage[];
+  households: Household[];
+  passes: PassOffer[];
 }
 
 export const EMPTY_COMMUNITY: CommunityState = {
   posts: [],
   conversations: [],
   messages: [],
+  households: [],
+  passes: [],
 };
 
 /**
@@ -380,7 +451,7 @@ export interface AppState {
 // v3: the Shared Rail (circle). v4: events, for outfits reserved against a trip
 // or a festival. Migration seeds both on older exports — scripts/test-migrate.mjs
 // holds a case for each.
-export const SCHEMA_VERSION = 4;
+export const SCHEMA_VERSION = 5;
 
 export const DEFAULT_CATEGORIES: UserCategory[] = [
   { id: 'tops', label: 'Tops' },
@@ -449,6 +520,7 @@ export const RETIRE_REASONS = [
   'Swapped on',
   'Worn out',
   'Cut for patterns',
+  'Passed on',
 ];
 
 export const PRIORITY_LABELS: Record<'low' | 'medium' | 'high', string> = {

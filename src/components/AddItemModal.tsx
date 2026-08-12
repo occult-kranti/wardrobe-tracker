@@ -1,4 +1,4 @@
-import { useRef, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { useWardrobe } from '../context/WardrobeContext';
 import {
   PRESET_COLORS,
@@ -7,6 +7,7 @@ import {
   categoryLabel,
   displayTag,
   type CategoryId,
+  type ClothingItem,
   type ItemSource,
   type Season,
 } from '../types';
@@ -40,10 +41,16 @@ const SOURCE_ORDER: ItemSource[] = [
 interface Props {
   open: boolean;
   onClose: () => void;
+  /** When set, the form opens PREFILLED and saves through updateItem: the
+      record is amended, not re-entered. The add form has promised "everything
+      except the name can be filled in later" since it shipped — this is the
+      later. */
+  editItem?: ClothingItem;
 }
 
-export default function AddItemModal({ open, onClose }: Props) {
-  const { addItem, addOccasion, settings } = useWardrobe();
+export default function AddItemModal({ open, onClose, editItem }: Props) {
+  const { addItem, updateItem, addOccasion, settings } = useWardrobe();
+  const amending = Boolean(editItem);
 
   const [name, setName] = useState('');
   const [category, setCategory] = useState<CategoryId>(
@@ -64,6 +71,23 @@ export default function AddItemModal({ open, onClose }: Props) {
   const [dragOver, setDragOver] = useState(false);
 
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // Prefill on open. Keyed on open+id so reopening the same piece rereads it,
+  // and switching pieces never leaks state across records.
+  useEffect(() => {
+    if (!open || !editItem) return;
+    setName(editItem.name);
+    setCategory(editItem.category);
+    setColor(editItem.color);
+    setBrand(editItem.brand ?? '');
+    setSource(editItem.source ?? '');
+    setFitsLike(editItem.fitsLike ?? '');
+    setSeason([...editItem.season]);
+    setOccasion([...editItem.occasion]);
+    setImageUrl(editItem.imageUrl ?? '');
+    setCost(editItem.cost !== undefined ? String(editItem.cost) : '');
+    setNotes(editItem.notes ?? '');
+  }, [open, editItem]);
 
   /* ---------- photo ---------- */
 
@@ -118,7 +142,7 @@ export default function AddItemModal({ open, onClose }: Props) {
     if (!trimmed) return;
     const parsedCost = cost.trim() === '' ? undefined : Number.parseFloat(cost);
 
-    addItem({
+    const record = {
       name: trimmed,
       category,
       color,
@@ -130,18 +154,24 @@ export default function AddItemModal({ open, onClose }: Props) {
       // Empty means "no photo", and the drawn flat takes over. Never a remote URL.
       imageUrl: imageUrl || '',
       cost: parsedCost !== undefined && Number.isFinite(parsedCost) ? parsedCost : undefined,
-      favorite: false,
       notes: notes.trim() || undefined,
-    });
+    };
 
-    // Graceful on the way out. Never a lecture.
-    showToast('Added. It starts at 0 wears.', 'success');
+    if (editItem) {
+      // The wear history, pin and bench state belong to the piece, not the form.
+      updateItem(editItem.id, record);
+      showToast('Amended.', 'success');
+    } else {
+      addItem({ ...record, favorite: false });
+      // Graceful on the way out. Never a lecture.
+      showToast('Added. It starts at 0 wears.', 'success');
+    }
     reset();
     onClose();
   };
 
   return (
-    <Modal open={open} onClose={onClose} title="Add a piece" wide>
+    <Modal open={open} onClose={onClose} title={amending ? 'Amend the record' : 'Add a piece'} wide>
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* ---------- photo, optional on purpose ---------- */}
         <Field
@@ -449,10 +479,12 @@ export default function AddItemModal({ open, onClose }: Props) {
 
         <div className="pt-1">
           <Button type="submit" tone="primary" className="w-full">
-            Add to the closet
+            {amending ? 'Amend the record' : 'Add to the closet'}
           </Button>
           <p className="text-[13px] text-text-2 mt-3 text-center leading-snug">
-            Everything except the name can be filled in later, or never.
+            {amending
+              ? 'The wear history stays exactly as it is.'
+              : 'Everything except the name can be filled in later, or never.'}
           </p>
         </div>
       </form>

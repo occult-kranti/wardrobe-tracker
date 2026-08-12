@@ -573,8 +573,8 @@ function buildWearLogs(): WearLog[] {
   logs.sort((a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id));
 
   // Planned days — future logs are plans, not wears.
-  logs.push({ id: 'd-log-plan-0', date: D(1), itemIds: [...OUTFITS[1].itemIds], outfitId: OUTFITS[1].id });
-  logs.push({ id: 'd-log-plan-1', date: D(3), itemIds: [...OUTFITS[0].itemIds], outfitId: OUTFITS[0].id });
+  logs.push({ id: 'd-log-plan-0', date: D(1), itemIds: [...OUTFITS[1].itemIds], outfitId: OUTFITS[1].id, planned: true });
+  logs.push({ id: 'd-log-plan-1', date: D(3), itemIds: [...OUTFITS[0].itemIds], outfitId: OUTFITS[0].id, planned: true });
   return logs;
 }
 

@@ -1,4 +1,4 @@
-import type { CommunityState, FeedPost, ChatMessage, SharedLook } from '../types';
+import type { CommunityState, FeedPost, ChatMessage, Household, SharedLook } from '../types';
 import type { PersonaSeed } from './personaData';
 import { todayLocal, addDays } from './dates';
 
@@ -162,9 +162,72 @@ export function seedCommunity(prev: CommunityState, personas: PersonaSeed[]): Co
     });
   }
 
+  /* ---------- the households ----------
+     The three sample wardrobes live in overlapping rooms, which is the point:
+     Vikram is in all three — partners with Meher, housemates with Aarav from
+     the Indiranagar flat years, and Aarav's cousin. Meher carries one
+     invitation still waiting for her yes, so the Join flow has something real
+     to show, and one hand-me-down sits mid-air in her tray. */
+  const households = [...prev.households];
+  const haveHousehold = new Set(households.map(h => h.id));
+  const seedHouseholds: Household[] = [
+    {
+      id: 'h-partners',
+      kind: 'partners',
+      members: [
+        { accountId: 'vikram', joined: D(-200) },
+        { accountId: 'meher', joined: D(-200) },
+      ],
+    },
+    {
+      id: 'h-flat',
+      name: 'The Indiranagar flat',
+      kind: 'roommates',
+      members: [
+        { accountId: 'aarav', joined: D(-400) },
+        { accountId: 'vikram', joined: D(-400) },
+      ],
+    },
+    {
+      id: 'h-cousins',
+      name: 'Menon-Sethi',
+      kind: 'family',
+      members: [
+        { accountId: 'vikram', joined: D(-300) },
+        { accountId: 'aarav', joined: D(-300) },
+        { accountId: 'meher' }, // invited, not yet joined
+      ],
+    },
+  ];
+  for (const h of seedHouseholds) if (!haveHousehold.has(h.id)) households.push(h);
+
+  const passes = [...prev.passes];
+  if (!passes.some(p => p.id === 'pass-kantha')) {
+    const aarav = byId.get('aarav');
+    const piece = aarav?.items.find(i => /kantha|kurta|jacket/i.test(i.name)) ?? aarav?.items[0];
+    if (piece) {
+      passes.push({
+        id: 'pass-kantha',
+        fromId: 'aarav',
+        toId: 'meher',
+        piece: {
+          itemId: piece.id,
+          name: piece.name,
+          imageUrl: '',
+          category: piece.category,
+          color: piece.color,
+        },
+        provenance: { from: 'Aarav', wearsInTheirRecord: 12, passedOn: D(-2) },
+        status: 'offered',
+      });
+    }
+  }
+
   return {
     posts: [...prev.posts, ...posts].sort((a, b) => b.date.localeCompare(a.date)),
     conversations,
     messages: [...prev.messages, ...messages].sort((a, b) => a.date.localeCompare(b.date)),
+    households,
+    passes,
   };
 }

@@ -94,7 +94,17 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       reseeded = true;
       return { ...account, seedVersion: PERSONA_SEED_VERSION };
     });
-    if (reseeded) saveAccounts(list);
+    if (reseeded) {
+      saveAccounts(list);
+      // The shared layer reseeds with the wardrobes: seedCommunity is
+      // idempotent (known-id checks), so existing posts, threads, households
+      // and passes survive and only the missing seed rows arrive. Without
+      // this, a browser that installed the samples last month would rebuild
+      // three closets and never learn the households exist.
+      const merged = seedCommunity(loadCommunity(), PERSONAS);
+      saveCommunity(merged);
+      setCommunityState(merged);
+    }
     let adoptedId: string | null = null;
     if (list.length === 0) {
       const adopted = adoptLegacyWardrobe();

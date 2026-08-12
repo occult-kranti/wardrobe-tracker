@@ -58,7 +58,7 @@ const v1 = {
 
 const m = migrate(v1);
 const checks = [
-  ['schemaVersion set', m.schemaVersion === 4],
+  ['schemaVersion set', m.schemaVersion === 5],
   // v4 adds events. A pre-v4 export must gain an empty, valid list rather than
   // an undefined the Events page would crash on, and an export that already
   // carries events must round-trip with its reservations intact.
@@ -88,6 +88,35 @@ const checks = [
   ['unparseable cost dropped', m.items[3].cost === undefined],
   ['recorded zero cost preserved', m.items[4].cost === 0],
   ['outfits preserved', m.outfits.length === 2],
+  // The planned flag. A plan used to be recognised by its date being in the
+  // future — which meant every plan silently became a "wear" the morning its
+  // day arrived, and Undo on that fiction decremented counts that had never
+  // moved. The flag is stored now. Migration: a log with no flag and a future
+  // date is a plan; a past log with no flag is a wear (a matured legacy plan
+  // cannot be told apart from a real wear — that ambiguity is exactly why the
+  // flag exists). A stored flag always survives, even on a past date: that is
+  // a matured, unconfirmed plan awaiting its question.
+  ['future logs gain the planned flag', (() => {
+    const withPlan = migrate({ ...v1, wearLogs: [{ id: 'l1', date: '2099-01-01', itemIds: ['a'] }] });
+    return withPlan.wearLogs[0].planned === true;
+  })()],
+  ['past logs stay wears', (() => {
+    const past = migrate({ ...v1, wearLogs: [{ id: 'l1', date: '2020-01-01', itemIds: ['a'] }] });
+    return past.wearLogs[0].planned !== true;
+  })()],
+  ['a stored planned flag survives maturing', (() => {
+    const matured = migrate({ ...v1, wearLogs: [{ id: 'l1', date: '2020-01-01', itemIds: ['a'], planned: true }] });
+    return matured.wearLogs[0].planned === true;
+  })()],
+  // v5: a hand-me-down carries its provenance — a FROZEN snapshot of where it
+  // came from, never a live link into the giver's wardrobe. It must round-trip
+  // untouched, and its absence must stay absent.
+  ['provenance round-trips', (() => {
+    const withProv = migrate({ ...v1, items: [{ ...v1.items[0], provenance: { from: 'Meher', wearsInTheirRecord: 51, passedOn: '2026-08-01' } }] });
+    const p = withProv.items[0].provenance;
+    return p && p.from === 'Meher' && p.wearsInTheirRecord === 51 && p.passedOn === '2026-08-01';
+  })()],
+  ['no provenance stays none', m.items[0].provenance === undefined],
   ['outfit without a photo survives', m.outfits[0].imageUrl === undefined && m.outfits[0].wearCount === 3],
   ['outfit photo round-trips', m.outfits[1].imageUrl === 'wardrobe/meher/MK-01.webp'],
   ['wearLogs preserved', m.wearLogs.length === 1],

@@ -8,6 +8,7 @@ import {
   type WishlistItem,
 } from '../types';
 import { isRecordedAmount } from './cost';
+import { isFutureDate } from './dates';
 
 // Every stored shape this app has ever written must load without loss. Unknown
 // keys are preserved verbatim so an export from a newer version can round-trip
@@ -63,7 +64,16 @@ export function migrate(raw: unknown): AppState {
   const items = Array.isArray(state.items) ? state.items.map(i => migrateItem(i as Loose)) : [];
   const wishlist = Array.isArray(state.wishlist) ? state.wishlist.map(w => migrateWish(w as Loose)) : [];
   const outfits = Array.isArray(state.outfits) ? state.outfits : [];
-  const wearLogs = Array.isArray(state.wearLogs) ? state.wearLogs : [];
+  // A legacy log with no planned flag and a future date is a plan; a past log
+  // with no flag is a wear. A matured legacy plan cannot be told apart from a
+  // real wear — that ambiguity is exactly why the flag is stored now.
+  const wearLogs = (Array.isArray(state.wearLogs) ? state.wearLogs : []).map(raw => {
+    const log = raw as Loose;
+    if (log && typeof log === 'object' && log.planned === undefined && typeof log.date === 'string' && isFutureDate(log.date)) {
+      return { ...log, planned: true };
+    }
+    return raw;
+  });
 
   const storedSettings = (state.settings ?? {}) as Loose;
   const categories = Array.isArray(storedSettings.categories) && storedSettings.categories.length

@@ -1,11 +1,13 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useSession } from '../context/SessionContext';
 import { useWardrobe } from '../context/WardrobeContext';
-import { Card, EmptyState, LinkButton, Masthead, SectionTitle, Stat } from '../components/ui';
+import { Button, Card, Chip, EmptyState, Field, LinkButton, Masthead, Modal, SectionTitle, Stat, inputClass } from '../components/ui';
 import { Basting, PlateEmptyCloset } from '../components/art';
 import { AccountMark, LookCard, shortDate } from '../components/social';
-import { postVisibleTo } from '../types';
+import { HOUSEHOLD_KIND_LABELS, postVisibleTo, type HouseholdKind } from '../types';
+import { createHousehold, joinHousehold, leaveHousehold } from '../lib/household';
+import { showToast } from '../components/Toast';
 import { personaById } from '../lib/personaWardrobe';
 import { formatMoney } from '../lib/cost';
 
@@ -21,7 +23,7 @@ import { formatMoney } from '../lib/cost';
  */
 export default function Profile() {
   const { id } = useParams<{ id: string }>();
-  const { accounts, activeId, community } = useSession();
+  const { accounts, activeId, community, setCommunity } = useSession();
   const wardrobe = useWardrobe();
 
   const targetId = id ?? activeId;
@@ -31,7 +33,7 @@ export default function Profile() {
 
   const shared = useMemo(
     () => community.posts
-      .filter(p => p.authorId === targetId && postVisibleTo(p, activeId, community.conversations))
+      .filter(p => p.authorId === targetId && postVisibleTo(p, activeId, community.conversations, community.households))
       .sort((a, b) => b.date.localeCompare(a.date)),
     [community.posts, community.conversations, targetId, activeId]
   );
@@ -51,6 +53,22 @@ export default function Profile() {
       </>
     );
   }
+
+  const [roofOpen, setRoofOpen] = useState(false);
+  const [roofKind, setRoofKind] = useState<HouseholdKind>('roommates');
+  const [roofName, setRoofName] = useState('');
+  const [roofInvites, setRoofInvites] = useState<string[]>([]);
+
+  const myHouseholds = community.households.filter(h =>
+    h.members.some(m => m.accountId === activeId)
+  );
+  const invitations = myHouseholds.filter(h =>
+    h.members.some(m => m.accountId === activeId && !m.joined)
+  );
+  const joinedHouseholds = myHouseholds.filter(h =>
+    h.members.some(m => m.accountId === activeId && m.joined)
+  );
+  const nameOf = (id: string) => accounts.find(a => a.id === id)?.name ?? 'A wardrobe';
 
   const worn = isMe ? wardrobe.activeItems.reduce((sum, i) => sum + i.wearCount, 0) : 0;
   const spend = isMe ? wardrobe.activeItems.reduce((sum, i) => sum + (i.cost ?? 0), 0) : 0;
@@ -91,6 +109,131 @@ export default function Profile() {
             <Stat value={spend > 0 ? formatMoney(spend) : '—'} label="What it cost" />
           </div>
         </Card>
+      ) : null}
+
+      {isMe ? (
+        <Card>
+          <SectionTitle aside={joinedHouseholds.length > 0 ? `${joinedHouseholds.length} joined` : undefined}>
+            Under this roof
+          </SectionTitle>
+
+          {invitations.map(h => (
+            <div key={h.id} className="flex flex-wrap items-center justify-between gap-3 py-2 border-b border-border">
+              <div className="min-w-0">
+                <p className="text-[15px] text-text">{h.name ?? HOUSEHOLD_KIND_LABELS[h.kind]}</p>
+                <p className="type-ledger text-[11px] text-text-2 mt-0.5">
+                  {HOUSEHOLD_KIND_LABELS[h.kind]} · with {h.members.filter(m => m.accountId !== activeId).map(m => nameOf(m.accountId)).join(', ')} · waiting on your yes
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button compact onClick={() => setCommunity(prev => joinHousehold(prev, h.id, activeId ?? ''))}>
+                  Join
+                </Button>
+                <Button tone="tertiary" onClick={() => setCommunity(prev => leaveHousehold(prev, h.id, activeId ?? ''))}>
+                  Not for me
+                </Button>
+              </div>
+            </div>
+          ))}
+
+          {joinedHouseholds.length === 0 && invitations.length === 0 ? (
+            <p className="text-[14px] text-text-2 leading-relaxed">
+              Wardrobes on this device can be joined as housemates, partners, or family —
+              one person can be under all three roofs at once. Each kind opens one door:
+              a shared thread, a share scope for just the household, or pieces passed on.
+            </p>
+          ) : null}
+
+          {joinedHouseholds.map(h => (
+            <div key={h.id} className="flex flex-wrap items-center justify-between gap-3 py-2 border-b border-border last:border-0">
+              <div className="min-w-0">
+                <p className="text-[15px] text-text">{h.name ?? HOUSEHOLD_KIND_LABELS[h.kind]}</p>
+                <p className="type-ledger text-[11px] text-text-2 mt-0.5">
+                  {HOUSEHOLD_KIND_LABELS[h.kind]} · {h.members.filter(m => m.accountId !== activeId).map(m => `${nameOf(m.accountId)}${m.joined ? '' : ' (invited)'}`).join(', ') || 'just you so far'}
+                </p>
+              </div>
+              <Button tone="tertiary" onClick={() => setCommunity(prev => leaveHousehold(prev, h.id, activeId ?? ''))}>
+                Leave
+              </Button>
+            </div>
+          ))}
+
+          <div className="mt-4">
+            <Button onClick={() => setRoofOpen(true)}>Join wardrobes under a roof</Button>
+          </div>
+          <p className="text-[13px] text-text-2 mt-3 leading-snug">
+            A household is ids and a kind, nothing else — no roles, no shape, no locks.
+            Everyone joins by their own yes and leaves without asking.
+          </p>
+        </Card>
+      ) : null}
+
+      {isMe ? (
+        <Modal open={roofOpen} onClose={() => setRoofOpen(false)} title="Under one roof">
+          <div className="space-y-5">
+            <Field label="What kind of roof">
+              <div className="flex flex-wrap gap-2 pt-1">
+                {(Object.keys(HOUSEHOLD_KIND_LABELS) as HouseholdKind[]).map(k => (
+                  <Chip key={k} selected={roofKind === k} onClick={() => setRoofKind(k)}>
+                    {HOUSEHOLD_KIND_LABELS[k]}
+                  </Chip>
+                ))}
+              </div>
+              <p className="text-[13px] text-text-2 mt-2 leading-snug">
+                {roofKind === 'roommates'
+                  ? 'You share the space, and sometimes the rail. A thread opens when the second person joins.'
+                  : roofKind === 'partners'
+                    ? 'You dress for the same evenings. Looks can be shared to just the household.'
+                    : 'Pieces get passed on, with their story attached.'}
+              </p>
+            </Field>
+            <Field label="Who else">
+              <div className="flex flex-wrap gap-2 pt-1">
+                {accounts.filter(a => a.id !== activeId).map(a => (
+                  <Chip
+                    key={a.id}
+                    selected={roofInvites.includes(a.id)}
+                    onClick={() =>
+                      setRoofInvites(prev =>
+                        prev.includes(a.id) ? prev.filter(x => x !== a.id) : [...prev, a.id]
+                      )
+                    }
+                  >
+                    {a.name}
+                  </Chip>
+                ))}
+              </div>
+              <p className="text-[13px] text-text-2 mt-2 leading-snug">
+                They join when they say yes from their own wardrobe — never before.
+              </p>
+            </Field>
+            <Field label="Name it" htmlFor="roof-name" hint="Optional. The flat, the house, the family name.">
+              <input
+                id="roof-name"
+                className={inputClass}
+                value={roofName}
+                onChange={e => setRoofName(e.target.value)}
+                placeholder="The Indiranagar flat"
+              />
+            </Field>
+            <div className="flex items-center gap-3">
+              <Button
+                tone="primary"
+                disabled={roofInvites.length === 0}
+                onClick={() => {
+                  setCommunity(prev => createHousehold(prev, activeId ?? '', roofKind, roofInvites, roofName));
+                  setRoofOpen(false);
+                  setRoofName('');
+                  setRoofInvites([]);
+                  showToast('Raised. Invitations wait on their yes.', 'info');
+                }}
+              >
+                Raise the roof
+              </Button>
+              <Button tone="tertiary" onClick={() => setRoofOpen(false)}>Cancel</Button>
+            </div>
+          </div>
+        </Modal>
       ) : null}
 
       {persona?.leadImage ? (
