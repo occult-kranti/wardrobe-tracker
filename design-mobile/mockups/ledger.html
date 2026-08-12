@@ -90,14 +90,9 @@
         </svg>
       </div>
 
-      <!-- STAT FOLIO — the four columns of the account book -->
-      <div class="plate" style="padding:0">
-        <span class="brk tl"></span><span class="brk tr"></span>
-        <span class="brk bl"></span><span class="brk br"></span>
-        <!-- the floret struck where the two rules cross -->
-        <span style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
-          z-index:2;background:var(--ground);padding:0 4px;color:var(--line-2);
-          font:400 10px Georgia,serif">✦</span>
+      <!-- STAT FOLIO — the four columns of the account book.
+           Quiet: figures are read, not admired. No brackets, no floret. -->
+      <div class="plate quiet" style="padding:0">
         <div class="stats">
           <div style="border-right:1px solid var(--line);border-bottom:1px solid var(--line);text-align:left;padding:9px 14px 8px">
             <p class="t-figure">61</p><div class="capline" style="width:52px;margin:6px 0 0"></div>
@@ -114,24 +109,12 @@
           <div style="text-align:left;padding:9px 14px 8px;position:relative">
             <p class="t-figure">6</p><div class="capline" style="width:52px;margin:6px 0 0"></div>
             <p class="t-mono-s cap">Resting</p>
-            <!-- the sandook: lidded chest on short legs, hasp closed -->
-            <svg viewBox="0 0 26 22" style="position:absolute;right:12px;bottom:10px;width:26px;height:22px;fill:none;stroke:var(--line-2);stroke-width:1">
-              <path d="M2 8C5 2 21 2 24 8"/><path d="M1.5 8h23"/>
-              <path d="M3 8h20v9H3z"/><path d="M5 17v3M21 17v3"/>
-              <path d="M11.5 5h3v7h-3z"/><circle cx="13" cy="10.5" r="1"/>
-            </svg>
           </div>
         </div>
       </div>
 
       <!-- IN USE — the worn/resting rule, drawn to scale -->
-      <div class="plate" style="padding:8px 14px 9px">
-        <span style="position:absolute;left:-11px;top:50%;transform:translateY(-50%);width:22px;height:20px;z-index:2">
-          <svg viewBox="0 0 22 20" style="width:22px;height:20px;fill:none;stroke:var(--line-2);stroke-width:1.1">
-            <circle cx="13" cy="10" r="5.5"/><circle cx="13" cy="10" r="2.4"/>
-            <path d="M7.6 10 1 7M7.6 10 1 13"/>
-          </svg>
-        </span>
+      <div class="plate quiet" style="padding:8px 14px 9px">
         <div style="display:flex;align-items:baseline;justify-content:space-between">
           <span class="t-label">In use</span>
           <span class="t-mono-s">55 of 61</span>
@@ -148,8 +131,7 @@
       </div>
 
       <!-- BY CATEGORY — bars ruled as stacked hairlines, never filled blocks -->
-      <div class="plate" style="padding:9px 14px 9px">
-        <span class="brk tr"></span><span class="brk bl"></span>
+      <div class="plate quiet" style="padding:9px 14px 9px">
         <div style="display:flex;align-items:baseline;justify-content:space-between">
           <span class="t-label">By category</span>
           <span class="t-mono-s">Wears · Pieces</span>
@@ -217,8 +199,7 @@
       </div>
 
       <!-- MONTHLY ACTIVITY — columns as open letterpress blocks -->
-      <div class="plate" style="padding:9px 13px 8px">
-        <span class="brk tr"></span><span class="brk bl"></span>
+      <div class="plate quiet" style="padding:9px 13px 8px">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
           <span class="t-label" style="padding-top:2px">Monthly activity</span>
           <span style="text-align:right">
@@ -279,26 +260,14 @@
         </div>
       </div>
 
-      <!-- COST PER WEAR — the balance carried forward, with the abacus rod -->
-      <div class="plate" style="padding:9px 14px 9px">
-        <span class="brk bl"></span>
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+      <!-- COST PER WEAR — the balance carried forward.
+           The abacus that sat in this header was the page's second drawing and
+           it sat inside data: the tansu already names the room, and the abacus
+           has its own scene in the milestone moment. Header, figure, chart. -->
+      <div class="plate quiet" style="padding:9px 14px 9px">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px">
           <span class="t-label" style="flex:none;font-size:10px;letter-spacing:.13em">Cost per wear, over time</span>
-          <!-- the tansu abacus: rod, frame, beads counted off in line work -->
-          <svg viewBox="0 0 168 20" style="width:146px;height:18px;flex:none;fill:none">
-            <g class="m1" stroke-width="1"><path d="M1 1h166v18H1z"/><path d="M5 5v10M163 5v10"/></g>
-            <g class="m2" stroke-width="1">
-              <path d="M5 10h158"/>
-              <ellipse cx="12" cy="10" rx="3" ry="5"/><ellipse cx="19" cy="10" rx="3" ry="5"/>
-              <ellipse cx="26" cy="10" rx="3" ry="5"/>
-              <ellipse cx="48" cy="10" rx="3" ry="5"/><ellipse cx="55" cy="10" rx="3" ry="5"/>
-              <ellipse cx="80" cy="10" rx="3" ry="5"/>
-              <ellipse cx="104" cy="10" rx="3" ry="5"/>
-              <ellipse cx="128" cy="10" rx="3" ry="5"/><ellipse cx="135" cy="10" rx="3" ry="5"/>
-              <ellipse cx="142" cy="10" rx="3" ry="5"/><ellipse cx="149" cy="10" rx="3" ry="5"/>
-              <ellipse cx="156" cy="10" rx="3" ry="5"/>
-            </g>
-          </svg>
+          <span class="t-mono-s" style="flex:none">Dec '25 — Aug</span>
         </div>
         <div class="rule" style="margin:6px 0 7px"></div>
 
@@ -358,7 +327,8 @@
   brackets, lock plate, two bail handles. Under it the stat folio's four columns, the IN USE rule
   drawn 55 solid and 6 open, BY CATEGORY bars hatched in stacked hairlines, MONTHLY ACTIVITY as
   open letterpress blocks with August left dashed, and the cost-per-wear step down from $44.10 to
-  $5.07 under its abacus. Long-press any figure to re-rule its cell and read the derivation.</p>
+  $5.07. The abacus keeps to the milestone moment; on the page at rest the figures are left to
+  be read. Long-press any figure to re-rule its cell and read the derivation.</p>
 </div>
 
 <!-- ========== the abacus moment ========== -->
@@ -388,7 +358,7 @@
         </svg>
       </div>
 
-      <div class="plate" style="padding:9px 14px 10px;opacity:.3">
+      <div class="plate quiet" style="padding:9px 14px 10px;opacity:.3">
         <span class="t-label">Cost per wear</span>
         <div class="rule" style="margin:6px 0 7px"></div>
         <p class="t-figure" style="font-size:31px">$5.07</p>

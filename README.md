@@ -7,7 +7,7 @@
 own, what you actually wear, and what it costs per wear. No account, no cloud, no
 subscription, no shop links. Everything lives on your device.
 
-**Live:** https://occult-kranti.github.io/wardrobe-tracker/ · **V2 (glass):** https://occult-kranti.github.io/wardrobe-tracker/v2/
+**Live:** https://occult-kranti.github.io/wardrobe-tracker/ · **V2 (glass):** https://occult-kranti.github.io/wardrobe-tracker/v2/ · **Mobile design pack:** https://occult-kranti.github.io/wardrobe-tracker/mobile_version_v1/
 
 ---
 

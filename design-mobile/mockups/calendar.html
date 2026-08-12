@@ -9,42 +9,8 @@
 <div class="stage">
   <div class="phone" data-room="atelier">
 
-    <!-- the frieze: the armoire that owns the week, a hanging rail on finialled
-         posts, a dresser at the far end. Ground art, top band only. -->
-    <div class="art" style="padding:10px 14px 0">
-      <svg viewBox="0 0 380 56" class="art">
-        <!-- the floor line -->
-        <g class="m1" stroke-width="1.1" stroke-opacity=".8">
-          <path d="M6 50h368"/>
-        </g>
-        <!-- armoire: cornice, panelled doors with cusped arch heads, plinth -->
-        <g class="m1" stroke-width="1.1" stroke-opacity=".9">
-          <path d="M12 11h58l-3 5H15z"/>
-          <path d="M16 16h50v29H16z"/><path d="M41 16v29"/>
-          <path d="M21 20h15v21H21zM46 20h15v21H46z"/>
-          <path d="M23 27c0-5 4-7 5.5-9 1.5 2 5.5 4 5.5 9M48 27c0-5 4-7 5.5-9 1.5 2 5.5 4 5.5 9"/>
-          <circle cx="39" cy="31" r="1"/><circle cx="43" cy="31" r="1"/>
-          <path d="M14 45h54v5H14z"/>
-        </g>
-        <!-- the rail: posts, ball finials, collars, four hangers -->
-        <g class="m2" stroke-width="1" stroke-opacity=".85">
-          <path d="M122 50V21M270 50V21"/>
-          <circle cx="122" cy="18" r="2.4"/><circle cx="270" cy="18" r="2.4"/>
-          <path d="M118 47h8M266 47h8"/>
-          <path d="M122 26h148"/>
-          <path d="M127 23v6M265 23v6"/>
-          <path d="M142 26a3 3 0 0 1 6 0M145 29v3M145 32l-11 9h22zM177 26a3 3 0 0 1 6 0M180 29v3M180 32l-11 9h22zM212 26a3 3 0 0 1 6 0M215 29v3M215 32l-11 9h22zM247 26a3 3 0 0 1 6 0M250 29v3M250 32l-11 9h22z"/>
-        </g>
-        <!-- dresser: six drawers, knobs, bracket plinth -->
-        <g class="m1" stroke-width="1.1" stroke-opacity=".85">
-          <path d="M300 22h68l-2 4h-64z"/>
-          <path d="M304 26h60v19h-60z"/>
-          <path d="M304 32.3h60M304 38.6h60"/>
-          <circle cx="334" cy="29" r="1"/><circle cx="334" cy="35.4" r="1"/><circle cx="334" cy="41.8" r="1"/>
-          <path d="M302 45h64v5h-64z"/>
-        </g>
-      </svg>
-    </div>
+    <!-- the frieze is gone: the room is named once, by the rail of days below,
+         which is the page's one hero drawing and its interface both. -->
 
     <div class="screen" style="gap:9px">
 
@@ -151,8 +117,7 @@
       </div>
 
       <!-- THE DAY DETAIL PLATE — the selected day, its entries strung as tags -->
-      <div class="plate double" style="padding:11px 13px 12px">
-        <div class="inner-rule"></div>
+      <div class="plate quiet" style="padding:11px 13px 12px">
 
         <div style="display:flex;align-items:center;gap:9px">
           <div class="rule" style="flex:1"></div>
@@ -160,91 +125,59 @@
           <div class="rule" style="flex:1"></div>
         </div>
 
+        <!-- The entries are rows inside the day, not cards inside a card: the
+             thread column and the second frame around each entry were line work
+             wrapped around line work. What identifies an entry is its seal, and
+             the room the frames gave back goes to the photographs. -->
+
         <!-- entry 01 — on the record: sealed, with UNDO -->
-        <div style="display:flex;margin-top:9px">
-          <!-- the thread the entries are strung on: it runs the plate's height -->
-          <div style="width:28px;flex:none;position:relative">
-            <div style="position:absolute;left:6px;top:4px;bottom:0;width:1px;background:var(--line);opacity:.85"></div>
-            <div class="art" style="position:absolute;left:0;top:0;width:12px">
-              <svg viewBox="0 0 12 12" style="width:12px;height:12px"><g class="m1" stroke-width="1"><circle cx="6" cy="4" r="2.4"/></g></svg>
-            </div>
-            <div class="art" style="position:absolute;left:0;top:50%;transform:translateY(-50%);width:34px">
-              <svg viewBox="0 0 34 28" style="width:34px;height:28px">
-                <g class="m2" stroke-width="1.1">
-                  <path d="M6 14c5-9 12-11 15-6M6 14c3 8 11 10 15 4"/>
-                  <circle cx="22" cy="14" r="5.4"/><circle cx="22" cy="14" r="2.2"/>
-                  <path d="M27.6 14H33"/>
-                </g>
-              </svg>
+        <div style="display:flex;gap:11px;margin-top:11px">
+          <div style="flex:1;min-width:0">
+            <p class="t-italic" style="font-size:18px">Client Fitting Day</p>
+            <p class="t-mono-s" style="margin-top:4px">6 pieces</p>
+            <div style="display:flex;gap:6px;margin-top:8px">
+              <span class="photo" style="width:64px;height:80px;border:1px solid var(--line-2)"><img src="photos/hm-shirt.webp" alt=""></span>
+              <span class="photo" style="width:64px;height:80px;border:1px solid var(--line-2)"><img src="photos/levis-denim-jeans.webp" alt=""></span>
+              <span class="photo" style="width:64px;height:80px;border:1px solid var(--line-2)"><img src="photos/loafer-penny.webp" alt=""></span>
+              <span class="photo" style="width:64px;height:80px;border:1px solid var(--line-2)"><img src="photos/watch-dress-steel.webp" alt=""></span>
             </div>
           </div>
-          <div class="plate" style="flex:1;padding:10px 11px">
-            <div style="display:flex;gap:9px">
-              <div style="flex:1;min-width:0">
-                <p class="t-italic" style="font-size:18px">Client Fitting Day</p>
-                <p class="t-mono-s" style="margin-top:4px">6 pieces</p>
-                <div style="display:flex;gap:5px;margin-top:8px">
-                  <span class="photo" style="width:52px;height:65px;border:1px solid var(--line-2)"><img src="photos/hm-shirt.webp" alt=""></span>
-                  <span class="photo" style="width:52px;height:65px;border:1px solid var(--line-2)"><img src="photos/levis-denim-jeans.webp" alt=""></span>
-                  <span class="photo" style="width:52px;height:65px;border:1px solid var(--line-2)"><img src="photos/loafer-penny.webp" alt=""></span>
-                  <span class="photo" style="width:52px;height:65px;border:1px solid var(--line-2)"><img src="photos/watch-dress-steel.webp" alt=""></span>
-                </div>
-              </div>
-              <div style="width:62px;flex:none;display:flex;flex-direction:column;align-items:center;gap:7px">
-                <!-- the stamped wax seal: this entry is on the record -->
-                <svg viewBox="0 0 40 40" style="width:38px;height:38px;fill:none">
-                  <g class="m2" stroke-width="1.1">
-                    <circle cx="20" cy="20" r="17" stroke-dasharray="3 2.4"/>
-                    <circle cx="20" cy="20" r="13"/><circle cx="20" cy="20" r="10"/>
-                  </g>
-                  <text x="20" y="25" text-anchor="middle" style="font:400 12px Georgia,serif;fill:var(--ink);stroke:none">T</text>
-                </svg>
-                <span class="tag" style="height:30px;padding:0 10px 0 9px"><span class="eyelet" style="width:6px;height:6px"></span><span>Undo</span></span>
-              </div>
-            </div>
+          <div style="width:62px;flex:none;display:flex;flex-direction:column;align-items:center;gap:7px">
+            <!-- the stamped wax seal: this entry is on the record -->
+            <svg viewBox="0 0 40 40" style="width:38px;height:38px;fill:none">
+              <g class="m2" stroke-width="1.1">
+                <circle cx="20" cy="20" r="17" stroke-dasharray="3 2.4"/>
+                <circle cx="20" cy="20" r="13"/><circle cx="20" cy="20" r="10"/>
+              </g>
+              <text x="20" y="25" text-anchor="middle" style="font:400 12px Georgia,serif;fill:var(--ink);stroke:none">T</text>
+            </svg>
+            <span class="tag" style="height:30px;padding:0 10px 0 9px"><span class="eyelet" style="width:6px;height:6px"></span><span>Undo</span></span>
           </div>
         </div>
 
+        <div class="rule" style="margin:12px 0 0"></div>
+
         <!-- entry 02 -->
-        <div style="display:flex;margin-top:6px">
-          <div style="width:28px;flex:none;position:relative">
-            <div style="position:absolute;left:6px;top:0;bottom:4px;width:1px;background:var(--line);opacity:.85"></div>
-            <div class="art" style="position:absolute;left:0;bottom:0;width:12px">
-              <svg viewBox="0 0 12 12" style="width:12px;height:12px"><g class="m1" stroke-width="1"><circle cx="6" cy="8" r="2.4"/></g></svg>
-            </div>
-            <div class="art" style="position:absolute;left:0;top:50%;transform:translateY(-50%);width:34px">
-              <svg viewBox="0 0 34 28" style="width:34px;height:28px">
-                <g class="m2" stroke-width="1.1">
-                  <path d="M6 14c5-9 12-11 15-6M6 14c3 8 11 10 15 4"/>
-                  <circle cx="22" cy="14" r="5.4"/><circle cx="22" cy="14" r="2.2"/>
-                  <path d="M27.6 14H33"/>
-                </g>
-              </svg>
+        <div style="display:flex;gap:11px;margin-top:11px">
+          <div style="flex:1;min-width:0">
+            <p class="t-italic" style="font-size:18px">Launch Party</p>
+            <p class="t-mono-s" style="margin-top:4px">5 pieces</p>
+            <div style="display:flex;gap:6px;margin-top:8px">
+              <span class="photo" style="width:64px;height:80px;border:1px solid var(--line-2)"><img src="photos/in-anarkali-gown.webp" alt=""></span>
+              <span class="photo" style="width:64px;height:80px;border:1px solid var(--line-2)"><img src="photos/boot-chelsea.webp" alt=""></span>
+              <span class="photo" style="width:64px;height:80px;border:1px solid var(--line-2)"><img src="photos/necklace-chain.webp" alt=""></span>
+              <span class="photo" style="width:64px;height:80px;border:1px solid var(--line-2)"><img src="photos/watch-dress-steel.webp" alt=""></span>
             </div>
           </div>
-          <div class="plate" style="flex:1;padding:10px 11px">
-            <div style="display:flex;gap:9px">
-              <div style="flex:1;min-width:0">
-                <p class="t-italic" style="font-size:18px">Launch Party</p>
-                <p class="t-mono-s" style="margin-top:4px">5 pieces</p>
-                <div style="display:flex;gap:5px;margin-top:8px">
-                  <span class="photo" style="width:52px;height:65px;border:1px solid var(--line-2)"><img src="photos/in-anarkali-gown.webp" alt=""></span>
-                  <span class="photo" style="width:52px;height:65px;border:1px solid var(--line-2)"><img src="photos/boot-chelsea.webp" alt=""></span>
-                  <span class="photo" style="width:52px;height:65px;border:1px solid var(--line-2)"><img src="photos/necklace-chain.webp" alt=""></span>
-                  <span class="photo" style="width:52px;height:65px;border:1px solid var(--line-2)"><img src="photos/watch-dress-steel.webp" alt=""></span>
-                </div>
-              </div>
-              <div style="width:62px;flex:none;display:flex;flex-direction:column;align-items:center;gap:7px">
-                <svg viewBox="0 0 40 40" style="width:38px;height:38px;fill:none">
-                  <g class="m2" stroke-width="1.1">
-                    <circle cx="20" cy="20" r="17" stroke-dasharray="3 2.4"/>
-                    <circle cx="20" cy="20" r="13"/><circle cx="20" cy="20" r="10"/>
-                  </g>
-                  <text x="20" y="25" text-anchor="middle" style="font:400 12px Georgia,serif;fill:var(--ink);stroke:none">T</text>
-                </svg>
-                <span class="tag" style="height:30px;padding:0 10px 0 9px"><span class="eyelet" style="width:6px;height:6px"></span><span>Undo</span></span>
-              </div>
-            </div>
+          <div style="width:62px;flex:none;display:flex;flex-direction:column;align-items:center;gap:7px">
+            <svg viewBox="0 0 40 40" style="width:38px;height:38px;fill:none">
+              <g class="m2" stroke-width="1.1">
+                <circle cx="20" cy="20" r="17" stroke-dasharray="3 2.4"/>
+                <circle cx="20" cy="20" r="13"/><circle cx="20" cy="20" r="10"/>
+              </g>
+              <text x="20" y="25" text-anchor="middle" style="font:400 12px Georgia,serif;fill:var(--ink);stroke:none">T</text>
+            </svg>
+            <span class="tag" style="height:30px;padding:0 10px 0 9px"><span class="eyelet" style="width:6px;height:6px"></span><span>Undo</span></span>
           </div>
         </div>
 
@@ -256,10 +189,9 @@
         </div>
       </div>
 
-      <!-- QUICK SCHEDULE — the week's standing sentence -->
-      <div class="plate" style="padding:8px 14px 9px">
-        <span class="brk tl"></span><span class="brk tr"></span>
-        <span class="brk bl"></span><span class="brk br"></span>
+      <!-- QUICK SCHEDULE — the week's standing sentence, set at the foot of the
+           page so the ground below the day reads as rest, not as a page cut short -->
+      <div class="plate" style="padding:8px 14px 9px;margin-top:auto;margin-bottom:4px">
         <p class="t-label" style="text-align:center">Quick schedule</p>
         <p class="t-italic" style="margin-top:4px;text-align:center;font-size:13px">Every day left on this page has an entry. The week ahead is open.</p>
       </div>
@@ -293,23 +225,13 @@
   <p class="caption-note"><b>Calendar — at rest.</b> The rail of days replaces seven stacked
   day-cards: one bead per entry, hatched for a wear on the record and open-eyelet for a plan,
   with Tuesday ringed by hand. Tapping a tick plucks its thread and re-inks the day plate below,
-  where each entry hangs as a strung tag with its seal and UNDO. Past days show + LOG only,
-  future days + PLAN only; today keeps both.</p>
+  where the entries are ruled rows — seal, pieces, photographs, UNDO — not cards framed inside a
+  card. Past days show + LOG only, future days + PLAN only; today keeps both.</p>
 </div>
 
 <!-- ========== the plan moment ========== -->
 <div class="stage">
   <div class="phone" data-room="atelier">
-    <div class="art" style="padding:10px 14px 0;opacity:.45">
-      <svg viewBox="0 0 380 56" class="art">
-        <g class="m1" stroke-width="1.1" stroke-opacity=".8"><path d="M6 50h368"/></g>
-        <g class="m2" stroke-width="1" stroke-opacity=".85">
-          <path d="M122 50V21M270 50V21"/><path d="M122 26h148"/>
-          <circle cx="122" cy="18" r="2.4"/><circle cx="270" cy="18" r="2.4"/>
-        </g>
-      </svg>
-    </div>
-
     <div class="screen" style="gap:9px">
       <div>
         <div style="display:flex;align-items:baseline;justify-content:space-between">
@@ -346,8 +268,7 @@
         </svg>
       </div>
 
-      <div class="plate double" style="padding:11px 13px;opacity:.3">
-        <div class="inner-rule"></div>
+      <div class="plate quiet" style="padding:11px 13px;opacity:.3">
         <div style="display:flex;align-items:center;gap:9px">
           <div class="rule" style="flex:1"></div>
           <span class="t-label" style="flex:none">Wednesday 12 · Planned</span>
@@ -355,10 +276,10 @@
         </div>
         <p class="t-italic" style="margin-top:9px;font-size:18px">Reformer Pilates</p>
         <p class="t-mono-s" style="margin-top:4px">Planned · 4 pieces</p>
-        <div class="rule-tick" style="margin:10px 0"></div>
+        <div class="rule-dash" style="margin:10px 0"></div>
         <p class="t-italic" style="font-size:18px">Studio-to-Street</p>
         <p class="t-mono-s" style="margin-top:4px">Planned · 6 pieces</p>
-        <div class="rule-tick" style="margin:10px 0"></div>
+        <div class="rule-dash" style="margin:10px 0"></div>
         <p class="t-italic" style="font-size:18px">Edit-Day Home Set</p>
         <p class="t-mono-s" style="margin-top:4px">Planned · 5 pieces</p>
         <div class="rule-dash" style="margin:11px 0 10px"></div>
@@ -368,8 +289,6 @@
       </div>
 
       <div class="plate" style="padding:8px 14px 9px;opacity:.3">
-        <span class="brk tl"></span><span class="brk tr"></span>
-        <span class="brk bl"></span><span class="brk br"></span>
         <p class="t-label" style="text-align:center">Quick schedule</p>
         <p class="t-italic" style="margin-top:4px;text-align:center;font-size:13px">Every day left on this page has an entry. The week ahead is open.</p>
       </div>

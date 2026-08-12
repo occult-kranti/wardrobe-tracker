@@ -50,11 +50,9 @@
             <path d="M284 62h56"/>
             <path d="M284 62c8 14 48 14 56 0"/>
           </g>
-          <!-- the ground rule the whole ritual stands on -->
+          <!-- the ground rule the whole ritual stands on, plain -->
           <g class="m1" stroke-width="1">
             <path d="M8 84h360"/>
-            <path d="M44 80l4 4-4 4-4-4zM332 80l4 4-4 4-4-4z"/>
-            <path d="M36 84h-8M52 84h8M324 84h-8M340 84h8" stroke-opacity=".7"/>
           </g>
         </svg>
       </div>
@@ -62,10 +60,13 @@
       <!-- the scale's opening line: nothing weighed, nothing advised yet -->
       <p class="t-mono-s" style="text-align:center;font-size:9px;margin-top:-2px">Describe the piece — the scale will weigh it</p>
 
-      <!-- THE MODULE — one framed block, sections ruled apart -->
-      <div class="plate" style="padding:9px 14px 11px">
-        <span class="brk tr"></span><span class="brk bl"></span>
-
+      <!-- THE MODULE — sections ruled apart, no box. The frame that used to
+           wrap it ran a thousand pixels of gold hairline 18px inside the
+           phone's own edge: a double frame around a form, and the reason the
+           page felt walled in. The label and its rule open the block; the
+           italic note closes it; the two exits below are now the only
+           drawn shapes at the foot, which is where the weight belongs. -->
+      <div style="padding:15px 0 4px">
         <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px">
           <span class="t-label" style="font-size:10px;letter-spacing:.13em">What are you looking at</span>
           <span class="t-mono-s" style="font-size:9px;white-space:nowrap">The piece in your hands</span>
@@ -75,9 +76,9 @@
         <!-- COLOUR — swatches are data, the only filled cells in the house -->
         <p class="t-mono-s">Colour</p>
         <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:5px;margin-top:6px">
-          <!-- the chosen colour: a second stroke drawn round it, eyelet punched -->
-          <span style="position:relative;height:27px;background:#17181A;border:1px solid var(--line-2)">
-            <span style="position:absolute;inset:2px;border:1px solid var(--line-2)"></span>
+          <!-- the chosen colour: the brighter metal and one punched eyelet.
+               The second stroke inside it was ornament sitting in data. -->
+          <span style="position:relative;height:27px;background:#17181A;border:1.5px solid var(--gold)">
             <span style="position:absolute;top:-4px;right:-4px;width:9px;height:9px;border-radius:50%;
               border:1.5px solid var(--gold);background:var(--ground)"></span>
           </span>
@@ -205,9 +206,10 @@
     </div>
   </div>
   <p class="caption-note"><b>Before you buy — at rest.</b> The balance stands level under the
-  masthead, pans empty: nothing has been weighed yet. One framed block asks what the piece is —
-  a swatch grid whose cells are the only filled shapes in the house, two ruled fields, and two
-  banks of eyelet tags. The two exits at the foot carry the same weight; the page never nudges.</p>
+  masthead, pans empty: nothing has been weighed yet. Below it the questions run unboxed,
+  ruled apart section by section — a swatch grid whose cells are the only filled shapes in
+  the house, two ruled fields, and two banks of eyelet tags. The two exits at the foot are
+  the only drawn shapes on the page and carry the same weight; the page never nudges.</p>
 </div>
 
 <!-- ========== the verdict moment ========== -->
@@ -222,7 +224,7 @@
         <div class="rule-double" style="margin-top:7px"></div>
       </div>
 
-      <div class="plate" style="padding:9px 14px 11px;opacity:.3">
+      <div style="padding:15px 0 4px;opacity:.3">
         <span class="t-label" style="font-size:10px;letter-spacing:.13em">What are you looking at</span>
         <div class="rule" style="margin:6px 0 8px"></div>
         <div style="display:flex;align-items:baseline;gap:10px">
