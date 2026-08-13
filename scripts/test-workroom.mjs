@@ -342,6 +342,43 @@ check('between two edits the newer wins', merge.newestWins === 'theirs', merge.n
 check('a task only one side has survives', merge.keepsNew === 2, String(merge.keepsNew));
 check('the seed stamp is fixed, not the clock', merge.seedStamp === '2026-01-01T00:00:00.000Z', merge.seedStamp);
 
+// --- a rewritten plan reaching a board that already exists ---------------
+// The mirror image of the merge bug: once a shared document exists, every row
+// in it looks newer than a seed row, so a rewritten plan could never arrive.
+const adopt = await page.evaluate(() => {
+  const fresh = buildSeed();
+  const old = {
+    version: 1, seedRev: 1, updatedAt: '2026-08-01T00:00:00.000Z',
+    people: [{ id: 'ghost', name: 'Added by hand', initials: 'AH', tint: 'ink' }],
+    tasks: [
+      // A row somebody genuinely worked on.
+      { ...fresh.tasks[0], status: 'done', assignees: ['kunjal'], updatedAt: '2026-08-01T00:00:00.000Z',
+        comments: [{ by: 'kunjal', at: '2026-08-01T00:00:00.000Z', text: 'a note somebody wrote' }] },
+      // A row that only exists because somebody created it.
+      { id: 'hand-made', title: 'Made by a person', group: fresh.tasks[0].group, status: 'next',
+        assignees: [], tags: [], comments: [], updatedAt: '2026-08-01T00:00:00.000Z', order: 999 },
+    ],
+  };
+  const out = adoptSeed(buildSeed(), old);
+  const first = out.tasks.find(t => t.id === fresh.tasks[0].id);
+  return {
+    taskCount: out.tasks.length,
+    planIsNew: out.tasks.length === fresh.tasks.length + 1,
+    keptProgress: first.status === 'done' && (first.assignees || []).includes('kunjal'),
+    keptNote: (first.comments || []).some(c => c.text === 'a note somebody wrote'),
+    keptSeedNotes: (first.comments || []).length >= 1,
+    keptHandMade: out.tasks.some(t => t.id === 'hand-made'),
+    keptPerson: out.people.some(p => p.id === 'ghost'),
+    rev: out.seedRev,
+  };
+});
+check('a rewritten plan reaches a board that already exists', adopt.planIsNew, `${adopt.taskCount} tasks`);
+check('and keeps the progress somebody made on it', adopt.keptProgress);
+check('and keeps the notes they wrote', adopt.keptNote);
+check('and keeps the tasks they created', adopt.keptHandMade);
+check('and keeps the people they added', adopt.keptPerson);
+check('and stamps the revision it adopted', adopt.rev === 2, String(adopt.rev));
+
 // --- mobile -------------------------------------------------------------
 const m = await browser.newPage({ viewport: { width: 390, height: 844 } });
 await m.goto(TRACKER, { waitUntil: 'networkidle' });

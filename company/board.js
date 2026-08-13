@@ -36,6 +36,20 @@ const nowISO = () => new Date().toISOString();
    is what mergeDocs needs to break ties honestly. */
 const SEED_AT = '2026-01-01T00:00:00.000Z';
 
+/* Bump this whenever the authored plan changes — tasks added, owners assigned,
+   review notes attached.
+
+   Fixing the merge created its mirror-image problem. Once a shared document
+   exists, every row in it is either a real edit or was written by an older
+   build, and both look newer than a seed row by construction. So a rewritten
+   plan could never reach a board that had already been shared: the team would
+   go on reading the plan as it stood the day sync was switched on, forever,
+   with nothing anywhere saying so.
+
+   A revision number is the author saying "this changed". People's work — notes,
+   and any row somebody has genuinely edited — is carried across. */
+const SEED_REV = 2;
+
 function buildSeed() {
   const tasks = SEED_TASKS.map((s, i) => ({
     id: 'seed-' + i,
@@ -58,7 +72,7 @@ function buildSeed() {
     updatedAt: SEED_AT,
     order: i,
   }));
-  return { version: 1, tasks, people: PEOPLE.slice(), updatedAt: SEED_AT };
+  return { version: 1, seedRev: SEED_REV, tasks, people: PEOPLE.slice(), updatedAt: SEED_AT };
 }
 
 let STATE = buildSeed();
@@ -170,7 +184,35 @@ function mergeDocs(mine, theirs) {
   }
   const people = [...theirs.people];
   for (const p of mine.people) if (!people.some(x => x.id === p.id)) people.push(p);
-  return { version: 1, tasks: [...byId.values()].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)), people, updatedAt: nowISO() };
+  return { version: 1, seedRev: SEED_REV, tasks: [...byId.values()].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)), people, updatedAt: nowISO() };
+}
+
+/* The authored plan has changed under a document that already exists. Take the
+   new plan as the base — that is the point — and carry across the things that
+   belong to people rather than to the author. */
+function adoptSeed(fresh, old) {
+  if (!old || !Array.isArray(old.tasks)) return fresh;
+  const oldById = new Map(old.tasks.map(t => [t.id, t]));
+  // Only a document written by a build that HAD revisions can be trusted to
+  // distinguish a real edit from a row an older bug merely re-stamped.
+  const trustworthy = old.seedRev != null;
+  for (const t of fresh.tasks) {
+    const prev = oldById.get(t.id);
+    if (!prev) continue;
+    // Notes are always somebody's work, whoever wrote the plan.
+    const seen = new Set((t.comments || []).map(c => c.at + c.text));
+    t.comments = [...(t.comments || []), ...(prev.comments || []).filter(c => !seen.has(c.at + c.text))];
+    if (trustworthy && (prev.updatedAt || '') > SEED_AT) {
+      t.status = prev.status; t.current = prev.current;
+      t.assignees = prev.assignees; t.due = prev.due;
+      t.updatedAt = prev.updatedAt;
+    }
+  }
+  // Rows somebody added by hand are not in any seed. Keep every one.
+  for (const t of old.tasks) if (!fresh.tasks.some(x => x.id === t.id)) fresh.tasks.push(t);
+  for (const p of (old.people || [])) if (!fresh.people.some(x => x.id === p.id)) fresh.people.push(p);
+  fresh.updatedAt = nowISO();
+  return fresh;
 }
 
 async function persist() {
@@ -1123,14 +1165,26 @@ function clearFilters() {
 
 async function boot() {
   const local = loadLocal();
-  if (local) STATE = local;
+  // A device holding an older revision of the plan gets the new one, keeping
+  // whatever was done on it. Without this, "I already opened this board once"
+  // is enough to never see an update again.
+  if (local) STATE = local.seedRev === SEED_REV ? local : adoptSeed(buildSeed(), local);
   ME = localStorage.getItem(ME_KEY);
 
   if (shared()) {
     try {
       const remote = await pullShared();
-      if (remote) STATE = mergeDocs(STATE, remote);
-      else await pushShared(STATE);
+      if (!remote) {
+        await pushShared(STATE);
+      } else if (remote.seedRev === SEED_REV) {
+        STATE = mergeDocs(STATE, remote);
+      } else {
+        // The shared copy predates this revision of the plan. Rebuild from the
+        // new plan, carry people's work across, and publish it once so the rest
+        // of the team stops reading the old one too.
+        STATE = adoptSeed(buildSeed(), remote);
+        await pushShared(STATE);
+      }
       LAST_SYNC = new Date();
     } catch (e) { console.warn('initial sync failed', e); }
     setInterval(poll, SYNC.pollMs);
