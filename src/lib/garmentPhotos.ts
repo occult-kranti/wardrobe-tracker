@@ -4,7 +4,7 @@
 // Every entry carries the licence it ships under and its attribution; anything
 // that arrived without one was dropped rather than published.
 //
-// 40 photographs.
+// 44 photographs.
 
 export interface GarmentPhoto {
   slug: string;
@@ -23,18 +23,39 @@ export const GARMENT_PHOTOS: GarmentPhoto[] = [
   "landing_url": "https://commons.wikimedia.org/wiki/File:Tropical_Rucksack_1.JPG"
  },
  {
+  "slug": "bangles-stack",
+  "path": "wardrobe/garment/bangles-stack.webp",
+  "license": "CC BY-SA 4.0",
+  "attribution": "Pradhan Venugopal",
+  "landing_url": "https://commons.wikimedia.org/wiki/File:Vibrant_green_bangles.jpg"
+ },
+ {
+  "slug": "banyan-robe",
+  "path": "wardrobe/garment/banyan-robe.webp",
+  "license": "CC0",
+  "attribution": null,
+  "landing_url": "https://commons.wikimedia.org/wiki/File:Banyan_MET_1976.149.1_F.jpg"
+ },
+ {
   "slug": "beanie-rib",
   "path": "wardrobe/garment/beanie-rib.webp",
-  "license": "Public domain",
-  "attribution": "No machine-readable author provided. CommonsHelper2 Bot assumed (based on copyright claims).",
-  "landing_url": "https://commons.wikimedia.org/wiki/File:Entrelac-hat.jpg"
+  "license": "CC0",
+  "attribution": null,
+  "landing_url": "https://commons.wikimedia.org/wiki/File:Hat_MET_29.158.485_Bt.jpg"
  },
  {
   "slug": "belt-leather",
   "path": "wardrobe/garment/belt-leather.webp",
+  "license": "CC BY-SA 3.0",
+  "attribution": "CEphoto, Uwe Aranas",
+  "landing_url": "https://commons.wikimedia.org/wiki/File:Germany_Belt-and-Buckle-02.jpg"
+ },
+ {
+  "slug": "binyeo-hairpin",
+  "path": "wardrobe/garment/binyeo-hairpin.webp",
   "license": "Public domain",
-  "attribution": "No machine-readable author provided. Joeyramoney~commonswiki assumed (based on copyright claims).",
-  "landing_url": "https://commons.wikimedia.org/wiki/File:Leather_belt_%26_buckle.jpg"
+  "attribution": null,
+  "landing_url": "https://commons.wikimedia.org/wiki/File:Hairpin_with_Dragon_Head_LACMA_M.2000.15.192_(1_of_2).jpg"
  },
  {
   "slug": "boot-chelsea",
@@ -44,11 +65,53 @@ export const GARMENT_PHOTOS: GarmentPhoto[] = [
   "landing_url": "https://commons.wikimedia.org/wiki/File:VeggieChelseaBoots.jpg"
  },
  {
+  "slug": "buckle-shoe",
+  "path": "wardrobe/garment/buckle-shoe.webp",
+  "license": "CC0",
+  "attribution": "Daderot",
+  "landing_url": "https://commons.wikimedia.org/wiki/File:French_baroque_shoe,_early_18th_century_-_Bata_Shoe_Museum_-_DSC00112.JPG"
+ },
+ {
   "slug": "camisole-silk",
   "path": "wardrobe/garment/camisole-silk.webp",
   "license": "CC BY 4.0",
   "attribution": "Bendon",
-  "landing_url": "https://commons.wikimedia.org/wiki/File:Camisole_(AM_2000.93.96-1).jpg"
+  "landing_url": "https://commons.wikimedia.org/wiki/File:Camisole_(AM_2000.93.96-4).jpg"
+ },
+ {
+  "slug": "cargo-pants",
+  "path": "wardrobe/garment/cargo-pants.webp",
+  "license": "Public domain",
+  "attribution": "User:Mattes",
+  "landing_url": "https://commons.wikimedia.org/wiki/File:Cargo_pant,_female.JPG"
+ },
+ {
+  "slug": "chima-hanbok",
+  "path": "wardrobe/garment/chima-hanbok.webp",
+  "license": "CC BY-SA 2.0",
+  "attribution": "by ddol-mang",
+  "landing_url": "https://commons.wikimedia.org/wiki/File:Korea-Geumbak.on.Hanbok-01.jpg"
+ },
+ {
+  "slug": "clogs-kitchen",
+  "path": "wardrobe/garment/clogs-kitchen.webp",
+  "license": "Public domain",
+  "attribution": "Picture taken by Kuchen.",
+  "landing_url": "https://commons.wikimedia.org/wiki/File:Clogs_with_wooden_sole_and_leather_upper,_Mary_Jane-style.jpg"
+ },
+ {
+  "slug": "coat-justaucorps",
+  "path": "wardrobe/garment/coat-justaucorps.webp",
+  "license": "CC0",
+  "attribution": null,
+  "landing_url": "https://commons.wikimedia.org/wiki/File:Coat_MET_CI40.196_F.jpg"
+ },
+ {
+  "slug": "coral-beads",
+  "path": "wardrobe/garment/coral-beads.webp",
+  "license": "CC BY-SA 4.0",
+  "attribution": "Durova",
+  "landing_url": "https://commons.wikimedia.org/wiki/File:Wire_necklace.jpg"
  },
  {
   "slug": "derby-plain",
@@ -58,11 +121,32 @@ export const GARMENT_PHOTOS: GarmentPhoto[] = [
   "landing_url": "https://commons.wikimedia.org/wiki/File:Derby_shoe1.jpg"
  },
  {
+  "slug": "dress-wrap",
+  "path": "wardrobe/garment/dress-wrap.webp",
+  "license": "Public domain",
+  "attribution": "Jeanne Boleyn (talk)",
+  "landing_url": "https://commons.wikimedia.org/wiki/File:Disco_dress_1970s.jpg"
+ },
+ {
   "slug": "duffle-weekender",
   "path": "wardrobe/garment/duffle-weekender.webp",
   "license": "CC BY-SA 3.0",
   "attribution": "Bahamut0013",
   "landing_url": "https://commons.wikimedia.org/wiki/File:Seabag.jpg"
+ },
+ {
+  "slug": "earring-jhumka",
+  "path": "wardrobe/garment/earring-jhumka.webp",
+  "license": "CC BY-SA 4.0",
+  "attribution": "ArmouredCyborg",
+  "landing_url": "https://commons.wikimedia.org/wiki/File:Bareilly_Jhumka_05.jpg"
+ },
+ {
+  "slug": "geta-clogs",
+  "path": "wardrobe/garment/geta-clogs.webp",
+  "license": "CC BY-SA 3.0",
+  "attribution": "Haragayato",
+  "landing_url": "https://commons.wikimedia.org/wiki/File:Geta.JPG"
  },
  {
   "slug": "gilet-quilted",
@@ -79,6 +163,132 @@ export const GARMENT_PHOTOS: GarmentPhoto[] = [
   "landing_url": "https://commons.wikimedia.org/wiki/File:Sudadera_urban.jpg"
  },
  {
+  "slug": "in-anarkali-gown",
+  "path": "wardrobe/garment/in-anarkali-gown.webp",
+  "license": "AI-generated for this project",
+  "attribution": null,
+  "landing_url": ""
+ },
+ {
+  "slug": "in-banarasi-silk-saree",
+  "path": "wardrobe/garment/in-banarasi-silk-saree.webp",
+  "license": "AI-generated for this project",
+  "attribution": null,
+  "landing_url": ""
+ },
+ {
+  "slug": "in-bandhgala-suit",
+  "path": "wardrobe/garment/in-bandhgala-suit.webp",
+  "license": "AI-generated for this project",
+  "attribution": null,
+  "landing_url": ""
+ },
+ {
+  "slug": "in-churidar-kurta",
+  "path": "wardrobe/garment/in-churidar-kurta.webp",
+  "license": "AI-generated for this project",
+  "attribution": null,
+  "landing_url": ""
+ },
+ {
+  "slug": "in-dhoti-kurta",
+  "path": "wardrobe/garment/in-dhoti-kurta.webp",
+  "license": "AI-generated for this project",
+  "attribution": null,
+  "landing_url": ""
+ },
+ {
+  "slug": "in-ghagra-choli",
+  "path": "wardrobe/garment/in-ghagra-choli.webp",
+  "license": "AI-generated for this project",
+  "attribution": null,
+  "landing_url": ""
+ },
+ {
+  "slug": "in-indo-western-jacket-set",
+  "path": "wardrobe/garment/in-indo-western-jacket-set.webp",
+  "license": "AI-generated for this project",
+  "attribution": null,
+  "landing_url": ""
+ },
+ {
+  "slug": "in-kurta-pajama",
+  "path": "wardrobe/garment/in-kurta-pajama.webp",
+  "license": "AI-generated for this project",
+  "attribution": null,
+  "landing_url": ""
+ },
+ {
+  "slug": "in-kurti-palazzo-set",
+  "path": "wardrobe/garment/in-kurti-palazzo-set.webp",
+  "license": "AI-generated for this project",
+  "attribution": null,
+  "landing_url": ""
+ },
+ {
+  "slug": "in-lehenga-choli",
+  "path": "wardrobe/garment/in-lehenga-choli.webp",
+  "license": "AI-generated for this project",
+  "attribution": null,
+  "landing_url": ""
+ },
+ {
+  "slug": "in-mekhela-chador",
+  "path": "wardrobe/garment/in-mekhela-chador.webp",
+  "license": "AI-generated for this project",
+  "attribution": null,
+  "landing_url": ""
+ },
+ {
+  "slug": "in-mundu-lungi-outfit",
+  "path": "wardrobe/garment/in-mundu-lungi-outfit.webp",
+  "license": "AI-generated for this project",
+  "attribution": null,
+  "landing_url": ""
+ },
+ {
+  "slug": "in-nehru-jacket-set",
+  "path": "wardrobe/garment/in-nehru-jacket-set.webp",
+  "license": "AI-generated for this project",
+  "attribution": null,
+  "landing_url": ""
+ },
+ {
+  "slug": "in-pathani-suit",
+  "path": "wardrobe/garment/in-pathani-suit.webp",
+  "license": "AI-generated for this project",
+  "attribution": null,
+  "landing_url": ""
+ },
+ {
+  "slug": "in-patiala-suit",
+  "path": "wardrobe/garment/in-patiala-suit.webp",
+  "license": "AI-generated for this project",
+  "attribution": null,
+  "landing_url": ""
+ },
+ {
+  "slug": "in-salwar-kameez",
+  "path": "wardrobe/garment/in-salwar-kameez.webp",
+  "license": "AI-generated for this project",
+  "attribution": null,
+  "landing_url": ""
+ },
+ {
+  "slug": "in-sharara-set",
+  "path": "wardrobe/garment/in-sharara-set.webp",
+  "license": "AI-generated for this project",
+  "attribution": null,
+  "landing_url": ""
+ },
+ {
+  "slug": "in-sherwani",
+  "path": "wardrobe/garment/in-sherwani.webp",
+  "license": "AI-generated for this project",
+  "attribution": null,
+  "landing_url": ""
+ },
+ {
   "slug": "leggings-yoga",
   "path": "wardrobe/garment/leggings-yoga.webp",
   "license": "CC BY-SA 4.0",
@@ -93,11 +303,25 @@ export const GARMENT_PHOTOS: GarmentPhoto[] = [
   "landing_url": "https://commons.wikimedia.org/wiki/File:Presidio_Loafer.jpg"
  },
  {
+  "slug": "monpe-trousers",
+  "path": "wardrobe/garment/monpe-trousers.webp",
+  "license": "Public domain",
+  "attribution": "Unknown authorUnknown author",
+  "landing_url": "https://commons.wikimedia.org/wiki/File:Monpe.JPG"
+ },
+ {
   "slug": "necklace-chain",
   "path": "wardrobe/garment/necklace-chain.webp",
   "license": "CC BY-SA 3.0",
   "attribution": "Durova",
   "landing_url": "https://commons.wikimedia.org/wiki/File:Chain_pearl_necklace.jpg"
+ },
+ {
+  "slug": "overcoat-wool",
+  "path": "wardrobe/garment/overcoat-wool.webp",
+  "license": "CC0",
+  "attribution": null,
+  "landing_url": "https://commons.wikimedia.org/wiki/File:Overcoat_MET_C.I.60.22.5_F.jpg"
  },
  {
   "slug": "oxford-captoe",
@@ -114,6 +338,20 @@ export const GARMENT_PHOTOS: GarmentPhoto[] = [
   "landing_url": "https://commons.wikimedia.org/wiki/File:Pashmina-schals_orig.jpg"
  },
  {
+  "slug": "rebozo-shawl",
+  "path": "wardrobe/garment/rebozo-shawl.webp",
+  "license": "CC BY 3.0",
+  "attribution": "Uranopyme",
+  "landing_url": "https://commons.wikimedia.org/wiki/File:Rebozos.jpg"
+ },
+ {
+  "slug": "sandal-leather",
+  "path": "wardrobe/garment/sandal-leather.webp",
+  "license": "CC0",
+  "attribution": "Daderot",
+  "landing_url": "https://commons.wikimedia.org/wiki/File:Indian_chappal,_Kolhapur,_late_20th_century_-_Bata_Shoe_Museum_-_DSC00445.JPG"
+ },
+ {
   "slug": "slip-on-suede",
   "path": "wardrobe/garment/slip-on-suede.webp",
   "license": "CC BY-SA 3.0",
@@ -123,9 +361,9 @@ export const GARMENT_PHOTOS: GarmentPhoto[] = [
  {
   "slug": "sneaker-white",
   "path": "wardrobe/garment/sneaker-white.webp",
-  "license": "Public domain",
-  "attribution": "Anonymous",
-  "landing_url": "https://commons.wikimedia.org/wiki/File:Feiyue_White.jpg"
+  "license": "CC BY-SA 4.0",
+  "attribution": "HI 622",
+  "landing_url": "https://commons.wikimedia.org/wiki/File:Nike_air_Force_1_white_on_white.jpg"
  },
  {
   "slug": "socks-crew",
@@ -137,16 +375,37 @@ export const GARMENT_PHOTOS: GarmentPhoto[] = [
  {
   "slug": "suit-jacket",
   "path": "wardrobe/garment/suit-jacket.webp",
-  "license": "CC BY-SA 2.0",
-  "attribution": "Paul Goyette",
-  "landing_url": "https://commons.wikimedia.org/wiki/File:Grey_and_navy_suit_on_mannequin.jpg"
+  "license": "CC BY-SA 3.0",
+  "attribution": "Toby Mott",
+  "landing_url": "https://commons.wikimedia.org/wiki/File:Grey_Organisation_Cabbage_Head.JPG"
  },
  {
   "slug": "sunglasses-wayfarer",
   "path": "wardrobe/garment/sunglasses-wayfarer.webp",
-  "license": "CC BY 2.5",
-  "attribution": "Rich Niewiroski Jr.",
-  "landing_url": "https://commons.wikimedia.org/wiki/File:RayBanWayfarer.jpg"
+  "license": "CC BY-SA 3.0",
+  "attribution": "Jaschke",
+  "landing_url": "https://commons.wikimedia.org/wiki/File:Ray_Ban_Original_Wayfarer.jpg"
+ },
+ {
+  "slug": "sword-smallsword",
+  "path": "wardrobe/garment/sword-smallsword.webp",
+  "license": "CC BY-SA 2.0 fr",
+  "attribution": "Rama",
+  "landing_url": "https://commons.wikimedia.org/wiki/File:Epees-de-cour-p1000571.jpg"
+ },
+ {
+  "slug": "tie-necktie",
+  "path": "wardrobe/garment/tie-necktie.webp",
+  "license": "CC BY-SA 4.0",
+  "attribution": "Affärside",
+  "landing_url": "https://commons.wikimedia.org/wiki/File:Memphis_tie_1A.JPG"
+ },
+ {
+  "slug": "tote-canvas",
+  "path": "wardrobe/garment/tote-canvas.webp",
+  "license": "CC BY-SA 4.0",
+  "attribution": "Jacklee.",
+  "landing_url": "https://commons.wikimedia.org/wiki/File:Canvas_tote_bag_from_Books_%26_Books,_Miami,_Florida,_USA_-_20130912.jpg"
  },
  {
   "slug": "trail-runner",
@@ -156,6 +415,20 @@ export const GARMENT_PHOTOS: GarmentPhoto[] = [
   "landing_url": "https://commons.wikimedia.org/wiki/File:Trail_running_shoe.jpg"
  },
  {
+  "slug": "trench-coat",
+  "path": "wardrobe/garment/trench-coat.webp",
+  "license": "Public domain",
+  "attribution": "Unknown authorUnknown author",
+  "landing_url": "https://commons.wikimedia.org/wiki/File:Burberry_advertisement_angling_suite_of_gabardine_fabric_1908.jpg"
+ },
+ {
+  "slug": "tricorne-hat",
+  "path": "wardrobe/garment/tricorne-hat.webp",
+  "license": "Public domain",
+  "attribution": "Unknown authorUnknown author",
+  "landing_url": "https://commons.wikimedia.org/wiki/File:Tricorne_hat_beaver_fur_c._1780.png"
+ },
+ {
   "slug": "waistcoat",
   "path": "wardrobe/garment/waistcoat.webp",
   "license": "CC BY-SA 3.0",
@@ -163,136 +436,17 @@ export const GARMENT_PHOTOS: GarmentPhoto[] = [
   "landing_url": "https://commons.wikimedia.org/wiki/File:Waistcoat.jpg"
  },
  {
+  "slug": "waistcoat-embroidered",
+  "path": "wardrobe/garment/waistcoat-embroidered.webp",
+  "license": "CC0",
+  "attribution": null,
+  "landing_url": "https://commons.wikimedia.org/wiki/File:Waistcoat_MET_26.56.33_S2.jpg"
+ },
+ {
   "slug": "watch-dress-steel",
   "path": "wardrobe/garment/watch-dress-steel.webp",
   "license": "CC BY-SA 3.0",
-  "attribution": "J. Lunau",
-  "landing_url": "https://commons.wikimedia.org/wiki/File:Junghans_Mega.jpg"
- },
- {
-  "slug": "in-banarasi-silk-saree",
-  "path": "wardrobe/garment/in-banarasi-silk-saree.webp",
-  "license": "AI-generated for this project",
-  "attribution": null,
-  "landing_url": ""
- },
- {
-  "slug": "in-lehenga-choli",
-  "path": "wardrobe/garment/in-lehenga-choli.webp",
-  "license": "AI-generated for this project",
-  "attribution": null,
-  "landing_url": ""
- },
- {
-  "slug": "in-kurti-palazzo-set",
-  "path": "wardrobe/garment/in-kurti-palazzo-set.webp",
-  "license": "AI-generated for this project",
-  "attribution": null,
-  "landing_url": ""
- },
- {
-  "slug": "in-salwar-kameez",
-  "path": "wardrobe/garment/in-salwar-kameez.webp",
-  "license": "AI-generated for this project",
-  "attribution": null,
-  "landing_url": ""
- },
- {
-  "slug": "in-anarkali-gown",
-  "path": "wardrobe/garment/in-anarkali-gown.webp",
-  "license": "AI-generated for this project",
-  "attribution": null,
-  "landing_url": ""
- },
- {
-  "slug": "in-sharara-set",
-  "path": "wardrobe/garment/in-sharara-set.webp",
-  "license": "AI-generated for this project",
-  "attribution": null,
-  "landing_url": ""
- },
- {
-  "slug": "in-mekhela-chador",
-  "path": "wardrobe/garment/in-mekhela-chador.webp",
-  "license": "AI-generated for this project",
-  "attribution": null,
-  "landing_url": ""
- },
- {
-  "slug": "in-kurta-pajama",
-  "path": "wardrobe/garment/in-kurta-pajama.webp",
-  "license": "AI-generated for this project",
-  "attribution": null,
-  "landing_url": ""
- },
- {
-  "slug": "in-sherwani",
-  "path": "wardrobe/garment/in-sherwani.webp",
-  "license": "AI-generated for this project",
-  "attribution": null,
-  "landing_url": ""
- },
- {
-  "slug": "in-dhoti-kurta",
-  "path": "wardrobe/garment/in-dhoti-kurta.webp",
-  "license": "AI-generated for this project",
-  "attribution": null,
-  "landing_url": ""
- },
- {
-  "slug": "in-churidar-kurta",
-  "path": "wardrobe/garment/in-churidar-kurta.webp",
-  "license": "AI-generated for this project",
-  "attribution": null,
-  "landing_url": ""
- },
- {
-  "slug": "in-bandhgala-suit",
-  "path": "wardrobe/garment/in-bandhgala-suit.webp",
-  "license": "AI-generated for this project",
-  "attribution": null,
-  "landing_url": ""
- },
- {
-  "slug": "in-pathani-suit",
-  "path": "wardrobe/garment/in-pathani-suit.webp",
-  "license": "AI-generated for this project",
-  "attribution": null,
-  "landing_url": ""
- },
- {
-  "slug": "in-nehru-jacket-set",
-  "path": "wardrobe/garment/in-nehru-jacket-set.webp",
-  "license": "AI-generated for this project",
-  "attribution": null,
-  "landing_url": ""
- },
- {
-  "slug": "in-indo-western-jacket-set",
-  "path": "wardrobe/garment/in-indo-western-jacket-set.webp",
-  "license": "AI-generated for this project",
-  "attribution": null,
-  "landing_url": ""
- },
- {
-  "slug": "in-patiala-suit",
-  "path": "wardrobe/garment/in-patiala-suit.webp",
-  "license": "AI-generated for this project",
-  "attribution": null,
-  "landing_url": ""
- },
- {
-  "slug": "in-mundu-lungi-outfit",
-  "path": "wardrobe/garment/in-mundu-lungi-outfit.webp",
-  "license": "AI-generated for this project",
-  "attribution": null,
-  "landing_url": ""
- },
- {
-  "slug": "in-ghagra-choli",
-  "path": "wardrobe/garment/in-ghagra-choli.webp",
-  "license": "AI-generated for this project",
-  "attribution": null,
-  "landing_url": ""
+  "attribution": "Sputniktilt",
+  "landing_url": "https://commons.wikimedia.org/wiki/File:Tudor_Prince_Date_Day_Ref76200.jpg"
  }
 ];

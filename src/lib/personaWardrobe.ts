@@ -114,6 +114,19 @@ function occasionsFor(persona: PersonaSeed): string[] {
  */
 const PHOTO_RULES: Array<[RegExp, string[]]> = [
   // ---- Indian garments first: the most specific names in these closets
+  // The period pack, for the briefed wardrobes. Most specific first.
+  [/justaucorps|frock coat/i, ['coat-justaucorps']],
+  [/banyan/i, ['banyan-robe']],
+  [/tricorne/i, ['tricorne-hat']],
+  [/buckled? shoes?|shoe buckles?/i, ['buckle-shoe']],
+  [/smallsword|dress sword/i, ['sword-smallsword']],
+  [/\bchima\b/i, ['chima-hanbok']],
+  [/binyeo/i, ['binyeo-hairpin']],
+  [/\bgeta\b/i, ['geta-clogs']],
+  [/monpe/i, ['monpe-trousers']],
+  [/rebozo/i, ['rebozo-shawl']],
+  [/\bcoral\b/i, ['coral-beads']],
+  [/\bclogs?\b/i, ['clogs-kitchen']],
   [/saree(?! blouse)|\bsari\b/i, ['in-banarasi-silk-saree', 'in-mekhela-chador']],
   [/mekhela/i, ['in-mekhela-chador']],
   [/lehenga|ghagra/i, ['in-lehenga-choli', 'in-ghagra-choli']],
@@ -176,9 +189,9 @@ const PHOTO_RULES: Array<[RegExp, string[]]> = [
 
   // ---- tailoring and layers
   [/dinner jacket|tuxedo|suit jacket|flannel suit|two-piece|blazer/i, ['suit-jacket']],
-  [/waistcoat|bandi/i, ['waistcoat']],
+  [/waistcoat|bandi/i, ['waistcoat-embroidered', 'waistcoat']],
   [/gilet|quilted|liner|field jacket|waxed|rain shell|\bshell\b/i, ['gilet-quilted']],
-  [/trench|overcoat|wool coat|longline/i, ['suit-jacket']],
+  [/trench|overcoat|wool coat|longline/i, ['overcoat-wool', 'trench-coat', 'suit-jacket']],
   [/hoodie|sweatshirt|quarter-zip/i, ['hoodie-oversized']],
   [/denim jacket|trucker/i, ['trucker-jacket']],
   [/cable|cricket|merino|crew(neck)?|v-neck|thermal|henley/i, ['sweater', 'hoodie-oversized']],
