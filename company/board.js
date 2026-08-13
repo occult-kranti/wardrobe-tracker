@@ -24,6 +24,18 @@
 const uid = () => 't' + Math.random().toString(36).slice(2, 9);
 const nowISO = () => new Date().toISOString();
 
+/* The moment the board was AUTHORED, not the moment this tab opened.
+
+   These two things were the same, and it silently broke sharing. Seed tasks
+   were stamped with the clock at page load, so a visitor arriving with a
+   pristine copy always looked newer than the team's real edits — the merge
+   kept the seed, then pushed it back. Every new reader quietly reverted the
+   board for everybody. Both boards said "Shared" the entire time.
+
+   A fixed stamp also makes "has this row ever been touched" answerable, which
+   is what mergeDocs needs to break ties honestly. */
+const SEED_AT = '2026-01-01T00:00:00.000Z';
+
 function buildSeed() {
   const tasks = SEED_TASKS.map((s, i) => ({
     id: 'seed-' + i,
@@ -42,11 +54,11 @@ function buildSeed() {
        that lives on the task gets read by whoever picks the task up, which is
        the person who can still act on it. `n: [{ by, text }]` in the data file
        becomes a note in the drawer, indistinguishable from one typed by hand. */
-    comments: (s.n || []).map(c => ({ by: c.by, at: c.at || nowISO(), text: c.text })),
-    updatedAt: nowISO(),
+    comments: (s.n || []).map(c => ({ by: c.by, at: c.at || SEED_AT, text: c.text })),
+    updatedAt: SEED_AT,
     order: i,
   }));
-  return { version: 1, tasks, people: PEOPLE.slice(), updatedAt: nowISO() };
+  return { version: 1, tasks, people: PEOPLE.slice(), updatedAt: SEED_AT };
 }
 
 let STATE = buildSeed();
@@ -148,7 +160,13 @@ function mergeDocs(mine, theirs) {
   const byId = new Map(theirs.tasks.map(t => [t.id, t]));
   for (const t of mine.tasks) {
     const other = byId.get(t.id);
-    if (!other || (t.updatedAt || '') >= (other.updatedAt || '')) byId.set(t.id, t);
+    if (!other) { byId.set(t.id, t); continue; }
+    // A row nobody here has touched must never overwrite one somebody there
+    // has. This is the guard that was missing, and it is why the tie-break
+    // below is a strict > rather than >=: equal timestamps mean equal content,
+    // so there is nothing to win.
+    if (t.updatedAt === SEED_AT) continue;
+    if ((t.updatedAt || '') > (other.updatedAt || '')) byId.set(t.id, t);
   }
   const people = [...theirs.people];
   for (const p of mine.people) if (!people.some(x => x.id === p.id)) people.push(p);

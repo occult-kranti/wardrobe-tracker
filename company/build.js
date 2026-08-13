@@ -212,7 +212,7 @@ const SEED_TASKS = [
   { g: 'release', t: 'Stand up cloud iOS builds from Windows', a: [], tags: ['release', 'mobile'], status: 'blocked', est: '4 days',
     why: 'SUPERSEDED by docs/32 — buying a Mac mini won on arithmetic, and cloud-only turned out to be impossible anyway. Apple enrolment in India runs through the Apple Developer app and is device-bound, so a Windows-only team cannot enrol at all, let alone build. What survives of this task is the CI half: Xcode Cloud gives 25 hours a month free with the membership, and a working cloud path is the answer to the bus factor of one Mac.',
     check: 'Keep this open only as the CI-redundancy task · Xcode Cloud first, GitHub Actions macOS at $0.062/min as the documented fallback · run the fallback once a month so it does not rot · see the Mac mini task in the iOS track',
-    dep: 'Order the Mac mini' },
+    dep: 'Verify the Mac mini price' },
   { g: 'release', t: 'Fix version discipline in one place', a: [], tags: ['release', 'tooling'], status: 'next', est: '1 day',
     why: 'Two stores, two version schemes, and a monotonic build number that cannot ever go backwards.',
     check: 'Single source in package.json · derived at build time for both platforms · tags cut by CI only · the full verify must pass before any store build exists' },

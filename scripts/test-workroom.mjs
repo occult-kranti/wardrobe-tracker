@@ -278,6 +278,38 @@ check('sync state says device-only', (await page.locator('#syncState').innerText
 
 check('no page errors', errors.length === 0, errors.slice(0, 3).join(' | '));
 
+// --- the merge rule -----------------------------------------------------
+// Shared mode shipped broken and said "Shared" the whole time: seed rows were
+// stamped with the clock at page load, so a visitor's untouched copy always
+// looked newer than the team's edits, won the merge, and got pushed back.
+// Every new reader silently reverted the board. These four cases are that bug
+// and its neighbours, run against the real function.
+const merge = await page.evaluate(() => {
+  const seedRow = id => ({ id, title: 'seed', updatedAt: SEED_AT, order: 0 });
+  const editedRow = (id, title, at) => ({ id, title, updatedAt: at, order: 0 });
+  const doc = tasks => ({ version: 1, tasks, people: [] });
+  const older = '2026-06-01T00:00:00.000Z';
+  const newer = '2026-07-01T00:00:00.000Z';
+  const pick = (mineTasks, theirTasks) =>
+    mergeDocs(doc(mineTasks), doc(theirTasks)).tasks.find(t => t.id === 'a').title;
+  return {
+    // A pristine local seed must NOT clobber somebody else's real edit.
+    pristineLoses: pick([seedRow('a')], [editedRow('a', 'theirs', older)]),
+    // A real local edit must still win over an untouched remote seed.
+    editWins: pick([editedRow('a', 'mine', older)], [seedRow('a')]),
+    // Between two real edits, the newer one wins.
+    newestWins: pick([editedRow('a', 'mine', older)], [editedRow('a', 'theirs', newer)]),
+    // A task only one side has must survive the merge.
+    keepsNew: mergeDocs(doc([seedRow('a'), seedRow('b')]), doc([seedRow('a')])).tasks.length,
+    seedStamp: SEED_AT,
+  };
+});
+check('a pristine copy never overwrites a real edit', merge.pristineLoses === 'theirs', merge.pristineLoses);
+check('a real edit still beats an untouched seed', merge.editWins === 'mine', merge.editWins);
+check('between two edits the newer wins', merge.newestWins === 'theirs', merge.newestWins);
+check('a task only one side has survives', merge.keepsNew === 2, String(merge.keepsNew));
+check('the seed stamp is fixed, not the clock', merge.seedStamp === '2026-01-01T00:00:00.000Z', merge.seedStamp);
+
 // --- mobile -------------------------------------------------------------
 const m = await browser.newPage({ viewport: { width: 390, height: 844 } });
 await m.goto(TRACKER, { waitUntil: 'networkidle' });
@@ -362,6 +394,12 @@ const bSeed = await b.evaluate(() => {
     badTag: SEED_TASKS.flatMap(t => (t.tags || []).filter(x => !tags.has(x))),
     dupes: titles.filter((t, i) => titles.indexOf(t) !== i),
     noWhy: SEED_TASKS.filter(t => !t.why).map(t => t.t),
+    // This check existed for the Workroom and not for this board, which is
+    // exactly how a dep pointing at a task that does not exist reached the
+    // live site. A dependency on nothing is worse than no dependency: it reads
+    // as considered.
+    orphanDep: SEED_TASKS.filter(t => t.dep && !titles.some(x => x.includes(t.dep))).map(t => `${t.t} -> ${t.dep}`),
+    badDate: SEED_TASKS.filter(t => t.due && !/^\d{4}-\d{2}-\d{2}$/.test(t.due)).map(t => t.t),
   };
 });
 check('workbench: every task sits in a real phase', bSeed.badGroup.length === 0, bSeed.badGroup.join(', '));
@@ -369,6 +407,8 @@ check('workbench: every assignee is on the roster', bSeed.badPerson.length === 0
 check('workbench: every tag is declared', bSeed.badTag.length === 0, bSeed.badTag.join(', '));
 check('workbench: no duplicate titles', bSeed.dupes.length === 0, bSeed.dupes.join(', '));
 check('workbench: every task says why', bSeed.noWhy.length === 0, bSeed.noWhy.join(', '));
+check('workbench: every dependency names a real task', bSeed.orphanDep.length === 0, bSeed.orphanDep.join(' | '));
+check('workbench: every due date is well formed', bSeed.badDate.length === 0, bSeed.badDate.join(', '));
 
 await browser.close();
 server.close();
