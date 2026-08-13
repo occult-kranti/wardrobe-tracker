@@ -29,6 +29,7 @@ const PEOPLE = [
 ];
 
 const GROUPS = [
+  { id: 'found',  name: 'Found in review',     window: 'Do these first',                     note: 'Defects confirmed in the code by a six-lens engineering review. Each one was verified, not inferred.' },
   { id: 'ground', name: 'Ground rules',        window: 'Week 1 — before any feature work', note: 'Nobody writes application code until these exist. They are what makes four people safe in one repo.' },
   { id: 'safety', name: 'Data safety',         window: 'Weeks 1–4 — ahead of the port',     note: 'The app has no server, so a bad write is unrecoverable. This is the highest-severity work on the board.' },
   { id: 'arch',   name: 'Architecture',        window: 'Weeks 2–6',                          note: 'The refactors that pay for themselves before three more people start committing.' },
@@ -43,6 +44,35 @@ const GROUPS = [
 const TAGS = ['blocker', 'architecture', 'data-safety', 'mobile', 'security', 'testing', 'performance', 'accessibility', 'tooling', 'release', 'docs', 'ai-workflow'];
 
 const SEED_TASKS = [
+  /* ---- found in review ------------------------------------------------- */
+  { g: 'found', t: 'Stop fetching Switzer from Fontshare on every launch', a: [], tags: ['blocker', 'security', 'performance'], status: 'next', current: true, est: '1 day',
+    why: 'index.html line 86 loads a stylesheet from api.fontshare.com, render-blocking, on every single launch. That makes two of the product\'s central claims untrue at once: the README says "no network call" and "Collects: Nothing", and the app claims to work offline. Every launch tells a third party the user\'s IP address and that they opened their wardrobe. The commit that self-hosted the type moved Fraunces and IBM Plex Mono into public/fonts and left Switzer behind.',
+    check: 'Check the Switzer licence permits self-hosting and app embedding before downloading anything; most webfont licences cover web serving only, and this one ships inside a paid binary · self-host the woff2 next to the other two families · delete the preconnect on line 13 too · add a CI check that fails the build on any external URL in index.html or src, so the promise is enforced rather than remembered · the company pages under company/ do the same thing and should follow' },
+  { g: 'found', t: 'Run CI on pull requests', a: ['hm'], tags: ['blocker', 'tooling', 'testing'], status: 'next', current: true, est: '2 hours',
+    why: 'deploy.yml triggers only on push to main and workflow_dispatch. There is no pull_request trigger anywhere, so a branch or a PR runs zero checks. Three developers are about to start opening PRs into a repository where nothing verifies them until after they are merged and already live.',
+    check: 'A pull_request workflow running typecheck, oxlint, the brand contract, the migration and demo suites · make those checks required in branch protection · keep the deploy job on main only' },
+  { g: 'found', t: 'Make npm run verify actually verify', a: [], tags: ['blocker', 'testing'], status: 'next', est: '1 hour',
+    why: 'verify runs build, the brand contract, and the migrate, demo and intake suites. It silently omits oxlint and the contrast suite, so the command everyone trusts as the gate passes while genuine lint errors and an AA contrast regression sit in the tree. The contrast suite once caught the dark theme failing AA by 0.01, which is exactly the class of bug nobody catches by eye.',
+    check: 'Add lint and test:contrast to the verify chain · add test:cast and test:art, which also exist and also never run · one command that means what its name says' },
+  { g: 'found', t: 'Move the BYOK API key out of localStorage', a: [], tags: ['blocker', 'security'], status: 'next', est: '2 days',
+    why: 'The bring-your-own-key value is held in plaintext web storage, readable by any script that ever runs in the WebView and captured by any backup that copies the origin. A user\'s API key is a billable credential.',
+    check: 'Keychain on iOS, Keystore on Android, through a Capacitor plugin · never in web storage, never in an export file, never in a log line · the export must be checked for it explicitly, since the export is lossless by design' },
+  { g: 'found', t: 'Fix the export button inside the WebView', a: [], tags: ['blocker', 'mobile', 'data-safety'], status: 'next', est: '1 day',
+    why: 'The export uses an anchor with a download attribute, which does not work in WKWebView. The lossless export is the product\'s central promise and its only backup mechanism, and it silently does nothing in the very build the company intends to sell.',
+    check: 'Route the export through the Filesystem and Share plugins on native · keep the anchor path on web · test it on a real iPhone before any TestFlight build, because this is the one feature that must never be broken' },
+  { g: 'found', t: 'Get the demo wardrobes off the cold-start path', a: [], tags: ['performance'], status: 'next', est: '3 days',
+    why: 'The entry chunk is 1,027,182 bytes raw and about 580KB of it is demo, persona and illustration data. personaData.ts is reachable from SessionContext, so every real user downloads and parses eight sample wardrobes they will never open, before their own closet renders.',
+    check: 'Dynamic import the persona data behind the sample-wardrobe action · measure the entry chunk before and after · a CI budget so it cannot creep back' },
+  { g: 'found', t: 'Fix the empty-cost bug that records a zero', a: [], tags: ['data-safety'], status: 'next', est: '2 hours',
+    why: 'An empty cost string is coerced to a recorded zero rather than left absent. A recorded zero is a fact in the ledger: it says this piece cost nothing, which drags cost-per-wear down and quietly corrupts the single number the product exists to compute.',
+    check: 'Absent and zero must stay distinguishable end to end · a property test asserting an empty input never becomes a recorded zero · check what already-stored data this has affected' },
+  { g: 'found', t: 'Turn on the accessibility linter that is already installed', a: [], tags: ['accessibility'], status: 'next', est: '1 day',
+    why: 'oxlint ships with a jsx-a11y plugin that is present but not enabled. Switching it on surfaces eleven findings across seven rules, two of which are real keyboard traps in the modal, and it costs nothing to run.',
+    check: 'Enable the plugin · fix the two keyboard bugs first, since a modal you cannot leave by keyboard is a genuine barrier · triage the rest · then make it a CI gate so the count cannot grow' },
+  { g: 'found', t: 'Put the brand skill where tools can find it', a: [], tags: ['tooling', 'ai-workflow'], status: 'next', est: '1 hour',
+    why: 'The brand contract skill lives in skills/ rather than .claude/skills/, so the assistant the team is about to rely on cannot discover it automatically. The one document that keeps the design honest is the one document not wired in. The skills README also documents an API that does not exist.',
+    check: 'Move to .claude/skills/ and confirm it loads · correct or delete the README that describes a fictional interface' },
+
   /* ---- ground rules --------------------------------------------------- */
   { g: 'ground', t: 'Turn on branch protection and required checks for main', a: ['hm'], tags: ['blocker', 'tooling'], status: 'next', current: true, est: '1 hour',
     why: 'Verified today: main has no protection rule, zero rulesets, and vulnerability alerts are off, on a repository whose every push to main force-pushes the live site. Three more people are about to get write access.',
