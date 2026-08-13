@@ -1607,7 +1607,7 @@ hours:
 2. `docs/06-focus-group-requirements.md` — especially §2 (binding amendments)
    and §3 (copy law), and §1's "Rejected outright" list.
 3. `docs/05-brand-identity.md` — the design contract; and
-   `skills/wardrobe-brand/SKILL.md` before any UI change.
+   `.claude/skills/wardrobe-brand/SKILL.md` before any UI change.
 4. `docs/07-design-decision-log.md` — not for the decisions but for the
    *form*: this is how you disagree here.
 5. `docs/28-the-company.md` §5.4, §2.6 (the persona rule) and §4.3 (the copy

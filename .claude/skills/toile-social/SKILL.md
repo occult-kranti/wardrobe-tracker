@@ -1,11 +1,11 @@
 ---
 name: toile-social
-description: Rules for Toile's multi-wardrobe and social surfaces - accounts, profiles, the feed, conversations, sharing, and events. Load before touching sign-in, profiles, feed, chats, events, or anything that crosses between wardrobes.
+description: Rules for Almari's multi-wardrobe and social surfaces - accounts, profiles, the feed, conversations, sharing, and events. Load before touching sign-in, profiles, feed, chats, events, or anything that crosses between wardrobes.
 ---
 
-# Toile — wardrobes, sharing, and the social surfaces
+# Almari — wardrobes, sharing, and the social surfaces
 
-Companion to `skills/wardrobe-brand/SKILL.md`, which still governs everything
+Companion to `.claude/skills/wardrobe-brand/SKILL.md`, which still governs everything
 visual. This file covers what that one does not: more than one wardrobe on a
 device, and the little that is shared between them.
 

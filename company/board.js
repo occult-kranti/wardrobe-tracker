@@ -47,7 +47,10 @@ function buildSeed() {
 
 let STATE = buildSeed();
 let ME = null;
-let VIEW = { group: 'all', person: 'all', tag: 'all', status: 'all', q: '', mode: 'board' };
+/* `group` filters to one phase; `groupBy` decides what the sections ARE. They
+   are different questions and were previously the same one, which is why the
+   board could only ever be read phase-first. */
+let VIEW = { group: 'all', person: 'all', tag: 'all', status: 'all', q: '', mode: 'now', groupBy: 'phase', mine: false };
 let SELECTED = new Set();
 let OPEN_TASK = null;
 let SYNCING = false;
@@ -59,9 +62,39 @@ const LOCAL_KEY = `almari-${BOARD_KEY}-state`;
 const ME_KEY = `almari-${BOARD_KEY}-me`;
 const SHUT_KEY = `almari-${BOARD_KEY}-collapsed`;
 
-/** Which phases are folded shut. Per device, like a desk left as you left it. */
+/* A board that gets renamed changes BOARD_KEY, and BOARD_KEY namespaces every
+   localStorage key here — so a rename silently orphans the team's edits unless
+   the old keys are carried across. A data file declares its former name as
+   BOARD_KEY_WAS and this runs once, before anything reads storage. It never
+   overwrites: if the new key already holds something, that is the newer truth. */
+(function migrateBoardKey() {
+  if (typeof BOARD_KEY_WAS !== 'string' || !BOARD_KEY_WAS || BOARD_KEY_WAS === BOARD_KEY) return;
+  try {
+    for (const suffix of ['state', 'me', 'collapsed']) {
+      const from = `almari-${BOARD_KEY_WAS}-${suffix}`;
+      const to = `almari-${BOARD_KEY}-${suffix}`;
+      const carried = localStorage.getItem(from);
+      if (carried !== null && localStorage.getItem(to) === null) localStorage.setItem(to, carried);
+    }
+  } catch { /* private mode: nothing was saved, so nothing can be lost */ }
+})();
+
+/** Which sections are folded shut. Per device, like a desk left as you left it.
+    Keys are `${groupBy}:${bucketId}` because bucket ids collide across
+    groupings — "done" is a status and could as easily be a phase — and folding
+    Done under one grouping must not fold something unrelated under another.
+    Entries saved before grouping existed are bare phase ids; carry them over. */
 const COLLAPSED = new Set(
-  (() => { try { return JSON.parse(localStorage.getItem(SHUT_KEY) || '[]'); } catch { return []; } })()
+  (() => {
+    try {
+      const raw = JSON.parse(localStorage.getItem(SHUT_KEY) || '[]');
+      const keyed = raw.map(k => (String(k).includes(':') ? k : `phase:${k}`));
+      // Write the re-keyed form straight back, so storage and memory agree
+      // from the first paint rather than only after somebody folds something.
+      if (keyed.some((k, i) => k !== raw[i])) localStorage.setItem(SHUT_KEY, JSON.stringify(keyed));
+      return keyed;
+    } catch { return []; }
+  })()
 );
 const saveCollapsed = () => {
   try { localStorage.setItem(SHUT_KEY, JSON.stringify([...COLLAPSED])); } catch { /* private mode */ }
@@ -187,11 +220,109 @@ function visibleTasks() {
     } else if (VIEW.person !== 'all' && !(t.assignees || []).includes(VIEW.person)) {
       return false;
     }
+    if (VIEW.mine && !(ME && (t.assignees || []).includes(ME))) return false;
     if (VIEW.tag !== 'all' && !(t.tags || []).includes(VIEW.tag)) return false;
     if (VIEW.status !== 'all' && t.status !== VIEW.status) return false;
-    if (q && !(`${t.title} ${t.why} ${t.check}`.toLowerCase().includes(q))) return false;
+    // Tags belong in the haystack: people search "sqlite" or "legal" far more
+    // often than they remember which phase a thing was filed under.
+    if (q && !(`${t.title} ${t.why} ${t.check} ${(t.tags || []).join(' ')}`.toLowerCase().includes(q))) return false;
     return true;
   });
+}
+
+/* ------------------------------------------------------------- grouping ---
+   Sections were hardcoded to phases. A board is read differently depending on
+   the question: "what is this phase" (planning), "what is Nimesh holding"
+   (a stand-up), "what is blocked" (a rescue), "what lands in September" (a
+   promise to somebody). Each of those is the same tasks under a different cut,
+   so grouping is a function from tasks to buckets and nothing else changes. */
+
+const MONTH_FMT = { month: 'long', year: 'numeric' };
+
+const GROUPINGS = {
+  phase: {
+    label: 'Phase',
+    buckets(tasks) {
+      return GROUPS.map(g => ({
+        id: g.id, name: g.name, note: g.note, meta: g.window,
+        tasks: tasks.filter(t => t.group === g.id),
+      }));
+    },
+  },
+  person: {
+    label: 'Person',
+    buckets(tasks) {
+      const out = STATE.people.map(p => ({
+        id: p.id, name: p.name, note: p.role || '', meta: '',
+        tasks: tasks.filter(t => (t.assignees || []).includes(p.id)),
+      }));
+      out.push({
+        id: 'nobody', name: 'Nobody yet', note: 'Work with no owner is work nobody is doing.',
+        meta: '', tasks: tasks.filter(t => !(t.assignees || []).length),
+      });
+      return out;
+    },
+  },
+  status: {
+    label: 'Status',
+    buckets(tasks) {
+      const order = [
+        ['ongoing', 'On now', 'Being worked on right now.'],
+        ['blocked', 'Blocked', 'Waiting on something or someone. Read these first.'],
+        ['next', 'Next', 'Ready to be picked up.'],
+        ['done', 'Done', ''],
+      ];
+      return order.map(([id, name, note]) => ({
+        id, name, note, meta: '', tasks: tasks.filter(t => t.status === id),
+      }));
+    },
+  },
+  due: {
+    label: 'Due month',
+    buckets(tasks) {
+      const months = [...new Set(tasks.filter(t => t.due).map(t => t.due.slice(0, 7)))].sort();
+      const out = months.map(m => ({
+        id: m,
+        name: new Date(m + '-01T00:00:00').toLocaleDateString('en-GB', MONTH_FMT),
+        note: '', meta: '',
+        tasks: tasks.filter(t => t.due && t.due.slice(0, 7) === m),
+      }));
+      out.push({
+        id: 'undated', name: 'No date yet',
+        note: 'Undated work is work that cannot slip, because it was never promised.',
+        meta: '', tasks: tasks.filter(t => !t.due),
+      });
+      return out;
+    },
+  },
+  tag: {
+    label: 'Tag',
+    buckets(tasks) {
+      const out = TAGS.map(x => ({
+        id: x, name: x, note: '', meta: '',
+        tasks: tasks.filter(t => (t.tags || []).includes(x)),
+      }));
+      out.push({
+        id: 'untagged', name: 'Untagged', note: '', meta: '',
+        tasks: tasks.filter(t => !(t.tags || []).length),
+      });
+      return out;
+    },
+  },
+  none: {
+    label: 'Nothing — one list',
+    buckets(tasks) {
+      return [{ id: 'all', name: 'All work', note: '', meta: '', tasks }];
+    },
+  },
+};
+
+/** Buckets for the current view, empty ones dropped, each sorted as authored. */
+function buckets() {
+  const g = GROUPINGS[VIEW.groupBy] || GROUPINGS.phase;
+  return g.buckets(visibleTasks())
+    .map(b => ({ ...b, tasks: b.tasks.slice().sort((a, z) => (a.order ?? 0) - (z.order ?? 0)) }))
+    .filter(b => b.tasks.length);
 }
 
 function paintSyncState() {
@@ -221,11 +352,11 @@ function taskRow(t) {
     <label class="pick"><input type="checkbox" ${SELECTED.has(t.id) ? 'checked' : ''} data-pick="${t.id}" aria-label="Select"></label>
     <div class="task-body" data-open="${t.id}">
       <div class="task-top">
-        <span class="st st-${t.status}">${t.status === 'ongoing' ? 'On now' : t.status === 'done' ? 'Done' : t.status === 'blocked' ? 'Blocked' : 'Next'}</span>
+        <span class="st st-${t.status}">${statusLabel(t.status)}</span>
         ${t.current ? '<span class="pin">Current focus</span>' : ''}
-        ${g && VIEW.group === 'all' ? `<span class="gtag">${esc(g.name)}</span>` : ''}
+        ${g && VIEW.groupBy !== 'phase' && VIEW.group === 'all' ? `<span class="gtag">${esc(g.name)}</span>` : ''}
       </div>
-      <h4>${esc(t.title)}</h4>
+      <h4><button class="task-open" data-open="${t.id}">${esc(t.title)}</button></h4>
       ${t.why ? `<p class="why">${esc(t.why)}</p>` : ''}
       <div class="task-meta">
         ${(t.assignees || []).length ? `<span class="avs">${t.assignees.map(a => avatar(a, 'sm')).join('')}</span>` : '<span class="unassigned">Unassigned</span>'}
@@ -239,33 +370,69 @@ function taskRow(t) {
 }
 
 function renderBoard() {
-  const tasks = visibleTasks();
-  const groups = VIEW.group === 'all' ? GROUPS : GROUPS.filter(g => g.id === VIEW.group);
+  const list = buckets();
+  if (!list.length) return emptyState();
   let html = '';
-  for (const g of groups) {
-    const mine = tasks.filter(t => t.group === g.id).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-    if (!mine.length) continue;
-    const done = mine.filter(t => t.status === 'done').length;
-    const shut = COLLAPSED.has(g.id);
+  for (const b of list) {
+    const done = b.tasks.filter(t => t.status === 'done').length;
+    const key = `${VIEW.groupBy}:${b.id}`;
+    const shut = COLLAPSED.has(key);
+    const pct = Math.round((done / b.tasks.length) * 100);
     html += `
     <section class="phase ${shut ? 'shut' : ''}">
       <header class="phase-head">
         <div>
-          <button class="phase-toggle" data-phase="${g.id}" aria-expanded="${!shut}" aria-controls="tasks-${g.id}">
-            <span class="chev" aria-hidden="true"></span><span class="ph-name">${esc(g.name)}</span>
+          <button class="phase-toggle" data-phase="${esc(key)}" aria-expanded="${!shut}" aria-controls="tasks-${esc(b.id)}">
+            <span class="chev" aria-hidden="true"></span><span class="ph-name">${esc(b.name)}</span>
           </button>
-          <p class="phase-note">${esc(g.note)}</p>
+          ${b.note ? `<p class="phase-note">${esc(b.note)}</p>` : ''}
         </div>
         <div class="phase-meta">
-          <span class="win">${esc(g.window)}</span>
-          <span class="count">${done}/${mine.length} done</span>
+          ${b.meta ? `<span class="win">${esc(b.meta)}</span>` : ''}
+          <span class="prog" title="${done} of ${b.tasks.length} done" aria-hidden="true"><i style="width:${pct}%"></i></span>
+          <span class="count">${done}/${b.tasks.length} done</span>
         </div>
       </header>
-      <div class="tasks" id="tasks-${g.id}"${shut ? ' hidden' : ''}>${mine.map(taskRow).join('')}</div>
+      <div class="tasks-wrap"><div class="tasks" id="tasks-${esc(b.id)}">${b.tasks.map(taskRow).join('')}</div></div>
     </section>`;
   }
-  return html || `<p class="empty">Nothing matches those filters.</p>`;
+  return html;
 }
+
+/* Saying "nothing matches" is only half an answer; the other half is the way
+   back out. */
+function emptyState() {
+  return `<div class="empty-box">
+    <p>Nothing matches what you have asked for.</p>
+    ${filtersActive().length ? `<p style="margin-top:16px"><button class="btn small" id="emptyClear">Clear the filters</button></p>` : ''}
+  </div>`;
+}
+
+/* A table for scanning. The board answers "what is in this phase"; the list
+   answers "where is that one task I half-remember". */
+function renderList() {
+  const rows = buckets().flatMap(b => b.tasks.map(t => ({ t, b })));
+  if (!rows.length) return emptyState();
+  return `<div class="list table-rail"><table>
+    <thead><tr>
+      <th>Task</th><th>${esc((GROUPINGS[VIEW.groupBy] || GROUPINGS.phase).label)}</th>
+      <th>Status</th><th>Who</th><th>Due</th>
+    </tr></thead>
+    <tbody>${rows.map(({ t, b }) => {
+      const d = daysUntil(t.due);
+      const late = d !== null && d < 0 && t.status !== 'done';
+      return `<tr class="${t.status}" data-open="${t.id}">
+        <td class="lt">${t.current ? '<span class="pin">Now</span> ' : ''}${esc(t.title)}</td>
+        <td class="lg">${esc(b.name)}</td>
+        <td><span class="st st-${t.status}">${statusLabel(t.status)}</span></td>
+        <td><span class="lp">${(t.assignees || []).map(a => avatar(a, 'sm')).join('') || '<span class="unassigned">—</span>'}</span></td>
+        <td class="lg ${late ? 'due overdue' : ''}">${t.due ? esc(fmtDate(t.due)) : '—'}</td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table></div>`;
+}
+
+const statusLabel = s => (s === 'ongoing' ? 'On now' : s === 'done' ? 'Done' : s === 'blocked' ? 'Blocked' : 'Next');
 
 function renderTimeline() {
   const dated = visibleTasks().filter(t => t.due).sort((a, b) => a.due.localeCompare(b.due));
@@ -316,11 +483,24 @@ function renderPeople() {
   return html;
 }
 
+const RENDERERS = {
+  now: () => renderNow(),
+  board: () => renderBoard(),
+  list: () => renderList(),
+  timeline: () => renderTimeline(),
+  people: () => renderPeople(),
+};
+
 function render() {
   const main = $('#main');
-  main.innerHTML = VIEW.mode === 'timeline' ? renderTimeline()
-    : VIEW.mode === 'people' ? renderPeople()
-    : renderBoard();
+  // Replacing innerHTML resets the document height for a frame, and the browser
+  // clamps the scroll position to the shorter page. Without this, ticking a
+  // checkbox near the bottom of a 97-task board threw you back up it.
+  const y = window.scrollY;
+  main.innerHTML = (RENDERERS[VIEW.mode] || RENDERERS.board)();
+  // 'instant' matters: the stylesheet sets scroll-behavior: smooth for anchor
+  // links, which would otherwise animate this correction and read as drift.
+  if (window.scrollY !== y) window.scrollTo({ top: y, behavior: 'instant' });
 
   const total = STATE.tasks.length;
   const done = STATE.tasks.filter(t => t.status === 'done').length;
@@ -328,11 +508,97 @@ function render() {
   const blocked = STATE.tasks.filter(t => t.status === 'blocked').length;
   $('#stats').innerHTML = `<b>${done}</b>/${total} done · <b>${ongoing}</b> on now${blocked ? ` · <b>${blocked}</b> blocked` : ''}`;
 
-  $('#bulkbar').hidden = SELECTED.size === 0;
-  $('#bulkcount').textContent = `${SELECTED.size} selected`;
+  paintBulk();
   paintSyncState();
+  paintActiveRail();
   viewToUrl();
   if (OPEN_TASK) paintDrawer();
+}
+
+/* ---------------------------------------------------------------- now -----
+   Every other view answers "what is the plan". This one answers "what is
+   happening", which is the only question a stand-up actually asks. The lanes
+   are the point: four people working in parallel should be four columns you
+   can read at once, not one list you have to filter four times. */
+
+function renderNow() {
+  const all = visibleTasks();
+  const pinned = all.filter(t => t.current && t.status !== 'done');
+  const blocked = all.filter(t => t.status === 'blocked');
+  const soon = all.filter(t => {
+    const d = daysUntil(t.due);
+    return d !== null && d >= 0 && d <= 14 && t.status !== 'done';
+  }).sort((a, b) => a.due.localeCompare(b.due));
+  const late = all.filter(t => {
+    const d = daysUntil(t.due);
+    return d !== null && d < 0 && t.status !== 'done';
+  }).sort((a, b) => a.due.localeCompare(b.due));
+
+  const lanes = [...STATE.people.map(p => ({
+    id: p.id, name: p.name, role: p.role || '', av: avatar(p.id, 'sm'),
+    tasks: all.filter(t => (t.assignees || []).includes(p.id) && t.status !== 'done'),
+  })), {
+    id: 'nobody', name: 'Nobody yet', role: 'Unclaimed work', av: '',
+    tasks: all.filter(t => !(t.assignees || []).length && t.status !== 'done'),
+  }].filter(l => l.tasks.length);
+
+  const strip = (title, note, list, cls) => (list.length ? `
+    <section class="now-block ${cls || ''}">
+      <header class="now-head"><h3>${esc(title)}</h3><span class="now-n">${list.length}</span></header>
+      ${note ? `<p class="phase-note">${esc(note)}</p>` : ''}
+      <div class="tasks">${list.map(taskRow).join('')}</div>
+    </section>` : '');
+
+  const laneCard = t => {
+    const d = daysUntil(t.due);
+    return `<div class="lane-task ${t.status} ${t.current ? 'is-current' : ''}" data-open="${t.id}">
+      <span class="lane-dot st-${t.status}" aria-hidden="true"></span>
+      <span class="lane-t">${esc(t.title)}</span>
+      ${d !== null ? `<span class="lane-when ${d < 0 ? 'overdue' : d <= 7 ? 'soon' : ''}">${d < 0 ? `${-d}d late` : d === 0 ? 'today' : `${d}d`}</span>` : ''}
+    </div>`;
+  };
+
+  /* Every section inside a lane is capped. Uncapped, one person holding fifty
+     unclaimed tasks made their column ten times the height of everybody else's,
+     and the grid row stretched to match — which is the opposite of a view whose
+     whole purpose is comparing columns side by side. The true totals stay in
+     the lane header, so capping hides nothing. */
+  const capped = (list, n, label) => {
+    if (!list.length) return '';
+    return `<p class="lane-label">${label}</p>${list.slice(0, n).map(laneCard).join('')}` +
+      (list.length > n ? `<p class="lane-more">and ${list.length - n} more</p>` : '');
+  };
+
+  const laneHtml = lanes.map(l => {
+    const on = l.tasks.filter(t => t.status === 'ongoing' || t.current);
+    const nxt = l.tasks.filter(t => t.status === 'next' && !t.current);
+    const blk = l.tasks.filter(t => t.status === 'blocked');
+    return `<section class="lane">
+      <header class="lane-head">${l.av}<div><b>${esc(l.name)}</b><small>${esc(l.role)}</small></div></header>
+      <p class="lane-count"><b>${l.tasks.length}</b> open${blk.length ? ` · <span class="lane-blk">${blk.length} blocked</span>` : ''}</p>
+      ${capped(on, 5, 'On now')}
+      ${capped(blk, 5, 'Blocked')}
+      ${capped(nxt, 4, 'Next up')}
+    </section>`;
+  }).join('');
+
+  const today = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+  if (!all.length) return emptyState();
+
+  return `
+  <div class="now">
+    <p class="now-date">${esc(today)}</p>
+    ${strip('Late', 'Promised for a date that has passed. Either move the date or move the work — leaving it is the one option that costs something.', late, 'is-late')}
+    ${strip('Pinned as current focus', 'What the team agreed matters most right now.', pinned)}
+    ${strip('Blocked', 'Each of these is waiting on a person or a decision. They do not unblock themselves.', blocked)}
+    ${lanes.length ? `<section class="now-block">
+      <header class="now-head"><h3>Running in parallel</h3><span class="now-n">${lanes.length} lanes</span></header>
+      <p class="phase-note">One column per person, everything not yet done. Read across to see where the team is thin and where it is doubled up.</p>
+      <div class="lanes">${laneHtml}</div>
+    </section>` : ''}
+    ${strip('Landing in the next fortnight', '', soon)}
+  </div>`;
 }
 
 /* ------------------------------------------------------------- drawer ---- */
@@ -341,6 +607,11 @@ function paintDrawer() {
   const t = STATE.tasks.find(x => x.id === OPEN_TASK);
   const dr = $('#drawer');
   if (!t) { dr.hidden = true; OPEN_TASK = null; return; }
+  /* Rebuilding the drawer replaces the textarea somebody is typing into. In
+     shared mode the five-second poll calls render(), and render() repaints the
+     drawer — so a half-written note used to disappear mid-sentence, blamed on
+     the network. If the focus is in here, the person is mid-thought: leave it. */
+  if (!dr.hidden && dr.contains(document.activeElement)) return;
   dr.hidden = false;
   const g = groupById(t.group);
   dr.innerHTML = `
@@ -514,41 +785,73 @@ function exportJSON() {
 
 function wire() {
   $('#main').addEventListener('click', e => {
+    /* Folding and selecting both used to call render(), which rebuilds every
+       task on the page. Two costs: the fold could never animate, because the
+       element it was animating stopped existing mid-transition; and ticking a
+       checkbox rebuilt ninety-seven cards to change one border. Both now touch
+       only the element they are about. */
     const fold = e.target.closest('[data-phase]');
     if (fold) {
-      const id = fold.dataset.phase;
-      if (COLLAPSED.has(id)) COLLAPSED.delete(id); else COLLAPSED.add(id);
-      saveCollapsed(); render(); return;
+      const key = fold.dataset.phase;
+      const shut = !COLLAPSED.has(key);
+      if (shut) COLLAPSED.add(key); else COLLAPSED.delete(key);
+      fold.closest('.phase').classList.toggle('shut', shut);
+      fold.setAttribute('aria-expanded', String(!shut));
+      saveCollapsed();
+      return;
     }
+    if (e.target.closest('#emptyClear')) { clearFilters(); return; }
     const pick = e.target.closest('[data-pick]');
     if (pick) {
       const id = pick.dataset.pick;
       if (SELECTED.has(id)) SELECTED.delete(id); else SELECTED.add(id);
-      render(); return;
+      const card = pick.closest('.task');
+      if (card) card.classList.toggle('is-sel', SELECTED.has(id));
+      paintBulk();
+      return;
     }
     const open = e.target.closest('[data-open]');
     if (open) { OPEN_TASK = open.dataset.open; paintDrawer(); }
   });
 
+  const MENUS = { fPhase: 'group', fPerson: 'person', fStatus: 'status', fTag: 'tag', fGroupBy: 'groupBy' };
+  $('#filters').addEventListener('change', e => {
+    const k = MENUS[e.target.id]; if (!k) return;
+    VIEW[k] = e.target.value;
+    paintViewControls(); render();
+  });
   $('#filters').addEventListener('click', e => {
-    const b = e.target.closest('[data-filter]'); if (!b) return;
-    const [k, v] = b.dataset.filter.split(':');
-    VIEW[k] = v;
-    $('#filters').querySelectorAll(`[data-filter^="${k}:"]`).forEach(x => x.classList.toggle('on', x === b));
-    render();
+    if (e.target.closest('#fMine')) { VIEW.mine = !VIEW.mine; paintViewControls(); render(); return; }
+    if (e.target.closest('#clearFilters')) { clearFilters(); return; }
+    const drop = e.target.closest('[data-drop]');
+    if (drop) {
+      const k = drop.dataset.drop;
+      if (k === 'mine') VIEW.mine = false;
+      else if (k === 'q') { VIEW.q = ''; $('#search').value = ''; }
+      else VIEW[k] = 'all';
+      paintViewControls(); render();
+    }
   });
 
-  $('#modeBoard').onclick = () => setMode('board');
-  $('#modeTimeline').onclick = () => setMode('timeline');
-  $('#modePeople').onclick = () => setMode('people');
-  $('#search').oninput = e => { VIEW.q = e.target.value; render(); };
+  MODES.forEach(x => { const b = $('#mode' + x); if (b) b.onclick = () => setMode(x.toLowerCase()); });
+
+  /* Search ran a full rebuild of every task on every keystroke, and each
+     rebuild also wrote the address bar. Waiting for a pause in typing turns
+     one render per character into one render per word. */
+  let searchTimer = null;
+  $('#search').oninput = e => {
+    const v = e.target.value;
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => { VIEW.q = v; render(); }, 140);
+  };
   $('#newTaskBtn').onclick = newTask;
   $('#exportBtn').onclick = exportJSON;
+  $('#keysBtn').onclick = openKeys;
   $('#foldBtn').onclick = () => {
-    // Fold everything, unless everything is already folded — then open it back up.
-    const shown = GROUPS.filter(g => STATE.tasks.some(t => t.group === g.id));
-    if (shown.every(g => COLLAPSED.has(g.id))) COLLAPSED.clear();
-    else for (const g of shown) COLLAPSED.add(g.id);
+    // Fold everything on screen, unless it already is — then open it back up.
+    const keys = buckets().map(b => `${VIEW.groupBy}:${b.id}`);
+    if (keys.length && keys.every(k => COLLAPSED.has(k))) keys.forEach(k => COLLAPSED.delete(k));
+    else keys.forEach(k => COLLAPSED.add(k));
     saveCollapsed(); render();
   };
 
@@ -560,13 +863,54 @@ function wire() {
   $('#bulkClear').onclick = () => { SELECTED.clear(); render(); };
 
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') { $('#modal').hidden = true; if (OPEN_TASK) { OPEN_TASK = null; $('#drawer').hidden = true; } }
+    if (e.key === 'Escape') {
+      $('#modal').hidden = true;
+      if (OPEN_TASK) { OPEN_TASK = null; $('#drawer').hidden = true; }
+      return;
+    }
+    // Everything below is a bare keystroke, so never while somebody is typing.
+    const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || e.target.isContentEditable;
+    if (typing || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.key === '/') { e.preventDefault(); $('#search').focus(); $('#search').select(); }
+    else if (e.key === '?') { e.preventDefault(); openKeys(); }
+    else if (e.key === 'f') { e.preventDefault(); $('#foldBtn').click(); }
+    else if (e.key === 'c') { e.preventDefault(); clearFilters(); }
+    else if (e.key >= '1' && e.key <= String(MODES.length)) {
+      e.preventDefault(); setMode(MODES[Number(e.key) - 1].toLowerCase());
+    }
   });
+}
+
+function openKeys() {
+  const m = $('#modal');
+  m.hidden = false;
+  const rows = [
+    ['/', 'Jump to search'],
+    ['1 – 5', 'Now, Board, List, Timeline, People'],
+    ['f', 'Fold or unfold every section'],
+    ['c', 'Clear all filters'],
+    ['Esc', 'Close this, or the task drawer'],
+    ['?', 'This card'],
+  ];
+  m.innerHTML = `<div class="sheet">
+    <h3>Keyboard</h3>
+    <div class="keys">${rows.map(([k, v]) => `<div class="keyrow"><kbd>${esc(k)}</kbd><span>${esc(v)}</span></div>`).join('')}</div>
+    <button class="btn small" id="closeKeys">Close</button>
+  </div>`;
+  $('#closeKeys').onclick = () => { m.hidden = true; };
+}
+
+function paintBulk() {
+  $('#bulkbar').hidden = SELECTED.size === 0;
+  $('#bulkcount').textContent = `${SELECTED.size} selected`;
 }
 
 function setMode(m) {
   VIEW.mode = m;
-  ['Board', 'Timeline', 'People'].forEach(x => $('#mode' + x).classList.toggle('on', x.toLowerCase() === m));
+  MODES.forEach(x => {
+    const b = $('#mode' + x);
+    if (b) b.classList.toggle('on', x.toLowerCase() === m);
+  });
   render();
 }
 
@@ -575,47 +919,144 @@ function setMode(m) {
    ("everything of Nimesh's that is blocked"). Keeping VIEW in the URL makes
    the address bar the sharing mechanism, and costs no storage and no server. */
 
+const VIEW_DEFAULTS = { group: 'all', person: 'all', tag: 'all', status: 'all', q: '', mode: 'now', groupBy: 'phase', mine: false };
+
 function viewToUrl() {
   const q = new URLSearchParams();
   for (const [k, v] of Object.entries(VIEW)) {
-    if (v && v !== 'all' && !(k === 'mode' && v === 'board')) q.set(k, v);
+    if (v !== VIEW_DEFAULTS[k] && v !== '' && v !== false) q.set(k, String(v));
   }
   const url = q.toString() ? `${location.pathname}?${q}` : location.pathname;
-  history.replaceState(null, '', url);
+  if (url === location.pathname + location.search) return;
+  /* Safari caps replaceState at 100 calls in 30 seconds and throws past it.
+     Typing used to call this once per keystroke; it is now once per settled
+     view, but a board left open all day should still never throw here. */
+  try { history.replaceState(null, '', url); } catch { /* the board matters more than the address bar */ }
 }
 
 function urlToView() {
   const q = new URLSearchParams(location.search);
-  for (const k of ['group', 'person', 'tag', 'status', 'q', 'mode']) {
+  for (const k of ['group', 'person', 'tag', 'status', 'q']) {
     const v = q.get(k);
     if (v) VIEW[k] = v;
   }
+  // A hand-edited or stale link must not be able to wedge the board on a view
+  // that does not exist, so anything unrecognised falls back to the default.
+  const mode = q.get('mode');
+  if (mode && MODES.some(m => m.toLowerCase() === mode)) VIEW.mode = mode;
+  const gb = q.get('groupBy');
+  if (gb && GROUPINGS[gb]) VIEW.groupBy = gb;
+  VIEW.mine = q.get('mine') === 'true';
 }
 
-/** Reflect a restored VIEW back onto the filter chips and mode buttons. */
+const MODES = ['Now', 'Board', 'List', 'Timeline', 'People'];
+
+/** Reflect a restored VIEW back onto the menus and the mode buttons. */
 function paintViewControls() {
-  for (const k of ['group', 'person', 'tag', 'status']) {
-    const chips = $('#filters').querySelectorAll(`[data-filter^="${k}:"]`);
-    chips.forEach(c => c.classList.toggle('on', c.dataset.filter === `${k}:${VIEW[k]}`));
+  const pairs = [['fPhase', 'group'], ['fPerson', 'person'], ['fStatus', 'status'], ['fTag', 'tag']];
+  for (const [id, k] of pairs) {
+    const el = $('#' + id); if (!el) continue;
+    el.value = VIEW[k];
+    el.classList.toggle('set', VIEW[k] !== 'all');
+  }
+  const gb = $('#fGroupBy');
+  if (gb) { gb.value = VIEW.groupBy; gb.classList.toggle('set', VIEW.groupBy !== 'phase'); }
+  const mine = $('#fMine');
+  if (mine) {
+    mine.classList.toggle('on', VIEW.mine);
+    mine.setAttribute('aria-pressed', String(VIEW.mine));
+    // Filtering to "mine" is meaningless before you have said who you are.
+    mine.disabled = !ME;
+    mine.title = ME ? '' : 'Sign in first';
   }
   $('#search').value = VIEW.q || '';
-  ['Board', 'Timeline', 'People'].forEach(x => $('#mode' + x).classList.toggle('on', x.toLowerCase() === VIEW.mode));
+  MODES.forEach(x => {
+    const b = $('#mode' + x);
+    if (b) b.classList.toggle('on', x.toLowerCase() === VIEW.mode);
+  });
 }
 
-function buildFilters() {
-  const groupBtns = [`<button class="fchip on" data-filter="group:all">All phases</button>`]
-    .concat(GROUPS.map(g => `<button class="fchip" data-filter="group:${g.id}">${esc(g.name)}</button>`)).join('');
-  const peopleBtns = [`<button class="fchip on" data-filter="person:all">Everyone</button>`]
-    .concat(STATE.people.map(p => `<button class="fchip" data-filter="person:${p.id}">${esc(p.name)}</button>`))
-    .concat([`<button class="fchip" data-filter="person:unassigned">Unassigned</button>`]).join('');
-  const statusBtns = ['all', 'next', 'ongoing', 'blocked', 'done']
-    .map(s => `<button class="fchip ${s === 'all' ? 'on' : ''}" data-filter="status:${s}">${s === 'all' ? 'Any status' : s === 'ongoing' ? 'On now' : s[0].toUpperCase() + s.slice(1)}</button>`).join('');
-  const tagBtns = [`<button class="fchip on" data-filter="tag:all">Any tag</button>`]
-    .concat(TAGS.map(x => `<button class="fchip" data-filter="tag:${x}">${esc(x)}</button>`)).join('');
+/* --------------------------------------------------------------- controls --
+   This was every phase, person, status and tag rendered as a flat pill: about
+   forty of them, four wrapped rows, sitting above the work and dwarfing it.
+   Menus hold the same choices in one row, and native <select> is deliberate —
+   it brings its own keyboard handling, its own screen-reader semantics and the
+   platform's own picker on a phone, none of which a hand-rolled popover would
+   get right for free. */
+
+function buildControls() {
+  const opt = (v, label, on) => `<option value="${esc(v)}"${on ? ' selected' : ''}>${esc(label)}</option>`;
+  const menu = (id, label, options) =>
+    `<span class="selw"><select class="sel" id="${id}" aria-label="${esc(label)}">${options}</select></span>`;
+
+  const groupBy = menu('fGroupBy', 'Group the board by',
+    Object.entries(GROUPINGS).map(([k, g]) => opt(k, g.label, VIEW.groupBy === k)).join(''));
+
+  const phase = menu('fPhase', 'Filter by phase',
+    opt('all', 'All phases', VIEW.group === 'all') +
+    GROUPS.map(g => opt(g.id, g.name, VIEW.group === g.id)).join(''));
+
+  const person = menu('fPerson', 'Filter by person',
+    opt('all', 'Everyone', VIEW.person === 'all') +
+    STATE.people.map(p => opt(p.id, p.name, VIEW.person === p.id)).join('') +
+    opt('unassigned', 'Unassigned', VIEW.person === 'unassigned'));
+
+  const status = menu('fStatus', 'Filter by status',
+    opt('all', 'Any status', VIEW.status === 'all') +
+    ['ongoing', 'next', 'blocked', 'done'].map(s => opt(s, statusLabel(s), VIEW.status === s)).join(''));
+
+  const tag = menu('fTag', 'Filter by tag',
+    opt('all', 'Any tag', VIEW.tag === 'all') +
+    TAGS.map(x => opt(x, x, VIEW.tag === x)).join(''));
+
   $('#filters').innerHTML = `
-    <div class="frow">${groupBtns}</div>
-    <div class="frow">${peopleBtns}</div>
-    <div class="frow">${statusBtns}${tagBtns}</div>`;
+    <div class="rail">
+      <span class="rail-label">Group by</span>${groupBy}
+      <span class="rail-sep" aria-hidden="true"></span>
+      <span class="rail-label">Show</span>${phase}${person}${status}${tag}
+      <button class="mine-btn" id="fMine" aria-pressed="false">Only mine</button>
+    </div>
+    <div class="rail active-rail" id="activeRail" hidden></div>`;
+}
+
+/** Every filter currently narrowing the board, in the order they read. */
+function filtersActive() {
+  const out = [];
+  if (VIEW.group !== 'all') {
+    const g = groupById(VIEW.group);
+    out.push({ k: 'group', key: 'Phase', text: g ? g.name : VIEW.group });
+  }
+  if (VIEW.person !== 'all') {
+    const p = personById(VIEW.person);
+    out.push({ k: 'person', key: 'Person', text: VIEW.person === 'unassigned' ? 'Unassigned' : (p ? p.name : VIEW.person) });
+  }
+  if (VIEW.mine) out.push({ k: 'mine', key: 'Only', text: 'Mine' });
+  if (VIEW.status !== 'all') out.push({ k: 'status', key: 'Status', text: statusLabel(VIEW.status) });
+  if (VIEW.tag !== 'all') out.push({ k: 'tag', key: 'Tag', text: VIEW.tag });
+  if (VIEW.q.trim()) out.push({ k: 'q', key: 'Search', text: VIEW.q.trim() });
+  return out;
+}
+
+/* A filtered board and an empty board look identical, and one of them is a bug
+   report. This row says which is which, and every chip is its own undo. */
+function paintActiveRail() {
+  const rail = $('#activeRail'); if (!rail) return;
+  const on = filtersActive();
+  if (!on.length) { rail.hidden = true; rail.innerHTML = ''; return; }
+  rail.hidden = false;
+  const shown = visibleTasks().length;
+  rail.innerHTML =
+    `<span class="shown-count">${shown} of ${STATE.tasks.length} shown</span>` +
+    on.map(f => `<button class="act" data-drop="${f.k}"><span class="k">${esc(f.key)}</span>${esc(f.text)}<span class="x2" aria-hidden="true">✕</span></button>`).join('') +
+    `<button class="link" id="clearFilters">Clear all</button>`;
+}
+
+/** Put every filter back to "everything". */
+function clearFilters() {
+  VIEW.group = VIEW.person = VIEW.tag = VIEW.status = 'all';
+  VIEW.mine = false; VIEW.q = '';
+  $('#search').value = '';
+  paintViewControls(); render();
 }
 
 /* ------------------------------------------------------------------ boot -- */
@@ -636,7 +1077,11 @@ async function boot() {
   }
 
   urlToView();
-  buildFilters(); wire(); paintIdentity(); paintViewControls(); render();
+  // A link that says "only mine" is meaningless to someone who has not said
+  // who they are; honouring it would show them an empty board.
+  if (VIEW.mine && !ME) VIEW.mine = false;
+
+  buildControls(); wire(); paintIdentity(); paintViewControls(); render();
 }
 
 document.addEventListener('DOMContentLoaded', boot);

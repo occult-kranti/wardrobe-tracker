@@ -18,7 +18,7 @@
 - [x] Focus group (LGBTQ+ fashion designers + shopaholic archetypes), moderated, then
       reviewed by a developer and a behavioral psychologist
       → `docs/06-focus-group-requirements.md`
-- [x] Brand contract encoded as a loadable skill → `skills/wardrobe-brand/SKILL.md`
+- [x] Brand contract encoded as a loadable skill → `.claude/skills/wardrobe-brand/SKILL.md`
 - [x] Repo agents: `design-critic`, `brand-artist` → `.claude/agents/`
 
 ## Phase 2 — Rebuild (✅ complete)

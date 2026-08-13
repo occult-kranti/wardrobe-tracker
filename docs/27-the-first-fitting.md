@@ -226,7 +226,7 @@ them on merge. Tokens only; no hex anywhere.
 /**
  * ALMARI tutorial artwork â€” "The First Fitting" â€” all hand-coded SVG,
  * no rasters, no external assets. Art direction: docs/05-brand-identity.md Â§6â€“7
- * and skills/wardrobe-brand/SKILL.md. Never draw a body.
+ * and .claude/skills/wardrobe-brand/SKILL.md. Never draw a body.
  *
  * Drop-in snippet for src/components/art.tsx. The `plateStroke` const and
  * `Plate` wrapper below DUPLICATE the ones already in art.tsx â€” delete them on

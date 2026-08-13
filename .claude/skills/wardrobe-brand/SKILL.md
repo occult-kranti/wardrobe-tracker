@@ -1,9 +1,9 @@
 ---
 name: wardrobe-brand
-description: The Toile brand contract for this wardrobe app. Load before ANY UI, styling, copy, icon, or artwork change - it defines the binding tokens, drawing rules, voice, and psychology directives that every visual and written change must follow.
+description: The Almari brand contract for this wardrobe app. Load before ANY UI, styling, copy, icon, or artwork change - it defines the binding tokens, drawing rules, voice, and psychology directives that every visual and written change must follow.
 ---
 
-# Toile — working rules
+# Almari — working rules
 
 The full contract is `docs/05-brand-identity.md`. This is the operational digest.
 When these rules conflict with a request, follow the rules and note the conflict.

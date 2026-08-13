@@ -93,7 +93,7 @@ It was designed against a documented contract rather than taste alone:
 | [`docs/01-market-research.md`](docs/01-market-research.md) | Competitive analysis |
 | [`docs/24-competitive-benchmark.md`](docs/24-competitive-benchmark.md) | Sourced benchmark of eleven wardrobe apps — pricing, users, reviews, data practices |
 | [`docs/02-design-psychology.md`](docs/02-design-psychology.md) | Color and interaction psychology |
-| [`skills/wardrobe-brand/SKILL.md`](skills/wardrobe-brand/SKILL.md) | The operational digest — load before any UI change |
+| [`.claude/skills/wardrobe-brand/SKILL.md`](.claude/skills/wardrobe-brand/SKILL.md) | The operational digest — load before any UI change |
 
 Three brand concepts were developed independently and scored by a
 consumer-psychologist, a principal designer, and a staff engineer; Toile won two of

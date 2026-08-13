@@ -1,5 +1,5 @@
 /* ============================================================================
-   THE CUTTING ROOM — the technical plan, as work.
+   THE TECH WORKBENCH — the technical plan, as work.
 
    Data for the shared board engine (board.js). This board is for the people
    writing the code: two to four developers who should be able to pick a task,
@@ -9,8 +9,14 @@
    a plan that says WHY gets executed.
    ========================================================================== */
 
-const BOARD_KEY = 'cuttingroom';
-const BOARD_TITLE = 'The Cutting Room';
+const BOARD_KEY = 'workbench';
+/* This board was called "The Cutting Room" until 13 Aug 2026. BOARD_KEY
+   namespaces localStorage, so renaming it without this line would have left
+   every saved edit, note and sign-in stranded under the old key — the board
+   would have looked freshly seeded and nobody would have known why. The engine
+   migrates the old keys once, then leaves them alone. */
+const BOARD_KEY_WAS = 'cuttingroom';
+const BOARD_TITLE = 'The Tech Workbench';
 
 const SYNC = {
   // Same table as the Workroom, a different row. See company/README-SYNC.md.

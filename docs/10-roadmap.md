@@ -40,7 +40,7 @@ Ordered by leverage, not by effort.
   mechanics; a group thread and one per pair; events holding outfits against
   dated occasions, with "Complete the look" filling gaps from what is owned.
   Decision record: `docs/12-wardrobes-and-feed.md`. Conventions:
-  `skills/toile-social/SKILL.md`.
+  `.claude/skills/toile-social/SKILL.md`.
 - **`loading="lazy"` removed from every data-URI image** — the direct cause of
   the below-the-fold void wall (finding 9's trigger). The structural fix (plate
   under photo, one Thumb) is still open below.

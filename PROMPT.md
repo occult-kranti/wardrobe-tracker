@@ -7,7 +7,7 @@ improving the demo data and the analytics.
 Read these in order before touching anything:
 
 1. `HANDOFF.md` — state of play, the push blocker, and what to work on next
-2. `skills/wardrobe-brand/SKILL.md` — the operational design rules (load this
+2. `.claude/skills/wardrobe-brand/SKILL.md` — the operational design rules (load this
    before ANY UI, copy, icon, or artwork change)
 3. `docs/05-brand-identity.md` — the full design contract
 4. `docs/06-focus-group-requirements.md` — features and copy law

@@ -52,12 +52,14 @@ jobs:
         run: |
           set -eu
           mkdir -p dist/company
-          cp company/almari.css company/board.js dist/company/
+          cp company/almari.css company/board.css company/board.js dist/company/
           cp company/tracker.html company/tracker.js dist/company/
           cp company/build.html company/build.js dist/company/
-          # Both boards are dead without the shared engine; fail loudly rather
-          # than publishing two pages that load and then do nothing.
+          # Both boards are dead without the shared engine and unreadable
+          # without the shared stylesheet; fail loudly rather than publishing
+          # two pages that load and then do nothing, or do it unstyled.
           test -f dist/company/board.js
+          test -f dist/company/board.css
       # V2 lives on its own branch and is served under /v2/. It builds with
       # base './' so it can sit at any subpath. Building it here means every
       # deploy of main re-publishes v2 alongside it — before this step, any

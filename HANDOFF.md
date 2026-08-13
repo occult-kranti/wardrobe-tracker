@@ -23,7 +23,7 @@ It was designed against documented contracts rather than taste:
 | `docs/06-focus-group-requirements.md` | Features + copy law from the focus group |
 | `docs/07-design-decision-log.md` | Why "Midnight Atelier" was superseded, with measurements |
 | `docs/08-verification.md` | Every suite, what it protects, traps to avoid |
-| `skills/wardrobe-brand/SKILL.md` | The operational digest — **load this before any UI change** |
+| `.claude/skills/wardrobe-brand/SKILL.md` | The operational digest — **load this before any UI change** |
 
 Green as of handoff: typecheck, brand contract (25 files), 17 migration checks,
 22 demo checks, 35 browser smoke checks, production build.

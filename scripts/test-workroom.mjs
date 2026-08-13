@@ -46,6 +46,16 @@ page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
 
 await page.goto(TRACKER, { waitUntil: 'networkidle' });
 
+// --- the now view -------------------------------------------------------
+// The board opens on "what is happening", not "what is the plan".
+check('the board opens on Now', (await page.locator('#modeNow').getAttribute('class')).includes('on'));
+const lanes = await page.locator('.lane').count();
+check('now shows a lane per person with open work', lanes >= 2, `${lanes} lanes`);
+check('now dates itself', (await page.locator('.now-date').count()) === 1);
+
+await page.locator('#modeBoard').click();
+await page.waitForTimeout(150);
+
 // --- render -------------------------------------------------------------
 const taskCount = await page.locator('.task').count();
 check('tasks render', taskCount > 50, `${taskCount} tasks`);
@@ -125,12 +135,45 @@ await page.locator('#drClose').click();
 check('drawer closes', !(await page.locator('#drawer').isVisible()));
 
 // --- filters, modes, select --------------------------------------------
-await page.locator('[data-filter="person:nimesh"]').click();
+await page.locator('#fPerson').selectOption('nimesh');
 await page.waitForTimeout(150);
 const nimeshTasks = await page.locator('.task').count();
 check('filter by person narrows the board', nimeshTasks >= 1 && nimeshTasks < taskCount, `${nimeshTasks} shown`);
-await page.locator('[data-filter="person:all"]').click();
 
+// A filtered board and an empty board look the same; the rail is the difference.
+check('the active rail appears when a filter is on', await page.locator('#activeRail').isVisible());
+check('the rail names the filter', (await page.locator('.act').first().innerText()).includes('Nimesh'));
+// innerText returns the text as rendered, and this row is uppercased in CSS.
+check('the rail counts what is hidden',
+  (await page.locator('.shown-count').innerText()).toLowerCase().includes(`of ${taskCount}`));
+await page.locator('.act[data-drop="person"]').click();
+await page.waitForTimeout(150);
+check('a rail chip is its own undo', (await page.locator('.task').count()) === taskCount);
+check('the rail hides itself when nothing is filtered', !(await page.locator('#activeRail').isVisible()));
+
+// --- grouping -----------------------------------------------------------
+// The same tasks, cut a different way. Sections must change; totals must not.
+await page.locator('#fGroupBy').selectOption('person');
+await page.waitForTimeout(150);
+const byPerson = await page.locator('.phase').count();
+check('grouping by person re-sections the board', byPerson >= 2 && byPerson <= 5, `${byPerson} sections`);
+await page.locator('#fGroupBy').selectOption('status');
+await page.waitForTimeout(150);
+const byStatus = await page.locator('.phase').count();
+check('grouping by status re-sections the board', byStatus >= 2 && byStatus <= 4, `${byStatus} sections`);
+check('regrouping never loses a task', (await page.locator('.task').count()) === taskCount);
+await page.locator('#fGroupBy').selectOption('due');
+await page.waitForTimeout(150);
+check('grouping by due month works', (await page.locator('.phase').count()) >= 2);
+await page.locator('#fGroupBy').selectOption('none');
+await page.waitForTimeout(150);
+check('grouping by nothing gives one section', (await page.locator('.phase').count()) === 1);
+await page.locator('#fGroupBy').selectOption('phase');
+await page.waitForTimeout(150);
+
+await page.locator('#modeList').click();
+await page.waitForTimeout(150);
+check('the list view renders a row per task', (await page.locator('.list tbody tr').count()) === taskCount);
 await page.locator('#modeTimeline').click();
 await page.waitForTimeout(150);
 check('timeline renders dated rows', (await page.locator('.tl-row').count()) > 5);
@@ -158,7 +201,9 @@ await page.waitForTimeout(150);
 const firstToggle = page.locator('.phase-toggle').first();
 const firstPhase = page.locator('.phase').first();
 await firstToggle.click();
-await page.waitForTimeout(150);
+// The fold animates now, and the folded rows only leave the tab order once the
+// transition has finished, so give it longer than the 200ms it takes.
+await page.waitForTimeout(350);
 check('a phase folds shut', (await firstPhase.getAttribute('class')).includes('shut') &&
   !(await firstPhase.locator('.tasks').isVisible()));
 check('the fold is announced to assistive tech', (await page.locator('.phase-toggle').first().getAttribute('aria-expanded')) === 'false');
@@ -176,23 +221,45 @@ await page.waitForTimeout(200);
 check('fold all again opens them', (await page.locator('.phase.shut').count()) === 0);
 
 // --- shareable views ----------------------------------------------------
-await page.locator('[data-filter="status:blocked"]').click();
-await page.locator('[data-filter="tag:legal"]').click();
+await page.locator('#fStatus').selectOption('blocked');
+await page.locator('#fTag').selectOption('legal');
+await page.locator('#fGroupBy').selectOption('person');
 await page.waitForTimeout(150);
-check('the view is written into the URL', page.url().includes('status=blocked') && page.url().includes('tag=legal'), page.url().split('?')[1] || '');
+check('the view is written into the URL',
+  page.url().includes('status=blocked') && page.url().includes('tag=legal') && page.url().includes('groupBy=person'),
+  page.url().split('?')[1] || '');
 const sharedUrl = page.url();
-await page.locator('[data-filter="status:all"]').click();
-await page.locator('[data-filter="tag:all"]').click();
+await page.locator('#fStatus').selectOption('all');
+await page.locator('#fTag').selectOption('all');
+await page.locator('#fGroupBy').selectOption('phase');
 await page.goto(sharedUrl, { waitUntil: 'networkidle' });
 await page.waitForTimeout(250);
-check('a shared URL restores the filters', (await page.locator('[data-filter="status:blocked"]').getAttribute('class')).includes('on') &&
-  (await page.locator('[data-filter="tag:legal"]').getAttribute('class')).includes('on'));
+check('a shared URL restores the filters',
+  (await page.locator('#fStatus').inputValue()) === 'blocked' &&
+  (await page.locator('#fTag').inputValue()) === 'legal');
+check('a shared URL restores the grouping', (await page.locator('#fGroupBy').inputValue()) === 'person');
+check('a restored filter is marked as set', (await page.locator('#fStatus').getAttribute('class')).includes('set'));
+
+// Clear-all must reach every filter, including the ones set from a link.
+await page.locator('#clearFilters').click();
+await page.waitForTimeout(150);
+check('clear all clears every filter', !(await page.locator('#activeRail').isVisible()));
+
+// A link naming a view that does not exist must land somewhere, not nowhere.
+await page.goto(TRACKER + '?mode=nonsense&groupBy=nonsense', { waitUntil: 'networkidle' });
+await page.waitForTimeout(200);
+check('a nonsense view falls back instead of wedging',
+  (await page.locator('#modeNow').getAttribute('class')).includes('on') &&
+  (await page.locator('.lane').count()) > 0);
+
 await page.goto(TRACKER, { waitUntil: 'networkidle' });
 await page.waitForTimeout(200);
 
 // --- persistence --------------------------------------------------------
 await page.reload({ waitUntil: 'networkidle' });
 await page.waitForTimeout(300);
+await page.locator('#modeBoard').click();
+await page.waitForTimeout(200);
 check('identity persists across reload', (await page.locator('#who').innerText()).includes('Kunjal'));
 check('edits persist across reload', (await page.locator('.task.done').count()) >= 1);
 check('comment persists across reload', (await page.locator('.cm').count()) >= 1);
@@ -237,7 +304,8 @@ check('the annual-revenue column is readable at 390px', revenueVisible);
 // --- the unassigned filter (was matching nothing) -----------------------
 const u = await browser.newPage({ viewport: { width: 1280, height: 900 } });
 await u.goto(TRACKER, { waitUntil: 'networkidle' });
-await u.locator('[data-filter="person:unassigned"]').click();
+await u.locator('#modeBoard').click();
+await u.locator('#fPerson').selectOption('unassigned');
 await u.waitForTimeout(200);
 const unassignedShown = await u.locator('.task').count();
 const unassignedReal = await u.evaluate(() => SEED_TASKS.filter(t => !(t.a || []).length).length);
@@ -249,10 +317,31 @@ const b = await browser.newPage({ viewport: { width: 1280, height: 900 } });
 const buildErrors = [];
 b.on('pageerror', e => buildErrors.push(String(e)));
 await b.goto('http://127.0.0.1:4180/company/build.html', { waitUntil: 'networkidle' });
-check('the cutting room renders its tasks', (await b.locator('.task').count()) > 30, `${await b.locator('.task').count()} tasks`);
-check('the cutting room renders every phase', (await b.locator('.phase').count()) === (await b.evaluate(() => GROUPS.length)));
-check('the cutting room throws nothing', buildErrors.length === 0, buildErrors.slice(0, 2).join(' | '));
+check('the workbench is named the workbench', (await b.title()).includes('Tech Workbench'));
+await b.locator('#modeBoard').click();
+await b.waitForTimeout(150);
+check('the workbench renders its tasks', (await b.locator('.task').count()) > 30, `${await b.locator('.task').count()} tasks`);
+check('the workbench renders every phase', (await b.locator('.phase').count()) === (await b.evaluate(() => GROUPS.length)));
+check('the workbench throws nothing', buildErrors.length === 0, buildErrors.slice(0, 2).join(' | '));
 check('the two boards do not share storage', await b.evaluate(() => BOARD_KEY) !== await u.evaluate(() => BOARD_KEY));
+
+// The rename changed BOARD_KEY, which namespaces localStorage. Without the
+// carry-over, every edit made before 13 Aug 2026 would have vanished in
+// silence — the board would simply have looked new.
+const mig = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+await mig.goto('http://127.0.0.1:4180/company/build.html', { waitUntil: 'networkidle' });
+await mig.evaluate(() => {
+  localStorage.clear();
+  localStorage.setItem('almari-cuttingroom-me', 'kunjal');
+  localStorage.setItem('almari-cuttingroom-collapsed', JSON.stringify(['sec']));
+});
+await mig.reload({ waitUntil: 'networkidle' });
+await mig.waitForTimeout(250);
+check('a renamed board carries its old storage across',
+  (await mig.evaluate(() => localStorage.getItem('almari-workbench-me'))) === 'kunjal');
+check('and carries the folds across too, re-keyed',
+  JSON.parse(await mig.evaluate(() => localStorage.getItem('almari-workbench-collapsed'))).includes('phase:sec'));
+check('the carried identity is actually used', (await mig.locator('#who').innerText()).includes('Kunjal'));
 const bSeed = await b.evaluate(() => {
   const groups = new Set(GROUPS.map(g => g.id)); const people = new Set(PEOPLE.map(p => p.id)); const tags = new Set(TAGS);
   const titles = SEED_TASKS.map(t => t.t);
@@ -264,11 +353,11 @@ const bSeed = await b.evaluate(() => {
     noWhy: SEED_TASKS.filter(t => !t.why).map(t => t.t),
   };
 });
-check('cutting room: every task sits in a real phase', bSeed.badGroup.length === 0, bSeed.badGroup.join(', '));
-check('cutting room: every assignee is on the roster', bSeed.badPerson.length === 0, bSeed.badPerson.join(', '));
-check('cutting room: every tag is declared', bSeed.badTag.length === 0, bSeed.badTag.join(', '));
-check('cutting room: no duplicate titles', bSeed.dupes.length === 0, bSeed.dupes.join(', '));
-check('cutting room: every task says why', bSeed.noWhy.length === 0, bSeed.noWhy.join(', '));
+check('workbench: every task sits in a real phase', bSeed.badGroup.length === 0, bSeed.badGroup.join(', '));
+check('workbench: every assignee is on the roster', bSeed.badPerson.length === 0, bSeed.badPerson.join(', '));
+check('workbench: every tag is declared', bSeed.badTag.length === 0, bSeed.badTag.join(', '));
+check('workbench: no duplicate titles', bSeed.dupes.length === 0, bSeed.dupes.join(', '));
+check('workbench: every task says why', bSeed.noWhy.length === 0, bSeed.noWhy.join(', '));
 
 await browser.close();
 server.close();

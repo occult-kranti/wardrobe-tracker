@@ -10,180 +10,7 @@
 <link rel="preconnect" href="https://api.fontshare.com">
 <link href="https://api.fontshare.com/v2/css?f[]=switzer@400,500,600,700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="almari.css">
-<style>
-  body { font-size: 16px; }
-  .shell { max-width: 1180px; margin: 0 auto; padding: 0 24px 120px; }
-
-  /* ---------------------------------------------------------- masthead -- */
-  .top { padding: 32px 0 16px; display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; justify-content: space-between; }
-  .top h1 { font-family: var(--display); font-weight: 700; font-size: 32px; letter-spacing: 0.14em; text-transform: uppercase; line-height: 1; }
-  .top .sub { font-family: var(--display); font-style: italic; font-size: 17px; color: var(--text-2); margin-top: 8px; }
-  .top-right { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-  #who { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; }
-  #stats { font-family: var(--mono); font-size: 13px; color: var(--text-2); }
-  #syncState { font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-2); display: inline-flex; align-items: center; gap: 8px; }
-  .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
-  .dot.local { background: var(--gold); }
-  .dot.ok { background: #2A6B4F; }
-  .dot.sync { background: var(--accent); }
-
-  .bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 16px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
-  .modes { display: inline-flex; border: 1px solid var(--border); border-radius: 2px; overflow: hidden; }
-  .modes button { min-height: 40px; padding: 0 16px; border: 0; background: transparent; color: var(--text-2); font-family: var(--ui); font-size: 13px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; }
-  .modes button.on { background: var(--text); color: var(--bg); }
-  #search { flex: 1; min-width: 180px; min-height: 40px; padding: 0 12px; border: 1px solid var(--border); border-radius: 2px; background: var(--surface); color: var(--text); font-family: var(--ui); font-size: 14px; }
-
-  /* ----------------------------------------------------------- filters -- */
-  #filters { padding: 16px 0 8px; display: grid; gap: 8px; }
-  .frow { display: flex; flex-wrap: wrap; gap: 6px; }
-  .fchip { min-height: 32px; padding: 0 12px; border: 1px solid var(--border); border-radius: 2px; background: transparent; color: var(--text-2); font-family: var(--ui); font-size: 13px; cursor: pointer; }
-  .fchip.on { background: var(--text); color: var(--bg); border-color: var(--text); }
-
-  /* ------------------------------------------------------------ phases -- */
-  .phase { margin-top: 40px; }
-  .phase-head { display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; align-items: baseline; border-bottom: 2px solid var(--text); padding-bottom: 8px; }
-  .phase-toggle {
-    display: inline-flex; align-items: center; gap: 10px; background: none; border: 0;
-    padding: 4px 0; margin-left: -2px; cursor: pointer; color: var(--text);
-    font-family: var(--display); font-size: 24px; font-weight: 600; line-height: 1.2;
-    min-height: 44px;
-  }
-  .phase-toggle:hover .ph-name { color: var(--accent); }
-  .chev {
-    width: 0; height: 0; flex: none;
-    border-left: 7px solid currentColor; border-top: 5px solid transparent; border-bottom: 5px solid transparent;
-    transform: rotate(90deg); transform-origin: 40% 50%; transition: transform 160ms ease-out;
-    color: var(--text-2);
-  }
-  .phase.shut .chev { transform: rotate(0deg); }
-  .phase.shut .phase-note { display: none; }
-  .phase.shut .phase-head { border-bottom-width: 1px; }
-  @media (prefers-reduced-motion: reduce) { .chev { transition: none; } }
-  .phase-note { font-size: 14px; color: var(--text-2); margin-top: 2px; max-width: 60ch; }
-  .phase-meta { font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-2); display: flex; gap: 16px; }
-  .tasks { display: grid; gap: 8px; margin-top: 16px; }
-
-  /* ------------------------------------------------------------- task --- */
-  .task { display: flex; gap: 8px; background: var(--surface); border: 1px solid var(--border); border-radius: 2px; padding: 12px 16px; }
-  .task.is-sel { border-color: var(--accent); }
-  .task.is-current { border-left: 3px solid var(--gold); }
-  .task.done { opacity: 0.55; }
-  .task.blocked { border-left: 3px solid var(--seal); }
-  .task-body { flex: 1; cursor: pointer; min-width: 0; }
-  .task h4 { font-size: 16px; font-weight: 600; line-height: 1.35; margin-top: 4px; }
-  .task.done h4 { text-decoration: line-through; }
-  .why { font-size: 14px; color: var(--text-2); margin-top: 4px; max-width: 78ch; }
-  .task-top { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-  .task-meta { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 8px; font-family: var(--mono); font-size: 11px; color: var(--text-2); }
-  .avs { display: inline-flex; gap: 4px; }
-  .pick { display: flex; align-items: flex-start; padding-top: 2px; }
-  .pick input { width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; }
-
-  .st { font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 8px; border-radius: 2px; border: 1px solid var(--border); }
-  .st-ongoing { background: var(--accent); color: var(--bg); border-color: var(--accent); }
-  .st-done { color: var(--text-2); }
-  .st-blocked { border-color: var(--seal); color: var(--seal); }
-  .pin { font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold); border: 1px solid var(--gold); border-radius: 2px; padding: 3px 8px; }
-  .gtag { font-family: var(--mono); font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-2); }
-  .tg { border: 1px solid var(--border); border-radius: 2px; padding: 2px 6px; }
-  .due.soon { color: var(--text); font-weight: 500; }
-  .due.overdue { color: var(--seal); }
-  .unassigned { font-style: italic; }
-
-  /* --------------------------------------------------------- timeline --- */
-  .timeline { margin-top: 24px; }
-  .tl-month { margin-top: 32px; }
-  .tl-month h3 { font-family: var(--display); font-size: 22px; font-weight: 600; border-bottom: 1px solid var(--text); padding-bottom: 8px; }
-  .tl-row { display: grid; grid-template-columns: 120px 24px 1fr auto auto; gap: 8px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); cursor: pointer; }
-  .tl-row.done { opacity: 0.5; }
-  .tl-date { font-family: var(--mono); font-size: 12px; color: var(--text-2); }
-  .tl-bar { height: 2px; background: var(--border); }
-  .tl-row.ongoing .tl-bar { background: var(--accent); }
-  .tl-row.is-current .tl-bar { background: var(--gold); }
-  .tl-row.blocked .tl-bar { background: var(--seal); }
-  .tl-title { font-size: 15px; }
-  .tl-when { font-family: var(--mono); font-size: 11px; color: var(--text-2); }
-  .tl-when.soon { color: var(--text); }
-  .tl-when.overdue { color: var(--seal); }
-  .tl-people { display: inline-flex; gap: 4px; }
-
-  /* ----------------------------------------------------------- people --- */
-  .person-card { margin-top: 24px; }
-  .person-head { display: flex; gap: 16px; align-items: center; }
-  .person-head h3 { font-family: var(--display); font-size: 22px; font-weight: 600; }
-  .person-nums { font-family: var(--mono); font-size: 13px; color: var(--text-2); margin: 12px 0; }
-  .tasks.compact .why { display: none; }
-
-  /* ----------------------------------------------------------- drawer --- */
-  #drawer {
-    position: fixed; top: 0; right: 0; bottom: 0; width: min(520px, 100%);
-    background: var(--surface); border-left: 1px solid var(--text); padding: 24px;
-    overflow-y: auto; z-index: 60;
-  }
-  .dr-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
-  .x { background: none; border: 0; color: var(--text-2); font-size: 18px; cursor: pointer; min-height: 44px; min-width: 44px; }
-  .dr-title { width: 100%; margin-top: 16px; font-family: var(--display); font-size: 22px; font-weight: 600; line-height: 1.25; background: transparent; border: 0; border-bottom: 1px solid var(--border); color: var(--text); padding-bottom: 8px; }
-  .dr-row { margin-top: 24px; }
-  .dr-row.two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  .dr-row label { display: block; font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-2); margin-bottom: 8px; }
-  .dr-row input, .dr-row textarea {
-    width: 100%; padding: 8px 12px; background: var(--bg); color: var(--text);
-    border: 1px solid var(--border); border-radius: 2px; font-family: var(--ui); font-size: 14px; line-height: 1.5;
-  }
-  .dr-row textarea { resize: vertical; }
-  .segs, .chips { display: flex; flex-wrap: wrap; gap: 6px; }
-  .seg, .chip, .toggle {
-    min-height: 36px; padding: 0 12px; border: 1px solid var(--border); border-radius: 2px;
-    background: transparent; color: var(--text-2); font-family: var(--ui); font-size: 13px;
-    cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
-  }
-  .seg.on { background: var(--text); color: var(--bg); border-color: var(--text); }
-  .chip.on { background: var(--accent); color: var(--bg); border-color: var(--accent); }
-  .toggle.on { border-color: var(--gold); color: var(--gold); }
-  .dep { font-size: 13px; color: var(--text-2); margin-top: 16px; font-style: italic; }
-  .comments { display: grid; gap: 12px; margin-bottom: 12px; }
-  .comment { display: flex; gap: 8px; font-size: 14px; }
-  .comment .ts { font-family: var(--mono); font-size: 11px; color: var(--text-2); }
-  .comment p { margin-top: 2px; }
-  .add-comment { display: grid; gap: 8px; }
-  .dr-foot { margin-top: 24px; font-family: var(--mono); font-size: 11px; color: var(--text-2); }
-
-  /* ------------------------------------------------------------ modal --- */
-  /* [hidden] must beat the display rules below, or the scrim paints over the page. */
-  [hidden] { display: none !important; }
-  #modal { position: fixed; inset: 0; background: rgba(32,29,24,0.45); display: grid; place-items: center; z-index: 80; padding: 24px; }
-  .sheet { background: var(--surface); border: 1px solid var(--text); border-radius: 2px; padding: 24px; max-width: 460px; width: 100%; max-height: 90vh; overflow-y: auto; }
-  .sheet h3 { font-family: var(--display); font-size: 22px; font-weight: 600; }
-  .who-list { display: grid; gap: 8px; margin: 16px 0; }
-  .who-btn { display: flex; align-items: center; gap: 12px; padding: 12px; border: 1px solid var(--border); border-radius: 2px; background: transparent; color: var(--text); font-family: var(--ui); font-size: 15px; cursor: pointer; text-align: left; }
-  .who-btn:hover { border-color: var(--accent); }
-  .who-btn small { display: block; font-size: 13px; color: var(--text-2); font-weight: 400; }
-  .add-person { display: flex; gap: 8px; margin-bottom: 16px; }
-  .add-person input { flex: 1; min-height: 40px; padding: 0 12px; border: 1px solid var(--border); border-radius: 2px; background: var(--bg); color: var(--text); font-family: var(--ui); font-size: 14px; }
-
-  /* ----------------------------------------------------------- bulkbar -- */
-  #bulkbar {
-    position: fixed; left: 50%; transform: translateX(-50%); bottom: 24px; z-index: 50;
-    display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
-    background: var(--surface); border: 1px solid var(--text); border-radius: 2px; padding: 12px 16px;
-  }
-  #bulkcount { font-family: var(--mono); font-size: 12px; color: var(--text-2); }
-
-  .empty { color: var(--text-2); font-style: italic; padding: 16px 0; }
-  .empty.small { font-size: 13px; padding: 8px 0; }
-  .setup { margin-top: 64px; }
-  .setup h2 { font-family: var(--display); font-size: 24px; font-weight: 600; }
-  .setup ol { margin: 16px 0 0 20px; display: grid; gap: 8px; font-size: 15px; }
-  .setup code { font-family: var(--mono); font-size: 13px; background: var(--sunken); padding: 1px 5px; border-radius: 2px; }
-  .setup pre { margin-top: 12px; background: var(--sunken); border: 1px solid var(--border); border-radius: 2px; padding: 16px; overflow-x: auto; font-family: var(--mono); font-size: 12px; line-height: 1.6; }
-
-  @media (max-width: 760px) {
-    .tl-row { grid-template-columns: 96px 1fr auto; }
-    .tl-bar, .tl-when { display: none; }
-    #drawer { width: 100%; }
-    .dr-row.two { grid-template-columns: 1fr; }
-  }
-</style>
+<link rel="stylesheet" href="board.css">
 </head>
 <body>
 <button class="theme-toggle" id="themeToggle" aria-label="Switch theme">Atelier</button>
@@ -203,17 +30,23 @@
 
   <div class="bar">
     <div class="modes">
-      <button id="modeBoard" class="on">Board</button>
+      <button id="modeNow" class="on">Now</button>
+      <button id="modeBoard">Board</button>
+      <button id="modeList">List</button>
       <button id="modeTimeline">Timeline</button>
       <button id="modePeople">People</button>
     </div>
-    <input id="search" placeholder="Search tasks…" aria-label="Search tasks">
+    <div class="search-wrap">
+      <input id="search" placeholder="Search tasks…" aria-label="Search tasks">
+      <span class="search-key" aria-hidden="true">/</span>
+    </div>
     <button class="btn small" id="foldBtn">Fold all</button>
     <button class="btn small" id="newTaskBtn" disabled>New task</button>
     <button class="btn small" id="exportBtn">Export</button>
+    <button class="btn small" id="keysBtn" title="Keyboard shortcuts" aria-label="Keyboard shortcuts">?</button>
   </div>
 
-  <nav id="filters" aria-label="Filters"></nav>
+  <nav id="filters" aria-label="Filters and grouping"></nav>
   <main id="main"></main>
 
   <section class="setup" id="setup">

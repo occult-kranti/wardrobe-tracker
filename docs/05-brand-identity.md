@@ -15,7 +15,7 @@
 
 ## 1. Positioning & voice
 
-**The house tailor, not the tech startup.** Toile is a private ledger for a real
+**The house tailor, not the tech startup.** Almari is a private ledger for a real
 wardrobe — quantified-self meets craft. It is the anti-Acloset: no account, no feed,
 no paywall ambush, no device lock-in. The record is yours; one-tap export is the
 brand's proof gesture.
