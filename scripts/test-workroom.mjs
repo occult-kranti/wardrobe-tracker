@@ -59,6 +59,32 @@ check('the two meetings are present',
 check('current focus is pinned', (await page.locator('.pin').count()) >= 2);
 check('new task disabled when signed out', await page.locator('#newTaskBtn').isDisabled());
 
+// --- seed integrity -----------------------------------------------------
+// A task filed under a phase that does not exist renders nowhere at all, and a
+// tag or assignee that is not in the roster silently cannot be filtered for.
+const seed = await page.evaluate(() => {
+  const groups = new Set(GROUPS.map(g => g.id));
+  const people = new Set(PEOPLE.map(p => p.id));
+  const tags = new Set(TAGS);
+  const titles = SEED_TASKS.map(t => t.t);
+  return {
+    badGroup: SEED_TASKS.filter(t => !groups.has(t.g)).map(t => t.t),
+    badPerson: SEED_TASKS.flatMap(t => (t.a || []).filter(a => !people.has(a))),
+    badTag: SEED_TASKS.flatMap(t => (t.tags || []).filter(x => !tags.has(x))),
+    dupes: titles.filter((t, i) => titles.indexOf(t) !== i),
+    noWhy: SEED_TASKS.filter(t => !t.why).map(t => t.t),
+    badDate: SEED_TASKS.filter(t => t.due && !/^\d{4}-\d{2}-\d{2}$/.test(t.due)).map(t => t.t),
+    orphanDep: SEED_TASKS.filter(t => t.dep && !titles.some(x => x.includes(t.dep))).map(t => t.t),
+  };
+});
+check('every task sits in a real phase', seed.badGroup.length === 0, seed.badGroup.join(', '));
+check('every assignee is on the roster', seed.badPerson.length === 0, seed.badPerson.join(', '));
+check('every tag is a declared tag', seed.badTag.length === 0, seed.badTag.join(', '));
+check('no duplicate task titles', seed.dupes.length === 0, seed.dupes.join(', '));
+check('every task says why it exists', seed.noWhy.length === 0, seed.noWhy.join(', '));
+check('every due date is well formed', seed.badDate.length === 0, seed.badDate.join(', '));
+check('every dependency names a real task', seed.orphanDep.length === 0, seed.orphanDep.join(', '));
+
 // --- sign in ------------------------------------------------------------
 await page.locator('#signIn').click();
 check('sign-in sheet opens', await page.locator('#modal').isVisible());

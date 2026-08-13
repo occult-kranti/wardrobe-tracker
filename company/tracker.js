@@ -48,7 +48,7 @@ const GROUPS = [
   { id: 'market',    name: 'Marketing',           window: 'M7–M12',          note: 'Organic-first, because a one-time price cannot outbid subscriptions.' },
 ];
 
-const TAGS = ['meeting', 'legal', 'critical-path', 'external-gate', 'product', 'design', 'mobile', 'testing', 'money', 'marketing', 'research', 'compliance'];
+const TAGS = ['meeting', 'legal', 'critical-path', 'external-gate', 'product', 'design', 'mobile', 'testing', 'launch', 'money', 'marketing', 'research', 'compliance'];
 
 /* ----------------------------------------------------------------- tasks -- */
 /* status: next | ongoing | done | blocked      current: the pinned focus      */
