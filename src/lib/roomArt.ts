@@ -99,7 +99,9 @@ const MIN_PIECE = 118;
 const MAX_PIECE = 260;
 /** Headroom over the tallest piece, and the floor band under everything. */
 const HEAD = 26;
-const FLOOR_BAND = 30;
+/** The deepest thing drawn below the floor line is the heel at +20. Thirty left
+    ten dead units under every room. */
+const FLOOR_BAND = 24;
 
 export interface RoomBay {
   id: string;
@@ -260,14 +262,26 @@ export function drawRoom(
   // does not sit between two wardrobes.
   let chair: RoomChair | null = null;
   if (withChair) {
-    const k = pw / BOX_W;
-    const left = x0 + showPieces * (pw + GAP);
+    // SMALLER, AND SET AT AN ANGLE.
+    //
+    // Drawn square-on at the wardrobes' own width it read as another piece of
+    // furniture in the line — and it is not one; nothing is filed to it. A
+    // chair in a real room is pulled out and turned, so this one is too: about
+    // seven tenths the size of the cases beside it, and tipped nine degrees
+    // about the point where its own feet meet the floor, so it still stands on
+    // the same floor as everything else while plainly not being part of the
+    // run.
+    const k = (pw * 0.7) / BOX_W;
+    const slotLeft = x0 + showPieces * (pw + GAP);
+    const left = Math.round(slotLeft + (pw - pw * 0.7) / 2);
     out.push(
-      `<g transform="translate(${left} ${Math.round(floorY - CROP_BOT * k)}) scale(${k.toFixed(4)})" ` +
+      `<g transform="translate(${left} ${Math.round(floorY - CROP_BOT * k)}) scale(${k.toFixed(4)}) rotate(-9 230 500)" ` +
       `class="text-text">${drawChair(wornCount).svg}</g>`
     );
     chair = {
-      left: Math.round((left / W) * 10000) / 100,
+      // The TARGET keeps the full slot: the drawing shrank, the thing a thumb
+      // aims at did not.
+      left: Math.round((slotLeft / W) * 10000) / 100,
       width: Math.round((pw / W) * 10000) / 100,
       top: Math.round((HEAD / H) * 10000) / 100,
       height: Math.round(((ph + FLOOR_BAND) / H) * 10000) / 100,
