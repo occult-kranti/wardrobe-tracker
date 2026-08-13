@@ -5,12 +5,15 @@ import { Button, Card, Chip, EmptyState, Field, LinkButton, Masthead, Modal, Sec
 import { Basting, GarmentPlate, PlateEmptyCloset } from '../components/art';
 import { IconCamera, IconChevronLeft, IconPlus } from '../components/icons';
 import { showToast } from '../components/Toast';
-import { drawFurniture, defaultSlotLabels, FORM_LABELS, FORM_NOTES, SLOT_NOUN, maxSlotsFor } from '../lib/furnitureArt';
+import {
+  drawFurniture, defaultSlotLabels, FORM_LABELS, FORM_NOTES, SLOT_NOUN, maxSlotsFor,
+  ORNAMENT_LABELS, ORNAMENT_NOTES,
+} from '../lib/furnitureArt';
 import { FURNITURE_PROMPT, readFurniture, type FurnitureRead } from '../lib/furniturePrompt';
 import { hasKey, keyLooksWrong, prepareImage, readPhotograph, saveKey } from '../lib/anthropic';
 import {
-  FURNITURE_FORMS, MAX_FURNITURE, MAX_FURNITURE_NAME, MAX_SLOT_LABEL,
-  type ClothingItem, type Furniture as FurniturePiece, type FurnitureForm,
+  FURNITURE_FORMS, MAX_FURNITURE, MAX_FURNITURE_NAME, MAX_SLOT_LABEL, ORNAMENTS,
+  type ClothingItem, type Furniture as FurniturePiece, type FurnitureForm, type Ornament,
 } from '../types';
 
 /**
@@ -112,6 +115,7 @@ function DrawPiece({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [name, setName] = useState('');
   const [form, setForm] = useState<FurnitureForm>('almirah');
   const [count, setCount] = useState(4);
+  const [ornament, setOrnament] = useState<Ornament>('plain');
   const [labels, setLabels] = useState<string[] | null>(null);
   const [reading, setReading] = useState(false);
   const [read, setRead] = useState<FurnitureRead | null>(null);
@@ -130,10 +134,11 @@ function DrawPiece({ open, onClose }: { open: boolean; onClose: () => void }) {
       id: 'preview',
       name: name || 'A place',
       form,
+      ornament,
       slots: generated.map((label, i) => ({ id: `p${i}`, label: labels?.[i] ?? label })),
       dateAdded: '',
     };
-  }, [name, form, count, ceiling, labels]);
+  }, [name, form, count, ceiling, labels, ornament]);
 
   const pick = (next: FurnitureForm) => {
     setForm(next);
@@ -143,13 +148,13 @@ function DrawPiece({ open, onClose }: { open: boolean; onClose: () => void }) {
   };
 
   const draw = () => {
-    const id = addFurniture(name, form, Math.min(count, ceiling));
+    const id = addFurniture(name, form, Math.min(count, ceiling), ornament);
     if (!id) {
       showToast(`This wardrobe already holds ${MAX_FURNITURE} places, which is as many as the room will draw.`, 'error');
       return;
     }
     onClose();
-    setName(''); setForm('almirah'); setCount(4); setLabels(null); setRead(null);
+    setName(''); setForm('almirah'); setCount(4); setLabels(null); setRead(null); setOrnament('plain');
     navigate(`/furniture/${id}`);
   };
 
@@ -317,6 +322,25 @@ function DrawPiece({ open, onClose }: { open: boolean; onClose: () => void }) {
           </div>
           <p className="text-[13px] text-text-2 leading-snug pt-1">{FORM_NOTES[form]}</p>
         </fieldset>
+
+        {/* A CARVED TREATMENT, offered only on the one form with room for one.
+            An almirah's doors and its crest are the surfaces a joiner actually
+            decorates; every other form here is a working object with no spare
+            face. The interior is never touched — a tray with a pattern on it is
+            a tray you cannot see into. */}
+        {form === 'almirah-fitted' ? (
+          <fieldset className="border-0 p-0 m-0 space-y-1.5">
+            <legend className="type-ledger text-[11px] text-text-2">How it is finished</legend>
+            <div className="flex flex-wrap gap-1.5 pt-0.5">
+              {ORNAMENTS.map(o => (
+                <Chip key={o} selected={ornament === o} onClick={() => setOrnament(o)}>
+                  {ORNAMENT_LABELS[o]}
+                </Chip>
+              ))}
+            </div>
+            <p className="text-[13px] text-text-2 leading-snug pt-1">{ORNAMENT_NOTES[ornament]}</p>
+          </fieldset>
+        ) : null}
 
         <fieldset className="border-0 p-0 m-0 space-y-1.5">
           <legend className="type-ledger text-[11px] text-text-2">

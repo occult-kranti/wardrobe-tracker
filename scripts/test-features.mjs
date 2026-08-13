@@ -270,20 +270,6 @@ check('the weather never asks for your location', !after.asked, '');
 
 /* ============ furniture — where a garment physically lives ============ */
 {
-  await page.goto(`${ORIGIN}/#/closet`, { waitUntil: 'domcontentloaded' });
-  await page.locator('a[href="#/furniture"]').first().waitFor({ state: 'attached', timeout: 15000 });
-  // The closet still opens on the clothes. The room is a door on this page, not
-  // a wall in front of it — so nothing may sit above the search box but the
-  // masthead and whatever the household has passed you.
-  const order = await page.evaluate(() => {
-    const search = document.getElementById('closet-search');
-    const room = document.querySelector('a[href="#/furniture"]');
-    if (!search || !room) return null;
-    return { roomBelowSearch: room.compareDocumentPosition(search) === Node.DOCUMENT_POSITION_PRECEDING };
-  });
-  check('the closet opens on the clothes, with the room a door below the search',
-    !!order && order.roomBelowSearch, '');
-
   // THE WAY IN. Furniture has no tab, so the Closet page carries the only
   // standing entry to it — one row, above the grid, under the rails.
   const wayIn = page.locator('a[href="#/furniture"]').first();
@@ -525,6 +511,79 @@ check('the weather never asks for your location', !after.asked, '');
   check('what is packed away is not offered for today',
     day.packedNames.length > 0 && day.offered.length === 0,
     `${day.packedNames.length} packed, ${day.offered.length} still offered`);
+}
+
+/* ============ the chair, and the room's own switch ============ */
+{
+  await page.goto(`${ORIGIN}/#/closet`, { waitUntil: 'domcontentloaded' });
+  await page.locator('#closet-search').waitFor({ state: 'attached', timeout: 15000 });
+
+  // THE ROOM opens the page, and can be put away by anyone who would rather it
+  // were not there. The preference outlives a reload.
+  const roomFirst = await page.evaluate(() => {
+    const search = document.getElementById('closet-search');
+    const svg = document.querySelector('svg[viewBox]');
+    return !!svg && !!search && svg.compareDocumentPosition(search) === Node.DOCUMENT_POSITION_FOLLOWING;
+  });
+  check('the dressing room opens on the room', roomFirst, '');
+  check('the page is called the dressing room',
+    /Dressing room/i.test(await page.evaluate(() => document.body.innerText)), '');
+
+  const hide = page.getByRole('button', { name: /hide the room/i }).first();
+  check('the room can be put away', await hide.count() === 1, '');
+  await hide.click();
+  await page.waitForTimeout(500);
+  const hidden = await page.evaluate(() => ({
+    stored: localStorage.getItem('toile-room'),
+    gone: document.querySelector('button[aria-expanded]')?.getAttribute('aria-expanded') === 'false',
+  }));
+  check('and it goes', hidden.gone && hidden.stored === 'off', `stored=${hidden.stored}`);
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(900);
+  const stillHidden = await page.evaluate(() =>
+    document.querySelector('button[aria-expanded]')?.getAttribute('aria-expanded') === 'false');
+  check('and stays away across a reload', stillHidden, '');
+  await page.getByRole('button', { name: /show the room/i }).first().click();
+  await page.waitForTimeout(600);
+  check('and comes back when asked', await page.evaluate(() =>
+    document.querySelector('button[aria-expanded]')?.getAttribute('aria-expanded') === 'true'), '');
+
+  // THE CHAIR is behind a pull: it appears only once somebody has asked about
+  // the wash. Nobody is shown their own laundry unprompted.
+  const unprompted = await page.evaluate(() =>
+    !document.querySelector('button[aria-label*="on the chair"]'));
+  check('the chair does not appear unprompted', unprompted, '');
+
+  const washChip = page.getByRole('button', { name: /needs wash \d+/i }).first();
+  if (await washChip.count()) {
+    await washChip.click();
+    await page.waitForTimeout(700);
+    const chair = await page.evaluate(() => {
+      const btn = document.querySelector('button[aria-label*="on the chair"]');
+      const svg = btn?.querySelector('svg');
+      return {
+        shown: !!btn,
+        paths: svg?.querySelectorAll('path').length ?? 0,
+        // The number must live in the sentence, never in the drawing.
+        numerals: !!svg?.querySelector('text'),
+        label: btn?.getAttribute('aria-label') ?? '',
+      };
+    });
+    check('asking about the wash shows the chair', chair.shown, chair.label);
+    check('the chair is drawn, not counted', chair.paths > 6 && !chair.numerals,
+      `${chair.paths} paths`);
+
+    // And it is a verb: tapping it sends the pile to the wash.
+    const before = await page.evaluate(key =>
+      JSON.parse(localStorage.getItem(key)).items.filter(i => i.laundryStatus === 'worn').length,
+      await activeKey());
+    await page.locator('button[aria-label*="on the chair"]').first().click();
+    await page.waitForTimeout(900);
+    const after = await page.evaluate(key =>
+      JSON.parse(localStorage.getItem(key)).items.filter(i => i.laundryStatus === 'worn').length,
+      await activeKey());
+    check('and tapping the chair clears it', before > 0 && after === 0, `${before} → ${after} worn`);
+  }
 }
 
 /* ============ the rooms, in one order ============ */

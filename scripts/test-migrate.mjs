@@ -212,6 +212,20 @@ const checks = [
     const f = withF.furniture[0];
     return f.form === 'almirah-fitted' && f.slots.length === 7 && f.slots[4].label === 'Bags';
   })()],
+  ['a carved treatment round-trips, and an unknown one becomes plain', (() => {
+    const withF = migrate({ ...v1, furniture: [
+      { id: 'f1', name: 'A', form: 'almirah-fitted', ornament: 'mughal', slots: [{ id: 's', label: 'x' }] },
+      { id: 'f2', name: 'B', form: 'almirah-fitted', ornament: 'baroque', slots: [{ id: 's', label: 'x' }] },
+      { id: 'f3', name: 'C', form: 'almirah-fitted', ornament: 'plain', slots: [{ id: 's', label: 'x' }] },
+      { id: 'f4', name: 'D', form: 'almirah-fitted', slots: [{ id: 's', label: 'x' }] },
+    ] });
+    // Plain is the ABSENCE of the field, so a plain piece is byte-identical to
+    // every piece written before ornament existed.
+    return withF.furniture[0].ornament === 'mughal'
+      && withF.furniture[1].ornament === undefined
+      && withF.furniture[2].ornament === undefined
+      && withF.furniture[3].ornament === undefined;
+  })()],
   ['an unknown form becomes a chest, and keeps its slots', (() => {
     // A form we cannot draw is a wrong picture of a real object, which is
     // recoverable. Dropping the piece would take its addresses with it.

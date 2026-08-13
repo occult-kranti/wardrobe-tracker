@@ -3,6 +3,7 @@ import {
   DEFAULT_CATEGORIES,
   DEFAULT_OCCASIONS,
   FURNITURE_FORMS,
+  ORNAMENTS,
   initialState,
   type AppState,
   type ClothingItem,
@@ -153,6 +154,11 @@ export function migrate(raw: unknown): AppState {
       // that can hold anything. It is a wrong picture of a real object, which
       // is recoverable; dropping it would take the addresses with it.
       if (!FURNITURE_FORMS.includes(f.form)) f.form = 'chest';
+      // v7: a carved treatment. Anything we cannot draw becomes plain rather
+      // than being dropped — an unknown ornament is a wrong surface on a real
+      // piece of furniture, and the furniture is what holds the clothes.
+      if (f.ornament !== undefined && !ORNAMENTS.includes(f.ornament)) delete f.ornament;
+      if (f.ornament === 'plain') delete f.ornament;
       const seenSlots = new Set<string>();
       const slots = (Array.isArray(f.slots) ? f.slots : [])
         .flatMap((s): AppState['furniture'][number]['slots'] => {

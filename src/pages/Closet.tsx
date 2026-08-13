@@ -1,5 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { Room } from '../components/Room';
+import { drawChair } from '../lib/furnitureArt';
 import { Tilt } from '../components/Glass';
 import { useWardrobe } from '../context/WardrobeContext';
 import ItemDetail from '../components/ItemDetail';
@@ -273,7 +275,7 @@ function RetiredRow({
 
 export default function Closet() {
   const {
-    items, activeItems, settings, furniture,
+    items, activeItems, settings,
     addItem, toggleFavoriteItem, deleteItem, logWear, setLaundryStatus, advanceLaundry, retireItem, unretireItem,
   } = useWardrobe();
 
@@ -351,11 +353,13 @@ export default function Closet() {
     });
   }, [browsable, search, activeCategory, filterSeason, filterOccasion, filterColor, showFavoritesOnly, benchFilter]);
 
-  /** A flat count, never a ratio — a bank balance, not a completion meter. */
-  const filedCount = useMemo(() => {
-    const known = new Set(furniture.map(f => f.id));
-    return activeItems.filter(i => i.place && known.has(i.place.furnitureId)).length;
-  }, [furniture, activeItems]);
+  /** Derived at render from laundryStatus. The chair is never stored, and is
+      never a place — giving a Tuesday a permanent address would turn it into a
+      fact about how somebody lives. */
+  const chairDrawing = useMemo(
+    () => drawChair(activeItems.filter(i => i.laundryStatus === 'worn').length),
+    [activeItems],
+  );
 
   const retiredItems = useMemo(
     () => items.filter(i => i.retired)
@@ -420,7 +424,7 @@ export default function Closet() {
   return (
     <div>
       <Masthead
-        title="Closet"
+        title="Dressing room"
         meta={closetEmpty ? undefined : countLabel}
         // The fastest road into a closet there is: one photograph of what you
         // already have on. It sits beside the count rather than as a second
@@ -469,6 +473,13 @@ export default function Closet() {
         />
       ) : (
         <div className="space-y-5">
+          {/* THE ROOM. Back at the top of the page by the owner's decision, and
+              rebuilt rather than restored: it composes the SAME drawings the
+              rest of the app uses instead of a second set of its own, and it is
+              as wide as its furniture needs rather than as wide as the plate.
+              Anyone who would rather not see it hides it once. */}
+          <Room />
+
           {/* The tray: hand-me-downs mid-air. Pull-only — no badge, no bubble —
               and nothing lands until the yes is said from in here, because a
               closet something can appear in uninvited is not your closet. */}
@@ -621,20 +632,53 @@ export default function Closet() {
           {/* Wash day used to be sixty taps — the State rail could show
               "Needs a wash 12" but could do nothing about it. With the filter
               active, the filter becomes the verb. */}
+          {/* THE CHAIR.
+              Every home has the one where the clothes that are neither clean
+              nor dirty end up, and this is the app's picture of that state.
+
+              Where it sits is the whole of what keeps it kind. It rides the row
+              that ALREADY only appears once you have tapped the wash filter —
+              you asked about the wash and the chair answers; nobody is shown
+              their own laundry unprompted. And it is a VERB: tapping it does
+              what the button does. A drawing that reports a pile is a comment
+              on your housekeeping; one that clears it is a tool.
+
+              The pile is literal up to twelve and stops counting after that.
+              Nineteen and twenty-three are the same picture — the number lives
+              in the sentence beside it, never in the drawing. */}
           {benchFilter === 'worn' && benchCounts.worn > 0 ? (
-            <div className="flex items-center justify-between gap-3 bg-surface plate rounded-[2px] px-4 py-3">
-              <p className="text-[13px] text-text-2">
-                {benchCounts.worn} {benchCounts.worn === 1 ? 'piece is' : 'pieces are'} waiting on the basket.
-              </p>
-              <Button
-                compact
+            <div className="flex items-center gap-4 bg-surface plate rounded-[2px] px-4 py-3">
+              <button
+                type="button"
                 onClick={() => {
                   const n = advanceLaundry('worn', 'washing');
                   showToast(`In the wash. ${n} ${n === 1 ? 'piece' : 'pieces'}.`, 'info');
                 }}
+                aria-label={`Send the ${benchCounts.worn} pieces on the chair to the wash`}
+                className="shrink-0 w-[76px] text-text focus-visible:outline-2"
               >
-                Send them all to the wash
-              </Button>
+                <span
+                  className="block"
+                  dangerouslySetInnerHTML={{
+                    __html: `<svg viewBox="${chairDrawing.viewBox}" class="w-full h-auto block" aria-hidden="true">${chairDrawing.svg}</svg>`,
+                  }}
+                />
+              </button>
+              <div className="min-w-0 flex-1">
+                <p className="text-[13px] text-text-2 leading-snug">
+                  {benchCounts.worn} {benchCounts.worn === 1 ? 'piece is' : 'pieces are'} waiting on the basket.
+                </p>
+                <Button
+                  compact
+                  className="mt-2"
+                  onClick={() => {
+                    const n = advanceLaundry('worn', 'washing');
+                    showToast(`In the wash. ${n} ${n === 1 ? 'piece' : 'pieces'}.`, 'info');
+                  }}
+                >
+                  Send them all to the wash
+                </Button>
+              </div>
             </div>
           ) : null}
           {benchFilter === 'washing' && benchCounts.washing > 0 ? (
@@ -745,42 +789,6 @@ export default function Closet() {
               </div>
             </div>
           )}
-
-          {/* WHERE THINGS LIVE — one line, and the whole of the furniture
-              feature's presence on this page.
-
-              It had a drawn room at the top of the closet and its own tab in the
-              navigation, and both were wrong in the same way: a grid of
-              photographs is what a closet IS, and everything above it was
-              something to get past. Arranging is a second question you ask of
-              clothes you already have, so it is a door on this page rather than
-              a room in front of it, and it is not a sibling of the closet in the
-              rail.
-
-              It sits here, under the rails and above the grid, because that is
-              where the page's other conditional prompts already sit — wash day
-              uses the same shape — and it is a row rather than a chip because
-              the designer's rule stands: a third rail is the wall. */}
-          <Link
-            to="/furniture"
-            className="flex items-center justify-between gap-3 bg-surface plate rounded-[2px] px-4 py-3 group"
-          >
-            <span className="min-w-0">
-              <span className="type-label text-text block">
-                {furniture.length === 0 ? 'Where things live' : 'The room'}
-              </span>
-              {/* Wraps rather than truncates. An ellipsis in the middle of a
-                  sentence reads as a fault in the app; two short lines do not. */}
-              <span className="type-ledger text-[11px] text-text-2 tabular block mt-0.5 leading-relaxed">
-                {furniture.length === 0
-                  ? 'A rail, a chest, an almirah'
-                  : `${furniture.length} ${furniture.length === 1 ? 'place' : 'places'} · ${filedCount} filed`}
-              </span>
-            </span>
-            <span className="type-label text-accent shrink-0 group-hover:underline underline-offset-[3px]">
-              {furniture.length === 0 ? 'Draw one' : 'Open'}
-            </span>
-          </Link>
 
           {filteredItems.length > 0 ? (
             <div id="everything" className="bg-surface plate rounded-[2px] p-4 sm:p-5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-7 v2-rise">

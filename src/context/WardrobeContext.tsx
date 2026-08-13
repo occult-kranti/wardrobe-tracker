@@ -21,6 +21,7 @@ import {
   type WearLog,
   type WishlistItem,
   type FurnitureForm,
+  type Ornament,
   MAX_FURNITURE,
 } from '../types';
 
@@ -66,7 +67,7 @@ interface WardrobeContextType extends AppState {
   /* ---------- furniture: where a piece lives ---------- */
   /** Returns the new piece's id, so a caller can open it straight away. */
   /** The id of what was drawn, or '' when the room is already full. */
-  addFurniture: (name: string, form: FurnitureForm, slotCount: number) => string;
+  addFurniture: (name: string, form: FurnitureForm, slotCount: number, ornament?: Ornament) => string;
   /** Pack a compartment away for the season, or bring it back out. */
   packSlot: (furnitureId: string, slotId: string, packed: boolean) => void;
   /** Pack, or unpack, every compartment of one piece at once. */
@@ -510,7 +511,9 @@ export function WardrobeProvider({ accountId, children }: { accountId: string; c
   /** Put a piece of this closet on, or take it off, my open-to-borrow list. */
   /* ---------- furniture ---------- */
 
-  const addFurniture = useCallback((name: string, form: FurnitureForm, slotCount: number) => {
+  const addFurniture = useCallback((
+    name: string, form: FurnitureForm, slotCount: number, ornament?: Ornament,
+  ) => {
     // The ceiling governs what may be MADE. It never governs what may be read:
     // a file that already holds more arrives intact and stays intact.
     if (state.furniture.length >= MAX_FURNITURE) return '';
@@ -524,6 +527,9 @@ export function WardrobeProvider({ accountId, children }: { accountId: string; c
       form,
       slots: labels.map((label, i) => ({ id: `${id}-s${i + 1}`, label })),
       dateAdded: todayLocal(),
+      // Plain is the absence of the field, not a value in it — so a plain piece
+      // is byte-identical to every piece written before ornament existed.
+      ...(ornament && ornament !== 'plain' ? { ornament } : {}),
     };
     setState(prev => (
       prev.furniture.length >= MAX_FURNITURE

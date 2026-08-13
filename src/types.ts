@@ -116,10 +116,24 @@ export interface FurnitureSlot {
   packed?: boolean;
 }
 
+/**
+ * A CARVED TREATMENT, on the one form grand enough to carry one.
+ *
+ * Absent means plain, so every piece that already exists is untouched and
+ * always will be. It changes no working part: the artist's law is that nothing
+ * inside the carcass may be ornamented, because everything in there — the rod,
+ * the trays, the locker, the labels, the tap targets — is a control.
+ */
+export type Ornament = 'plain' | 'mughal' | 'rajput' | 'shoji';
+
+export const ORNAMENTS: Ornament[] = ['plain', 'mughal', 'rajput', 'shoji'];
+
 export interface Furniture {
   id: string;
   name: string;
   form: FurnitureForm;
+  /** Only ever read for a fitted almirah. Absent is plain. */
+  ornament?: Ornament;
   /** At least one, and at most that form's own maximum — see FORM_MAX_SLOTS. */
   slots: FurnitureSlot[];
   note?: string;

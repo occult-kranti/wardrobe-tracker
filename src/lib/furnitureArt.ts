@@ -1,4 +1,4 @@
-import { FORM_MAX_SLOTS, type Furniture, type FurnitureForm } from '../types';
+import { FORM_MAX_SLOTS, type Furniture, type FurnitureForm, type Ornament } from '../types';
 
 /**
  * DRAWING THE FURNITURE.
@@ -631,6 +631,112 @@ const FITTED_LABELS: string[] = [
   'Hanging ledge', 'Shelves', 'Jewels', 'Locker', 'Bags', 'Shoes', 'Drawer',
 ];
 
+/**
+ * ORNAMENT — Mughal, Rajput and Japanese, on the one form grand enough for it.
+ *
+ * ONE LAW, and it decides everything else: **no ornament inside the carcass.**
+ * Everything between (96,96) and (364,482) is a working part — the rod and what
+ * hangs on it, the trays, the locker and its keyhole, the labels, the counts,
+ * and the rectangles a thumb aims at. Ornament goes where the object actually
+ * has area and no job: the crest above the case, the leaves, the plinth below.
+ *
+ * The second decision is the interesting one, and it came from measuring rather
+ * than from taste. A true jaali is two crossing diagonal families; at the pitch
+ * this drawing can afford, the perpendicular spacing is about 9px against 1.1px
+ * strokes. That is not a screen, it is grey tone, and on a fractional DPR it
+ * moirés. **So the Mughal treatment ships as a pierced grille — vertical bars
+ * with a real opening between them — which is what a jaali resolves to from
+ * three feet away anyway.** More authentic and less legible is a trade this
+ * house does not make.
+ *
+ * The leaves fold flat at 24 units wide, which is thirteen pixels. A leaf that
+ * narrow can say three things: how many rails divide it, where they sit, and
+ * whether they are light or heavy. It cannot carry a pattern, so none of these
+ * treatments puts one there — each states its tradition in the RHYTHM of its
+ * rails, which is how a joiner would have done it.
+ */
+const ORN = 'fill="none" stroke="var(--color-text-2)" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter"';
+
+interface OrnamentSet {
+  crest: (scale: number) => string;
+  leaf: (x0: number, scale: number) => string;
+  plinth: () => string;
+}
+
+const ORNAMENT_SETS: Record<Ornament, OrnamentSet> = {
+  plain: {
+    crest: () => '',
+    leaf: (x0) =>
+      `<path d="M${x0 + 5} 112h14v150h-14z" ${R1}/><path d="M${x0 + 5} 278h14v170h-14z" ${R1}/>`,
+    plinth: () => '',
+  },
+
+  // The mehrab: a nine-point cusped arch springing off the case's own corners,
+  // with a pierced tympanum under it and the same pitch repeated as a
+  // ventilated plinth — crest and base tied by one rhythm.
+  mughal: {
+    crest: () =>
+      `<path d="M84 96h292" ${ORN}/>` +
+      `<path d="M96 96Q100 76 120 70Q133 50 156 52Q175 36 198 46Q218 44 230 26` +
+      `Q242 44 262 46Q285 36 304 52Q327 50 340 70Q360 76 364 96" ${ORN}/>` +
+      `<path d="M150 58h160v34h-160z" ${ORN}/>` +
+      `<path d="M170 58v34M194 58v34M218 58v34M242 58v34M266 58v34M290 58v34" ${ORN}/>`,
+    leaf: (x0, scale) =>
+      `<path d="M${x0 + 5} 112h14v226h-14z" ${ORN}/>` +
+      `<path d="M${x0 + 5} 350h14v100h-14z" ${ORN}/>` +
+      // The arched head is 4px tall at phone scale; below that it is lint.
+      (scale >= 0.68 ? `<path d="M${x0 + 5} 128q7-14 14 0" ${ORN}/>` : ''),
+    plinth: () =>
+      `<path d="M96 496h268" ${ORN}/>` +
+      `<path d="M122 482v14M146 482v14M170 482v14M194 482v14M218 482v14` +
+      `M242 482v14M266 482v14M290 482v14M314 482v14M338 482v14" ${ORN}/>`,
+  },
+
+  // The jharokha, made drawable in a house with no perspective: the projection
+  // is stated as OVERSAIL rather than as depth. Heavier throughout, because
+  // heaviness is the axis Rajput woodwork has and Mughal does not.
+  rajput: {
+    crest: () =>
+      `<path d="M52 40h356v18h-356z" ${R1}/>` +
+      `<path d="M96 96v-24q0-14 14-14M364 96v-24q0-14-14-14" ${R1}/>` +
+      `<path d="M110 58a30 12 0 0 0 60 0a30 12 0 0 0 60 0a30 12 0 0 0 60 0a30 12 0 0 0 60 0" ${ORN}/>`,
+    leaf: (x0) =>
+      // Bold cross-bands the full width of the leaf. The panels are implied by
+      // the bands and never outlined: a 5-unit inset rule at this width merges
+      // with the stile and reads as a thicker line, not as a panel.
+      `<path d="M${x0} 104h24M${x0} 116h24M${x0} 268h24M${x0} 280h24M${x0} 452h24M${x0} 464h24" ${R1}/>`,
+    plinth: () =>
+      `<path d="M92 482h280M92 492h280" ${R1}/>` +
+      `<path d="M120 492a22 8 0 0 0 44 0a22 8 0 0 0 44 0a22 8 0 0 0 44 0a22 8 0 0 0 44 0a22 8 0 0 0 44 0" ${ORN}/>`,
+  },
+
+  // Shoji, and the corrective. One lintel, an even ladder, one line on the
+  // floor — and then a band of nothing above the lintel that is never filled.
+  // The empty part is the treatment.
+  shoji: {
+    crest: () => `<path d="M64 76h332v12h-332z" ${ORN}/>`,
+    leaf: (x0) =>
+      `<path d="M${x0 + 5} 112h14v340h-14z" ${ORN}/>` +
+      `<path d="M${x0 + 5} 180h14M${x0 + 5} 248h14M${x0 + 5} 316h14M${x0 + 5} 384h14" ${ORN}/>`,
+    plinth: () => `<path d="M84 500h292" ${ORN}/>`,
+  },
+};
+
+/** What each treatment is called, for the one control that offers them. */
+export const ORNAMENT_LABELS: Record<Ornament, string> = {
+  plain: 'Plain',
+  mughal: 'Mughal',
+  rajput: 'Rajput',
+  shoji: 'Shoji',
+};
+
+export const ORNAMENT_NOTES: Record<Ornament, string> = {
+  plain: 'Pressed steel and two panelled doors. Nothing added.',
+  mughal: 'A cusped arch over the case, a pierced screen under it, and the same rhythm again along the plinth.',
+  rajput: 'A bracketed hood oversailing the case, heavy rails on the doors, a scalloped apron at the foot.',
+  shoji: 'One lintel, an even ladder of rails, and a band of nothing left above it.',
+};
+
 function drawFitted(f: Furniture, counts: Record<string, number>, scale: number): Drawing {
   const fs = labelSize(scale);
   const parts = fittedPlan(f.slots.length);
@@ -640,10 +746,11 @@ function drawFitted(f: Furniture, counts: Record<string, number>, scale: number)
   // WOODEN DOORS, folded flat against a STEEL CASE — the two materials are the
   // whole of what this object is called, so both are drawn rather than stated.
   // Wood is panelled; steel is riveted and has a pressed lip.
+  const orn = ORNAMENT_SETS[f.ornament ?? 'plain'];
+  out.push(orn.crest(scale));
   for (const [x0, x1] of [[68, 92], [368, 392]]) {
     out.push(`<path d="M${x0} ${F_TOP + 4}h${x1 - x0}v${F_BOT - F_TOP - 8}h-${x1 - x0}z" ${R1}/>`);
-    out.push(`<path d="M${x0 + 5} ${F_TOP + 16}h${x1 - x0 - 10}v150h-${x1 - x0 - 10}z" ${R1}/>`);
-    out.push(`<path d="M${x0 + 5} ${F_TOP + 182}h${x1 - x0 - 10}v170h-${x1 - x0 - 10}z" ${R1}/>`);
+    out.push(orn.leaf(x0, scale));
   }
   out.push(`<path d="M96 ${F_TOP}h268v${F_BOT - F_TOP}h-268z" ${R1}/>`);
   out.push(`<path d="M96 ${F_TOP + 12}h268" ${R1}/>`);
@@ -652,6 +759,7 @@ function drawFitted(f: Furniture, counts: Record<string, number>, scale: number)
   }
   out.push(`<path d="M96 ${F_BOT}h268" ${R1}/>`);
   out.push(`<path d="M108 ${F_BOT}v18M352 ${F_BOT}v18" ${R1}/>`);
+  out.push(orn.plinth());
 
   const divided = parts.some(p => p.x === F_DIV);
   if (divided) out.push(`<path d="M${F_DIV} ${F_IN_TOP}v${F_IN_BOT - F_IN_TOP}" ${R1}/>`);
@@ -956,6 +1064,156 @@ function drawRack(f: Furniture, counts: Record<string, number>, scale: number): 
   });
 
   return { svg: out.join(''), slots, viewBox: `0 0 ${VIEW.w} ${VIEW.h}` };
+}
+
+/* ---------- the chair ----------
+   Every home has it: the chair where the clothes that are neither clean nor
+   dirty accumulate. It is drawn here because it is the users' own word — the
+   panellist quoted at the top of types.ts said "I have a rail and a chair" —
+   and because it is the one honest picture of the state between worn and
+   washed.
+
+   IT IS NOT A PIECE OF FURNITURE, and must never become one. Nothing is filed
+   to the chair; it is derived from laundryStatus at render and stored nowhere.
+   Giving a laundry state a permanent address would turn a Tuesday into a fact
+   about how somebody lives.
+
+   AND IT IS NOT A METER. Up to twelve the drawing is literal — there are as
+   many garments drawn as there are garments, each landing where a real one
+   lands. Past twelve it stops counting and starts describing: one enveloping
+   shape at thirteen, and a heap with four legs under it at twenty-five.
+   Nineteen and twenty-three are the same drawing, and that is the feature. A
+   drawing that changed measurably at every integer would be a bar chart of
+   somebody's housekeeping with a joke on top. The number is written beside it;
+   the number is never drawn. */
+
+const CHAIR_FRAME = [
+  'M158 168v332M302 168v332',
+  'M136 340h188v12h-188z',
+  'M142 352v148M318 352v148',
+  'M142 448h176',
+  'M72 500h316',
+].map(d => `<path d="${d}" ${R1}/>`).join('');
+
+/** Cloth marks. Curves, always — the frame is straight lines and slabs, and
+    that difference is how the drawing says which is furniture and which is
+    laundry without labelling either. */
+const CLOTH = {
+  drapeA: 'M174 270c-4-28-2-58 2-86c7-18 20-24 41-24c21 0 34 6 41 24c4 28 6 58 2 86',
+  drapeAHem: 'M174 270c28 8 58 8 86 0',
+  drapeASleeve: 'M246 273c8 16 12 32 10 48c-5 4-12 4-15-2c0-14-4-28-9-42',
+  drapeB: 'M250 252c-4-26-2-52 2-78c7-16 20-22 40-22c20 0 33 6 40 22c4 26 6 52 2 78',
+  drapeBHem: 'M250 252c26 8 58 8 84 0',
+  drapeC: 'M122 248c-4-26-2-52 2-78c7-16 20-22 40-22c20 0 33 6 40 22c4 26 6 52 2 78',
+  drapeCHem: 'M122 248c26 8 58 8 84 0',
+  course1: 'M140 340c10-14 30-22 56-24c30-2 56 2 74 10c10 4 14 10 14 14',
+  course1Fold: 'M164 334c16-8 38-12 60-10',
+  course2: 'M152 330c8-18 28-30 54-32c30-2 54 4 70 14c8 5 10 12 8 18',
+  course3: 'M158 318c8-18 26-30 50-32c28-2 50 4 64 14c7 5 9 11 7 18',
+  course4: 'M156 306c10-20 28-32 52-34c28-2 50 4 66 14c10 6 14 14 12 22',
+  spill1: 'M262 336c8 14 12 34 10 56c-6 6-16 6-22 0c2-20-2-40-8-52',
+  spill2: 'M196 336c10 24 16 60 14 96c-8 8-20 8-28 0c2-34-4-68-14-92',
+  fallen1: 'M324 500c-2-14 6-26 20-30c12-4 22 0 28 8c4 6 4 14 2 22',
+  fallen2: 'M136 500c2-14-6-26-20-30c-12-4-22 0-28 8c-4 6-4 14-2 22',
+  fallen3: 'M332 472c2-14 12-22 26-22c12 0 20 6 20 14c0 5-2 9-6 12',
+  shroud: 'M144 300c-8-46-2-92 10-122c10-24 30-36 56-38c22-2 40 6 52 18c14-12 34-16 52-10c22 8 32 28 30 52c-2 30-8 60-14 86',
+  shroudFold: 'M164 214c26-16 60-20 88-10',
+  mass: 'M116 440c-10-46-14-96-12-140c2-42 14-80 36-110c14-20 36-34 60-50c20-2 36 8 50 28c10-24 28-38 50-36c24 2 44 22 56 58c14 32 22 70 24 110c2 48-6 96-28 140',
+  massHem: 'M116 440c34 18 74 28 118 28c44 0 84-10 118-28',
+  massFold: 'M140 262c34-26 78-40 122-38',
+};
+
+const cloth = (...keys: (keyof typeof CLOTH)[]) =>
+  keys.map(k => `<path d="${CLOTH[k]}" ${R2}/>`).join('');
+
+/**
+ * Draw the chair, with as much on it as there is.
+ *
+ * A member that passes under cloth is DRAWN SHORT rather than drawn over: there
+ * are no fills in this house, so not drawing the hidden part is the only
+ * occlusion available — and it is the truer one anyway. A visible stub under
+ * twelve units is dropped entirely, because a six-pixel nub reads as a
+ * rendering fault rather than as a rail continuing behind a shirt.
+ */
+export function drawChair(count: number): Drawing {
+  const n = Math.max(0, Math.round(count) || 0);
+  const out: string[] = [];
+
+  if (n >= 25) {
+    // The terminal drawing. Four legs under a heap, and nothing else of the
+    // chair. This is what it looks like at 25 and at 250.
+    out.push(`<path d="M142 449v51M158 454v46M302 459v41M318 455v45" ${R1}/>`);
+    out.push(`<path d="M72 500h316" ${R1}/>`);
+    out.push(cloth('mass', 'massHem', 'massFold', 'fallen1', 'fallen2', 'fallen3'));
+    return { svg: out.join(''), slots: [{ id: 'chair', x: 84, y: 128, w: 296, h: 372 }], viewBox: `0 0 ${VIEW.w} ${VIEW.h}` };
+  }
+
+  // The back's frame, clipped by whatever is hanging over it.
+  const overBack = Math.min(3, n >= 6 ? 3 : n >= 3 ? 2 : n >= 1 ? 1 : 0);
+  if (overBack === 0) {
+    out.push(`<path d="M152 168h156v14h-156z" ${R1}/>`);
+    out.push(`<path d="M158 216h144v12h-144z" ${R1}/>`);
+    out.push(`<path d="M158 264h144v12h-144z" ${R1}/>`);
+  } else if (overBack === 1) {
+    out.push(`<path d="M152 168h34M248 168h60M152 182h24M258 182h50M152 168v14M308 168v14" ${R1}/>`);
+    out.push(`<path d="M158 216h13M261 216h41M158 228h12M262 228h40M158 216v12M302 216v12" ${R1}/>`);
+    out.push(`<path d="M158 264h144v12h-144z" ${R1}/>`);
+  } else if (overBack === 2) {
+    out.push(`<path d="M152 168h34M152 182h24M152 168v14" ${R1}/>`);
+    out.push(`<path d="M158 216h13M158 228h12M158 216v12" ${R1}/>`);
+    out.push(`<path d="M158 264h16M260 264h42M158 276h16M260 276h42M158 264v12M302 264v12" ${R1}/>`);
+  } else {
+    out.push(`<path d="M158 264h16M260 264h42M158 276h16M260 276h42M158 264v12M302 264v12" ${R1}/>`);
+  }
+
+  // The stiles lose their tops as the back fills.
+  const leftTop = n >= 6 ? 250 : 168;
+  const rightTop = n >= 3 ? 252 : 168;
+  out.push(`<path d="M158 ${leftTop}v${500 - leftTop}M302 ${rightTop}v${500 - rightTop}" ${R1}/>`);
+
+  if (n >= 8) {
+    // The seat's front edge breaks where something hangs over it.
+    out.push(`<path d="M136 340h32M212 340h30M274 340h50" ${R1}/>`);
+    out.push(`<path d="M136 352h40M210 352h38M272 352h52" ${R1}/>`);
+    out.push(`<path d="M136 340v12M324 340v12" ${R1}/>`);
+    out.push(`<path d="M142 352v148M318 352v148M142 448h176M72 500h316" ${R1}/>`);
+  } else {
+    out.push(CHAIR_FRAME);
+  }
+
+  if (n === 0) {
+    // An empty chair, said in the house's own mark for "nothing here yet, and
+    // nothing is wrong" — the same basting stitch an empty drawer wears.
+    out.push(`<path d="M156 346h148" ${R3}/>`);
+  }
+
+  if (n >= 13) {
+    // ONE SHAPE INSTEAD OF THREE. Past twelve the drawing stops counting, and
+    // the way it says so is that the separate garments over the back are gone
+    // — swallowed by a single outline. Drawing the shroud BEHIND them made
+    // thirteen look like twelve with a smudge, which is the worst of both: it
+    // still reads as counting, and it counts wrong.
+    out.push(cloth('shroud', 'shroudFold'));
+  } else {
+    if (n >= 1) out.push(cloth('drapeA', 'drapeAHem', 'drapeASleeve'));
+    if (n >= 3) out.push(cloth('drapeB', 'drapeBHem'));
+    if (n >= 6) out.push(cloth('drapeC', 'drapeCHem'));
+  }
+  if (n >= 2) out.push(cloth('course1', 'course1Fold'));
+  if (n >= 4) out.push(cloth('course2'));
+  if (n >= 5) out.push(cloth('course3'));
+  if (n >= 7) out.push(cloth('course4'));
+  if (n >= 8) out.push(cloth('spill1'));
+  if (n >= 9) out.push(cloth('spill2'));
+  if (n >= 10) out.push(cloth('fallen1'));
+  if (n >= 11) out.push(cloth('fallen2'));
+  if (n >= 12) out.push(cloth('fallen3'));
+
+  return {
+    svg: out.join(''),
+    slots: [{ id: 'chair', x: 84, y: 128, w: 296, h: 372 }],
+    viewBox: `0 0 ${VIEW.w} ${VIEW.h}`,
+  };
 }
 
 /**

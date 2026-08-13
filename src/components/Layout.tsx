@@ -23,7 +23,10 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { path: '/', label: 'Today', icon: IconToday },
-  { path: '/closet', label: 'Closet', icon: IconCloset },
+  // "Dressing room" is the place; "the closet" stays the word for the
+  // collection of clothes, which is what every line of copy in the app means
+  // by it. shortLabel because the five-slot thumb rail cannot hold two words.
+  { path: '/closet', label: 'Dressing room', shortLabel: 'Dressing', icon: IconCloset },
   { path: '/outfits', label: 'Outfits', icon: IconOutfits },
   { path: '/calendar', label: 'Calendar', icon: IconCalendar },
   { path: '/ledger', label: 'Ledger', icon: IconLedger },

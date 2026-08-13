@@ -5,7 +5,7 @@ import { addDays, formatLocalDate, isFutureDate, todayLocal } from '../lib/dates
 import { isPlannedLog, type ClothingItem, type Outfit, type WearLog } from '../types';
 import { Button, Card, EmptyState, IconButton, Masthead, Modal, SectionTitle, TagRail } from '../components/ui';
 import {
-  IconArrowRight, IconChevronLeft, IconChevronRight, IconEyelet, IconEyeletFilled, IconPlus,
+  IconArrowRight, IconChevronLeft, IconChevronRight, IconEyelet, IconPlus,
 } from '../components/icons';
 import { Basting, GarmentPlate, PlateEmptyLedger } from '../components/art';
 import { showToast } from '../components/Toast';
@@ -238,15 +238,38 @@ export default function Calendar() {
 
       {/* the week */}
       <div className="grid grid-cols-1 sm:grid-cols-7 gap-2">
-        {days.map(date => {
+        {days.map((date, index) => {
           const logs = logsByDate.get(date) ?? [];
           const isToday = date === today;
           const past = date < today;
           const recorded = logs.some(l => !isPlannedLog(l) && !isFutureDate(l.date));
 
+          /**
+           * A DAY THAT IS DONE RECEDES; it is not marked.
+           *
+           * It used to carry a filled eyelet in the accent, which was the
+           * brightest thing on the week and said nothing the day's own contents
+           * did not already say — the outfit is written right there. A settled
+           * day should sit further back than an unsettled one, not shout that
+           * it is finished.
+           *
+           * So the cell sinks instead, and sinks further the longer ago it was:
+           * 20% of the way to the sunken surface for the most recent day
+           * recorded, 30% for the oldest in the week. Toward SUNKEN rather than
+           * toward black, because "sunken" is a recessed surface in every room
+           * by definition — a literal darkening would recede in the pattern
+           * room and glare in the atelier.
+           */
+          const depth = recorded
+            ? 20 + Math.round((10 * (days.length - 1 - index)) / Math.max(1, days.length - 1))
+            : 0;
+
           return (
             <div
               key={date}
+              style={depth
+                ? { backgroundColor: `color-mix(in srgb, var(--color-sunken) ${depth}%, var(--color-surface))` }
+                : undefined}
               className={`bg-surface rounded-[2px] p-2.5 flex flex-col sm:min-h-[168px] ${
                 isToday ? 'plate-ink' : 'plate'
               }`}
@@ -255,11 +278,7 @@ export default function Calendar() {
                 <span className="type-ledger text-[11px] text-text-2 tabular">
                   {weekdayShort(date)} {dayNumber(date)}
                 </span>
-                {recorded ? (
-                  <span className="text-accent shrink-0" title="Worn — on the record">
-                    <IconEyeletFilled size={12} />
-                  </span>
-                ) : isToday ? (
+                {isToday ? (
                   <span className="text-text-2 shrink-0" title="Today">
                     <IconEyelet size={12} />
                   </span>
