@@ -33,7 +33,7 @@ export const START_LEDE =
   'It begins empty, on this device. Only a name is needed — everything else can wait until there is something to say.';
 
 export const SAMPLES_NOTE =
-  'Samples are three worked closets — a full year of wear, saved looks, and a shared rail between them. Useful for seeing the populated screens before cataloguing your own.';
+  'Samples are eight worked closets — a full year of wear, saved looks, and a shared rail between them. Useful for seeing the populated screens before cataloguing your own.';
 
 /** What the door is holding for you, if you arrived by a deep link. */
 function NextNote({ next }: { next: string | null }) {
@@ -187,7 +187,7 @@ export default function Door({ starting = false }: { starting?: boolean }) {
             {empty ? (
               <>
                 <Basting className="my-5" />
-                <Button onClick={installSamples}>Or open the three sample wardrobes</Button>
+                <Button onClick={installSamples}>Or open the sample wardrobes</Button>
                 <p className="type-ledger text-[11px] text-text-2 mt-4">{SAMPLES_NOTE}</p>
               </>
             ) : (
@@ -218,7 +218,7 @@ export default function Door({ starting = false }: { starting?: boolean }) {
                 Start a wardrobe
               </LinkButton>
               {accounts.some(a => a.isSample) ? null : (
-                <Button onClick={installSamples}>Add the three sample wardrobes</Button>
+                <Button onClick={installSamples}>Add the sample wardrobes</Button>
               )}
             </div>
             {accounts.some(a => a.isSample) ? null : (

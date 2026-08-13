@@ -1,4 +1,5 @@
 import type { PersonaSeed, PersonaItemSeed, PersonaOutfitSeed, PersonaCalendarDay } from './personaData';
+import type { ItemSource, WishStatus } from '../types';
 
 /**
  * FIVE MORE SAMPLE WARDROBES, authored here rather than generated.
@@ -493,3 +494,192 @@ CAST_BRIEFS.push({
 });
 
 export const CAST: PersonaSeed[] = CAST_BRIEFS.map(expand);
+
+/* ============================================================================
+   CHARACTER ARCS.
+
+   The wear log can derive counts, bench states and a year of history, but it
+   cannot derive the facts of a life: where a coat came from, what was given
+   away whole, what sat on the wishlist through two winters. Those are authored
+   here, keyed by persona, and applied by buildPersonaState AFTER the derived
+   state so nothing below contradicts the history.
+
+   Between the five of them the arcs light every feature the numbers alone
+   leave dark: sources and provenance, favorites, retire-with-history, and all
+   four endings of the wishlist's cooling-off (waiting, the expired ask, kept,
+   let go into "stayed yours", bought).
+
+   Colours here are the colours of cloth, like every hex in this file.
+   ========================================================================== */
+
+/** A wishlist entry authored in day-offsets; the builder turns them into dates. */
+export interface ArcWish {
+  name: string;
+  category: string;
+  color: string;
+  brand?: string;
+  price?: number;
+  priority: 'low' | 'medium' | 'high';
+  addedDaysAgo: number;
+  status: WishStatus;
+  /** Days until the silent wait ends. Negative: it already has. Omitted: no wait (bought). */
+  endsInDays?: number;
+  asked?: boolean;
+  releasedDaysAgo?: number;
+  notes?: string;
+}
+
+export interface PersonaArc {
+  /** Matched against item names. Last match wins, so order general → specific. */
+  sources?: Array<[RegExp, ItemSource]>;
+  provenance?: Array<[RegExp, { from: string; wearsInTheirRecord?: number; passedOnDaysAgo: number }]>;
+  brands?: Array<[RegExp, string]>;
+  favorites?: RegExp[];
+  /** Pieces that have left the closet. History kept, like the feature promises. */
+  retired?: Array<[RegExp, { daysAgo: number; reason: string }]>;
+  wishlist?: ArcWish[];
+}
+
+export const CAST_ARCS: Record<string, PersonaArc> = {
+  /* The ledger's cautionary tale: the sale, the worn-once court suit, and a
+     wishlist the bailiffs got to first. */
+  fergus: {
+    sources: [
+      [/Dead officer's frock coat/, 'secondhand'],
+      [/Infantry coat, issued/, 'gifted'],
+    ],
+    favorites: [/Court suit jacket/],
+    retired: [
+      [/Sable-lined overcoat/, { daysAgo: 20, reason: 'Sold at the sale' }],
+      [/Gambler's laced coat/, { daysAgo: 20, reason: 'Sold at the sale' }],
+      [/Malacca cane/, { daysAgo: 19, reason: 'Sold at the sale' }],
+    ],
+    wishlist: [
+      { name: 'Marten-lined travelling cloak', category: 'outerwear', color: '#4A3B2E',
+        price: 26000, priority: 'high', addedDaysAgo: 34, status: 'waiting',
+        endsInDays: -8, asked: false,
+        notes: 'The furrier will hold it a month. The bailiffs may not.' },
+      { name: 'A second dress sword', category: 'accessories', color: '#8A8D8F',
+        price: 7200, priority: 'low', addedDaysAgo: 90, status: 'let-go',
+        endsInDays: -76, asked: true, releasedDaysAgo: 75,
+        notes: 'One is enough to be seen wearing.' },
+      { name: 'Court suit jacket', category: 'layers', color: '#2F4E7E',
+        price: 18000, priority: 'high', addedDaysAgo: 260, status: 'bought',
+        notes: 'Worn once. The ledger keeps the score.' },
+    ],
+  },
+
+  /* Sixteen pieces, and a blouse being saved for. The smallest closet carries
+     the live cooling-off. */
+  amparo: {
+    sources: [
+      [/house-issued|Second smock/, 'gifted'],
+      [/^Cardigan$/, 'gifted'],
+      [/Rebozo/, 'inherited'],
+    ],
+    provenance: [
+      [/Rebozo/, { from: 'her mother', passedOnDaysAgo: 2200 }],
+    ],
+    favorites: [/Rebozo/, /New blouse/],
+    wishlist: [
+      { name: 'Blouse for the wedding', category: 'tops', color: '#E8D8C8',
+        price: 260, priority: 'high', addedDaysAgo: 9, status: 'waiting',
+        endsInDays: 6, asked: false,
+        notes: 'Her sister marries in October. Saving from this month\'s wages.' },
+      { name: 'Patent shoes in the arcade window', category: 'shoes', color: '#1E1B19',
+        price: 320, priority: 'low', addedDaysAgo: 40, status: 'let-go',
+        endsInDays: -33, asked: true, releasedDaysAgo: 33,
+        notes: 'The street shoes still shine up.' },
+      { name: 'New blouse', category: 'tops', color: '#D97C6A',
+        price: 240, priority: 'medium', addedDaysAgo: 120, status: 'bought',
+        notes: 'The coral one. The first thing she chose herself.' },
+    ],
+  },
+
+  /* Nothing retires here, and that is the point: what is mended is not poor.
+     The wishlist keeps one hope and lets one duplicate go. */
+  boksoon: {
+    sources: [
+      [/Bojagi/, 'self-made'],
+      [/Mourning hanbok/, 'self-made'],
+      [/Apron/, 'self-made'],
+      [/Good jeogori/, 'inherited'],
+      [/Secondhand wool coat/, 'secondhand'],
+    ],
+    provenance: [
+      [/Good jeogori/, { from: 'her mother', passedOnDaysAgo: 4400 }],
+    ],
+    favorites: [/Good jeogori/, /Silver binyeo/],
+    wishlist: [
+      { name: 'Silk for a new goreum ribbon', category: 'accessories', color: '#C48CA0',
+        price: 120, priority: 'medium', addedDaysAgo: 30, status: 'kept',
+        endsInDays: -23, asked: true,
+        notes: 'The good jeogori is not for wearing. The ribbon can still be new.' },
+      { name: 'A second padded vest', category: 'layers', color: '#5D6650',
+        price: 240, priority: 'low', addedDaysAgo: 55, status: 'let-go',
+        endsInDays: -48, asked: true, releasedDaysAgo: 47,
+        notes: 'The first one can be re-wadded.' },
+    ],
+  },
+
+  /* Forty-eight pieces becoming twelve. Retirement is the story, and what is
+     given away is given away whole. */
+  ngozi: {
+    sources: [
+      [/coral/i, 'inherited'],
+      [/Skirt cut from a wrapper/, 'self-made'],
+      [/Cardigan, re-knit/, 'self-made'],
+    ],
+    provenance: [
+      [/Coral necklace/, { from: 'her mother', passedOnDaysAgo: 3300 }],
+    ],
+    favorites: [/One strand of coral/],
+    retired: [
+      [/Lace wedding dress/, { daysAgo: 88, reason: 'Given away whole' }],
+      [/Wool coat/, { daysAgo: 74, reason: 'Given away whole' }],
+      [/Capri trousers/, { daysAgo: 61, reason: 'Given away whole' }],
+    ],
+    wishlist: [
+      { name: 'A bolt of george, for after', category: 'bottoms', color: '#1E4436',
+        priority: 'high', addedDaysAgo: 70, status: 'kept',
+        endsInDays: -63, asked: true,
+        notes: 'For after.' },
+      { name: 'Gele, the good kind', category: 'accessories', color: '#B4552C',
+        price: 2400, priority: 'low', addedDaysAgo: 100, status: 'let-go',
+        endsInDays: -93, asked: true, releasedDaysAgo: 92,
+        notes: 'The rust one still ties.' },
+    ],
+  },
+
+  /* Decide once, buy it nine times. The overcoat that waited two winters is
+     the wishlist's proof that the cooling-off is a wait, not a wall. */
+  nico: {
+    sources: [
+      [/Brother's oxford/, 'gifted'],
+      [/Shop apron/, 'inherited'],
+    ],
+    provenance: [
+      [/Brother's oxford/, { from: 'his brother', wearsInTheirRecord: 61, passedOnDaysAgo: 700 }],
+    ],
+    brands: [
+      [/Heavyweight tee/, 'Camber'],
+      [/Work trousers|Second work trousers/, 'Stan Ray'],
+      [/Kitchen clogs/, 'Birkenstock'],
+      [/Steel dive watch/, 'Seiko'],
+    ],
+    favorites: [/Shop apron/, /Steel dive watch/],
+    wishlist: [
+      { name: 'Wool overcoat', category: 'outerwear', color: '#3B3C3E',
+        price: 38000, priority: 'high', addedDaysAgo: 750, status: 'bought',
+        notes: 'Two winters on the list. Bought the week the review ran.' },
+      { name: 'A tenth tee', category: 'tops', color: '#F2F1EC', brand: 'Camber',
+        price: 8500, priority: 'low', addedDaysAgo: 21, status: 'let-go',
+        endsInDays: -14, asked: true, releasedDaysAgo: 14,
+        notes: 'Nine is exactly enough.' },
+      { name: 'White canvas high-tops', category: 'shoes', color: '#E9E6DC',
+        price: 9800, priority: 'medium', addedDaysAgo: 3, status: 'waiting',
+        endsInDays: 4, asked: false,
+        notes: 'For days off, if those start happening.' },
+    ],
+  },
+};
