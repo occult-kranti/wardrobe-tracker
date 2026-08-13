@@ -43,6 +43,13 @@ jobs:
       - run: npm run build
       # The mobile design pack ships beside the app at /mobile_version_v1/.
       - run: node scripts/build-mobile-gallery.mjs
+      # The company plan and the workroom are hand-written static pages; they
+      # ship at /company/ and reference the app's self-hosted fonts at ../fonts/.
+      - name: Copy the company pages into dist/company
+        run: |
+          set -eu
+          mkdir -p dist/company
+          cp -r company/. dist/company/
       # V2 lives on its own branch and is served under /v2/. It builds with
       # base './' so it can sit at any subpath. Building it here means every
       # deploy of main re-publishes v2 alongside it — before this step, any

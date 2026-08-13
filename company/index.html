@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Almari — your closet outlives the app</title>
+<meta name="description" content="Almari is a private wardrobe ledger. Free on the web, forever. Native apps for iOS and Android, one small price, no subscription. This is the company plan, published in the open.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%23BE1231'/%3E%3Ctext x='16' y='22' text-anchor='middle' font-family='Georgia,serif' font-size='17' fill='%23FFFDF6'%3EA%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://api.fontshare.com">
+<link href="https://api.fontshare.com/v2/css?f[]=switzer@400,500,600,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="almari.css">
+<style>
+  main { max-width: 880px; margin: 0 auto; padding: 0 24px 96px; }
+
+  header { padding: 72px 0 40px; }
+  .tagline { font-family: var(--display); font-style: italic; font-size: clamp(20px, 3.4vw, 28px); color: var(--text-2); margin-top: 32px; }
+  .standfirst { margin-top: 16px; max-width: 620px; color: var(--text-2); }
+  .masthead-links { margin-top: 32px; display: flex; flex-wrap: wrap; gap: 16px 24px; align-items: center; }
+  .masthead-links a:not(.btn) {
+    font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+    display: inline-block; padding: 12px 0; margin: -12px 0; border-bottom: 0;
+  }
+  .masthead-links a:not(.btn):hover { border-bottom: 1px solid var(--accent-hover); }
+  header hr { margin-top: 40px; }
+
+  section { padding-top: 64px; }
+  h2 { font-family: var(--display); font-weight: 600; font-size: clamp(28px, 5vw, 40px); line-height: 1.15; }
+  h2 .no { font-family: var(--mono); font-size: 11px; font-weight: 400; color: var(--text-2); display: block; letter-spacing: 0.06em; margin-bottom: 8px; }
+  h3 { font-family: var(--display); font-weight: 600; font-size: 22px; margin: 32px 0 8px; }
+  section > p, section > .lede { margin-top: 16px; max-width: 660px; }
+  .lede { color: var(--text-2); }
+
+  .grid { display: grid; gap: 16px; margin-top: 24px; }
+  .grid.two { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+  .grid.three { grid-template-columns: repeat(auto-fit, minmax(224px, 1fr)); }
+  .figure { font-family: var(--display); font-size: 40px; font-weight: 600; line-height: 1.1; margin-top: 8px; }
+  .figure small { font-family: var(--mono); font-size: 11px; font-weight: 400; color: var(--text-2); display: block; margin-top: 8px; letter-spacing: 0.04em; line-height: 1.5; }
+
+  .swatches { display: flex; gap: 4px; margin-top: 8px; }
+  .swatches i { width: 22px; height: 22px; border-radius: 2px; border: 1px solid var(--swatch-edge); display: inline-block; }
+  .persona h3 { margin-top: 0; font-size: 20px; }
+  .persona .kicker { margin-top: 4px; display: block; }
+  .persona p { font-size: 14px; color: var(--text-2); margin-top: 8px; }
+
+  .timeline { list-style: none; margin-top: 24px; border-left: 1px solid var(--text); padding-left: 0; }
+  .timeline li { position: relative; padding: 0 0 24px 32px; }
+  .timeline li::before {
+    content: ''; position: absolute; left: -4.5px; top: 8px; width: 8px; height: 8px;
+    border-radius: 50%; background: var(--bg); border: 1.5px solid var(--accent);
+  }
+  .timeline .mo { font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-2); }
+  .timeline b { font-weight: 600; }
+  .timeline p { font-size: 15px; color: var(--text-2); margin-top: 4px; }
+
+  .veto-list { columns: 2; column-gap: 40px; margin-top: 24px; list-style: none; font-size: 15px; }
+  .veto-list li { padding: 8px 0; border-bottom: 1px dashed var(--border); break-inside: avoid; }
+  .veto-list li::before { content: '—'; color: var(--text-2); margin-right: 8px; }
+  @media (max-width: 640px) { .veto-list { columns: 1; } }
+
+  details { margin-top: 16px; border: 1px solid var(--border); border-radius: 2px; background: var(--surface); }
+  summary { cursor: pointer; padding: 16px; font-weight: 600; font-size: 15px; list-style: none; min-height: 44px; display: flex; align-items: center; }
+  summary::-webkit-details-marker { display: none; }
+  summary::before { content: '+'; font-family: var(--mono); margin-right: 12px; color: var(--accent); }
+  details[open] summary::before { content: '−'; }
+  details > div { padding: 0 16px 16px; font-size: 15px; color: var(--text-2); }
+  summary:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+  .footnote { font-size: 13px; color: var(--text-2); margin-top: 16px; max-width: 660px; }
+
+  /* The net-per-unit column is the same figure in all three rows and is stated
+     in the footnote; on a phone the annual-revenue column matters more. */
+  @media (max-width: 640px) {
+    table td:nth-child(3), table th:nth-child(3) { display: none; }
+  }
+</style>
+</head>
+<body>
+<button class="theme-toggle" id="themeToggle" aria-label="Switch theme">Atelier</button>
+<main>
+
+<header>
+  <h1 class="wordmark">Almari<svg viewBox="0 0 64 5" aria-hidden="true"><path d="M1 3.2C10 1.6 20 3.8 32 2.6s22 1.4 31-.4" fill="none" stroke="var(--seal)" stroke-width="1.6" stroke-linecap="butt"/></svg></h1>
+  <p class="tagline">Your closet outlives the app.</p>
+  <p class="standfirst">A private wardrobe ledger — what you own, what you actually wear,
+  what it costs per wear. It lives on your device. No account, no cloud, no
+  subscription, no shop links. This page is the company plan, published in the open.</p>
+  <nav class="masthead-links">
+    <a class="btn" href="../">Open the app</a>
+    <a href="../v2/">The glass build</a>
+    <a href="tracker.html">The workroom</a>
+    <a href="https://github.com/occult-kranti/wardrobe-tracker">The repository</a>
+    <a href="../demo.mp4">The film, 96s</a>
+  </nav>
+  <hr class="rule-double">
+</header>
+
+<section id="product">
+  <h2><span class="no">01 · THE PRODUCT</span>A record, not a form</h2>
+  <p class="lede">The wardrobe-app category asks for eight hours of photography, then
+  charges you to see your own numbers — or stays free by earning when you buy more.
+  Almari takes the opposite bet: everything the others charge for is free, the daily
+  loop is two taps, and the record is never hostage.</p>
+  <div class="grid three">
+    <div class="plate"><span class="kicker">The daily loop</span><div class="figure">2 taps<small>to log a day's wear</small></div></div>
+    <div class="plate"><span class="kicker">The native metric</span><div class="figure">₹ / wear<small>cost-per-wear, falling — computed on your device</small></div></div>
+    <div class="plate"><span class="kicker">The exit</span><div class="figure">Lossless<small>whole-record export, permanently — even fields added later</small></div></div>
+  </div>
+  <p>The quiet features are the point: a wishlist with a seven-day cooling-off that
+  waits silently and then asks once. A mending pile, because a torn shirt is neither
+  clean nor dirty. Retirement instead of deletion, with history kept. A drawn
+  technical flat for every piece without a photograph, so photo-free use looks
+  intentional — nothing here ever asks who you are, only what the clothes are.</p>
+</section>
+
+<section id="wardrobes">
+  <h2><span class="no">02 · THE PROOF</span>Eight worked wardrobes</h2>
+  <p class="lede">The samples are the demo, the test fixtures, and the tutorial in one.
+  Five are briefed the way a costume department is briefed — a wardrobe written as an
+  idea and an arc, in period and in cloth, belonging to nobody.</p>
+  <div class="grid two">
+    <div class="plate persona">
+      <h3>The Candlelight Wardrobe</h3><span class="kicker">Kilkenny → the Continent → Wiltshire, 1760s</span>
+      <div class="swatches"><i style="background:#1F3B2C"></i><i style="background:#5A2740"></i><i style="background:#2F4E7E"></i><i style="background:#D6C29A"></i><i style="background:#C9CBC8"></i></div>
+      <p>A tenant farmer's son gambles his way into an English estate; every coat is a
+      receipt for a rung of the ladder. The ledger's cautionary tale — a court suit
+      worn once, and a sale the bailiffs attended.</p>
+    </div>
+    <div class="plate persona">
+      <h3>Four Nails Behind a Door</h3><span class="kicker">Mexico City, 1970</span>
+      <div class="swatches"><i style="background:#AFC6D8"></i><i style="background:#B7D2BE"></i><i style="background:#8E8B86"></i><i style="background:#20201F"></i><i style="background:#D97C6A"></i></div>
+      <p>A live-in housekeeper's sixteen pieces, worn to the thread. The smallest
+      closet carries the live cooling-off: a blouse being saved for, one week at a
+      time. This wardrobe exists to prove the app is decent to somebody who owns
+      almost nothing.</p>
+    </div>
+    <div class="plate persona">
+      <h3>Salt and Indigo</h3><span class="kicker">An island near Busan → Osaka, 1933</span>
+      <div class="swatches"><i style="background:#E6DFCD"></i><i style="background:#2E3F57"></i><i style="background:#C4643C"></i><i style="background:#3C3B39"></i><i style="background:#C3B4CB"></i></div>
+      <p>A hanbok becomes a Japanese housedress one garment at a time. Nothing retires
+      here, and that is the point — what is mended is not poor. Her mother's silk
+      jeogori is kept, not worn.</p>
+    </div>
+    <div class="plate persona">
+      <h3>Bright, Then Earth</h3><span class="kicker">Lagos → Nsukka → Umuahia, 1966</span>
+      <div class="swatches"><i style="background:#2B4C9B"></i><i style="background:#C2543F"></i><i style="background:#E4CE6B"></i><i style="background:#1E4436"></i><i style="background:#93826D"></i></div>
+      <p>Forty-eight pieces becoming twelve in eighteen months. Retirement is the
+      story: what is given away is given away whole. One strand of coral remains,
+      and the wishlist keeps a bolt of george, for after.</p>
+    </div>
+    <div class="plate persona">
+      <h3>Whites and Blacks</h3><span class="kicker">Chicago, now</span>
+      <div class="swatches"><i style="background:#F2F1EC"></i><i style="background:#232322"></i><i style="background:#3F5A78"></i><i style="background:#3E5470"></i><i style="background:#8C3A32"></i></div>
+      <p>A chef who decided once and bought the same tee nine times — the hardest
+      closet a wear-tracker can be given. His overcoat sat on the wishlist through
+      two winters and was bought the week the review ran.</p>
+    </div>
+    <div class="plate persona">
+      <h3>And three of today</h3><span class="kicker">Kochi · Mumbai · New Delhi</span>
+      <div class="swatches"><i style="background:#105F7D"></i><i style="background:#B4552C"></i><i style="background:#2A6B4F"></i><i style="background:#C9A227"></i><i style="background:#5A2740"></i></div>
+      <p>Three contemporary Indian wardrobes — festival drapes, client weeks,
+      wedding seasons — sharing a rail, lending and borrowing with provenance kept.
+      The ceremony features no competitor carries.</p>
+    </div>
+  </div>
+  <p class="footnote">No persona is named after a character or a performer, and none
+  will ever be: the wardrobe is briefed, never borrowed. The rule is kept in the
+  codebase beside the wardrobes themselves.</p>
+</section>
+
+<section id="model">
+  <h2><span class="no">03 · THE MODEL</span>Priced once, honestly</h2>
+  <p class="lede">The web app is free — everything, permanently. The native apps for
+  iOS and Android will cost a single small price, in the tradition of tools that are
+  bought once and kept. No subscription, no tiers, no ads, nothing sold but the app
+  itself.</p>
+  <div class="grid three">
+    <div class="plate"><span class="kicker">India</span><div class="figure">₹299<small>one time, on either store</small></div></div>
+    <div class="plate"><span class="kicker">Elsewhere</span><div class="figure">$4.99<small>one time — a price this category has sustained for over a decade</small></div></div>
+    <div class="plate"><span class="kicker">The web</span><div class="figure">₹0<small>forever, with nothing withheld</small></div></div>
+  </div>
+  <p>This model is chosen because it is the only one that cannot bend the product.
+  A subscription needs retention mechanics; an ad model needs attention; a commerce
+  model needs you to buy more clothes. A one-time price needs only that the app be
+  worth it on the day you buy it — and it aligns the company with the product's own
+  promise of permanence.</p>
+  <div class="table-rail">
+  <table aria-label="Revenue scenarios">
+    <thead><tr><th>Scenario</th><th class="num">Paid units / yr</th><th class="num">Net / unit</th><th class="num">Annual revenue</th></tr></thead>
+    <tbody>
+      <tr><td>Low</td><td class="num">5,000</td><td class="num">≈ ₹268</td><td class="num">≈ ₹13.4 lakh</td></tr>
+      <tr><td>Mid</td><td class="num">25,000</td><td class="num">≈ ₹268</td><td class="num">≈ ₹67 lakh</td></tr>
+      <tr><td>High</td><td class="num">100,000</td><td class="num">≈ ₹268</td><td class="num">≈ ₹2.7 crore</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="footnote">Blend of ₹299 / $4.99 at a 70/30 India–global mix, ₹95.5 per US$,
+  after the 15% small-developer store commission and 18% GST on the Indian leg — about
+  ₹268 net on every unit. The rows are illustrative points, not forecasts. The company
+  is sized so the low case carries a maintenance-mode company: a lean private limited,
+  one founder, contractors over salaries, and infrastructure that costs nearly nothing
+  because there is no server.</p>
+</section>
+
+<section id="plan">
+  <h2><span class="no">04 · THE PLAN</span>Twelve months, two gates</h2>
+  <p class="lede">An Indian private limited company, incorporated for three reasons a
+  repository cannot do: sign contracts, sell in two stores, and hold the mark. The
+  critical path runs through exactly two external gates — trademark clearance and
+  App Review. Everything else is work.</p>
+  <ul class="timeline">
+    <li><span class="mo">Months 1–2</span><br><b>The company, and the name examined.</b>
+      <p>Incorporation via SPICe+, then DPIIT recognition the week the certificate
+      arrives. An attorney clearance search on the mark before a rupee of brand
+      spend — the field is crowded, and the plan prices a rename now at a fraction
+      of a rename after launch. Hardening ships meanwhile: the sample wardrobes
+      photographed from open-licence museum collections.</p></li>
+    <li><span class="mo">Month 3</span><br><b>The mark filed, the fitting built.</b>
+      <p>Trademark filed in classes 9 and 42, word and device, with expedited
+      examination — filed the moment clearance allows, never before. The tutorial
+      built to its written spec: one welcome sheet, five coach marks, then silence.</p></li>
+    <li><span class="mo">Months 3–6</span><br><b>The port.</b>
+      <p>The native wrap: the same app, storage moved early to durable native ground
+      through the migration layer that already round-trips losslessly — so the alpha
+      tests what will actually ship — with camera, share sheet, haptics, and an
+      optional Face ID lock. Internal TestFlight from month five; moderated alpha
+      sessions and the first diary study follow.</p></li>
+    <li><span class="mo">Months 4–9</span><br><b>Grant season, alongside.</b>
+      <p>Applications to the Startup India Seed Fund and MeitY GENESIS against a
+      working beta — non-dilutive money fits a company shaped like this one; venture
+      money is a named fork, off by default. The state grant window falls at month
+      twelve and is planned for, not hoped for.</p></li>
+    <li><span class="mo">Months 6–9</span><br><b>True offline, and the open beta.</b>
+      <p>The service worker finished; sync-you-own file sync — a file the person
+      controls, no account anywhere. Play open track and TestFlight external.
+      Because the app will never phone home, testing is moderated sessions, diary
+      studies, and the support mail — measurement by consent, which is slower and
+      honest. At month eight, a named gate: the opposition window on the mark is
+      checked before any launch spend.</p></li>
+    <li><span class="mo">Months 9–10</span><br><b>The stores.</b>
+      <p>Submission, one budgeted review cycle, launch on both platforms. First
+      revenue. The web app unchanged, still free, still the whole product.</p></li>
+    <li><span class="mo">Months 11–12</span><br><b>The quiet season.</b>
+      <p>Nano and micro collaborations — honest wardrobe audits, no promo codes,
+      because there is nothing to code. Press on the craft: ownership, the
+      thirty-wears arithmetic, and the hand-drawn plates. Then a raise/no-raise
+      decision on stated gates, with no-raise as the default.</p></li>
+  </ul>
+  <p class="footnote">The same plan, as assignable work with owners and dates, lives in
+  <a href="tracker.html">the workroom</a>.</p>
+</section>
+
+<section id="numbers">
+  <h2><span class="no">05 · THE LEDGER</span>The company's own numbers</h2>
+  <p class="lede">Stated once, like a bank balance.</p>
+  <div class="grid three">
+    <div class="plate"><span class="kicker">Incorporation</span><div class="figure">≤ ₹35K<small>SPICe+ all-in, two directors, zero MCA fee slab</small></div></div>
+    <div class="plate"><span class="kicker">Bootstrap burn</span><div class="figure">₹1.6–4L<small>per month — founder, contractors, no office, no servers</small></div></div>
+    <div class="plate"><span class="kicker">18-month runway</span><div class="figure">₹29–73L<small>the whole bootstrap scenario, at August 2026 rates</small></div></div>
+    <div class="plate"><span class="kicker">Trademark</span><div class="figure">₹9,000<small>two classes at the recognised-startup rate, plus the attorney</small></div></div>
+    <div class="plate"><span class="kicker">Store accounts</span><div class="figure">$149<small>Apple $99/yr · Play $25 + $25, once</small></div></div>
+    <div class="plate"><span class="kicker">Servers</span><div class="figure">₹0<small>a local-first app has nothing to host but this page</small></div></div>
+  </div>
+  <details>
+    <summary>Where money could come from, in order of fit</summary>
+    <div>
+      <p>Non-dilutive first: the Startup India Seed Fund (up to ₹20L grant + ₹50L
+      convertible, through a recognised incubator), Karnataka Elevate (up to ₹50L),
+      MeitY GENESIS. Then angels on iSAFE/CCD instruments, only against a revenue
+      run-rate, only to fund a small funded scenario. Venture capital is a
+      deliberately named fork: taking it would require adding a cloud product line
+      the design contract forbids — so it is off the table unless the contract
+      itself is ever renegotiated in the open.</p>
+    </div>
+  </details>
+  <details>
+    <summary>What the AI does, and does not do</summary>
+    <div>
+      <p>The app was built with Claude Code and the port will be too — that is the
+      workshop, not the product. In the product there is no Almari-operated AI at
+      all: the photo-intake feature hands a prompt to a vision model the person
+      already uses, on their own account, and the native apps may add a
+      bring-your-own-key convenience. Cataloguing a hundred-piece wardrobe on a
+      person's own key costs them roughly the price of a cup of chai. Nothing leaves
+      the device unless the person connects a key of their own — and then photos go
+      only to the provider they chose, on their own account. Almari never sees them,
+      because there is no company server to see them with.</p>
+    </div>
+  </details>
+  <details>
+    <summary>The tutorial, planned to the word</summary>
+    <div>
+      <p>One welcome sheet — "The first fitting" — then five dotted coach marks in
+      the manner of a tailor's annotations: the two-tap log, the drawn flats, the
+      falling cost-per-wear, the wishlist that waits, the export that is always
+      yours. A step count, never a progress bar. No confetti, no streaks, and at
+      the end, deliberately, nothing.</p>
+    </div>
+  </details>
+</section>
+
+<section id="never">
+  <h2><span class="no">06 · THE CONTRACT</span>What this company will never do</h2>
+  <p class="lede">Set by a focus group before the first commit, kept by a linter, and
+  restated here so no future conversation reopens them.</p>
+  <ul class="veto-list">
+    <li>No accounts, no cloud sync</li>
+    <li>No telemetry, no analytics SDKs</li>
+    <li>No ads</li>
+    <li>No shop links or affiliate codes</li>
+    <li>No subscriptions</li>
+    <li>No item caps</li>
+    <li>No notifications</li>
+    <li>No badges, streaks, or confetti</li>
+    <li>No shame mechanics</li>
+    <li>No gendered anything</li>
+    <li>No required field that erases someone</li>
+    <li>No export that loses a field</li>
+  </ul>
+  <p class="footnote">A feature that talks you out of buying cannot profit from buying.
+  That sentence is load-bearing: it is why the wishlist can be trusted, and why the
+  company is small on purpose.</p>
+</section>
+
+<footer>
+  <span class="seal-mark" aria-hidden="true">A</span>
+  <p><b>Almari</b> · a wardrobe ledger · built in the open ·
+  <a href="https://github.com/occult-kranti/wardrobe-tracker">github.com/occult-kranti/wardrobe-tracker</a></p>
+  <p style="margin-top:8px">This page is a plan, published August 2026. The company is
+  in formation; the mark is in clearance; the figures are the plan's own arithmetic
+  at ₹95.5 per US$ and will age. The app, meanwhile, is real —
+  <a href="../">open it</a>.</p>
+</footer>
+
+</main>
+<script>
+  (function () {
+    var root = document.documentElement, t = document.getElementById('themeToggle');
+    var stored = localStorage.getItem('almari-site-theme');
+    if (stored) root.dataset.theme = stored;
+    function isDark() {
+      return root.dataset.theme === 'dark' ||
+        (!root.dataset.theme && matchMedia('(prefers-color-scheme: dark)').matches);
+    }
+    function label() { t.textContent = isDark() ? 'Pattern room' : 'Atelier'; }
+    label();
+    t.addEventListener('click', function () {
+      root.dataset.theme = isDark() ? 'light' : 'dark';
+      localStorage.setItem('almari-site-theme', root.dataset.theme);
+      label();
+    });
+  })();
+</script>
+</body>
+</html>
