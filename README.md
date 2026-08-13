@@ -1,13 +1,16 @@
-# TOILE
+# ALMARI
 
-> *toile /twahl/ — n.* An early garment prototype sewn in plain cloth; the tailor's
-> working record of what a piece really is.
+> *almari /ʌlˈmɑːri/ — n.* A wardrobe; the cupboard a household's clothes live in.
+> From Portuguese *armário*, by way of Hindi and half the languages of the
+> subcontinent — the ordinary word for the ordinary piece of furniture.
 
 **Your wardrobe, on record.** A private ledger for a real wardrobe — track what you
 own, what you actually wear, and what it costs per wear. No account, no cloud, no
 subscription, no shop links. Everything lives on your device.
 
 **Live:** https://occult-kranti.github.io/wardrobe-tracker/ · **V2 (glass):** https://occult-kranti.github.io/wardrobe-tracker/v2/ · **Mobile design pack:** https://occult-kranti.github.io/wardrobe-tracker/mobile_version_v1/
+
+**The company:** [the plan, published in the open](https://occult-kranti.github.io/wardrobe-tracker/company/) · [the workroom](https://occult-kranti.github.io/wardrobe-tracker/company/tracker.html) — the launch plan as assignable work. Written up in full at [`docs/28-the-company.md`](docs/28-the-company.md).
 
 ---
 
@@ -32,7 +35,7 @@ because they earn when you buy: Whering's lead investor is eBay, and Alta holds
 90 days, because logging a wear takes longer than the habit can survive.
 [The full benchmark of eleven apps](docs/24-competitive-benchmark.md) has the numbers.
 
-Toile takes the opposite bet: give away everything the others charge for
+Almari takes the opposite bet: give away everything the others charge for
 (cost-per-wear, utilization, the full ledger), keep the daily loop under two taps,
 and never make the record hostage. There is no server to hold it.
 
@@ -68,7 +71,7 @@ and never make the record hostage. There is no server to hold it.
 - **What's it like out?** — one tap, four answers, kept for the day. It narrows
   the day's suggestions the way weather-aware rivals do, without a location
   permission, a forecast API, or anything to leak.
-- **On your home screen** — a manifest and an offline service worker, so Toile
+- **On your home screen** — a manifest and an offline service worker, so Almari
   gets an icon, opens full screen, and works with no signal. No store, no account.
 - **Catalogue from photos** — the first hour is the slowest thing about a wardrobe app,
   so hand a photograph of the clothes to whatever vision model you already use, with
@@ -78,7 +81,7 @@ and never make the record hostage. There is no server to hold it.
 
 ## Design
 
-The identity is **Toile**: pattern-cutting paper, iron-gall ink, and one sealing-wax
+The identity, developed under the working name *Toile*, is pattern-cutting paper, iron-gall ink, and one sealing-wax
 carmine used scarcely. Icons are technical fashion flats — garments drawn the way a
 pattern-drafter draws them, with real construction and **no bodies**, so nothing
 assumes who wears what. Every mark is hand-coded SVG; there are no raster assets.
