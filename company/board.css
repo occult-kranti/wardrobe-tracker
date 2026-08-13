@@ -271,6 +271,14 @@ body { font-size: 16px; }
   border: 1px solid var(--border); border-radius: 2px; font-family: var(--ui); font-size: 14px; line-height: 1.5;
 }
 .dr-row textarea { resize: vertical; }
+/* The steps, read as a list rather than as one long middle-dotted line. The
+   textarea underneath stays the way you edit them. */
+.steps { list-style: none; display: grid; gap: 8px; margin-bottom: 12px; }
+.steps li { position: relative; padding-left: 20px; font-size: 14px; line-height: 1.5; }
+.steps li::before {
+  content: ''; position: absolute; left: 2px; top: 0.62em;
+  width: 7px; height: 7px; border: 1px solid var(--text-2); border-radius: 1px;
+}
 .segs, .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .seg, .chip, .toggle {
   min-height: 36px; padding: 0 12px; border: 1px solid var(--border); border-radius: 2px;

@@ -607,6 +607,15 @@ function renderNow() {
 
 /* ------------------------------------------------------------- drawer ---- */
 
+/* Steps are authored as one middle-dot-separated line, which is convenient to
+   write and miserable to read — the longest is nine clauses. Split it back out
+   so the person doing the work sees a list of steps rather than a paragraph. */
+function steps(check) {
+  const parts = String(check || '').split('·').map(s => s.trim()).filter(Boolean);
+  if (!parts.length) return '<p class="empty small">No steps written yet.</p>';
+  return `<ul class="steps">${parts.map(p => `<li>${esc(p)}</li>`).join('')}</ul>`;
+}
+
 function paintDrawer() {
   const t = STATE.tasks.find(x => x.id === OPEN_TASK);
   const dr = $('#drawer');
@@ -650,8 +659,12 @@ function paintDrawer() {
       <div><label>Due</label><input type="date" id="drDue" value="${esc(t.due || '')}" ${ME ? '' : 'disabled'}></div>
       <div><label>Estimate</label><input id="drEst" value="${esc(t.est || '')}" placeholder="e.g. 3 days" ${ME ? '' : 'disabled'}></div>
     </div>
-    <div class="dr-row"><label>Why this exists</label><textarea id="drWhy" rows="4" ${ME ? '' : 'disabled'}>${esc(t.why || '')}</textarea></div>
-    <div class="dr-row"><label>Checklist / notes</label><textarea id="drCheck" rows="3" ${ME ? '' : 'disabled'}>${esc(t.check || '')}</textarea></div>
+    <div class="dr-row"><label>Why this needs to be done</label><textarea id="drWhy" rows="4" ${ME ? '' : 'disabled'}>${esc(t.why || '')}</textarea></div>
+    <div class="dr-row">
+      <label>The steps — what done looks like</label>
+      ${steps(t.check)}
+      ${ME ? `<textarea id="drCheck" rows="4" placeholder="Separate each step with ·">${esc(t.check || '')}</textarea>` : ''}
+    </div>
     ${t.dep ? `<p class="dep">Waits on: ${esc(t.dep)}</p>` : ''}
     <div class="dr-row">
       <label>Notes from the team</label>
