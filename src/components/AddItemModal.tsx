@@ -12,8 +12,11 @@ import {
   type Season,
 } from '../types';
 import { Button, Chip, Field, Modal, inputClass, selectClass } from './ui';
+import { hasKey, keyLooksWrong, loadKey, prepareImage, readPhotograph, saveKey } from '../lib/anthropic';
+import { readIntake } from '../lib/intake';
+import { INTAKE_PROMPT } from '../lib/intakePrompt';
 import { Basting, GarmentPlate } from './art';
-import { IconCamera, IconCheck, IconClose, IconPlus } from './icons';
+import { IconCamera, IconCheck, IconClose, IconPlus, IconUp, IconDown } from './icons';
 import { showToast } from './Toast';
 import { CutoutBench } from './Cutout';
 
@@ -68,6 +71,58 @@ export default function AddItemModal({ open, onClose, editItem }: Props) {
   const [newTag, setNewTag] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [cutting, setCutting] = useState(false);
+  /** The eleven optional fields, folded away until asked for. */
+  const [more, setMore] = useState(false);
+  /** Reading the attached photograph into the form. */
+  const [reading, setReading] = useState(false);
+  const [readFailed, setReadFailed] = useState<string | null>(null);
+  const [readNote, setReadNote] = useState<string | null>(null);
+  const [key, setKey] = useState(() => loadKey());
+  const [keyOpen, setKeyOpen] = useState(false);
+
+  /**
+   * Let the photograph fill the form.
+   *
+   * The same one journey out as the intake bench, and the same rule: what
+   * comes back is words, and it lands in the fields as a DRAFT — every value
+   * is still sitting in an input the person can change before anything is
+   * written. Nothing is saved by this button.
+   */
+  const readThisPhoto = async () => {
+    setReadFailed(null);
+    setReadNote(null);
+    if (!imageUrl) return;
+    if (!hasKey()) { setKeyOpen(true); return; }
+    try {
+      setReading(true);
+      const image = await prepareImage(imageUrl);
+      const { text } = await readPhotograph(image, INTAKE_PROMPT);
+      const read = readIntake(text);
+      if (read.error || read.drafts.length === 0) {
+        setReadFailed(read.error ?? 'Nothing wearable was found in that photograph.');
+        return;
+      }
+      // One photograph of one piece should give one row; if it found several,
+      // take the most confident and say so rather than picking silently.
+      const best = [...read.drafts].sort((a, b) => b.confidence - a.confidence)[0];
+      if (read.drafts.length > 1) {
+        setReadNote(`Found ${read.drafts.length} pieces — filled in the clearest one, "${best.name}". The bench handles a whole layout at once.`);
+      }
+      setName(best.name);
+      setCategory(best.category);
+      setColor(best.color);
+      if (best.brand) setBrand(best.brand);
+      if (best.season.length) setSeason(best.season);
+      if (best.occasion.length) setOccasion(best.occasion);
+      if (best.description) setNotes(best.description);
+      // Anything it guessed weakly is worth a human eye, so open the drawer.
+      if (best.uncertain.length > 0 || best.brand) setMore(true);
+    } catch (e) {
+      setReadFailed(e instanceof Error ? e.message : 'That did not work. Nothing was changed.');
+    } finally {
+      setReading(false);
+    }
+  };
   const [cost, setCost] = useState('');
   const [notes, setNotes] = useState('');
   const [dragOver, setDragOver] = useState(false);
@@ -279,6 +334,66 @@ export default function AddItemModal({ open, onClose, editItem }: Props) {
                 </div>
               </div>
             )}
+            {/* Let the photograph do the typing. One journey out, with your own
+                key; what comes back lands in the fields as a draft you can
+                still change. Nothing is saved by this. */}
+            {imageUrl ? (
+              <div className="mt-3 pt-3 border-t border-border">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    type="button"
+                    compact
+                    tone="primary"
+                    disabled={reading}
+                    onClick={() => { void readThisPhoto(); }}
+                  >
+                    {reading ? 'Reading the photograph…' : 'Fill this in from the photo'}
+                  </Button>
+                  {hasKey() ? (
+                    <span className="type-ledger text-[10px] text-text-2">
+                      Goes to Anthropic with your key · everything else stays here
+                    </span>
+                  ) : (
+                    <Button type="button" compact tone="tertiary" onClick={() => setKeyOpen(o => !o)}>
+                      {keyOpen ? 'Not now' : 'Add a Claude key'}
+                    </Button>
+                  )}
+                </div>
+
+                {keyOpen && !hasKey() ? (
+                  <div className="mt-3">
+                    <Field label="Your Anthropic key" htmlFor="add-key" hint="Stored on this device only. It is used when you press the button above, and at no other time.">
+                      <input
+                        id="add-key"
+                        type="password"
+                        className={inputClass}
+                        value={key}
+                        onChange={e => setKey(e.target.value)}
+                        placeholder="sk-ant-…"
+                        autoComplete="off"
+                        spellCheck={false}
+                      />
+                    </Field>
+                    <Button
+                      type="button"
+                      compact
+                      className="mt-3"
+                      disabled={!key.trim() || keyLooksWrong(key)}
+                      onClick={() => { saveKey(key); setKeyOpen(false); }}
+                    >
+                      Keep the key
+                    </Button>
+                    {keyLooksWrong(key) ? (
+                      <span className="type-ledger text-[10px] text-danger ml-3">Keys begin with sk-ant-</span>
+                    ) : null}
+                  </div>
+                ) : null}
+
+                {readNote ? <p className="text-[13px] text-text-2 mt-2 leading-snug">{readNote}</p> : null}
+                {readFailed ? <p className="text-[13px] text-danger mt-2 leading-snug">{readFailed}</p> : null}
+              </div>
+            ) : null}
+
             {imageUrl && cutting ? (
               <CutoutBench
                 source={imageUrl}
@@ -360,8 +475,26 @@ export default function AddItemModal({ open, onClose, editItem }: Props) {
           </div>
         </fieldset>
 
+        {/* ---------- everything else, folded away ----------
+             A name, a kind and a colour are what a piece needs to exist.
+             The other eleven fields are all optional and were all on screen
+             at once, which made a two-second task look like a form. They are
+             still one tap away, and the tap says how many are behind it. */}
         <Basting />
+        <button
+          type="button"
+          onClick={() => setMore(v => !v)}
+          aria-expanded={more}
+          className="w-full flex items-center justify-between gap-3 min-h-11 text-left"
+        >
+          <span className="type-ledger text-[11px] text-text-2">
+            {more ? 'Fewer details' : 'More details — brand, cost, season, notes'}
+          </span>
+          {more ? <IconUp size={16} className="text-text-2" /> : <IconDown size={16} className="text-text-2" />}
+        </button>
 
+        {!more ? null : (
+        <>
         {/* ---------- how it came to you ---------- */}
         <div className="grid sm:grid-cols-2 gap-5">
           <Field label="Brand" htmlFor="add-item-brand">
@@ -500,6 +633,8 @@ export default function AddItemModal({ open, onClose, editItem }: Props) {
             />
           </Field>
         </div>
+        </>
+        )}
 
         <div className="pt-1">
           <Button type="submit" tone="primary" className="w-full">

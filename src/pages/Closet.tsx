@@ -419,10 +419,17 @@ export default function Closet() {
         // The fastest road into a closet there is: one photograph of what you
         // already have on. It sits beside the count rather than as a second
         // shout beneath it (§8.4 — one CTA to a screen).
+        // Both roads stay open for good. Cataloguing is not a one-time setup
+        // task that finishes — a closet gains pieces for as long as it exists,
+        // and every rival that hides its import behind an onboarding flow gets
+        // told so in its reviews.
         action={closetEmpty ? undefined : (
-          <LinkButton to="/intake?worn=1" compact icon={<IconCamera size={16} />}>
-            Today&rsquo;s outfit
-          </LinkButton>
+          <span className="flex flex-wrap items-center gap-2">
+            <LinkButton to="/intake?worn=1" compact icon={<IconCamera size={16} />}>
+              Today&rsquo;s outfit
+            </LinkButton>
+            <LinkButton to="/intake" compact>A whole layout</LinkButton>
+          </span>
         )}
       />
 
