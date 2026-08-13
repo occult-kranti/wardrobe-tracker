@@ -5,11 +5,12 @@ import { categoryLabel, isQuietCategory, type ClothingItem, type Outfit, type We
 import { todayLocal, isFutureDate, daysSince, addDays } from '../lib/dates';
 import { isPlannedLog } from '../types';
 import { costPerWear, formatPerWear } from '../lib/cost';
-import { Button, Card, EmptyState, Masthead, Modal, SectionTitle, Stat } from '../components/ui';
+import { Button, Card, Chip, EmptyState, Masthead, Modal, SectionTitle, Stat } from '../components/ui';
 import { IconArrowRight, IconCheck, IconEyeletFilled } from '../components/icons';
 import { Basting, GarmentPlate, PlateEmptyCloset, WaxSeal } from '../components/art';
 import { showToast } from '../components/Toast';
 import AddItemModal from '../components/AddItemModal';
+import { OUTDOORS, loadOutdoors, saveOutdoors, suitsOutdoors, type Outdoors } from '../lib/outdoors';
 
 /**
  * TODAY — the home page and the daily habit loop.
@@ -88,6 +89,12 @@ export default function Dashboard() {
   const [addOpen, setAddOpen] = useState(false);
 
   const today = todayLocal();
+  // What it is like out, asked rather than tracked. See lib/outdoors.ts.
+  const [outdoors, setOutdoors] = useState<Outdoors | null>(() => loadOutdoors(todayLocal()));
+  const answerOutdoors = (next: Outdoors | null) => {
+    setOutdoors(next);
+    saveOutdoors(today, next);
+  };
   const byId = useMemo(() => new Map(items.map(i => [i.id, i])), [items]);
   const retiredIds = useMemo(
     () => new Set(items.filter(i => i.retired).map(i => i.id)),
@@ -153,7 +160,17 @@ export default function Dashboard() {
     () => activeItems.filter(i => !isQuietCategory(settings, i.category)),
     [activeItems, settings]
   );
-  const pickable = showAll || pool.length === 0 ? everything : pool;
+  const unweathered = showAll || pool.length === 0 ? everything : pool;
+  /**
+   * The weather narrows the picker, and only if it has been answered and only
+   * if it leaves something. A filter that empties the screen is a worse answer
+   * than no filter, so it stands down rather than showing a wall of nothing.
+   */
+  const weathered = useMemo(
+    () => unweathered.filter(i => suitsOutdoors(i, outdoors)),
+    [unweathered, outdoors]
+  );
+  const pickable = weathered.length > 0 ? weathered : unweathered;
 
   /* ---------- totals (plans are not wears) ---------- */
 
@@ -624,6 +641,26 @@ export default function Dashboard() {
           </div>
         ) : (
           <div>
+            {/* One tap, four answers, kept for today only. No location, no
+                permission prompt, no network call — the person tapping it is
+                standing at the window, which beats a forecast. */}
+            <div className="flex flex-wrap items-center gap-2 mb-4">
+              <span className="type-ledger text-[10px] text-text-2 mr-1">Out there</span>
+              {OUTDOORS.map(o => (
+                <Chip
+                  key={o.id}
+                  selected={outdoors === o.id}
+                  onClick={() => answerOutdoors(outdoors === o.id ? null : o.id)}
+                >
+                  {o.label}
+                </Chip>
+              ))}
+            </div>
+            {outdoors && weathered.length === 0 ? (
+              <p className="type-ledger text-[10px] text-text-2 -mt-2 mb-3">
+                Nothing in the closet is tagged for that yet, so this is everything.
+              </p>
+            ) : null}
             {pickable.length === 0 ? (
               <p className="text-[14px] text-text-2">
                 Nothing to pick from yet.{' '}

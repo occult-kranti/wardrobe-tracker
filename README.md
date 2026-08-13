@@ -60,6 +60,16 @@ and never make the record hostage. There is no server to hold it.
 - **Mending** — `needs repair` and `at the tailor` are bench states; a torn shirt is
   neither clean nor dirty. Empty pile reads *"Your needle rests."*
 - **Retire, don't delete** — a piece can leave the closet with its full history kept.
+- **Lift a garment off its background** — the category's headline feature, done in
+  your browser. No model download, no upload, no company touching the photograph.
+  Two pictures and one slider: take the cut or keep the original, both finished
+  states. (Whering's own reviewers put its server-side cutout at "about 50% of
+  the time"; its Play Store disclosure says it shares photos with third parties.)
+- **What's it like out?** — one tap, four answers, kept for the day. It narrows
+  the day's suggestions the way weather-aware rivals do, without a location
+  permission, a forecast API, or anything to leak.
+- **On your home screen** — a manifest and an offline service worker, so Toile
+  gets an icon, opens full screen, and works with no signal. No store, no account.
 - **Catalogue from photos** — the first hour is the slowest thing about a wardrobe app,
   so hand a photograph of the clothes to whatever vision model you already use, with
   [the prompt](docs/23-photo-intake.md), and drop the file it writes into the app. Every
@@ -111,7 +121,12 @@ you to keep a backup.
 npm install
 npm run dev      # vite dev server
 npm run build    # typecheck + production build
-npm run lint     # oxlint
+npm run lint     # oxlint + the brand contract
+npm run verify   # build, brand, migration, persona and intake suites
+
+# The browser suites. Serve a build first: npx vite preview --port 4174
+npm run test:flows     # every route, signed out and in, phone and desktop
+npm run test:features  # the door, the cutout, the weather, installability
 ```
 
 Stack: React 19 · TypeScript · Vite · Tailwind CSS v4 · React Router (HashRouter,

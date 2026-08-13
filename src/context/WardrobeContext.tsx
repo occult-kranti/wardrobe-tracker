@@ -1,5 +1,6 @@
 import { createContext, useContext, useCallback, useMemo, type ReactNode } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
+import { showToast } from '../components/Toast';
 import { todayLocal, isFutureDate, addDays } from '../lib/dates';
 import { migrate } from '../lib/migrate';
 import { wardrobeKey } from '../lib/accounts';
@@ -77,7 +78,18 @@ export function WardrobeProvider({ accountId, children }: { accountId: string; c
   // wardrobes remounts it — useLocalStorage reads storage only in its useState
   // initializer, so without the remount the next write would put one closet's
   // contents under another's key.
-  const [state, setState] = useLocalStorage<AppState>(wardrobeKey(accountId), initialState, migrate);
+  const [state, setState] = useLocalStorage<AppState>(
+    wardrobeKey(accountId),
+    initialState,
+    migrate,
+    // The one failure this app must never keep to itself: the device refusing
+    // the write. Everything on screen still looks saved, and a refresh would
+    // throw it away. Photographs are almost always the cause.
+    () => showToast(
+      'This device would not take the write — its storage is full. Export a backup from Settings now, then remove a few photographs.',
+      'error',
+    ),
+  );
 
   const activeItems = useMemo(() => state.items.filter(isActive), [state.items]);
 

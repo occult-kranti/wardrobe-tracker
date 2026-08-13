@@ -93,6 +93,12 @@ function GarmentTile({ item, className = '' }: { item: ClothingItem; className?:
           <img
             src={item.imageUrl}
             alt={item.name}
+            // A 300-piece closet is 300 photographs. Decoding them all at once
+            // is what makes a big wardrobe feel like a slow app in every rival
+            // whose reviews mention 250 items; the browser will do this for us
+            // if asked, and nothing above the fold is affected.
+            loading="lazy"
+            decoding="async"
             className="w-full h-full object-cover"
           />
         ) : (

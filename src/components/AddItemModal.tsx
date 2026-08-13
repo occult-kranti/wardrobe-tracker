@@ -15,6 +15,7 @@ import { Button, Chip, Field, Modal, inputClass, selectClass } from './ui';
 import { Basting, GarmentPlate } from './art';
 import { IconCamera, IconCheck, IconClose, IconPlus } from './icons';
 import { showToast } from './Toast';
+import { CutoutBench } from './Cutout';
 
 /**
  * ADD A PIECE — the intake form.
@@ -66,6 +67,7 @@ export default function AddItemModal({ open, onClose, editItem }: Props) {
   );
   const [newTag, setNewTag] = useState('');
   const [imageUrl, setImageUrl] = useState('');
+  const [cutting, setCutting] = useState(false);
   const [cost, setCost] = useState('');
   const [notes, setNotes] = useState('');
   const [dragOver, setDragOver] = useState(false);
@@ -97,7 +99,10 @@ export default function AddItemModal({ open, onClose, editItem }: Props) {
       return;
     }
     const reader = new FileReader();
-    reader.onload = e => setImageUrl((e.target?.result as string) ?? '');
+    reader.onload = e => {
+      setImageUrl((e.target?.result as string) ?? '');
+      setCutting(false);
+    };
     reader.onerror = () => showToast('That photo would not open. Try another.', 'error');
     reader.readAsDataURL(file);
   };
@@ -211,6 +216,17 @@ export default function AddItemModal({ open, onClose, editItem }: Props) {
                     It is stored on this device with the rest of the closet.
                   </p>
                   <div className="flex flex-wrap gap-2 mt-3">
+                    {/* The category's headline feature, done on the device.
+                        Offered rather than performed: an automatic cut that
+                        eats a sleeve and cannot be refused is worse than no
+                        cut at all. */}
+                    <Button
+                      type="button"
+                      compact
+                      onClick={() => setCutting(c => !c)}
+                    >
+                      {cutting ? 'Close the bench' : 'Lift off the background'}
+                    </Button>
                     <Button
                       type="button"
                       compact
@@ -226,6 +242,7 @@ export default function AddItemModal({ open, onClose, editItem }: Props) {
                       icon={<IconClose size={14} />}
                       onClick={() => {
                         setImageUrl('');
+                        setCutting(false);
                         if (fileRef.current) fileRef.current.value = '';
                       }}
                     >
@@ -262,6 +279,13 @@ export default function AddItemModal({ open, onClose, editItem }: Props) {
                 </div>
               </div>
             )}
+            {imageUrl && cutting ? (
+              <CutoutBench
+                source={imageUrl}
+                onUse={url => { setImageUrl(url); setCutting(false); }}
+                onClose={() => setCutting(false)}
+              />
+            ) : null}
             <input
               ref={fileRef}
               id="add-item-photo"

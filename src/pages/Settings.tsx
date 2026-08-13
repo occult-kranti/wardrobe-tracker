@@ -26,6 +26,7 @@ import {
   IconUp,
 } from '../components/icons';
 import { showToast } from '../components/Toast';
+import { useInstall } from '../lib/install';
 
 /**
  * SETTINGS — stewardship, not preferences.
@@ -124,6 +125,50 @@ function Row({
       </div>
       <div className="sm:min-w-0">{control}</div>
     </div>
+  );
+}
+
+/**
+ * Installing the app.
+ *
+ * Every rival is in both app stores; this is a web page. What a person
+ * actually wants from that is the icon on their home screen, opening without
+ * browser furniture, working on a plane — and a manifest and a service worker
+ * give all three without a company, a store account, or a server.
+ *
+ * Three honest states: already installed, ready to install, and browsers with
+ * no install prompt at all (Safari), where the truthful answer is the two-line
+ * instruction rather than a button that does nothing.
+ */
+function InstallRow() {
+  const { ready, installed, install } = useInstall();
+
+  if (installed) {
+    return (
+      <Row
+        title="Installed"
+        body="Toile is on your home screen and opens without browser chrome. It works with no signal, because the wardrobe was never anywhere else."
+        control={<span className="type-ledger text-[11px] text-text-2">On this device</span>}
+      />
+    );
+  }
+
+  return (
+    <Row
+      title="Add Toile to your home screen"
+      body={
+        ready
+          ? 'It gets an icon, opens full screen, and works offline. No store, no account, no download — the page you already have simply stays.'
+          : 'Your browser installs from its own menu: Share, then "Add to Home Screen" on iPhone; the menu, then "Install app" on Android and desktop Chrome. It gets an icon, opens full screen, and works offline.'
+      }
+      control={
+        ready ? (
+          <Button tone="primary" onClick={() => { void install(); }}>Add to home screen</Button>
+        ) : (
+          <span className="type-ledger text-[11px] text-text-2">From your browser menu</span>
+        )
+      }
+    />
   );
 }
 
@@ -497,6 +542,12 @@ export default function Settings() {
           body="Lay the clothes out, photograph them, and hand the photograph to whatever vision model you already use with the prompt from docs/23. Drop the file it writes here and every piece arrives as a draft to check. The photograph never passes through us."
           control={<LinkButton to="/intake">Open the bench</LinkButton>}
         />
+      </Card>
+
+      {/* ---------- on this device ---------- */}
+      <Card>
+        <SectionTitle aside="no store, no company">On your home screen</SectionTitle>
+        <InstallRow />
       </Card>
 
       {/* ---------- data ---------- */}

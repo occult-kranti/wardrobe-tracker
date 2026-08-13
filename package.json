@@ -17,6 +17,8 @@
     "verify": "npm run build && npm run lint:brand && npm run test:migrate && npm run test:demo && npm run test:intake",
     "test:contrast": "node scripts/test-contrast.mjs",
     "test:intake": "node scripts/test-intake.mjs",
+    "test:flows": "node scripts/test-flows.mjs",
+    "test:features": "node scripts/test-features.mjs",
     "build:gallery": "node scripts/build-mobile-gallery.mjs"
   },
   "dependencies": {

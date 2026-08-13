@@ -15,7 +15,7 @@ import { WardrobeList, StartWardrobeForm, START_LEDE } from './SignIn';
  * Same list component as the door, so the two screens can never drift.
  */
 export default function SwitchWardrobe() {
-  const { accounts, activeId, signIn, signOut } = useSession();
+  const { accounts, activeId, signIn, signOut, installSamples } = useSession();
   const navigate = useNavigate();
 
   const choose = (id: string) => {
@@ -42,6 +42,12 @@ export default function SwitchWardrobe() {
           <LinkButton to="/open/new" tone="primary" icon={<IconPlus size={16} />}>
             Start another wardrobe
           </LinkButton>
+          {/* The samples are reachable from here and not only from the door:
+              someone who started their own wardrobe first would otherwise have
+              no way to see a populated screen ever again. */}
+          {accounts.some(a => a.isSample) ? null : (
+            <Button onClick={installSamples}>Add the three sample wardrobes</Button>
+          )}
           <Button onClick={signOut}>Close this wardrobe</Button>
         </div>
         <p className="type-ledger text-[11px] text-text-2 mt-4">
