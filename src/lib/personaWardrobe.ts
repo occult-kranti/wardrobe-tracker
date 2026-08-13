@@ -13,7 +13,18 @@ import {
   type WearLog,
 } from '../types';
 import { todayLocal, addDays } from './dates';
-import { PERSONAS, BRAND_SHOTS, type PersonaSeed } from './personaData';
+import { PERSONAS as GENERATED, BRAND_SHOTS, type PersonaSeed } from './personaData';
+import { CAST } from './personaCast';
+
+/**
+ * The three generated wardrobes, and the five authored ones.
+ *
+ * Joined here rather than merged into personaData.ts, which is emitted by
+ * scripts/build-persona-data.mjs from a source pack that is not in this
+ * repository — merging into it would mean the next person to run the generator
+ * silently deletes five wardrobes.
+ */
+const PERSONAS: PersonaSeed[] = [...GENERATED, ...CAST];
 import { furnish } from './furnishing';
 import { GARMENT_PHOTOS } from './garmentPhotos';
 
@@ -55,7 +66,7 @@ const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Frida
  * Bumped whenever the generated wardrobes change shape — photographs, bench
  * states, costs. Samples recording an older number are rebuilt at boot.
  */
-export const PERSONA_SEED_VERSION = 5;
+export const PERSONA_SEED_VERSION = 6;
 
 /** How far back the generated rotation runs, in days. */
 const HISTORY_DAYS = 250;
@@ -281,6 +292,74 @@ interface EventPlan {
 }
 
 const EVENT_PLANS: Record<string, EventPlan[]> = {
+  fergus: [
+    { name: 'Presentation at St James\'s', kind: 'celebration', place: 'London', startsIn: 16, days: 3, notes: 'The court suit travels flat, in paper. The sword goes separately.', dayLabels: [
+      { label: 'Fittings and the tailor', match: /captain|travel|coat/i },
+      { label: 'Presentation', match: /court|formal|presented/i },
+      { label: 'Supper afterwards', match: /party|supper|evening/i },
+    ] },
+    { name: 'The sale at the house', kind: 'trip', place: 'Wiltshire', startsIn: -22, days: 2, notes: 'What is left after the bailiffs. He keeps one plain coat.', dayLabels: [
+      { label: 'The inventory', match: /captain|travel|coat/i },
+      { label: 'The sale', match: /court|formal|presented/i },
+    ] },
+    { name: 'The road to Bath', kind: 'trip', place: 'Bath', startsIn: 40, days: 2, notes: 'Cards at the Assembly. Nothing worn twice at the same table.', dayLabels: [
+      { label: 'The road', match: /captain|travel|coat/i },
+      { label: 'The Assembly', match: /party|court|formal/i },
+    ] },
+  ],
+  amparo: [
+    { name: 'Corpus Christi', kind: 'festival', place: 'Mexico City', startsIn: -18, days: 1, notes: 'The one day the good blouse comes out. It did not go well.', dayLabels: [
+      { label: 'The procession', match: /cinema|formal|blouse/i },
+    ] },
+    { name: 'The coast, October', kind: 'trip', place: 'Veracruz', startsIn: 21, days: 2, notes: 'The rebozo comes out of the trunk. It goes back in on the way home.', dayLabels: [
+      { label: 'The bus down', match: /roof|work|smock/i },
+      { label: 'The beach', match: /beach|travel|rebozo/i },
+    ] },
+    { name: 'Her sister\'s wedding', kind: 'celebration', place: 'Oaxaca', startsIn: 48, days: 1, notes: 'She is saving for a blouse she has not bought yet.', dayLabels: [
+      { label: 'The wedding', match: /cinema|formal|blouse/i },
+    ] },
+  ],
+  boksoon: [
+    { name: 'The crossing', kind: 'trip', place: 'Busan to Shimonoseki', startsIn: -30, days: 3, notes: 'What fits in one bojagi. The good jeogori goes at the bottom.', dayLabels: [
+      { label: 'Leaving the island', match: /kitchen|boarding|work/i },
+      { label: 'The ferry', match: /crossing|travel|osaka/i },
+      { label: 'Arriving in Ikaino', match: /market|work/i },
+    ] },
+    { name: 'Chuseok', kind: 'festival', place: 'Ikaino', startsIn: 24, days: 2, notes: 'She cooks for thirty people and wears the apron over everything.', dayLabels: [
+      { label: 'The cooking', match: /kitchen|boarding|work/i },
+      { label: 'The table', match: /crossing|formal/i },
+    ] },
+    { name: 'The market fair', kind: 'work', place: 'Ikaino', startsIn: 52, days: 1, notes: 'Two stalls\' worth of stock and one pair of boots.', dayLabels: [
+      { label: 'The fair', match: /market|work/i },
+    ] },
+  ],
+  ngozi: [
+    { name: 'The declaration', kind: 'trip', place: 'Enugu', startsIn: -14, days: 2, notes: 'Packing the house. Everything that does not fit is given away whole.', dayLabels: [
+      { label: 'The announcement', match: /faculty|party|nsukka/i },
+      { label: 'Packing the house', match: /road|travel|east/i },
+    ] },
+    { name: 'A wedding in the town', kind: 'celebration', place: 'Umuahia', startsIn: 27, days: 1, notes: 'The last strand of coral, and a skirt that used to be a wrapper.', dayLabels: [
+      { label: 'The wedding', match: /faculty|party/i },
+    ] },
+    { name: 'The move west', kind: 'trip', place: 'Umuahia', startsIn: 44, days: 2, notes: 'Twelve pieces and a tin trunk.', dayLabels: [
+      { label: 'The road', match: /road|travel|east/i },
+      { label: 'Arriving', match: /rations|everyday/i },
+    ] },
+  ],
+  nico: [
+    { name: 'Friends and family', kind: 'work', place: 'Chicago', startsIn: -9, days: 3, notes: 'Three days on the pass. Nine shirts is exactly enough and no more.', dayLabels: [
+      { label: 'Build-out', match: /service|shop|work/i },
+      { label: 'Friends and family', match: /service|shop/i },
+      { label: 'Opening night', match: /review|formal/i },
+    ] },
+    { name: 'The review', kind: 'celebration', place: 'Chicago', startsIn: 18, days: 1, notes: 'The coat he sat on the wishlist through two winters.', dayLabels: [
+      { label: 'Dinner', match: /review|formal/i },
+    ] },
+    { name: 'Stage week', kind: 'work', place: 'Copenhagen', startsIn: 46, days: 2, notes: 'The whites come down off the top shelf.', dayLabels: [
+      { label: 'First service', match: /stage|copenhagen|whites/i },
+      { label: 'Last service', match: /stage|copenhagen|whites/i },
+    ] },
+  ],
   aarav: [
     { name: 'Goa, off-season', kind: 'trip', place: 'Goa', startsIn: 12, days: 4, notes: 'Carry-on only. One pair of shoes that can get wet.', dayLabels: [
       { label: 'Flight down', match: /travel|airport|red-eye/i },

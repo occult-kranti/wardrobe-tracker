@@ -107,7 +107,23 @@ function planFor(seed: string, items: ClothingItem[]): Plan[] {
     tally.set(a, (tally.get(a) ?? 0) + 1);
   }
   const has = (a: Affinity) => tally.get(a) ?? 0;
+  const total = items.filter(i => !i.retired).length;
   const plans: Plan[] = [];
+
+  // A SMALL CLOSET IS NOT A SMALL VERSION OF A BIG ONE.
+  //
+  // Everything below is threshold-gated — a rail at eight hanging pieces, a
+  // chest at six folded — so a wardrobe of fourteen things came out as one
+  // almirah and nothing else, which is both wrong and the least interesting
+  // drawing available. Somebody with fourteen garments does not own an almirah;
+  // they own four nails behind a door and a shelf, and that is a better picture
+  // than a big cupboard with three things in it.
+  if (total < 20) {
+    plans.push({ name: 'Pegs by the door', form: 'hooks', slots: 3 + Math.floor(rand(seed, 'hooks') * 2) });
+    plans.push({ name: 'The shelf', form: 'shelves', slots: 2 });
+    if (has('shoes') >= 2) plans.push({ name: 'By the door', form: 'rack', slots: 2 });
+    return plans;
+  }
 
   // The almirah first, always — it is the app's namesake and the object most of
   // its people actually own. Which of the three it is varies by closet.
@@ -120,27 +136,43 @@ function planFor(seed: string, items: ClothingItem[]): Plan[] {
     slots: Math.min(maxSlotsFor(form), 4 + Math.floor(rand(seed, 'almirah-n') * 3)),
   });
 
-  if (has('hanging') >= 8) {
+  // THE THRESHOLDS SCALE WITH THE CLOSET.
+  //
+  // Fixed numbers — a rail at eight hanging pieces, a chest at six folded —
+  // were read off a sixty-piece wardrobe and are simply the wrong question to
+  // ask a twenty-four-piece one: a chef with two pairs of trousers, three pairs
+  // of shoes and sixteen shirts came out with a wardrobe and a rail and nothing
+  // else, because every other threshold was written for somebody who owns three
+  // times as much. Proportion asks the same question at any size.
+  const need = (share: number, floor: number) => Math.max(floor, Math.round(total * share));
+
+  if (has('hanging') >= need(0.15, 4)) {
     plans.push({ name: 'The hall rail', form: 'rail', slots: 2 + Math.floor(rand(seed, 'rail') * 3) });
   }
-  if (has('folded') >= 6) {
+  if (has('folded') >= need(0.10, 3)) {
     plans.push({ name: 'Chest by the window', form: 'chest', slots: 3 + Math.floor(rand(seed, 'chest') * 3) });
   }
-  if (has('shoes') >= 5) {
+  if (has('shoes') >= need(0.08, 2)) {
     plans.push({ name: 'Shoe rack at the door', form: 'rack', slots: 3 + Math.floor(rand(seed, 'rack') * 2) });
   }
-  if (has('jewellery') >= 5) {
-    plans.push(rand(seed, 'jewel') < 0.5
-      ? { name: 'Jewellery box', form: 'box', slots: 2 + Math.floor(rand(seed, 'box') * 3) }
-      : { name: 'Bangle stand', form: 'stand', slots: 2 + Math.floor(rand(seed, 'stand') * 3) });
+  // A BOX AND A STAND ARE NOT ALTERNATIVES. This was a coin flip, which meant a
+  // closet with twenty pieces of jewellery in it could only ever have one place
+  // to keep them — and a stand holds bangles while a box holds everything that
+  // is not a bangle. Past a certain amount, you own both.
+  if (has('jewellery') >= need(0.08, 3)) {
+    plans.push({ name: 'Jewellery box', form: 'box', slots: 2 + Math.floor(rand(seed, 'box') * 3) });
   }
-  if (has('bags') >= 4) {
+  if (has('jewellery') >= 12) {
+    plans.push({ name: 'Bangle stand', form: 'stand', slots: 2 + Math.floor(rand(seed, 'stand') * 3) });
+  }
+  if (has('bags') >= need(0.07, 2)) {
     plans.push({ name: 'Pegs by the door', form: 'hooks', slots: 3 + Math.floor(rand(seed, 'hooks') * 3) });
   }
 
-  // Four is a furnished room; six is a warehouse, and the wall only draws so
-  // many before the rest go through the door.
-  return plans.slice(0, 5);
+  // Eight, not five. Five was chosen when the room drew a fixed number of even
+  // bays; it now fits what it can and puts the rest through the door, so a
+  // closet grand enough for eight pieces of furniture may have eight.
+  return plans.slice(0, 8);
 }
 
 export interface Furnished {
@@ -214,6 +246,33 @@ export function furnish(seed: string, items: ClothingItem[], dateAdded: string):
   }
 
   let filed = 0;
+
+  // EVERY PIECE GETS SOMETHING FIRST.
+  //
+  // The round-robin below spends a budget of about half the closet across every
+  // slot in the room, and a small wardrobe with several pieces of furniture has
+  // more slots than budget — so the last piece in the run could be reached only
+  // after the budget was gone, and stood there empty. Which is precisely the
+  // thing this file's own test forbids, and it went unnoticed until a
+  // twenty-piece closet with three places in it was built.
+  //
+  // So each piece is given one thing before any piece is given two.
+  for (const piece of furniture) {
+    if (filed >= budget) break;
+    const first = rounds.find(r => r.piece.id === piece.id);
+    if (!first) continue;
+    const own = pool.get(first.wants) ?? [];
+    const general = first.wants === 'any' || first.wants === 'folded';
+    const item = own.shift()
+      ?? (general ? (spare.shift() ?? [...pool.values()].find(list => list.length > 0)?.shift()) : undefined)
+      // A specific compartment takes its own kind — but a piece of furniture
+      // standing empty in a sample wardrobe is the worse failure of the two.
+      ?? [...pool.values()].find(list => list.length > 0)?.shift();
+    if (!item) continue;
+    placed.set(item.id, { furnitureId: piece.id, slotId: first.slot.id });
+    filed++;
+  }
+
   for (let pass = 0; pass < 4 && filed < budget; pass++) {
     for (const { piece, slot, wants } of rounds) {
       if (filed >= budget) break;

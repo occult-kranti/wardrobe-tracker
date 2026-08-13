@@ -36,6 +36,10 @@ const COLOR_ALLOWED = new Set([
   'src/lib/similarity.ts',
   'src/lib/garmentArt.ts', // generated garment plates; artwork, like art.tsx
   'src/lib/personaData.ts', // generated closets; the hexes are garment colours
+  // Same reason: these are the colours of cloth, not of the interface. A
+  // wax-print cobalt and a persimmon padded chima are facts about somebody's
+  // wardrobe — there is no design token for what colour a coat is.
+  'src/lib/personaCast.ts',
   // The intake prompt is instructions addressed to a vision model, not
   // interface copy. It has to show an example hex in the JSON shape it asks
   // for, and it has to NAME the gendered wording it forbids — a rule that
