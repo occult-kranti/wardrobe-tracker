@@ -215,6 +215,48 @@ for (const persona of PERSONAS) {
       st.wearLogs.filter(l => l.date > today && l.planned !== true).length],
     [`${persona.id}: wears never carry the flag`,
       st.wearLogs.filter(l => l.date <= today).every(l => l.planned !== true), ''],
+
+    // THE FURNISHED SAMPLE. A demo wardrobe arrives with places in it, because
+    // the feature is invisible until somebody draws one and a first-time
+    // visitor would never learn it exists. Every rule the panel would hold us
+    // to is asserted here rather than trusted.
+    [`${persona.id}: the room is furnished`, st.furniture.length >= 3, `${st.furniture.length} places`],
+    [`${persona.id}: no place stands empty`,
+      st.furniture.every(f => st.items.some(i => i.place?.furnitureId === f.id)),
+      st.furniture.filter(f => !st.items.some(i => i.place?.furnitureId === f.id)).map(f => f.name).join(', ')],
+    // Not everything is filed, and that is the point: a demo where every
+    // garment has an address is a demo of a filing cabinet.
+    [`${persona.id}: about half is filed, never all of it`, (() => {
+      const share = st.items.filter(i => i.place).length / st.items.length;
+      return share > 0.25 && share < 0.7;
+    })(), `${Math.round(st.items.filter(i => i.place).length / st.items.length * 100)}%`],
+    [`${persona.id}: every filing resolves to a real compartment`, (() => {
+      const slots = new Set(st.furniture.flatMap(f => f.slots.map(x => x.id)));
+      return st.items.filter(i => i.place).every(i => slots.has(i.place.slotId));
+    })(), ''],
+    // The clothes are in the RIGHT compartments — shoes on the shoe tier,
+    // jewellery in the tray. A kaftan in a jewellery tray is the app being
+    // wrong about somebody's own wardrobe.
+    [`${persona.id}: nothing is filed where it does not belong`, (() => {
+      const kind = c => /shoe|boot|sneaker|sandal/i.test(c) ? 'shoes'
+        : /jewel|bangle/i.test(c) ? 'jewellery'
+        : /access|bag|belt|scarf/i.test(c) ? 'bags' : 'clothes';
+      const wants = l => /shoe|tier/i.test(l) ? 'shoes'
+        : /jewel|tray|bangle/i.test(l) ? 'jewellery'
+        : /bag|peg/i.test(l) ? 'bags' : 'any';
+      const slots = new Map(st.furniture.flatMap(f => f.slots.map(x => [x.id, x.label])));
+      return st.items.filter(i => i.place).every(i => {
+        const w = wants(slots.get(i.place.slotId) ?? '');
+        return w === 'any' || w === kind(i.category);
+      });
+    })(), ''],
+    // And one compartment is packed away, so the seasonal case is visible.
+    [`${persona.id}: something is packed away for the season`,
+      st.furniture.some(f => f.slots.some(x => x.packed === true)), ''],
+    [`${persona.id}: the same closet every time`, (() => {
+      const again = buildPersonaState(persona);
+      return JSON.stringify(again.furniture) === JSON.stringify(st.furniture);
+    })(), ''],
   ];
   for (const [n, ok, d] of checks) { console.log(ok ? 'PASS' : 'FAIL', '-', n, d !== '' ? `(${d})` : ''); if (!ok) pfail++; }
 }

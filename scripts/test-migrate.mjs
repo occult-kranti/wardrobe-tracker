@@ -203,6 +203,15 @@ const checks = [
     return withF.furniture.length === forms.length
       && forms.every((form, i) => withF.furniture[i].form === form);
   })()],
+  ['the fitted almirah round-trips with its seven parts', (() => {
+    const withF = migrate({ ...v1, furniture: [{
+      id: 'f1', name: 'Fitted', form: 'almirah-fitted', dateAdded: '2026-01-01',
+      slots: ['Hanging ledge', 'Shelves', 'Jewels', 'Locker', 'Bags', 'Shoes', 'Drawer']
+        .map((label, i) => ({ id: `s${i}`, label })),
+    }] });
+    const f = withF.furniture[0];
+    return f.form === 'almirah-fitted' && f.slots.length === 7 && f.slots[4].label === 'Bags';
+  })()],
   ['an unknown form becomes a chest, and keeps its slots', (() => {
     // A form we cannot draw is a wrong picture of a real object, which is
     // recoverable. Dropping the piece would take its addresses with it.

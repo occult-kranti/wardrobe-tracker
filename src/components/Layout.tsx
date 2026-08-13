@@ -4,7 +4,7 @@ import { nextTheme } from '../lib/accounts';
 import {
   IconToday, IconCloset, IconOutfits, IconCalendar, IconLedger,
   IconWishlist, IconCompare, IconRail, IconSettings, IconPlus, IconTheme, IconMenu, IconClose,
-  IconEvents, IconFeed, IconChats, IconProfile, IconChest,
+  IconEvents, IconFeed, IconChats, IconProfile,
 } from './icons';
 import { GroundFrieze, HangingRail, GutterFigure, ScatterField, Wordmark, TagMark } from './art';
 import { useWardrobe } from '../context/WardrobeContext';
@@ -25,7 +25,6 @@ const navItems: NavItem[] = [
   { path: '/', label: 'Today', icon: IconToday },
   { path: '/closet', label: 'Closet', icon: IconCloset },
   { path: '/outfits', label: 'Outfits', icon: IconOutfits },
-  { path: '/furniture', label: 'Furniture', icon: IconChest },
   { path: '/calendar', label: 'Calendar', icon: IconCalendar },
   { path: '/ledger', label: 'Ledger', icon: IconLedger },
   { path: '/wishlist', label: 'Wishlist', icon: IconWishlist },
@@ -39,6 +38,17 @@ const navItems: NavItem[] = [
   { path: '/rail', label: 'Shared rail', shortLabel: 'Rail', icon: IconRail },
   { path: '/settings', label: 'Settings', icon: IconSettings },
 ];
+
+/**
+ * Furniture is NOT in here, and that is the point.
+ *
+ * Where a garment lives is a fact ABOUT THE CLOSET, not a sibling of it. Given
+ * its own tab it competed with the closet for the same attention and asked to
+ * be visited; reached from inside the closet it is what it actually is — a
+ * second way of looking at the clothes you were already looking at. The routes
+ * stay (/furniture and /furniture/:id), so nothing bookmarked breaks; only the
+ * standing invitation goes.
+ */
 
 // Five slots in the thumb zone; the rest live behind "More".
 const mobilePrimary = ['/', '/closet', '/outfits', '/feed'];

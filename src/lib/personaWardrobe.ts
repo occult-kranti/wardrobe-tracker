@@ -14,6 +14,7 @@ import {
 } from '../types';
 import { todayLocal, addDays } from './dates';
 import { PERSONAS, BRAND_SHOTS, type PersonaSeed } from './personaData';
+import { furnish } from './furnishing';
 import { GARMENT_PHOTOS } from './garmentPhotos';
 
 /**
@@ -558,15 +559,20 @@ export function buildPersonaState(persona: PersonaSeed): AppState {
     stylingNote: o.note,
   }));
 
+  // A furnished room, so the places feature is visible to somebody who has
+  // never drawn one. Seeded from the persona's own id: the same closet every
+  // time, and a different one per person.
+  const furnished = furnish(persona.id, items, addDays(firstLog, -30));
+
   return {
     schemaVersion: SCHEMA_VERSION,
-    items,
+    items: furnished.items,
     outfits,
     wearLogs: logs,
     wishlist: [],
     circle: EMPTY_CIRCLE,
     events: buildEvents(persona, outfits),
-    furniture: [],
+    furniture: furnished.furniture,
     settings: {
       categories: categoriesFor(persona),
       occasions: occasionsFor(persona),

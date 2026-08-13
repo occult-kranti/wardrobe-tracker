@@ -175,6 +175,11 @@ export function defaultSlotLabels(form: FurnitureForm, count: number): string[] 
       ...(count >= 4 ? ['The drawer'] : []),
     ].slice(0, count);
   }
+  if (form === 'almirah-fitted') {
+    // The parts' own names, in the order the object reads: the hanging ledge,
+    // then down the right-hand column, then back to the foot of the left.
+    return FITTED_LABELS.slice(0, count);
+  }
   if (form === 'rail') {
     return count === 1 ? ['The rail'] : Array.from({ length: count }, (_, i) => `Section ${i + 1}`);
   }
@@ -540,6 +545,238 @@ function drawAlmirah(
   return { svg: out.join(''), slots, viewBox: `0 0 ${VIEW.w} ${VIEW.h}` };
 }
 
+/* ---------- the fitted almirah ----------
+   A steel carcass with wooden doors, fitted out inside for everything a
+   wardrobe actually holds: a hanging ledge, a shelf, a tray for the jewellery,
+   the locker, a stand for the bags, shoes at the foot, a drawer under them.
+
+   It is a third almirah rather than a wider one because its INTERIOR IS LAID
+   OUT DIFFERENTLY, not merely divided further: the tall column on the left runs
+   the hanging, the shoes and the drawer, while the right-hand column stacks the
+   small things full-height. That layout is the only reason seven compartments
+   fit at a legal size — stacking all seven the plain almirah's way gives bands
+   of 59 units, which is 42px, which is a control a thumb misses. */
+
+const F_TOP = 96;
+const F_BOT = 482;
+const F_IN_X0 = 104;
+const F_IN_X1 = 356;
+const F_IN_TOP = 106;
+const F_IN_BOT = 478;
+/**
+ * The stile between the two columns: left 120 wide, right 132. Both clear the
+ * 62-unit floor, and the split is where it is because of the WORDS rather than
+ * the boxes — at 216 the left column was 112 wide, which leaves room for six
+ * characters beside a count, and "DRAWER" is six characters that then collided
+ * with its own number. Eight units moved settles it with nothing to truncate.
+ */
+const F_DIV = 224;
+
+type FittedRole = 'hanging' | 'shelves' | 'jewels' | 'locker' | 'bags' | 'shoes' | 'drawer';
+
+interface FittedPart {
+  role: FittedRole;
+  x: number; y: number; w: number; h: number;
+}
+
+/**
+ * The parts of a fitted almirah, in the object's own order.
+ *
+ * Left column, top to bottom: the hanging ledge, the shoe tier, the drawer.
+ * Right column, top to bottom: shelves, the jewellery tray, the locker, the bag
+ * stand. The order the compartments are RETURNED in is the order they are read
+ * — hanging first, then down the right, then back to the foot of the left —
+ * which is also the order they arrive in as the count grows.
+ */
+function fittedPlan(n: number): FittedPart[] {
+  const rightRoles: FittedRole[] = ['shelves', 'jewels', 'locker', 'bags'];
+  const rightCount = Math.max(0, Math.min(4, n - 1));
+  const hasShoes = n >= 6;
+  const hasDrawer = n >= 7;
+
+  // The left column's own split. Every band clears 62 units.
+  const leftBands: { role: FittedRole; y: number; h: number }[] = [];
+  if (hasDrawer) {
+    leftBands.push({ role: 'hanging', y: F_IN_TOP, h: 194 });
+    leftBands.push({ role: 'shoes', y: 304, h: 86 });
+    leftBands.push({ role: 'drawer', y: 394, h: 84 });
+  } else if (hasShoes) {
+    leftBands.push({ role: 'hanging', y: F_IN_TOP, h: 280 });
+    leftBands.push({ role: 'shoes', y: 390, h: 88 });
+  } else {
+    leftBands.push({ role: 'hanging', y: F_IN_TOP, h: F_IN_BOT - F_IN_TOP });
+  }
+
+  const leftW = (rightCount > 0 ? F_DIV : F_IN_X1) - F_IN_X0;
+  const byRole = new Map<FittedRole, FittedPart>();
+  for (const band of leftBands) {
+    byRole.set(band.role, { role: band.role, x: F_IN_X0, y: band.y, w: leftW, h: band.h });
+  }
+
+  const rightH = (F_IN_BOT - F_IN_TOP) / Math.max(1, rightCount);
+  for (let i = 0; i < rightCount; i++) {
+    byRole.set(rightRoles[i], {
+      role: rightRoles[i],
+      x: F_DIV, y: Math.round(F_IN_TOP + i * rightH),
+      w: F_IN_X1 - F_DIV, h: Math.round(rightH),
+    });
+  }
+
+  const order: FittedRole[] = ['hanging', ...rightRoles, 'shoes', 'drawer'];
+  return order.map(role => byRole.get(role)).filter((p): p is FittedPart => !!p);
+}
+
+/** The names of the parts, which is what a fitted almirah's compartments are. */
+const FITTED_LABELS: string[] = [
+  'Hanging ledge', 'Shelves', 'Jewels', 'Locker', 'Bags', 'Shoes', 'Drawer',
+];
+
+function drawFitted(f: Furniture, counts: Record<string, number>, scale: number): Drawing {
+  const fs = labelSize(scale);
+  const parts = fittedPlan(f.slots.length);
+  const out: string[] = [];
+  const slots: DrawnSlot[] = [];
+
+  // WOODEN DOORS, folded flat against a STEEL CASE — the two materials are the
+  // whole of what this object is called, so both are drawn rather than stated.
+  // Wood is panelled; steel is riveted and has a pressed lip.
+  for (const [x0, x1] of [[68, 92], [368, 392]]) {
+    out.push(`<path d="M${x0} ${F_TOP + 4}h${x1 - x0}v${F_BOT - F_TOP - 8}h-${x1 - x0}z" ${R1}/>`);
+    out.push(`<path d="M${x0 + 5} ${F_TOP + 16}h${x1 - x0 - 10}v150h-${x1 - x0 - 10}z" ${R1}/>`);
+    out.push(`<path d="M${x0 + 5} ${F_TOP + 182}h${x1 - x0 - 10}v170h-${x1 - x0 - 10}z" ${R1}/>`);
+  }
+  out.push(`<path d="M96 ${F_TOP}h268v${F_BOT - F_TOP}h-268z" ${R1}/>`);
+  out.push(`<path d="M96 ${F_TOP + 12}h268" ${R1}/>`);
+  for (const [rx, ry] of [[106, F_TOP + 22], [354, F_TOP + 22], [106, F_BOT - 12], [354, F_BOT - 12]]) {
+    out.push(`<path d="M${rx - 4} ${ry}h8M${rx} ${ry - 4}v8" ${R1}/>`);
+  }
+  out.push(`<path d="M96 ${F_BOT}h268" ${R1}/>`);
+  out.push(`<path d="M108 ${F_BOT}v18M352 ${F_BOT}v18" ${R1}/>`);
+
+  const divided = parts.some(p => p.x === F_DIV);
+  if (divided) out.push(`<path d="M${F_DIV} ${F_IN_TOP}v${F_IN_BOT - F_IN_TOP}" ${R1}/>`);
+
+  parts.forEach((part, i) => {
+    const slot = f.slots[i];
+    if (!slot) return;
+    const count = counts[slot.id] ?? 0;
+    const filled = count > 0;
+    const reg = filled ? R2 : R3;
+    slots.push({ id: slot.id, x: part.x, y: part.y, w: part.w, h: part.h });
+    const tone = filled ? 'currentColor' : 'var(--color-text-2)';
+    const mono = `font:${filled ? 500 : 400} ${fs}px var(--font-mono);letter-spacing:.06em`;
+
+    switch (part.role) {
+      case 'hanging': {
+        const rodY = part.y + 26;
+        out.push(`<path d="M${part.x + 6} ${rodY}h${part.w - 12}" ${R1}/>`);
+        const k = Math.min(0.5, part.w / 240);
+        const many = Math.min(3, Math.max(1, count));
+        for (let hI = 0; hI < many; hI++) {
+          const cx = Math.round(part.x + part.w * ((hI + 1) / (many + 1)));
+          out.push(hanger(cx, rodY, k, reg));
+          if (filled) {
+            const arm = Math.round(42 * k);
+            out.push(
+              `<path d="M${cx} ${rodY + Math.round(14 * k)}l-${arm - 2} ${Math.round(22 * k)}` +
+              `c-3 ${Math.round(56 * k)}-2 ${Math.round(104 * k)} 1 ${Math.round(140 * k)}` +
+              `c${Math.round(22 * k)} 4 ${Math.round(48 * k)} 4 ${Math.round(70 * k)} 0` +
+              `c3-${Math.round(36 * k)} 4-${Math.round(84 * k)} 1-${Math.round(140 * k)}z" ${R2}/>`
+            );
+          }
+        }
+        // Vertical: a tall narrow column cannot carry a word laid across it.
+        out.push(
+          `<text x="${part.x + 18}" y="${part.y + part.h - 14}" fill="${tone}" ` +
+          `transform="rotate(-90 ${part.x + 18} ${part.y + part.h - 14})" style="${mono}">` +
+          `${esc(fitLabel(slot.label, part.h - 20, fs))}</text>`
+        );
+        if (count) {
+          out.push(
+            `<text x="${part.x + part.w - 10}" y="${part.y + part.h - 12}" text-anchor="end" ` +
+            `fill="${tone}" style="font:400 ${fs}px var(--font-mono)">${count}</text>`
+          );
+        }
+        break;
+      }
+      case 'shelves': {
+        const rules = Math.min(3, Math.max(1, Math.floor(part.h / 64)));
+        for (let r = 1; r <= rules; r++) {
+          const sy = Math.round(part.y + (part.h * r) / (rules + 1));
+          out.push(`<path d="M${part.x} ${sy}h${part.w}" ${R1}/>`);
+          if (filled) {
+            out.push(`<path d="M${part.x + 16} ${sy - 10}h${part.w - 32}M${part.x + 22} ${sy - 19}h${part.w - 44}" ${R2}/>`);
+          } else {
+            out.push(`<path d="M${part.x + 10} ${sy - 6}h${part.w - 20}" ${R3}/>`);
+          }
+        }
+        out.push(band(part.x, part.x + part.w, part.y + 22, slot.label, count, filled, fs));
+        break;
+      }
+      case 'jewels': {
+        // A shallow tray, divided across — what makes it jewellery and not a
+        // drawer is that you can see everything in it at once.
+        const ty = part.y + Math.round(part.h / 2) - 18;
+        out.push(`<path d="M${part.x + 8} ${ty}h${part.w - 16}v40h-${part.w - 16}z" ${reg}/>`);
+        out.push(`<path d="M${part.x + 8 + Math.round((part.w - 16) / 3)} ${ty}v40` +
+          `M${part.x + 8 + Math.round(((part.w - 16) * 2) / 3)} ${ty}v40" ${reg}/>`);
+        if (filled) {
+          out.push(`<path d="M${part.x + part.w / 2 - 9} ${ty + 40}a9 9 0 0 0 18 0" ${R2}/>`);
+        }
+        out.push(band(part.x, part.x + part.w, part.y + 22, slot.label, count, filled, fs));
+        break;
+      }
+      case 'locker': {
+        const ly = part.y + Math.round(part.h / 2) - 24;
+        out.push(`<path d="M${part.x + 8} ${ly}h${part.w - 16}v48h-${part.w - 16}z" ${reg}/>`);
+        const kx = part.x + part.w - 26;
+        out.push(`<path d="M${kx} ${ly + 19}a5 5 0 1 1 0 10a5 5 0 1 1 0-10" ${reg}/>`);
+        out.push(`<path d="M${kx} ${ly + 29}v7" ${reg}/>`);
+        out.push(band(part.x, part.x + part.w, part.y + 22, slot.label, count, filled, fs));
+        break;
+      }
+      case 'bags': {
+        // A shelf with the bags stood upright on it: a body and a handle, which
+        // is the whole of what makes a bag a bag from across a room.
+        const sy = part.y + part.h - 14;
+        out.push(`<path d="M${part.x} ${sy}h${part.w}" ${R1}/>`);
+        if (filled) {
+          for (const bx of [part.x + 26, part.x + 82]) {
+            out.push(`<path d="M${bx - 14} ${sy}v-34h28v34z" ${R2}/>`);
+            out.push(`<path d="M${bx - 8} ${sy - 34}q8-16 16 0" ${R2}/>`);
+          }
+        } else {
+          out.push(`<path d="M${part.x + 10} ${sy - 8}h${part.w - 20}" ${R3}/>`);
+        }
+        out.push(band(part.x, part.x + part.w, part.y + 22, slot.label, count, filled, fs));
+        break;
+      }
+      case 'shoes': {
+        const sy = part.y + part.h - 12;
+        out.push(`<path d="M${part.x} ${sy}h${part.w}" ${R1}/>`);
+        out.push(`<path d="M${part.x + 4} ${sy - 20}h${part.w - 8}" ${reg}/>`);
+        if (filled) {
+          out.push(
+            `<path d="M${part.x + 16} ${sy - 2}v-16q0-8 10-8h20q16 0 30 16l10 8z" ${R2}/>`
+          );
+        }
+        out.push(band(part.x, part.x + part.w, part.y + 22, slot.label, count, filled, fs));
+        break;
+      }
+      case 'drawer': {
+        out.push(`<path d="M${part.x + 4} ${part.y + 30}h${part.w - 8}v${part.h - 40}h-${part.w - 8}z" ${reg}/>`);
+        if (filled) {
+          out.push(`<path d="M${part.x + part.w / 2 - 20} ${part.y + 30 + (part.h - 40) / 2}h40" ${R2}/>`);
+        }
+        out.push(band(part.x, part.x + part.w, part.y + 22, slot.label, count, filled, fs));
+        break;
+      }
+    }
+  });
+
+  return { svg: out.join(''), slots, viewBox: `0 0 ${VIEW.w} ${VIEW.h}` };
+}
+
 /* ---------- a jewellery box ----------
    Lid up, because a box drawn shut is a rectangle. The trays are the point:
    what separates a jewellery box from a small chest is that its insides are
@@ -741,6 +978,7 @@ export function drawFurniture(
     case 'shelves': return drawShelves(f, counts, scale);
     case 'almirah': return drawAlmirah(f, counts, scale, false);
     case 'almirah-carved': return drawAlmirah(f, counts, scale, true);
+    case 'almirah-fitted': return drawFitted(f, counts, scale);
     case 'box': return drawBox(f, counts, scale);
     case 'hooks': return drawHooks(f, counts, scale);
     case 'stand': return drawStand(f, counts, scale);
@@ -756,6 +994,7 @@ export const FORM_LABELS: Record<FurnitureForm, string> = {
   shelves: 'Shelves',
   almirah: 'A steel almirah',
   'almirah-carved': 'A wooden almirah',
+  'almirah-fitted': 'A fitted almirah',
   box: 'A jewellery box',
   hooks: 'A row of pegs',
   stand: 'A bangle stand',
@@ -774,6 +1013,7 @@ export const FORM_NOTES: Record<FurnitureForm, string> = {
   shelves: 'An open case. What is folded rather than hung.',
   almirah: 'The pressed-steel wardrobe with a mirror on the door — hanging on one side, shelves and a locker on the other, a drawer beneath.',
   'almirah-carved': 'The old wooden one, with panelled doors and a pediment. Divided inside the same way.',
+  'almirah-fitted': 'Steel case, wooden doors, and an inside fitted out for everything — a hanging ledge, a jewellery tray, shoes at the foot, and a stand for the bags.',
   box: 'Shallow trays under a lid. Rings, studs, chains.',
   hooks: 'A batten and its pegs — the bags, the belts, the scarf that lives by the door.',
   stand: 'A post that bangles stack on.',
@@ -787,6 +1027,7 @@ export const SLOT_NOUN: Record<FurnitureForm, [string, string]> = {
   shelves: ['shelf', 'shelves'],
   almirah: ['compartment', 'compartments'],
   'almirah-carved': ['compartment', 'compartments'],
+  'almirah-fitted': ['compartment', 'compartments'],
   box: ['tray', 'trays'],
   hooks: ['peg', 'pegs'],
   stand: ['tier', 'tiers'],

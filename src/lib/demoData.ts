@@ -1,6 +1,7 @@
 import { SCHEMA_VERSION, DEFAULT_CATEGORIES, DEFAULT_OCCASIONS, type AppState, type ClothingItem, type Outfit, type Season, type WearLog, type WishlistItem } from '../types';
 import { todayLocal, addDays } from './dates';
 import { GARMENT_ART } from './garmentArt';
+import { furnish } from './furnishing';
 
 /**
  * A sample wardrobe that exercises every feature at once, so the populated
@@ -772,10 +773,13 @@ export function buildDemoState(): AppState {
     };
   });
 
+  // The demo closet arrives furnished too — same reason, same seed discipline.
+  const furnished = furnish('demo', items, D(-120));
+
   return {
     schemaVersion: SCHEMA_VERSION,
-    furniture: [],
-    items,
+    furniture: furnished.furniture,
+    items: furnished.items,
     outfits,
     wearLogs,
     wishlist: buildWishlist(),

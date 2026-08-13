@@ -102,7 +102,7 @@ function markHeight(form: FurnitureForm, slots: number, mu: number): number {
     // An almirah is ONE CASE. Its compartment count divides the inside and does
     // not change its height, which is exactly what makes it recognisable across
     // a room: it is the tall one.
-    case 'almirah': case 'almirah-carved': return Math.round(7.8 * mu);
+    case 'almirah': case 'almirah-carved': case 'almirah-fitted': return Math.round(7.8 * mu);
     case 'box': return Math.round(3.4 * mu);
     case 'hooks': return Math.round(5.4 * mu);
     case 'stand': return Math.round(6.2 * mu);
@@ -208,9 +208,11 @@ function mark(f: Furniture, cx: number, floorY: number, mu: number, filled: bool
       break;
     }
     case 'almirah':
-    case 'almirah-carved': {
+    case 'almirah-carved':
+    case 'almirah-fitted': {
       const { w, x0, x1 } = caseOf(3.0);
       const carved = f.form === 'almirah-carved';
+      const fitted = f.form === 'almirah-fitted';
       const caseTop = carved ? top + r(0.5 * mu) : top;
       out.push(`<path d="M${x0} ${caseTop}h${w}v${floorY - caseTop - plinth}h-${w}z" ${reg}/>`);
       // The tell that makes an almirah an almirah from across a room: it is
@@ -220,6 +222,16 @@ function mark(f: Furniture, cx: number, floorY: number, mu: number, filled: bool
         out.push(`<path d="M${x0 - 4} ${caseTop}q${r(w / 2) + 4} -${r(0.55 * mu)} ${w + 8} 0" ${reg}/>`);
         out.push(`<path d="M${x0 + 4} ${floorY - plinth}v${plinth}q0 ${r(0.2 * mu)} -3 ${r(0.2 * mu)}` +
           `M${x1 - 4} ${floorY - plinth}v${plinth}q0 ${r(0.2 * mu)} 3 ${r(0.2 * mu)}" ${reg}/>`);
+      } else if (fitted) {
+        // Wooden doors on a steel case: two sunk panels a side, which is what
+        // tells this one from its plain steel sibling across a room.
+        const top = caseTop + r(0.5 * mu);
+        const mid = caseTop + r(3.6 * mu);
+        for (const [px0, px1] of [[x0 + 4, cx - 4], [cx + 4, x1 - 4]]) {
+          out.push(`<path d="M${px0} ${top}h${px1 - px0}v${r(2.8 * mu)}h-${px1 - px0}z" ${det}/>`);
+          out.push(`<path d="M${px0} ${mid}h${px1 - px0}v${r(3 * mu)}h-${px1 - px0}z" ${det}/>`);
+        }
+        out.push(`<path d="M${x0 + 4} ${floorY - plinth}v${plinth}M${x1 - 4} ${floorY - plinth}v${plinth}" ${reg}/>`);
       } else {
         // The mirror on the left leaf, in the one mark this house has for glass.
         out.push(`<path d="M${x0 + 4} ${caseTop + r(0.7 * mu)}l${r(w / 2) - 8} ${r(2.4 * mu)}" ${E}/>`);

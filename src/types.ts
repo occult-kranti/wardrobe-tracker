@@ -81,13 +81,18 @@ export type FurnitureForm =
   // division is fixed by the object rather than chosen by the owner. It is the
   // commonest wardrobe on earth and the app had no drawing for it.
   | 'almirah' | 'almirah-carved'
+  // The fitted one: a steel carcass with wooden doors, and an inside that is
+  // not N of the same thing — a hanging ledge, a jewellery tray, a shoe tier, a
+  // stand for bags. The wardrobe somebody had built rather than bought.
+  | 'almirah-fitted'
   // Things that hold what is not a garment. Every one of these earns its place
   // by being a different SHAPE, not a different noun: a tray is not a drawer, a
   // peg is not a shelf, and a bangle stand is a post.
   | 'box' | 'hooks' | 'stand' | 'rack';
 
 export const FURNITURE_FORMS: FurnitureForm[] = [
-  'rail', 'chest', 'shelves', 'almirah', 'almirah-carved', 'box', 'hooks', 'stand', 'rack',
+  'rail', 'chest', 'shelves', 'almirah', 'almirah-carved', 'almirah-fitted',
+  'box', 'hooks', 'stand', 'rack',
 ];
 
 export interface FurnitureSlot {
@@ -140,6 +145,7 @@ export const FORM_MAX_SLOTS: Record<FurnitureForm, number> = {
   shelves: 6,
   almirah: 6,
   'almirah-carved': 6,
+  'almirah-fitted': 7,
   box: 4,
   hooks: 5,
   stand: 4,

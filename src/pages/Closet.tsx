@@ -1,7 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Tilt } from '../components/Glass';
-import { Room } from '../components/Room';
 import { useWardrobe } from '../context/WardrobeContext';
 import ItemDetail from '../components/ItemDetail';
 import AddItemModal from '../components/AddItemModal';
@@ -352,6 +351,12 @@ export default function Closet() {
     });
   }, [browsable, search, activeCategory, filterSeason, filterOccasion, filterColor, showFavoritesOnly, benchFilter]);
 
+  /** A flat count, never a ratio — a bank balance, not a completion meter. */
+  const filedCount = useMemo(() => {
+    const known = new Set(furniture.map(f => f.id));
+    return activeItems.filter(i => i.place && known.has(i.place.furnitureId)).length;
+  }, [furniture, activeItems]);
+
   const retiredItems = useMemo(
     () => items.filter(i => i.retired)
       .sort((a, b) => (b.retired?.date ?? '').localeCompare(a.retired?.date ?? '')),
@@ -464,27 +469,6 @@ export default function Closet() {
         />
       ) : (
         <div className="space-y-5">
-          {/* THE ROOM OPENS THE TAB.
-              A grid is a good way to find a garment and a poor way to remember
-              where one lives, and "where is it?" is the question furniture
-              exists to answer. So the closet opens on the room and the grid
-              follows it, unchanged, one scroll down — nothing was taken away to
-              make space for this. */}
-          <div className="bg-surface plate rounded-[2px] p-4 sm:p-5">
-            <Room active={searchParams.get('at')} />
-            <p className="text-[13px] text-text-2 mt-3 leading-snug">
-              {furniture.length === 0
-                ? 'Everything hangs on the rail for now. '
-                : 'Tap a piece to open it, or go through the door to '}
-              <Link
-                to="/furniture"
-                className="text-accent underline underline-offset-[3px]"
-              >
-                {furniture.length === 0 ? 'Draw a place' : 'every place'}
-              </Link>
-            </p>
-          </div>
-
           {/* The tray: hand-me-downs mid-air. Pull-only — no badge, no bubble —
               and nothing lands until the yes is said from in here, because a
               closet something can appear in uninvited is not your closet. */}
@@ -761,6 +745,42 @@ export default function Closet() {
               </div>
             </div>
           )}
+
+          {/* WHERE THINGS LIVE — one line, and the whole of the furniture
+              feature's presence on this page.
+
+              It had a drawn room at the top of the closet and its own tab in the
+              navigation, and both were wrong in the same way: a grid of
+              photographs is what a closet IS, and everything above it was
+              something to get past. Arranging is a second question you ask of
+              clothes you already have, so it is a door on this page rather than
+              a room in front of it, and it is not a sibling of the closet in the
+              rail.
+
+              It sits here, under the rails and above the grid, because that is
+              where the page's other conditional prompts already sit — wash day
+              uses the same shape — and it is a row rather than a chip because
+              the designer's rule stands: a third rail is the wall. */}
+          <Link
+            to="/furniture"
+            className="flex items-center justify-between gap-3 bg-surface plate rounded-[2px] px-4 py-3 group"
+          >
+            <span className="min-w-0">
+              <span className="type-label text-text block">
+                {furniture.length === 0 ? 'Where things live' : 'The room'}
+              </span>
+              {/* Wraps rather than truncates. An ellipsis in the middle of a
+                  sentence reads as a fault in the app; two short lines do not. */}
+              <span className="type-ledger text-[11px] text-text-2 tabular block mt-0.5 leading-relaxed">
+                {furniture.length === 0
+                  ? 'A rail, a chest, an almirah'
+                  : `${furniture.length} ${furniture.length === 1 ? 'place' : 'places'} · ${filedCount} filed`}
+              </span>
+            </span>
+            <span className="type-label text-accent shrink-0 group-hover:underline underline-offset-[3px]">
+              {furniture.length === 0 ? 'Draw one' : 'Open'}
+            </span>
+          </Link>
 
           {filteredItems.length > 0 ? (
             <div id="everything" className="bg-surface plate rounded-[2px] p-4 sm:p-5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-7 v2-rise">

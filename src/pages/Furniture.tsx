@@ -5,6 +5,7 @@ import { Button, Card, Chip, EmptyState, Field, LinkButton, Masthead, Modal, Sec
 import { Basting, GarmentPlate, PlateEmptyCloset } from '../components/art';
 import { IconCamera, IconChevronLeft, IconPlus } from '../components/icons';
 import { showToast } from '../components/Toast';
+import { Room } from '../components/Room';
 import { drawFurniture, defaultSlotLabels, FORM_LABELS, FORM_NOTES, SLOT_NOUN, maxSlotsFor } from '../lib/furnitureArt';
 import { FURNITURE_PROMPT, readFurniture, type FurnitureRead } from '../lib/furniturePrompt';
 import { hasKey, keyLooksWrong, prepareImage, readPhotograph, saveKey } from '../lib/anthropic';
@@ -399,6 +400,21 @@ export default function Furniture() {
           </Button>
         }
       />
+
+      {/* THE ROOM, ON THE PAGE THAT IS ABOUT THE ROOM.
+          It opened the Closet tab for a week and was wrong there: a grid of
+          photographs is what a closet is, and a drawn wall in front of it was
+          something to get past. Here it is the answer to the question the page
+          asks — where does everything live — and the cards below are the same
+          answer written out. */}
+      <div className="bg-surface plate rounded-[2px] p-4 sm:p-5">
+        <Room />
+        <p className="text-[13px] text-text-2 mt-3 leading-snug">
+          Tap a piece to open it. Everything you own is still in{' '}
+          <Link to="/closet" className="text-accent underline underline-offset-[3px]">the closet</Link>,
+          filed or not.
+        </p>
+      </div>
 
       <ul className="grid sm:grid-cols-2 gap-5 v2-rise">
         {furniture.map(piece => (

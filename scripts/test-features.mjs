@@ -24,6 +24,20 @@ const page = await ctx.newPage();
 const errors = [];
 page.on('pageerror', e => errors.push(String(e).split('\n')[0].slice(0, 140)));
 
+/**
+ * The ACTIVE wardrobe's storage key.
+ *
+ * `Object.keys(localStorage).find(k => k.startsWith('wardrobe-tracker:'))` was
+ * wrong the moment this suite started opening more than one wardrobe: it
+ * returns whichever key the browser happens to enumerate first, which for a run
+ * that starts a blank wardrobe and then opens a sample is sometimes the blank
+ * one. Read the session, the way the app does.
+ */
+const activeKey = () => page.evaluate(() => {
+  const id = JSON.parse(localStorage.getItem('toile-session') || '{}').activeId;
+  return id ? `wardrobe-tracker:${id}` : null;
+});
+
 /* ============ the door, and the deep link that used to strand you ============ */
 await page.goto(`${ORIGIN}/#/feed`, { waitUntil: 'domcontentloaded' });
 await page.waitForTimeout(700);
@@ -50,6 +64,24 @@ await page.waitForTimeout(900);
 const landed = await page.evaluate(() => ({ hash: location.hash, text: document.body.innerText.slice(0, 90) }));
 check('a blank name still opens a wardrobe', landed.hash === '#/' || landed.hash === '',
   `hash ${landed.hash} — ${landed.text.replace(/\s+/g, ' ').slice(0, 50)}`);
+
+// The places feature, in a wardrobe that has none — which is this one, freshly
+// started. The sample wardrobes now arrive furnished, so this is the only point
+// in the run where the empty state is the true state.
+{
+  await page.goto(`${ORIGIN}/#/furniture`, { waitUntil: 'domcontentloaded' });
+  await page.locator('h1, h2').first().waitFor({ state: 'attached', timeout: 15000 });
+  const empty = await page.evaluate(() => document.body.innerText);
+  check('the empty state names a rail, not a dresser',
+    /A rail is a place/i.test(empty) && !/you should own/i.test(empty), '');
+
+  // And no standing invitation in the navigation: arranging is a question you
+  // ask of the closet, not a sibling of it.
+  const nav = await page.evaluate(() =>
+    [...document.querySelectorAll('nav a')].map(a => a.getAttribute('href')));
+  check('furniture is not a tab of its own', !nav.includes('#/furniture'),
+    nav.filter(Boolean).join(' ').slice(0, 60));
+}
 
 /* ============ what it is like out ============ */
 // Against a worked closet, not the empty one just started: an empty wardrobe
@@ -238,17 +270,39 @@ check('the weather never asks for your location', !after.asked, '');
 
 /* ============ furniture — where a garment physically lives ============ */
 {
-  // Invisible until built. A wardrobe that never wants this must never see it.
   await page.goto(`${ORIGIN}/#/closet`, { waitUntil: 'domcontentloaded' });
-  await page.waitForTimeout(700);
-  const quiet = await page.evaluate(() => !/Where it lives/i.test(document.body.innerText));
-  check('the feature is invisible until a place is drawn', quiet, '');
+  await page.locator('a[href="#/furniture"]').first().waitFor({ state: 'attached', timeout: 15000 });
+  // The closet still opens on the clothes. The room is a door on this page, not
+  // a wall in front of it — so nothing may sit above the search box but the
+  // masthead and whatever the household has passed you.
+  const order = await page.evaluate(() => {
+    const search = document.getElementById('closet-search');
+    const room = document.querySelector('a[href="#/furniture"]');
+    if (!search || !room) return null;
+    return { roomBelowSearch: room.compareDocumentPosition(search) === Node.DOCUMENT_POSITION_PRECEDING };
+  });
+  check('the closet opens on the clothes, with the room a door below the search',
+    !!order && order.roomBelowSearch, '');
 
-  await page.goto(`${ORIGIN}/#/furniture`, { waitUntil: 'domcontentloaded' });
-  await page.waitForTimeout(700);
-  const empty = await page.evaluate(() => document.body.innerText);
-  check('the empty state names a rail, not a dresser',
-    /A rail is a place/i.test(empty) && !/you should own/i.test(empty), '');
+  // THE WAY IN. Furniture has no tab, so the Closet page carries the only
+  // standing entry to it — one row, above the grid, under the rails.
+  const wayIn = page.locator('a[href="#/furniture"]').first();
+  check('the closet carries the way in to the room', await wayIn.count() === 1, '');
+  await wayIn.click();
+  await page.waitForTimeout(900);
+  const arrivedAtRoom = await page.evaluate(() => location.hash);
+  check('and it opens the room', arrivedAtRoom === '#/furniture', arrivedAtRoom);
+
+  // A sample wardrobe arrives furnished, so the feature is visible to somebody
+  // who has never drawn a place.
+  const furnished = await page.evaluate((key) => {
+    const st = JSON.parse(localStorage.getItem(key));
+    return { places: st.furniture.length, filed: st.items.filter(i => i.place).length, total: st.items.length };
+  }, await activeKey());
+  check('the sample wardrobe comes furnished', furnished.places >= 3, `${furnished.places} places`);
+  check('and about half of it is filed, never all',
+    furnished.filed / furnished.total > 0.25 && furnished.filed / furnished.total < 0.7,
+    `${Math.round(furnished.filed / furnished.total * 100)}%`);
 
   await page.getByRole('button', { name: /draw a place/i }).first().click();
   await page.waitForTimeout(600);
@@ -300,9 +354,15 @@ check('the weather never asks for your location', !after.asked, '');
   // Three drawers by default; add one and confirm the drawing itself changed.
   // The preview specifically — `svg` alone would match a nav icon. The drawing
   // carries an aria-label naming the piece and its drawers.
-  const previewSize = () => page.evaluate(() =>
-    [...document.querySelectorAll('svg[aria-label]')]
-      .find(s => /drawer/i.test(s.getAttribute('aria-label') || ''))?.innerHTML.length ?? 0);
+  // Scoped to the OPEN MODAL. Unscoped, this found the first drawing on the
+  // page whose label mentioned drawers — and once the sample wardrobes arrived
+  // furnished, that was a chest CARD sitting behind the modal, which of course
+  // never changed when the modal's + was pressed.
+  const previewSize = () => page.evaluate(() => {
+    const modal = document.querySelector('[role="dialog"]') ?? document.body;
+    return [...modal.querySelectorAll('svg[aria-label]')]
+      .find(s => /drawer/i.test(s.getAttribute('aria-label') || ''))?.innerHTML.length ?? 0;
+  });
   const beforeDraw = await previewSize();
   await page.getByRole('button', { name: /one more drawer/i }).first().click();
   await page.waitForTimeout(400);
@@ -334,10 +394,8 @@ check('the weather never asks for your location', !after.asked, '');
   check('the drawer now holds them', /4 pieces/i.test(filled), '');
 
   // THE CHECK THIS FEATURE EXISTS TO SURVIVE.
-  const countPieces = () => page.evaluate(async () => {
-    const key = Object.keys(localStorage).find(k => k.startsWith('wardrobe-tracker:'));
-    return JSON.parse(localStorage.getItem(key)).items.length;
-  });
+  const countPieces = async () => page.evaluate(
+    key => JSON.parse(localStorage.getItem(key)).items.length, await activeKey());
   const beforeRemove = await countPieces();
   await page.getByRole('button', { name: /remove this place/i }).first().click();
   await page.waitForTimeout(1200);
@@ -357,10 +415,9 @@ check('the weather never asks for your location', !after.asked, '');
 
 /* ============ the room, and packing away ============ */
 {
-  // THE CLOSET OPENS AS A ROOM. One piece of furniture was drawn just above, so
-  // the wall has something on it.
-  await page.goto(`${ORIGIN}/#/closet`, { waitUntil: 'domcontentloaded' });
-  await page.waitForTimeout(900);
+  // The room lives on the furniture page now, not in front of the closet.
+  await page.goto(`${ORIGIN}/#/furniture`, { waitUntil: 'domcontentloaded' });
+  await page.locator('a.registered').first().waitFor({ state: 'attached', timeout: 15000 });
   const room = await page.evaluate(() => {
     const links = [...document.querySelectorAll('a')]
       .filter(a => /\/furniture/.test(a.getAttribute('href') || ''));
@@ -373,7 +430,7 @@ check('the weather never asks for your location', !after.asked, '');
       text: document.body.innerText.slice(0, 600),
     };
   });
-  check('the closet opens on a room you can walk into', room.walkable >= 2, `${room.walkable} ways in`);
+  check('the room is somewhere you can walk into', room.walkable >= 2, `${room.walkable} ways in`);
   check('every way in is a legal tap target', room.smallest >= 44, `smallest ${Math.round(room.smallest)}px`);
 
   // THE CHECK THAT CATCHES A HIT LAYER IN THE WRONG PLACE.
@@ -421,28 +478,25 @@ check('the weather never asks for your location', !after.asked, '');
   await page.getByRole('link', { name: /bedroom chest/i }).first().click();
   await page.waitForTimeout(800);
 
-  const poolBefore = await page.evaluate(() => {
-    const key = Object.keys(localStorage).find(k => k.startsWith('wardrobe-tracker:'));
+  const poolBefore = await page.evaluate((key) => {
     const s = JSON.parse(localStorage.getItem(key));
     return s.items.filter(i => !i.retired && i.laundryStatus === 'clean').length;
-  });
+  }, await activeKey());
 
   await page.getByRole('button', { name: /pack this away/i }).first().click();
   // Wait for the CONSEQUENCE, not for a number of milliseconds. The write path
   // coalesces before it reaches storage, and a fixed sleep here made this check
   // fail on a cold first run and pass on every warm one — which is a defect in
   // the test, not weather.
-  await page.waitForFunction(() => {
-    const key = Object.keys(localStorage).find(k => k.startsWith('wardrobe-tracker:'));
+  await page.waitForFunction((key) => {
     if (!key) return false;
     try {
       return JSON.parse(localStorage.getItem(key)).furniture
         .some(f => f.slots.some(x => x.packed === true));
     } catch { return false; }
-  }, null, { timeout: 15000 }).catch(() => {});
+  }, await activeKey(), { timeout: 15000 }).catch(() => {});
 
-  const packed = await page.evaluate(() => {
-    const key = Object.keys(localStorage).find(k => k.startsWith('wardrobe-tracker:'));
+  const packed = await page.evaluate((key) => {
     const s = JSON.parse(localStorage.getItem(key));
     const slot = s.furniture.flatMap(f => f.slots).find(x => x.packed);
     return {
@@ -450,7 +504,7 @@ check('the weather never asks for your location', !after.asked, '');
       items: s.items.length,
       stillClean: s.items.filter(i => !i.retired && i.laundryStatus === 'clean').length,
     };
-  });
+  }, await activeKey());
   check('a compartment can be packed away for the season', packed.flagged, '');
   check('and packing takes nothing out of the closet',
     packed.stillClean === poolBefore, `${poolBefore} → ${packed.stillClean} clean pieces`);
@@ -458,8 +512,7 @@ check('the weather never asks for your location', !after.asked, '');
   // The one thing it does change, checked where it changes it.
   await page.goto(`${ORIGIN}/#/`, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(900);
-  const day = await page.evaluate(() => {
-    const key = Object.keys(localStorage).find(k => k.startsWith('wardrobe-tracker:'));
+  const day = await page.evaluate((key) => {
     const s = JSON.parse(localStorage.getItem(key));
     const packedSlots = new Set(
       s.furniture.flatMap(f => f.slots.filter(x => x.packed).map(x => `${f.id}/${x.id}`))
@@ -469,7 +522,7 @@ check('the weather never asks for your location', !after.asked, '');
       .map(i => i.name);
     const shown = document.body.innerText;
     return { packedNames, offered: packedNames.filter(n => n && shown.includes(n)) };
-  });
+  }, await activeKey());
   check('what is packed away is not offered for today',
     day.packedNames.length > 0 && day.offered.length === 0,
     `${day.packedNames.length} packed, ${day.offered.length} still offered`);
