@@ -154,6 +154,21 @@ check('search narrows the board', searched >= 1 && searched < taskCount, `${sear
 await page.locator('#search').fill('');
 await page.waitForTimeout(150);
 
+// --- shareable views ----------------------------------------------------
+await page.locator('[data-filter="status:blocked"]').click();
+await page.locator('[data-filter="tag:legal"]').click();
+await page.waitForTimeout(150);
+check('the view is written into the URL', page.url().includes('status=blocked') && page.url().includes('tag=legal'), page.url().split('?')[1] || '');
+const sharedUrl = page.url();
+await page.locator('[data-filter="status:all"]').click();
+await page.locator('[data-filter="tag:all"]').click();
+await page.goto(sharedUrl, { waitUntil: 'networkidle' });
+await page.waitForTimeout(250);
+check('a shared URL restores the filters', (await page.locator('[data-filter="status:blocked"]').getAttribute('class')).includes('on') &&
+  (await page.locator('[data-filter="tag:legal"]').getAttribute('class')).includes('on'));
+await page.goto(TRACKER, { waitUntil: 'networkidle' });
+await page.waitForTimeout(200);
+
 // --- persistence --------------------------------------------------------
 await page.reload({ waitUntil: 'networkidle' });
 await page.waitForTimeout(300);

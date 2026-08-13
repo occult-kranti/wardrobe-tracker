@@ -698,6 +698,7 @@ function render() {
   $('#bulkbar').hidden = SELECTED.size === 0;
   $('#bulkcount').textContent = `${SELECTED.size} selected`;
   paintSyncState();
+  viewToUrl();
   if (OPEN_TASK) paintDrawer();
 }
 
@@ -923,6 +924,38 @@ function setMode(m) {
   render();
 }
 
+/* ---------------------------------------------------------- shared views --
+   A filtered board is the thing people actually want to send each other
+   ("everything of Nimesh's that is blocked"). Keeping VIEW in the URL makes
+   the address bar the sharing mechanism, and costs no storage and no server. */
+
+function viewToUrl() {
+  const q = new URLSearchParams();
+  for (const [k, v] of Object.entries(VIEW)) {
+    if (v && v !== 'all' && !(k === 'mode' && v === 'board')) q.set(k, v);
+  }
+  const url = q.toString() ? `${location.pathname}?${q}` : location.pathname;
+  history.replaceState(null, '', url);
+}
+
+function urlToView() {
+  const q = new URLSearchParams(location.search);
+  for (const k of ['group', 'person', 'tag', 'status', 'q', 'mode']) {
+    const v = q.get(k);
+    if (v) VIEW[k] = v;
+  }
+}
+
+/** Reflect a restored VIEW back onto the filter chips and mode buttons. */
+function paintViewControls() {
+  for (const k of ['group', 'person', 'tag', 'status']) {
+    const chips = $('#filters').querySelectorAll(`[data-filter^="${k}:"]`);
+    chips.forEach(c => c.classList.toggle('on', c.dataset.filter === `${k}:${VIEW[k]}`));
+  }
+  $('#search').value = VIEW.q || '';
+  ['Board', 'Timeline', 'People'].forEach(x => $('#mode' + x).classList.toggle('on', x.toLowerCase() === VIEW.mode));
+}
+
 function buildFilters() {
   const groupBtns = [`<button class="fchip on" data-filter="group:all">All phases</button>`]
     .concat(GROUPS.map(g => `<button class="fchip" data-filter="group:${g.id}">${esc(g.name)}</button>`)).join('');
@@ -956,7 +989,8 @@ async function boot() {
     setInterval(poll, SYNC.pollMs);
   }
 
-  buildFilters(); wire(); paintIdentity(); render();
+  urlToView();
+  buildFilters(); wire(); paintIdentity(); paintViewControls(); render();
 }
 
 document.addEventListener('DOMContentLoaded', boot);
