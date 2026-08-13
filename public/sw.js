@@ -81,8 +81,10 @@ self.addEventListener('fetch', event => {
       if (hit) return hit;
       return fetch(request)
         .then(response => {
-          // Typefaces come back opaque from another origin. Cache them anyway:
-          // an unreadable response still renders, and type is most of the app.
+          // The typefaces are same-origin now — self-hosted after Google
+          // rotated a file hash out from under a cached stylesheet and the
+          // flow suite caught the 404 in production. The opaque branch stays
+          // for anything a future page embeds cross-origin.
           if (sameOrigin || response.type === 'opaque') keep(request, response);
           return response;
         })
