@@ -50,7 +50,8 @@ await page.goto(TRACKER, { waitUntil: 'networkidle' });
 const taskCount = await page.locator('.task').count();
 check('tasks render', taskCount > 50, `${taskCount} tasks`);
 const phases = await page.locator('.phase').count();
-check('all phases render', phases === 11, `${phases} phases`);
+const declared = await page.evaluate(() => GROUPS.length);
+check('every declared phase renders', phases === declared, `${phases} of ${declared}`);
 check('modal is hidden at rest', !(await page.locator('#modal').isVisible()));
 check('bulkbar hidden at rest', !(await page.locator('#bulkbar').isVisible()));
 check('the two meetings are present',
