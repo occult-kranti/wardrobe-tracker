@@ -226,13 +226,13 @@
     </p>
     <ol>
       <li>Make a free project at <a href="https://supabase.com">supabase.com</a>.</li>
-      <li>In the SQL editor, run the block below. It makes one table with one row, and
-        lets anyone with the key read and write it — right for a small trusted team,
-        wrong for anything with real secrets in it.</li>
+      <li>In the SQL editor, run the block below. It makes one table with one row.
+        The three policies as written let <b>anyone holding the key</b> read and write
+        it, so read the warning under the block before you use them as they are.</li>
       <li>Open <b>Project Settings → API</b> and copy the <b>Project URL</b> and the
         <b>anon</b> key.</li>
       <li>Paste both into the <code>SYNC</code> block at the top of
-        <code>company/tracker.js</code>, commit, and push. The header will read
+        <code>company/build.js</code>, commit, and push. The header will read
         <b>Shared</b> instead of <b>This device only</b>.</li>
     </ol>
     <pre>create table almari_workroom (
@@ -241,9 +241,26 @@
   updated_at timestamptz default now()
 );
 alter table almari_workroom enable row level security;
+
+-- Open to anyone with the key. Fine on a private host, NOT on a public URL:
 create policy "team read"  on almari_workroom for select using (true);
 create policy "team write" on almari_workroom for insert with check (true);
-create policy "team edit"  on almari_workroom for update using (true);</pre>
+create policy "team edit"  on almari_workroom for update using (true);
+
+-- Safe on a public URL. Turn on Supabase Auth, invite the team, then use these
+-- instead of the three above:
+-- create policy "team read"  on almari_workroom for select using (auth.uid() is not null);
+-- create policy "team write" on almari_workroom for insert with check (auth.uid() is not null);
+-- create policy "team edit"  on almari_workroom for update using (auth.uid() is not null);</pre>
+    <p class="phase-note" style="margin-top:16px"><b>The key cannot go in a public
+      repository.</b> This site is served from a public repo, so committing the anon
+      key alongside the open policies above publishes read <em>and write</em> access to
+      this board to everyone. For task titles that is untidy; the moment the board holds
+      anything about a real person, a tester's email or a journalist's number, it is a
+      personal-data breach and the company answers for it under the DPDP Act. Either
+      serve the board from a private host, or turn on Supabase Auth and use the
+      commented policies. Never put passwords, bank details, or anything about a person
+      who has not consented into this board.</p>
   </section>
 
   <footer>
