@@ -510,7 +510,11 @@ check('the weather never asks for your location', !after.asked, '');
 /* ============ the obsidian room ============ */
 {
   await page.goto(`${ORIGIN}/#/settings`, { waitUntil: 'domcontentloaded' });
-  await page.waitForTimeout(600);
+  // Wait for the element being measured, not for a number. A 600ms sleep was
+  // enough against a local preview and not enough against the deployed site, so
+  // `.plate` was sometimes null and the ornament check read a false off an empty
+  // string — a test that reports the network rather than the stylesheet.
+  await page.locator('.plate').first().waitFor({ state: 'attached', timeout: 15000 });
   const room = await page.evaluate(() => {
     document.documentElement.setAttribute('data-theme', 'obsidian');
     const s = getComputedStyle(document.documentElement);
