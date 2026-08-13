@@ -6,6 +6,7 @@
  * browser's broken-image glyph in the middle of the closet grid, which is how
  * the Raw Denim plate shipped broken while every other suite stayed green.
  */
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { chromium } from 'playwright';
 import { build } from 'esbuild';
 import { mkdtempSync } from 'node:fs';
@@ -14,13 +15,13 @@ import { join } from 'node:path';
 
 const out = join(mkdtempSync(join(tmpdir(), 'art-')), 'a.mjs');
 await build({
-  entryPoints: [new URL('../src/lib/garmentArt.ts', import.meta.url).pathname],
+  entryPoints: [fileURLToPath(new URL('../src/lib/garmentArt.ts', import.meta.url))],
   bundle: true,
   format: 'esm',
   outfile: out,
   logLevel: 'error',
 });
-const { GARMENT_ART } = await import(out);
+const { GARMENT_ART } = await import(pathToFileURL(out).href);
 
 const ids = Object.keys(GARMENT_ART);
 const browser = await chromium.launch();

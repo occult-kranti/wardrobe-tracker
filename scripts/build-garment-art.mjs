@@ -9,6 +9,7 @@
  *
  * Usage: node scripts/build-garment-art.mjs <source-dir>
  */
+import { fileURLToPath } from 'node:url';
 import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join, basename, extname } from 'node:path';
 
@@ -18,7 +19,7 @@ if (!src) {
   process.exit(2);
 }
 
-const OUT = new URL('../src/lib/garmentArt.ts', import.meta.url).pathname;
+const OUT = fileURLToPath(new URL('../src/lib/garmentArt.ts', import.meta.url));
 const files = readdirSync(src).filter(f => extname(f) === '.svg').sort();
 
 const entries = [];

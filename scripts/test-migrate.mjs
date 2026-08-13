@@ -1,4 +1,5 @@
 // Verifies a real v1 localStorage payload survives migration with no loss.
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { build } from 'esbuild';
 import { writeFileSync, mkdtempSync } from 'fs';
 import { tmpdir } from 'os';
@@ -6,14 +7,14 @@ import { join } from 'path';
 
 const out = join(mkdtempSync(join(tmpdir(), 'mig-')), 'migrate.mjs');
 await build({
-  entryPoints: [new URL('../src/lib/migrate.ts', import.meta.url).pathname],
+  entryPoints: [fileURLToPath(new URL('../src/lib/migrate.ts', import.meta.url))],
   bundle: true,
   format: 'esm',
   outfile: out,
   logLevel: 'error',
 });
 
-const { migrate } = await import(out);
+const { migrate } = await import(pathToFileURL(out).href);
 
 const v1 = {
   items: [
