@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Tilt } from '../components/Glass';
+import { Room } from '../components/Room';
 import { useWardrobe } from '../context/WardrobeContext';
 import ItemDetail from '../components/ItemDetail';
 import AddItemModal from '../components/AddItemModal';
@@ -273,7 +274,7 @@ function RetiredRow({
 
 export default function Closet() {
   const {
-    items, activeItems, settings,
+    items, activeItems, settings, furniture,
     addItem, toggleFavoriteItem, deleteItem, logWear, setLaundryStatus, advanceLaundry, retireItem, unretireItem,
   } = useWardrobe();
 
@@ -463,6 +464,27 @@ export default function Closet() {
         />
       ) : (
         <div className="space-y-5">
+          {/* THE ROOM OPENS THE TAB.
+              A grid is a good way to find a garment and a poor way to remember
+              where one lives, and "where is it?" is the question furniture
+              exists to answer. So the closet opens on the room and the grid
+              follows it, unchanged, one scroll down — nothing was taken away to
+              make space for this. */}
+          <div className="bg-surface plate rounded-[2px] p-4 sm:p-5">
+            <Room active={searchParams.get('at')} />
+            <p className="text-[13px] text-text-2 mt-3 leading-snug">
+              {furniture.length === 0
+                ? 'Everything hangs on the rail for now. '
+                : 'Tap a piece to open it, or go through the door to '}
+              <Link
+                to="/furniture"
+                className="text-accent underline underline-offset-[3px]"
+              >
+                {furniture.length === 0 ? 'Draw a place' : 'every place'}
+              </Link>
+            </p>
+          </div>
+
           {/* The tray: hand-me-downs mid-air. Pull-only — no badge, no bubble —
               and nothing lands until the yes is said from in here, because a
               closet something can appear in uninvited is not your closet. */}
@@ -741,7 +763,7 @@ export default function Closet() {
           )}
 
           {filteredItems.length > 0 ? (
-            <div className="bg-surface plate rounded-[2px] p-4 sm:p-5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-7 v2-rise">
+            <div id="everything" className="bg-surface plate rounded-[2px] p-4 sm:p-5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-7 v2-rise">
               {filteredItems.map(item => (
                 <ClosetCard
                   key={item.id}

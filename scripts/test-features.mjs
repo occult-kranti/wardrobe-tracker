@@ -252,6 +252,50 @@ check('the weather never asks for your location', !after.asked, '');
 
   await page.getByRole('button', { name: /draw a place/i }).first().click();
   await page.waitForTimeout(600);
+
+  // The nine forms, and the two that are the point of this pass.
+  const forms = await page.evaluate(() =>
+    [...document.querySelectorAll('button')].map(b => b.textContent.trim()));
+  check('a steel almirah and a carved one are both offered',
+    forms.includes('A steel almirah') && forms.includes('A wooden almirah'),
+    forms.filter(f => /almirah/i.test(f)).join(', '));
+  check('and the things a closet has nowhere to put',
+    ['A jewellery box', 'A row of pegs', 'A bangle stand', 'A shoe rack'].every(f => forms.includes(f)), '');
+
+  // An almirah is not N of the same thing: its compartments are the parts of the
+  // object, named after themselves, in the order the parts are in.
+  const almirahLabels = await page.evaluate(() => {
+    const svg = [...document.querySelectorAll('svg[aria-label]')]
+      .find(s => /compartment/i.test(s.getAttribute('aria-label') || ''));
+    return [...(svg?.querySelectorAll('text') ?? [])].map(t => t.textContent);
+  });
+  check('the almirah draws its own segregation, not numbered drawers',
+    almirahLabels.some(t => /HANGING/i.test(t)) && almirahLabels.some(t => /LOCKER/i.test(t)),
+    almirahLabels.filter(Boolean).join(' / '));
+
+  // Each form stops where its own drawing stops giving a 44px target.
+  const ceiling = async (formLabel, nounRe) => {
+    await page.getByRole('button', { name: new RegExp(`^${formLabel}$`) }).first().click();
+    await page.waitForTimeout(300);
+    const plus = page.getByRole('button', { name: nounRe }).first();
+    for (let i = 0; i < 12; i++) {
+      if (!(await plus.isEnabled())) break;
+      await plus.click();
+      await page.waitForTimeout(90);
+    }
+    return page.evaluate(() => {
+      const el = [...document.querySelectorAll('span')]
+        .find(x => x.className.includes('tabular') && /^\d+$/.test(x.textContent.trim()));
+      return Number(el?.textContent.trim() ?? 0);
+    });
+  };
+  const pegs = await ceiling('A row of pegs', /one more peg/i);
+  check('a form stops at its own ceiling, and says why', pegs === 5, `pegs capped at ${pegs}`);
+  const trays = await ceiling('A jewellery box', /one more tray/i);
+  check('and a different form has a different ceiling', trays === 4, `trays capped at ${trays}`);
+
+  await page.getByRole('button', { name: /^A chest$/ }).first().click();
+  await page.waitForTimeout(300);
   await page.fill('#fp-name', 'Bedroom chest');
   // Three drawers by default; add one and confirm the drawing itself changed.
   // The preview specifically — `svg` alone would match a nav icon. The drawing
@@ -263,6 +307,8 @@ check('the weather never asks for your location', !after.asked, '');
   await page.getByRole('button', { name: /one more drawer/i }).first().click();
   await page.waitForTimeout(400);
   const afterDraw = await previewSize();
+  // The chest was reset to a lower count by the ceiling walk above, so this is
+  // a real "one more drawer redraws the case" check either way.
   check('the drawing is generated from the drawer count', afterDraw > beforeDraw && beforeDraw > 0,
     `${beforeDraw} → ${afterDraw} chars of path`);
 
@@ -275,7 +321,7 @@ check('the weather never asks for your location', !after.asked, '');
   await page.getByRole('button', { name: /put things in/i }).first().click();
   await page.waitForTimeout(800);
   await page.evaluate(() => {
-    const tiles = [...document.querySelectorAll('button[aria-pressed]')].slice(0, 4);
+    const tiles = [...document.querySelectorAll('ul button[aria-pressed]')].slice(0, 4);
     tiles.forEach(t => t.click());
   });
   await page.waitForTimeout(400);
@@ -307,6 +353,115 @@ check('the weather never asks for your location', !after.asked, '');
     const back = await page.evaluate(() => document.body.innerText);
     check('Undo puts the place back with its contents', /Bedroom chest/i.test(back), '');
   }
+}
+
+/* ============ the room, and packing away ============ */
+{
+  // THE CLOSET OPENS AS A ROOM. One piece of furniture was drawn just above, so
+  // the wall has something on it.
+  await page.goto(`${ORIGIN}/#/closet`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(900);
+  const room = await page.evaluate(() => {
+    const links = [...document.querySelectorAll('a')]
+      .filter(a => /\/furniture/.test(a.getAttribute('href') || ''));
+    const walkable = links.filter(a => a.className.includes('registered'));
+    const boxes = walkable.map(a => a.getBoundingClientRect());
+    return {
+      walkable: walkable.length,
+      smallest: boxes.length ? Math.min(...boxes.map(b => Math.min(b.width, b.height))) : 0,
+      named: walkable.map(a => a.textContent.trim()).filter(Boolean),
+      text: document.body.innerText.slice(0, 600),
+    };
+  });
+  check('the closet opens on a room you can walk into', room.walkable >= 2, `${room.walkable} ways in`);
+  check('every way in is a legal tap target', room.smallest >= 44, `smallest ${Math.round(room.smallest)}px`);
+
+  // THE CHECK THAT CATCHES A HIT LAYER IN THE WRONG PLACE.
+  // Measuring a link's box only proves it is big. It has to be OVER the thing
+  // it opens — the first version of this divided both axes by the plate's WIDTH,
+  // so every target floated up into the ceiling band with three pixels of the
+  // furniture inside it, and passed every check but this one.
+  const overlap = await page.evaluate(() => {
+    const link = [...document.querySelectorAll('a.registered')]
+      .find(a => /\/furniture\//.test(a.getAttribute('href') || ''));
+    if (!link) return null;
+    const svg = link.closest('div')?.querySelector('svg');
+    const paths = [...(svg?.querySelectorAll('path') ?? [])].map(p => p.getBoundingClientRect());
+    const box = link.getBoundingClientRect();
+    // How much of the drawing's ink falls inside this link's box, vertically.
+    const inside = paths.filter(p =>
+      p.width > 0 && p.right > box.left && p.left < box.right
+      && p.bottom > box.top + 2 && p.top < box.bottom - 2).length;
+    return { inside, drawn: paths.length };
+  });
+  check('and it sits over the furniture it opens, not above it',
+    !!overlap && overlap.inside >= 4, overlap ? `${overlap.inside} strokes inside the target` : 'no bay link');
+
+  // Tapping one has to arrive at that piece, not at the index.
+  const walkedTo = await page.evaluate(() => {
+    const link = [...document.querySelectorAll('a.registered')]
+      .find(a => /\/furniture\//.test(a.getAttribute('href') || ''));
+    return link?.getAttribute('href') ?? '';
+  });
+  await page.locator('a.registered').filter({ hasText: /piece/ }).first().click();
+  await page.waitForTimeout(900);
+  const arrived = await page.evaluate(() => ({ hash: location.hash, text: document.body.innerText.slice(0, 80) }));
+  check('walking to a piece opens that piece',
+    walkedTo.includes(arrived.hash.replace('#', '')) && /#\/furniture\/./.test(arrived.hash),
+    arrived.hash);
+  check('and each one says what it is, for a screen reader',
+    room.named.some(t => /piece/i.test(t)), room.named[0] ?? '');
+  // A room is not a scoreboard. No percentage, no "x of y", no meter.
+  check('the room never scores you', !/\d+%|\d+ of \d+/.test(room.text), '');
+
+  // PACKED AWAY — the seasonal case, which is the whole reason a place is worth
+  // having. Nothing leaves the closet; it stops being suggested.
+  await page.goto(`${ORIGIN}/#/furniture`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(700);
+  await page.getByRole('link', { name: /bedroom chest/i }).first().click();
+  await page.waitForTimeout(800);
+
+  const poolBefore = await page.evaluate(() => {
+    const key = Object.keys(localStorage).find(k => k.startsWith('wardrobe-tracker:'));
+    const s = JSON.parse(localStorage.getItem(key));
+    return s.items.filter(i => !i.retired && i.laundryStatus === 'clean').length;
+  });
+
+  await page.getByRole('button', { name: /pack this away/i }).first().click();
+  await page.waitForTimeout(900);
+
+  const packed = await page.evaluate(() => {
+    const key = Object.keys(localStorage).find(k => k.startsWith('wardrobe-tracker:'));
+    const s = JSON.parse(localStorage.getItem(key));
+    const slot = s.furniture.flatMap(f => f.slots).find(x => x.packed);
+    return {
+      flagged: !!slot,
+      items: s.items.length,
+      stillClean: s.items.filter(i => !i.retired && i.laundryStatus === 'clean').length,
+    };
+  });
+  check('a compartment can be packed away for the season', packed.flagged, '');
+  check('and packing takes nothing out of the closet',
+    packed.stillClean === poolBefore, `${poolBefore} → ${packed.stillClean} clean pieces`);
+
+  // The one thing it does change, checked where it changes it.
+  await page.goto(`${ORIGIN}/#/`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(900);
+  const day = await page.evaluate(() => {
+    const key = Object.keys(localStorage).find(k => k.startsWith('wardrobe-tracker:'));
+    const s = JSON.parse(localStorage.getItem(key));
+    const packedSlots = new Set(
+      s.furniture.flatMap(f => f.slots.filter(x => x.packed).map(x => `${f.id}/${x.id}`))
+    );
+    const packedNames = s.items
+      .filter(i => i.place && packedSlots.has(`${i.place.furnitureId}/${i.place.slotId}`))
+      .map(i => i.name);
+    const shown = document.body.innerText;
+    return { packedNames, offered: packedNames.filter(n => n && shown.includes(n)) };
+  });
+  check('what is packed away is not offered for today',
+    day.packedNames.length > 0 && day.offered.length === 0,
+    `${day.packedNames.length} packed, ${day.offered.length} still offered`);
 }
 
 /* ============ the obsidian room ============ */

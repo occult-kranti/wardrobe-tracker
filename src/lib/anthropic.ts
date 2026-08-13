@@ -162,7 +162,7 @@ export async function readPhotograph(image: Prepared, prompt: string): Promise<{
   try {
     res = await post(model, key, image, prompt);
   } catch {
-    throw new Error('Could not reach Anthropic. Check the connection — everything else in Toile works offline.');
+    throw new Error('Could not reach Anthropic. Check the connection — everything else in Almari works offline.');
   }
 
   // One step down if this key cannot see the preferred model, then stop.

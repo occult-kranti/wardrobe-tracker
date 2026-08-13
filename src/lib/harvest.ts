@@ -16,6 +16,18 @@ import type { IntakeDraft } from './intake';
 /** A crop with a breath of margin — a box drawn tight can clip a sleeve. */
 const BLEED = 0.02;
 
+/**
+ * The margin used when the crop is about to have its background lifted.
+ *
+ * Six times the ordinary bleed, and the reason is the pass that comes next: it
+ * learns what the background is by looking at the frame's border. A crop drawn
+ * tight to the garment HAS no border that is background — it is garment to the
+ * edge — so the cut had nothing to read and the batch path was quietly the
+ * worst place in the app to attempt one. The wider crop is thrown away
+ * afterwards; only the cut-out is kept.
+ */
+const LIFT_BLEED = 0.12;
+
 function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -29,16 +41,17 @@ function loadImage(src: string): Promise<HTMLImageElement> {
 export async function cropBox(
   src: string,
   box: [number, number, number, number],
+  bleed: number = BLEED,
 ): Promise<string> {
   const img = await loadImage(src);
   const W = img.naturalWidth;
   const H = img.naturalHeight;
 
   const [bx, by, bw, bh] = box;
-  const x = Math.max(0, Math.round((bx - BLEED) * W));
-  const y = Math.max(0, Math.round((by - BLEED) * H));
-  const w = Math.min(W - x, Math.round((bw + BLEED * 2) * W));
-  const h = Math.min(H - y, Math.round((bh + BLEED * 2) * H));
+  const x = Math.max(0, Math.round((bx - bleed) * W));
+  const y = Math.max(0, Math.round((by - bleed) * H));
+  const w = Math.min(W - x, Math.round((bw + bleed * 2) * W));
+  const h = Math.min(H - y, Math.round((bh + bleed * 2) * H));
   if (w < 8 || h < 8) throw new Error('That box is too small to crop.');
 
   const canvas = document.createElement('canvas');
@@ -102,7 +115,10 @@ export async function harvest(
         note = undefined;
       } else {
         try {
-          const cut = await cutOut(crop);
+          // Cut from a roomier crop, then keep the result — which is already
+          // trimmed back to the garment's own bounds by the pass itself.
+          const roomy = await cropBox(photo, draft.box!, LIFT_BLEED);
+          const cut = await cutOut(roomy);
           if (cut.good) lifted = cut.url;
           else note = 'kept as photographed — the background would not lift cleanly';
         } catch {

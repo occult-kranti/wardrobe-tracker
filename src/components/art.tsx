@@ -19,7 +19,7 @@ export function Wordmark({ className = '' }: { className?: string }) {
         className="type-masthead leading-none"
         style={{ fontWeight: 700, letterSpacing: '0.18em', fontSize: '1.05em' }}
       >
-        TOILE
+        ALMARI
       </span>
       {/* hand-wavered chalk underline */}
       <svg viewBox="0 0 64 5" className="w-full mt-[3px]" style={{ height: 4 }} aria-hidden="true">
@@ -100,7 +100,7 @@ export function TagMark({ size = 28 }: { size?: number }) {
         fill="currentColor"
         style={{ font: full ? '700 22px var(--font-display)' : '700 24px var(--font-display)' }}
       >
-        T
+        A
       </text>
 
       {/* and out of the front grommet, the long twirl */}
@@ -303,7 +303,7 @@ const SIDEBAR_W = 220;
 const CONTENT_W = 1024; // max-w-5xl
 
 export function GroundFrieze({ name, page = '/' }: { name?: string; page?: string }) {
-  const first = escapeXml((name ?? 'Toile').trim().split(/\s+/)[0] || 'Toile');
+  const first = escapeXml((name ?? 'Almari').trim().split(/\s+/)[0] || 'Almari');
   const key = '/' + (page.split('/')[1] ?? '');
   const set = PAGE_SETS[key] ?? DEFAULT_SET;
   // Alternate the frieze's side per page, so the house does not hang every

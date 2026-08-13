@@ -1,12 +1,17 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useWardrobe } from '../context/WardrobeContext';
 import { Button, Card, Chip, EmptyState, Field, LinkButton, Masthead, Modal, SectionTitle, inputClass } from '../components/ui';
 import { Basting, GarmentPlate, PlateEmptyCloset } from '../components/art';
-import { IconChevronLeft, IconPlus } from '../components/icons';
+import { IconCamera, IconChevronLeft, IconPlus } from '../components/icons';
 import { showToast } from '../components/Toast';
-import { drawFurniture, defaultSlotLabels, FORM_LABELS, SLOT_NOUN, MAX_SLOTS } from '../lib/furnitureArt';
-import type { ClothingItem, Furniture as FurniturePiece, FurnitureForm } from '../types';
+import { drawFurniture, defaultSlotLabels, FORM_LABELS, FORM_NOTES, SLOT_NOUN, maxSlotsFor } from '../lib/furnitureArt';
+import { FURNITURE_PROMPT, readFurniture, type FurnitureRead } from '../lib/furniturePrompt';
+import { hasKey, keyLooksWrong, prepareImage, readPhotograph, saveKey } from '../lib/anthropic';
+import {
+  FURNITURE_FORMS, MAX_FURNITURE, MAX_FURNITURE_NAME, MAX_SLOT_LABEL,
+  type ClothingItem, type Furniture as FurniturePiece, type FurnitureForm,
+} from '../types';
 
 /**
  * FURNITURE — where a garment physically lives.
@@ -94,27 +99,81 @@ function useCounts(items: ClothingItem[], furnitureId: string) {
 /* ---------------- drawing a new piece ---------------- */
 
 function DrawPiece({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { addFurniture } = useWardrobe();
+  const { addFurniture, furniture } = useWardrobe();
   const navigate = useNavigate();
   const [name, setName] = useState('');
-  const [form, setForm] = useState<FurnitureForm>('chest');
-  const [count, setCount] = useState(3);
+  const [form, setForm] = useState<FurnitureForm>('almirah');
+  const [count, setCount] = useState(4);
+  const [labels, setLabels] = useState<string[] | null>(null);
+  const [reading, setReading] = useState(false);
+  const [read, setRead] = useState<FurnitureRead | null>(null);
+  const [askKey, setAskKey] = useState(false);
+  const [key, setKey] = useState('');
+  const photoRef = useRef<HTMLInputElement>(null);
+
+  const ceiling = maxSlotsFor(form);
+  const full = furniture.length >= MAX_FURNITURE;
 
   // The preview redraws as you press +. The flow IS the artistry: you are
   // building the object, not filling in a form about it.
-  const preview = useMemo<FurniturePiece>(() => ({
-    id: 'preview',
-    name: name || 'A place',
-    form,
-    slots: defaultSlotLabels(form, count).map((label, i) => ({ id: `p${i}`, label })),
-    dateAdded: '',
-  }), [name, form, count]);
+  const preview = useMemo<FurniturePiece>(() => {
+    const generated = defaultSlotLabels(form, Math.min(count, ceiling));
+    return {
+      id: 'preview',
+      name: name || 'A place',
+      form,
+      slots: generated.map((label, i) => ({ id: `p${i}`, label: labels?.[i] ?? label })),
+      dateAdded: '',
+    };
+  }, [name, form, count, ceiling, labels]);
+
+  const pick = (next: FurnitureForm) => {
+    setForm(next);
+    // Each form has its own ceiling, so the number has to come with it.
+    setCount(c => Math.min(c, maxSlotsFor(next)));
+    setLabels(null);
+  };
 
   const draw = () => {
-    const id = addFurniture(name, form, count);
+    const id = addFurniture(name, form, Math.min(count, ceiling));
+    if (!id) {
+      showToast(`This wardrobe already holds ${MAX_FURNITURE} places, which is as many as the room will draw.`, 'error');
+      return;
+    }
     onClose();
-    setName(''); setForm('chest'); setCount(3);
+    setName(''); setForm('almirah'); setCount(4); setLabels(null); setRead(null);
     navigate(`/furniture/${id}`);
+  };
+
+  /** Photograph the thing itself, and let the model read its inside. */
+  const readPhoto = async (file: File) => {
+    setReading(true);
+    setRead(null);
+    try {
+      const src = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result));
+        reader.onerror = () => reject(new Error('That photograph would not open.'));
+        reader.readAsDataURL(file);
+      });
+      const prepared = await prepareImage(src);
+      const { text } = await readPhotograph(prepared, FURNITURE_PROMPT);
+      const answer = readFurniture(text);
+      setRead(answer);
+      // NOTHING IS WRITTEN HERE. The read moves the controls, the drawing
+      // redraws, and the person still has to press Draw it — a model's answer
+      // is a suggestion about someone's own bedroom, not a fact about it.
+      if (answer.isFurniture) {
+        setForm(answer.form);
+        setCount(Math.min(answer.slots, maxSlotsFor(answer.form)));
+        setLabels(answer.labels.length ? answer.labels : null);
+        if (answer.name) setName(answer.name);
+      }
+    } catch (e) {
+      showToast((e as Error).message, 'error');
+    } finally {
+      setReading(false);
+    }
   };
 
   const noun = SLOT_NOUN[form];
@@ -125,26 +184,130 @@ function DrawPiece({ open, onClose }: { open: boolean; onClose: () => void }) {
           <FurniturePlate piece={preview} counts={{}} />
         </div>
 
+        {/* Reading it off a photograph. Second, quieter, and never the only
+            road in — drawing one by hand is four taps and needs no key, no
+            network and no account. */}
+        <div className="rounded-[2px] bg-sunken plate-ink p-3">
+          <p className="type-ledger text-[11px] text-text-2">Or photograph the thing itself</p>
+          <p className="text-[13px] text-text-2 mt-1.5 leading-snug">
+            Open its doors and take one picture. It reads what kind it is and how the
+            inside divides, then moves the controls above — nothing is saved until you
+            draw it.
+          </p>
+          <input
+            ref={photoRef}
+            type="file"
+            accept="image/*"
+            className="sr-only"
+            onChange={e => {
+              const file = e.target.files?.[0];
+              e.target.value = '';
+              if (file) void readPhoto(file);
+            }}
+          />
+          <div className="flex flex-wrap items-center gap-2 mt-3">
+            <Button
+              compact
+              disabled={reading}
+              icon={<IconCamera size={16} />}
+              onClick={() => {
+                if (!hasKey()) { setAskKey(true); return; }
+                photoRef.current?.click();
+              }}
+            >
+              {reading ? 'Reading' : 'Read a photograph'}
+            </Button>
+            {hasKey() ? (
+              <button
+                type="button"
+                onClick={() => setAskKey(v => !v)}
+                className="type-ledger text-[10px] text-text-2 underline underline-offset-[3px] min-h-11 px-1"
+              >
+                Change the key
+              </button>
+            ) : null}
+          </div>
+
+          {askKey ? (
+            <div className="mt-3 space-y-2">
+              <Field label="Your Anthropic key" htmlFor="fp-key">
+                <input
+                  id="fp-key"
+                  className={inputClass}
+                  value={key}
+                  onChange={e => setKey(e.target.value)}
+                  placeholder="sk-ant-…"
+                  autoComplete="off"
+                />
+              </Field>
+              <p className="text-[13px] text-text-2 leading-snug">
+                It stays on this device and is sent to Anthropic only, with the one
+                photograph. About a third of a cent a read.
+              </p>
+              <Button
+                compact
+                tone="primary"
+                onClick={() => {
+                  if (keyLooksWrong(key)) {
+                    showToast('That does not look like an Anthropic key — they begin sk-ant-.', 'error');
+                    return;
+                  }
+                  saveKey(key);
+                  setKey('');
+                  setAskKey(false);
+                  photoRef.current?.click();
+                }}
+              >
+                Keep it
+              </Button>
+            </div>
+          ) : null}
+
+          {read && !read.isFurniture ? (
+            <p className="text-[13px] text-text-2 mt-3 leading-snug">
+              That does not look like a piece of furniture it can draw.
+              {read.note ? ` ${read.note}` : ''} Set it by hand above — it is four taps.
+            </p>
+          ) : null}
+          {read?.isFurniture ? (
+            <div className="mt-3 space-y-1">
+              <p className="text-[13px] text-text leading-snug">
+                Read as {FORM_LABELS[read.form].toLowerCase()} with {read.slots}{' '}
+                {read.slots === 1 ? SLOT_NOUN[read.form][0] : SLOT_NOUN[read.form][1]}
+                {read.confidence !== 'high' ? `, ${read.confidence} confidence` : ''}. Correct
+                anything below, then draw it.
+              </p>
+              {read.repairs.map(line => (
+                <p key={line} className="type-ledger text-[10px] text-text-2 leading-relaxed">{line}</p>
+              ))}
+              {read.note ? (
+                <p className="type-ledger text-[10px] text-text-2 leading-relaxed">{read.note}</p>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+
         <Field label="What to call it" htmlFor="fp-name">
           <input
             id="fp-name"
             className={inputClass}
             value={name}
+            maxLength={MAX_FURNITURE_NAME}
             onChange={e => setName(e.target.value)}
-            placeholder="Bedroom chest, the hall rail, the loft"
-            autoFocus
+            placeholder="Bedroom almirah, the hall rail, the loft"
           />
         </Field>
 
         <fieldset className="border-0 p-0 m-0 space-y-1.5">
           <legend className="type-ledger text-[11px] text-text-2">What kind</legend>
           <div className="flex flex-wrap gap-1.5 pt-0.5">
-            {(['rail', 'chest', 'shelves'] as FurnitureForm[]).map(f => (
-              <Chip key={f} selected={form === f} onClick={() => setForm(f)}>
+            {FURNITURE_FORMS.map(f => (
+              <Chip key={f} selected={form === f} onClick={() => pick(f)}>
                 {FORM_LABELS[f]}
               </Chip>
             ))}
           </div>
+          <p className="text-[13px] text-text-2 leading-snug pt-1">{FORM_NOTES[form]}</p>
         </fieldset>
 
         <fieldset className="border-0 p-0 m-0 space-y-1.5">
@@ -152,28 +315,36 @@ function DrawPiece({ open, onClose }: { open: boolean; onClose: () => void }) {
             How many {noun[1]}
           </legend>
           <div className="flex items-center gap-3 pt-0.5">
-            <Button compact onClick={() => setCount(c => Math.max(1, c - 1))} aria-label={`One fewer ${noun[0]}`}>
+            <Button compact onClick={() => { setLabels(null); setCount(c => Math.max(1, c - 1)); }} aria-label={`One fewer ${noun[0]}`}>
               &minus;
             </Button>
-            <span className="type-masthead text-[22px] tabular w-8 text-center">{count}</span>
+            <span className="type-masthead text-[22px] tabular w-8 text-center">{Math.min(count, ceiling)}</span>
             <Button
               compact
-              disabled={count >= MAX_SLOTS}
-              onClick={() => setCount(c => Math.min(MAX_SLOTS, c + 1))}
+              disabled={count >= ceiling}
+              onClick={() => { setLabels(null); setCount(c => Math.min(ceiling, c + 1)); }}
               aria-label={`One more ${noun[0]}`}
             >
               +
             </Button>
           </div>
-          {count >= MAX_SLOTS ? (
+          {count >= ceiling ? (
             <p className="type-ledger text-[10px] text-text-2 pt-1">
-              Seven is the tallest that fits the page. An eighth {noun[0]} is a second place.
+              {ceiling} is as many as this drawing holds at a size a thumb can hit.
+              {' '}A {ceiling + 1}th {noun[0]} is a second place.
             </p>
           ) : null}
         </fieldset>
 
+        {full ? (
+          <p className="text-[13px] text-text-2 leading-snug">
+            This wardrobe already holds {MAX_FURNITURE} places, which is as many as the
+            room will draw. Remove one to draw another — the clothes in it stay either way.
+          </p>
+        ) : null}
+
         <div className="flex flex-wrap items-center gap-3 pt-1">
-          <Button tone="primary" onClick={draw}>Draw it</Button>
+          <Button tone="primary" disabled={full} onClick={draw}>Draw it</Button>
           <Button tone="tertiary" onClick={onClose}>Cancel</Button>
         </div>
       </div>
@@ -283,6 +454,7 @@ export function FurniturePiece() {
   const navigate = useNavigate();
   const {
     furniture, activeItems, renameFurniture, renameSlot, removeFurniture, filePieces,
+    packSlot, packPiece,
   } = useWardrobe();
 
   const piece = furniture.find(f => f.id === id);
@@ -358,6 +530,7 @@ export function FurniturePiece() {
               id="fp-rename"
               className={inputClass}
               value={piece.name}
+              maxLength={MAX_FURNITURE_NAME}
               onChange={e => renameFurniture(piece.id, e.target.value)}
             />
           </Field>
@@ -378,9 +551,53 @@ export function FurniturePiece() {
               id="fp-slot"
               className={inputClass}
               value={slot.label}
+              maxLength={MAX_SLOT_LABEL}
               onChange={e => renameSlot(piece.id, slot.id, e.target.value)}
             />
           </Field>
+
+          {/* PACKED AWAY — the one thing a compartment can say about itself that
+              changes anything anywhere else, and the case the focus group named
+              as the whole point of having places at all. It is not retirement
+              and not a bench state: nothing leaves the closet, nothing loses a
+              wear, nothing becomes unsearchable. The day's suggestions simply
+              stop reaching into the trunk under the bed in July. */}
+          <div className="flex flex-wrap items-center gap-2">
+            <Chip
+              selected={!!slot.packed}
+              onClick={() => {
+                packSlot(piece.id, slot.id, !slot.packed);
+                showToast(
+                  slot.packed
+                    ? `${slot.label} is back in the rotation.`
+                    : `${slot.label} is packed away. Its ${inside.length} ${inside.length === 1 ? 'piece stays' : 'pieces stay'} in the closet and stop being suggested.`,
+                  'info',
+                );
+              }}
+            >
+              {slot.packed ? 'Packed away' : 'Pack this away'}
+            </Chip>
+            {piece.slots.length > 1 ? (
+              <Chip
+                onClick={() => {
+                  const allPacked = piece.slots.every(s => s.packed);
+                  packPiece(piece.id, !allPacked);
+                  showToast(
+                    allPacked ? `${piece.name} is back in the rotation.` : `${piece.name} is packed away.`,
+                    'info',
+                  );
+                }}
+              >
+                {piece.slots.every(s => s.packed) ? 'Unpack the whole thing' : 'Pack the whole thing'}
+              </Chip>
+            ) : null}
+          </div>
+          {slot.packed ? (
+            <p className="text-[13px] text-text-2 leading-snug">
+              Out of season. Everything in here keeps its wears and stays in the closet,
+              searchable and wearable — it just stops being offered on a Tuesday.
+            </p>
+          ) : null}
 
           <Button tone="primary" onClick={() => { setPicked([]); setPutting(true); }}>
             Put things in

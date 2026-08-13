@@ -3,7 +3,7 @@
  *
  * The contract and the prompt that produces this file live in
  * docs/23-photo-intake.md. Nothing here talks to a network: the user runs
- * whatever model they already have, and Toile only reads the JSON.
+ * whatever model they already have, and Almari only reads the JSON.
  *
  * The parser is deliberately forgiving in one direction and strict in the
  * other. Forgiving: unknown keys are ignored, missing optional fields are

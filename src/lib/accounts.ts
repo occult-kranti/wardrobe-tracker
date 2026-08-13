@@ -22,6 +22,16 @@ import {
  */
 
 export const LEGACY_KEY = 'wardrobe-tracker';
+/**
+ * THE KEYS KEEP THE OLD NAME, ON PURPOSE.
+ *
+ * This app was called Toile until it was called Almari. These strings were not
+ * renamed with it, because they are the addresses of wardrobes that already
+ * exist on people's devices: change the prefix and every one of them is orphaned
+ * on the next load, and migrating them would be rewriting somebody's whole
+ * closet in order to tidy a string nobody ever sees. The name is on the outside
+ * of the box. This is the label on the shelf it has always sat on.
+ */
 export const SESSION_KEY = 'toile-session';
 export const ACCOUNTS_KEY = 'toile-accounts';
 export const COMMUNITY_KEY = 'toile-community';

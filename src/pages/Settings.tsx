@@ -148,7 +148,7 @@ function InstallRow() {
     return (
       <Row
         title="Installed"
-        body="Toile is on your home screen and opens without browser chrome. It works with no signal, because the wardrobe was never anywhere else."
+        body="Almari is on your home screen and opens without browser chrome. It works with no signal, because the wardrobe was never anywhere else."
         control={<span className="type-ledger text-[11px] text-text-2">On this device</span>}
       />
     );
@@ -156,7 +156,7 @@ function InstallRow() {
 
   return (
     <Row
-      title="Add Toile to your home screen"
+      title="Add Almari to your home screen"
       body={
         ready
           ? 'It gets an icon, opens full screen, and works offline. No store, no account, no download — the page you already have simply stays.'
@@ -191,7 +191,7 @@ function KeyRow() {
         body={
           held
             ? 'Held on this device, and used only when you hand over a photograph on the intake bench. It is never sent anywhere but Anthropic, and only with a photograph you chose.'
-            : 'Optional. With a key, Toile can read a photograph for you on the bench. Without one, copy the prompt into the model you already use — the bench works either way.'
+            : 'Optional. With a key, Almari can read a photograph for you on the bench. Without one, copy the prompt into the model you already use — the bench works either way.'
         }
         control={
           held ? (
@@ -393,7 +393,7 @@ export default function Settings() {
                 This closet lives in one browser, on one device.
               </p>
               <p className="text-[14px] text-text-2 leading-relaxed mt-2">
-                Toile keeps {records} records in this browser's local storage. There is no
+                Almari keeps {records} records in this browser's local storage. There is no
                 account and no copy on a server — clearing site data, switching browsers, or
                 losing the device takes the history with it. An export is the only copy there is.
               </p>
@@ -633,7 +633,7 @@ export default function Settings() {
 
           <Row
             title="Import"
-            body="Reads a backup from any version of Toile and brings it forward. Fields it doesn't recognise are kept, not dropped."
+            body="Reads a backup from any version of Almari and brings it forward. Fields it doesn't recognise are kept, not dropped."
             control={
               <>
                 <Button icon={<IconImport size={16} />} onClick={() => fileRef.current?.click()}>
@@ -701,7 +701,7 @@ export default function Settings() {
 
           <Row
             title="Start over"
-            body="Clears this device and returns Toile to its defaults."
+            body="Clears this device and returns Almari to its defaults."
             control={
               <Button tone="destructive" onClick={() => setShowReset(true)}>
                 Reset
@@ -732,7 +732,7 @@ export default function Settings() {
       {/* ---------- about ---------- */}
       <Card>
         <SectionTitle>About</SectionTitle>
-        <p className="type-masthead text-[24px]">Toile</p>
+        <p className="type-masthead text-[24px]">Almari</p>
         <p className="type-editorial text-[16px] text-text-2 mt-1">Your wardrobe, on record.</p>
 
         <Basting className="my-4" />

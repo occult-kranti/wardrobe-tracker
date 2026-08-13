@@ -680,7 +680,7 @@ function buildCircle(): AppState['circle'] {
     profiles: [
       {
         id: 'c-me',
-        handle: '@toile',
+        handle: '@almari',
         name: 'This closet',
         bio: 'The ledger you are reading. Mends before replacing; drafts patterns on the kitchen table; believes the best piece is the one already hanging up.',
         monogram: 'T',

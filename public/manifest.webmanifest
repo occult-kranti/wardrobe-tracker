@@ -1,6 +1,6 @@
 {
-  "name": "Toile — your wardrobe, on record",
-  "short_name": "Toile",
+  "name": "Almari — your wardrobe, on record",
+  "short_name": "Almari",
   "description": "A private ledger for a real wardrobe. Offline, on your device, free.",
   "start_url": "./",
   "scope": "./",

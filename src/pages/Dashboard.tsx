@@ -337,7 +337,7 @@ export default function Dashboard() {
           <EmptyState
             plate={<PlateEmptyCloset />}
             title="Nothing on the rail yet."
-            body="Toile is a record, not a form. The first piece you add starts it — one photo or none, a name, and every wear it earns from here."
+            body="Almari is a record, not a form. The first piece you add starts it — one photo or none, a name, and every wear it earns from here."
             action={
               <Button tone="primary" onClick={() => setAddOpen(true)}>
                 Add the first piece

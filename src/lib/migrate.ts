@@ -2,6 +2,7 @@ import {
   SCHEMA_VERSION,
   DEFAULT_CATEGORIES,
   DEFAULT_OCCASIONS,
+  FURNITURE_FORMS,
   initialState,
   type AppState,
   type ClothingItem,
@@ -143,18 +144,41 @@ export function migrate(raw: unknown): AppState {
       seenFurniture.add(f.id);
       // A nameless piece is named after itself rather than thrown away.
       if (typeof f.name !== 'string' || !f.name.trim()) f.name = f.id;
-      if (f.form !== 'rail' && f.form !== 'chest' && f.form !== 'shelves') f.form = 'chest';
+      // A name longer than the drawing can carry is KEPT WHOLE. The limit is a
+      // limit on what may be TYPED — the field carries maxLength — and the
+      // drawing clips what it cannot fit at render. Cutting it here would
+      // silently shorten a record nobody asked us to edit, and would contradict
+      // the rule six lines down that keeps over-long slot lists intact.
+      // A form we do not know how to draw becomes a chest, which is the form
+      // that can hold anything. It is a wrong picture of a real object, which
+      // is recoverable; dropping it would take the addresses with it.
+      if (!FURNITURE_FORMS.includes(f.form)) f.form = 'chest';
+      const seenSlots = new Set<string>();
       const slots = (Array.isArray(f.slots) ? f.slots : [])
         .flatMap((s): AppState['furniture'][number]['slots'] => {
           if (!s || typeof s !== 'object') return [];
           const slot = { ...(s as unknown as Loose) } as unknown as AppState['furniture'][number]['slots'][number];
           if (typeof slot.id !== 'string' || !slot.id) return [];
+          // Two slots with one id means every piece filed in either is filed in
+          // both. The second is dropped; its pieces keep a place that resolves.
+          if (seenSlots.has(slot.id)) return [];
+          seenSlots.add(slot.id);
           if (typeof slot.label !== 'string' || !slot.label.trim()) slot.label = slot.id;
+          // v7: packed away. Anything that is not exactly true is not packed —
+          // a truthy string from a hand-edited file must not silently remove
+          // half a wardrobe from the day's suggestions.
+          if (slot.packed !== true) delete slot.packed;
           return [slot];
         });
       // Zero slots is furniture nothing can be filed in — an object that exists
       // and cannot be used. One is the floor.
       f.slots = slots.length > 0 ? slots : [{ id: `${f.id}-1`, label: 'Inside' }];
+      // OVER THE CEILING: the extra slots are KEPT, not cut. A file written by
+      // a build with a taller drawing than ours still describes real drawers
+      // with real clothes in them, and truncating here would orphan every piece
+      // filed below the seventh. The drawing is what has a limit, so the
+      // drawing is what gives way — it renders what it can and says so. What is
+      // refused is only the making of a NEW one over the line.
       if (typeof f.dateAdded !== 'string') f.dateAdded = new Date().toISOString().slice(0, 10);
       return [f];
     });

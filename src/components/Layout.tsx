@@ -94,7 +94,7 @@ export default function Layout() {
       {/* Mobile masthead */}
       <header className="lg:hidden fixed top-0 inset-x-0 z-50 bg-bg/95 backdrop-blur-sm border-b border-border safe-t">
         <div className="flex items-center justify-between masthead-bar px-4">
-          <Link to="/" className="flex items-center gap-2 text-text min-h-11 py-1" aria-label="Toile — home">
+          <Link to="/" className="flex items-center gap-2 text-text min-h-11 py-1" aria-label="Almari — home">
             <TagMark size={22} />
             <Wordmark className="w-[64px]" />
           </Link>
@@ -112,7 +112,7 @@ export default function Layout() {
       {/* Desktop rail */}
       <aside className="hidden lg:flex flex-col w-[220px] shrink-0 border-r border-border bg-bg sticky top-0 h-screen">
         <div className="px-6 pt-7 pb-6">
-          <Link to="/" className="flex items-center gap-2.5 text-text min-h-11 py-1" aria-label="Toile — home">
+          <Link to="/" className="flex items-center gap-2.5 text-text min-h-11 py-1" aria-label="Almari — home">
             <TagMark size={34} />
             <Wordmark className="w-[76px]" />
           </Link>

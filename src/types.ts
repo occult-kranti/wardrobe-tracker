@@ -55,10 +55,17 @@ export interface ClothingItem {
 /**
  * FURNITURE — the thing a garment lives in.
  *
- * Three forms, deliberately. A rail is first because the panel's studio-flat
- * seat put it plainly: "I have a rail and a chair. I am not typing 'chair' into
- * a dropdown that offers me 'dresser'." Nobody is short of furniture, and the
- * app must never imply someone owns too little of it.
+ * A rail is first, and stays first, because the panel's studio-flat seat put it
+ * plainly: "I have a rail and a chair. I am not typing 'chair' into a dropdown
+ * that offers me 'dresser'." Nobody is short of furniture, and the app must
+ * never imply someone owns too little of it — which is also why the list below
+ * runs from the cheapest object to the grandest and not the other way round.
+ *
+ * A form earns its place by being a different DRAWING. "Handbag storage" is not
+ * a form; a row of pegs is. "Jewellery" is not a form; a lidded box of trays
+ * is, and a bangle stand is a third thing again, because a post is not a tray.
+ * Anything that would be an existing drawing with a different word on it was
+ * cut.
  *
  * What is NOT here, and never will be: a capacity, a size, a fullness
  * percentage. Every one of the three panels struck it independently — a drawer
@@ -66,23 +73,92 @@ export interface ClothingItem {
  * completion meter under another name. How full a drawer is gets DRAWN, from
  * the count of what is in it, and is never stored.
  */
-export type FurnitureForm = 'rail' | 'chest' | 'shelves';
+export type FurnitureForm =
+  | 'rail' | 'chest' | 'shelves'
+  // The two almirahs. Not a chest with a different word on it: an almirah is
+  // one tall case whose inside is DIVIDED — a hanging side, a lockable
+  // compartment, shelves stacked beside them, a drawer under the lot — and that
+  // division is fixed by the object rather than chosen by the owner. It is the
+  // commonest wardrobe on earth and the app had no drawing for it.
+  | 'almirah' | 'almirah-carved'
+  // Things that hold what is not a garment. Every one of these earns its place
+  // by being a different SHAPE, not a different noun: a tray is not a drawer, a
+  // peg is not a shelf, and a bangle stand is a post.
+  | 'box' | 'hooks' | 'stand' | 'rack';
+
+export const FURNITURE_FORMS: FurnitureForm[] = [
+  'rail', 'chest', 'shelves', 'almirah', 'almirah-carved', 'box', 'hooks', 'stand', 'rack',
+];
 
 export interface FurnitureSlot {
   id: string;
   /** Always non-empty — generated on creation, editable afterwards. */
   label: string;
+  /**
+   * PACKED AWAY — the winter coats in the top of the almirah, the wedding
+   * clothes in the trunk.
+   *
+   * The one thing a place can say about itself that changes anything elsewhere,
+   * and the case the focus group named as the whole point of having places at
+   * all: what is packed should stop being offered on a Tuesday in July. It is
+   * NOT retirement and NOT a bench state — the pieces stay in the closet, keep
+   * every wear, stay searchable, and can be worn the moment you go and get
+   * them. All that changes is that the day's suggestions stop reaching for
+   * them.
+   *
+   * Absent means not packed, which is almost everything, forever.
+   */
+  packed?: boolean;
 }
 
 export interface Furniture {
   id: string;
   name: string;
   form: FurnitureForm;
-  /** One to seven. Seven is the tallest chest that fits the drawing's box. */
+  /** At least one, and at most that form's own maximum — see FORM_MAX_SLOTS. */
   slots: FurnitureSlot[];
   note?: string;
   dateAdded: string;
 }
+
+/**
+ * HOW MANY COMPARTMENTS EACH FORM CAN HAVE.
+ *
+ * Every one of these numbers is a DRAWING limit, not an inventory limit, and
+ * that is the only kind of limit this app is allowed to have. A form stops
+ * where its own picture stops being legible at 390px — below a 44px tap target
+ * the control is broken, so the count that would break it is the count that is
+ * refused. Nothing here caps how much you may OWN; an eighth drawer is a second
+ * chest, which is a truer description of a bedroom anyway.
+ *
+ * Lives in types.ts rather than in the generator because the migration has to
+ * enforce it and the migration must not import a drawing.
+ */
+export const FORM_MAX_SLOTS: Record<FurnitureForm, number> = {
+  rail: 5,
+  chest: 7,
+  shelves: 6,
+  almirah: 6,
+  'almirah-carved': 6,
+  box: 4,
+  hooks: 5,
+  stand: 4,
+  rack: 5,
+};
+
+/**
+ * How many places one wardrobe may hold.
+ *
+ * The room drawing shows the first eight along its wall and the rest through
+ * the door, so this is the point past which the door stops meaning "more" and
+ * starts meaning "a filing cabinet". Twenty-four is four bedrooms' worth. It is
+ * a ceiling nobody will meet, which is what a good ceiling is.
+ */
+export const MAX_FURNITURE = 24;
+
+/** Long enough for "The almirah in the back bedroom", short enough to draw. */
+export const MAX_FURNITURE_NAME = 60;
+export const MAX_SLOT_LABEL = 40;
 
 export interface WishlistItem {
   id: string;
@@ -496,7 +572,7 @@ export interface AppState {
 // or a festival. v5: provenance on a hand-me-down. v6: furniture — where a piece
 // physically lives. Migration seeds each on older exports; scripts/test-migrate.mjs
 // holds a case for every one, written before the field existed.
-export const SCHEMA_VERSION = 6;
+export const SCHEMA_VERSION = 7;
 
 export const DEFAULT_CATEGORIES: UserCategory[] = [
   { id: 'tops', label: 'Tops' },

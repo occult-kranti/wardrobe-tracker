@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Brand-contract linter for Toile.
+ * Brand-contract linter for Almari.
  *
  * The panel's directives and the design contract are only real if something
  * enforces them — the judges warned that the labour-intensive details are the

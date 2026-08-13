@@ -58,7 +58,7 @@ const v1 = {
 
 const m = migrate(v1);
 const checks = [
-  ['schemaVersion set', m.schemaVersion === 6],
+  ['schemaVersion set', m.schemaVersion === 7],
   // v4 adds events. A pre-v4 export must gain an empty, valid list rather than
   // an undefined the Events page would crash on, and an export that already
   // carries events must round-trip with its reservations intact.
@@ -191,6 +191,93 @@ const checks = [
     return bad.items[0].place === undefined && half.items[0].place === undefined;
   })()],
   ['no place stays none', m.items[0].place === undefined],
+
+  // v7: the new forms, the limits, and packing away. Same standard as v6 —
+  // every case here is about the RECORD surviving, because the one thing a
+  // storage feature must never do is lose clothes.
+  ['the new forms survive', (() => {
+    const forms = ['rail', 'chest', 'shelves', 'almirah', 'almirah-carved', 'box', 'hooks', 'stand', 'rack'];
+    const withF = migrate({ ...v1, furniture: forms.map((form, i) => (
+      { id: `f${i}`, name: form, form, slots: [{ id: `s${i}`, label: 'x' }] }
+    )) });
+    return withF.furniture.length === forms.length
+      && forms.every((form, i) => withF.furniture[i].form === form);
+  })()],
+  ['an unknown form becomes a chest, and keeps its slots', (() => {
+    // A form we cannot draw is a wrong picture of a real object, which is
+    // recoverable. Dropping the piece would take its addresses with it.
+    const withF = migrate({ ...v1, furniture: [
+      { id: 'f1', name: 'Trunk', form: 'palanquin', slots: [{ id: 's1', label: 'Inside' }] },
+    ] });
+    return withF.furniture[0].form === 'chest' && withF.furniture[0].slots.length === 1;
+  })()],
+  ['slots ABOVE the drawing limit are kept, never cut', (() => {
+    // The case that decides whether this feature can lose things. A file from a
+    // build with a taller drawing still describes real drawers with real
+    // clothes in them; truncating would orphan every piece filed below the
+    // seventh. The drawing gives way, not the record.
+    const slots = Array.from({ length: 40 }, (_, i) => ({ id: `s${i}`, label: `Drawer ${i}` }));
+    const withF = migrate({ ...v1, furniture: [{ id: 'f1', name: 'Tall', form: 'chest', slots }] });
+    return withF.furniture[0].slots.length === 40 && withF.furniture[0].slots[39].id === 's39';
+  })()],
+  ['two hundred places all arrive', (() => {
+    // Over MAX_FURNITURE by an order of magnitude. The ceiling governs what may
+    // be MADE, never what may be READ.
+    const many = Array.from({ length: 200 }, (_, i) => (
+      { id: `f${i}`, name: `Place ${i}`, form: 'chest', slots: [{ id: `f${i}-s`, label: 'In' }] }
+    ));
+    const withF = migrate({ ...v1, furniture: many });
+    return withF.furniture.length === 200;
+  })()],
+  ['a ten-thousand-character name is KEPT WHOLE', (() => {
+    // The limit is on what may be typed, not on what may be held. Cutting here
+    // would silently shorten somebody's record, and the drawing already clips
+    // what it cannot fit.
+    const withF = migrate({ ...v1, furniture: [
+      { id: 'f1', name: 'x'.repeat(10000), form: 'chest',
+        slots: [{ id: 's1', label: 'y'.repeat(10000) }] },
+    ] });
+    const f = withF.furniture[0];
+    return f.name.length === 10000 && f.slots.length === 1 && f.slots[0].label.length === 10000;
+  })()],
+  ['an oversized file round-trips unchanged', (() => {
+    // Two hundred places, nine slots each, absurd names — migrating it must be
+    // a no-op, or every load of that file quietly edits it again.
+    const over = migrate({ ...v1, furniture: Array.from({ length: 200 }, (_, i) => ({
+      id: `f${i}`, name: 'n'.repeat(500), form: 'almirah', dateAdded: '2026-01-01',
+      slots: Array.from({ length: 9 }, (_, j) => ({ id: `f${i}s${j}`, label: 'l'.repeat(200) })),
+    })) });
+    return JSON.stringify(migrate(over)) === JSON.stringify(over);
+  })()],
+  ['duplicate slot ids collapse to one', (() => {
+    // Two slots with one id means a piece filed in either is filed in both.
+    const withF = migrate({ ...v1, furniture: [
+      { id: 'f1', name: 'A', form: 'chest', slots: [
+        { id: 's', label: 'first' }, { id: 's', label: 'second' },
+      ] },
+    ] });
+    return withF.furniture[0].slots.length === 1 && withF.furniture[0].slots[0].label === 'first';
+  })()],
+  ['packed survives, and only when it is exactly true', (() => {
+    // A truthy string out of a hand-edited file must not quietly take half a
+    // wardrobe out of the day's suggestions.
+    const withF = migrate({ ...v1, furniture: [
+      { id: 'f1', name: 'A', form: 'chest', slots: [
+        { id: 's1', label: 'Winter', packed: true },
+        { id: 's2', label: 'Summer', packed: 'yes' },
+        { id: 's3', label: 'Now', packed: 1 },
+        { id: 's4', label: 'Also now' },
+      ] },
+    ] });
+    const s = withF.furniture[0].slots;
+    return s[0].packed === true && s[1].packed === undefined
+      && s[2].packed === undefined && s[3].packed === undefined;
+  })()],
+  ['a negative or NaN slot list is still one slot', (() => {
+    const a = migrate({ ...v1, furniture: [{ id: 'f1', name: 'A', form: 'rail', slots: -3 }] });
+    const b = migrate({ ...v1, furniture: [{ id: 'f2', name: 'B', form: 'rail', slots: NaN }] });
+    return a.furniture[0].slots.length === 1 && b.furniture[0].slots.length === 1;
+  })()],
 ];
 
 // Idempotency: migrating twice must be a no-op.

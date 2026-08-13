@@ -1,7 +1,7 @@
 import { createContext, useContext, useCallback, useMemo, type ReactNode } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { showToast } from '../components/Toast';
-import { defaultSlotLabels, MAX_SLOTS } from '../lib/furnitureArt';
+import { defaultSlotLabels, maxSlotsFor } from '../lib/furnitureArt';
 import { todayLocal, isFutureDate, addDays } from '../lib/dates';
 import { migrate } from '../lib/migrate';
 import { wardrobeKey } from '../lib/accounts';
@@ -21,6 +21,7 @@ import {
   type WearLog,
   type WishlistItem,
   type FurnitureForm,
+  MAX_FURNITURE,
 } from '../types';
 
 interface WardrobeContextType extends AppState {
@@ -64,7 +65,12 @@ interface WardrobeContextType extends AppState {
   addOccasion: (tag: string) => void;
   /* ---------- furniture: where a piece lives ---------- */
   /** Returns the new piece's id, so a caller can open it straight away. */
+  /** The id of what was drawn, or '' when the room is already full. */
   addFurniture: (name: string, form: FurnitureForm, slotCount: number) => string;
+  /** Pack a compartment away for the season, or bring it back out. */
+  packSlot: (furnitureId: string, slotId: string, packed: boolean) => void;
+  /** Pack, or unpack, every compartment of one piece at once. */
+  packPiece: (furnitureId: string, packed: boolean) => void;
   renameFurniture: (id: string, name: string) => void;
   renameSlot: (furnitureId: string, slotId: string, label: string) => void;
   /** Removes the furniture, never the clothes. Returns the way to put it back. */
@@ -505,8 +511,12 @@ export function WardrobeProvider({ accountId, children }: { accountId: string; c
   /* ---------- furniture ---------- */
 
   const addFurniture = useCallback((name: string, form: FurnitureForm, slotCount: number) => {
+    // The ceiling governs what may be MADE. It never governs what may be read:
+    // a file that already holds more arrives intact and stays intact.
+    if (state.furniture.length >= MAX_FURNITURE) return '';
     const id = `f-${crypto.randomUUID().slice(0, 8)}`;
-    const count = Math.max(1, Math.min(MAX_SLOTS, Math.round(slotCount)));
+    const wanted = Number.isFinite(slotCount) ? Math.round(slotCount) : 1;
+    const count = Math.max(1, Math.min(maxSlotsFor(form), wanted));
     const labels = defaultSlotLabels(form, count);
     const piece = {
       id,
@@ -515,8 +525,49 @@ export function WardrobeProvider({ accountId, children }: { accountId: string; c
       slots: labels.map((label, i) => ({ id: `${id}-s${i + 1}`, label })),
       dateAdded: todayLocal(),
     };
-    setState(prev => ({ ...prev, furniture: [...prev.furniture, piece] }));
+    setState(prev => (
+      prev.furniture.length >= MAX_FURNITURE
+        ? prev
+        : { ...prev, furniture: [...prev.furniture, piece] }
+    ));
     return id;
+  }, [setState, state.furniture.length]);
+
+  /**
+   * PACKED AWAY.
+   *
+   * The whole of what this does elsewhere is one line in getWearablePool. It is
+   * not a bench state and not a retirement: the pieces stay in the closet, keep
+   * every wear, stay searchable and stay wearable. They simply stop being
+   * offered, which is the difference between a wardrobe app and a filing system
+   * — nobody wants a wool coat suggested in July, and nobody wants to delete it
+   * to stop that happening.
+   */
+  const packSlot = useCallback((furnitureId: string, slotId: string, packed: boolean) => {
+    setState(prev => ({
+      ...prev,
+      furniture: prev.furniture.map(f => f.id !== furnitureId ? f : {
+        ...f,
+        slots: f.slots.map(s => {
+          if (s.id !== slotId) return s;
+          if (!packed) { const { packed: _gone, ...rest } = s; return rest; }
+          return { ...s, packed: true };
+        }),
+      }),
+    }));
+  }, [setState]);
+
+  const packPiece = useCallback((furnitureId: string, packed: boolean) => {
+    setState(prev => ({
+      ...prev,
+      furniture: prev.furniture.map(f => f.id !== furnitureId ? f : {
+        ...f,
+        slots: f.slots.map(s => {
+          if (!packed) { const { packed: _gone, ...rest } = s; return rest; }
+          return { ...s, packed: true };
+        }),
+      }),
+    }));
   }, [setState]);
 
   const renameFurniture = useCallback((id: string, name: string) => {
@@ -709,10 +760,23 @@ export function WardrobeProvider({ accountId, children }: { accountId: string; c
   const getUnwornItems = useCallback(() =>
     activeItems.filter(i => i.wearCount === 0), [activeItems]);
 
+  /** Every compartment currently packed away, across every piece. */
+  const packedSlots = useMemo(() => {
+    const packed = new Set<string>();
+    for (const f of state.furniture) {
+      for (const s of f.slots) if (s.packed) packed.add(`${f.id}/${s.id}`);
+    }
+    return packed;
+  }, [state.furniture]);
+
   const getWearablePool = useCallback(() =>
     activeItems.filter(i =>
-      i.laundryStatus === 'clean' && !isBenched(i) && !isQuietCategory(state.settings, i.category)
-    ), [activeItems, state.settings]);
+      i.laundryStatus === 'clean'
+      && !isBenched(i)
+      && !isQuietCategory(state.settings, i.category)
+      // In the trunk under the bed is not "available today".
+      && !(i.place && packedSlots.has(`${i.place.furnitureId}/${i.place.slotId}`))
+    ), [activeItems, state.settings, packedSlots]);
 
   const getOutfitSuggestions = useCallback(() => {
     const today = todayLocal();
@@ -740,6 +804,7 @@ export function WardrobeProvider({ accountId, children }: { accountId: string; c
       updateSettings, addCategory, renameCategory, setCategoryQuiet, moveCategory, addOccasion,
       sendRailMessage, setRequestStatus, returnLoan, setLendable,
       addFurniture, renameFurniture, renameSlot, removeFurniture, filePiece, filePieces,
+      packSlot, packPiece,
       replaceState, markExported,
       getItem, getOutfit,
       getMostWorn, getLeastWorn, getUnwornItems, getWearablePool,

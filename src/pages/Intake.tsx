@@ -259,7 +259,7 @@ export default function Intake() {
 
             <Basting className="my-5" />
 
-            {/* The one thing in Toile that leaves the device, said before the
+            {/* The one thing in Almari that leaves the device, said before the
                 button that does it — never after, and never in a tooltip. */}
             <div className="rounded-[2px] border border-accent/60 bg-sunken p-4">
               <p className="type-ledger text-[11px] text-accent">This one step uses the network</p>

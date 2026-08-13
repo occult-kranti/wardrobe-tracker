@@ -1,5 +1,5 @@
 /**
- * Toile's service worker — the whole of "works with no signal".
+ * Almari's service worker — the whole of "works with no signal".
  *
  * There is nothing to sync, because there is no server: the wardrobe already
  * lives in this browser's localStorage. The only thing standing between the
