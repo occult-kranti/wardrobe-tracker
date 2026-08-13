@@ -883,7 +883,7 @@ function wire() {
     const pick = e.target.closest('[data-pick]');
     if (pick) {
       const id = pick.dataset.pick;
-      SELECTED.has(id) ? SELECTED.delete(id) : SELECTED.add(id);
+      if (SELECTED.has(id)) SELECTED.delete(id); else SELECTED.add(id);
       render(); return;
     }
     const open = e.target.closest('[data-open]');
