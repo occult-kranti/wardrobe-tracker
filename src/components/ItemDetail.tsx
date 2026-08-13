@@ -18,6 +18,7 @@ import { Button, Chip, IconButton, Modal, SectionTitle, Stat, inputClass, select
 import { Basting, GarmentPlate } from './art';
 import { IconPin } from './icons';
 import { showToast } from './Toast';
+import { CutoutBench } from './Cutout';
 
 /**
  * ONE PIECE — its record.
@@ -83,6 +84,7 @@ export default function ItemDetail({ itemId, onClose, onAmend }: Props) {
     retireItem,
     unretireItem,
     deleteItem,
+    updateItem,
   } = useWardrobe();
 
   const item = getItem(itemId);
@@ -91,6 +93,7 @@ export default function ItemDetail({ itemId, onClose, onAmend }: Props) {
   const [reasonChoice, setReasonChoice] = useState('');
   const [reasonNote, setReasonNote] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [lifting, setLifting] = useState(false);
 
   // "Do I already own something like this?" — asked of a piece already on the
   // rail. Facts only; the comparison never recommends anything.
@@ -151,6 +154,20 @@ export default function ItemDetail({ itemId, onClose, onAmend }: Props) {
                 {item.favorite ? 'Pinned' : 'Pin'}
               </span>
             </div>
+
+            {/* Lifting the background on a piece ALREADY in the closet.
+                This is the case that matters most: someone catalogues two
+                hundred pieces, then finds the cutout, and would otherwise
+                have to amend every record one at a time to use it. The
+                photograph is replaced only when they say so, and the
+                original is one press of Undo away. */}
+            {item.imageUrl ? (
+              <div className="mt-3">
+                <Button compact onClick={() => setLifting(v => !v)}>
+                  {lifting ? 'Close the bench' : 'Lift the background'}
+                </Button>
+              </div>
+            ) : null}
           </div>
 
           <div className="min-w-0 space-y-3">
@@ -200,6 +217,22 @@ export default function ItemDetail({ itemId, onClose, onAmend }: Props) {
             ) : null}
           </div>
         </div>
+
+        {lifting && item.imageUrl ? (
+          <CutoutBench
+            source={item.imageUrl}
+            onUse={url => {
+              const before = item.imageUrl;
+              updateItem(item.id, { imageUrl: url });
+              setLifting(false);
+              showToast('Lifted. The photograph never left this device.', 'success', {
+                label: 'Undo',
+                run: () => updateItem(item.id, { imageUrl: before }),
+              });
+            }}
+            onClose={() => setLifting(false)}
+          />
+        ) : null}
 
         <Basting />
 

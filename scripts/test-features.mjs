@@ -204,6 +204,38 @@ check('the weather never asks for your location', !after.asked, '');
   check('and nothing was sent', calls.length === 0, calls.join(' '));
 }
 
+/* ============ lifting the background on a piece already catalogued ============ */
+{
+  await page.goto(`${ORIGIN}/#/closet`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(800);
+  // Open the first piece that has a real photograph.
+  const opened = await page.evaluate(() => {
+    const withPhoto = [...document.querySelectorAll('article')]
+      .find(a => a.querySelector('img'));
+    const open = withPhoto?.querySelector('button[aria-label^="Open"]');
+    if (!open) return false;
+    open.click();
+    return true;
+  });
+  await page.waitForTimeout(900);
+  const lift = page.getByRole('button', { name: /^lift the background$/i }).first();
+  check('a piece already in the closet can have its background lifted',
+    opened && await lift.count() === 1, '');
+  if (opened && await lift.count()) {
+    await lift.click();
+    await page.waitForTimeout(3500);
+    const bench = await page.evaluate(() => ({
+      shown: [...document.querySelectorAll('img')].some(i => /lifted off its background/i.test(i.alt)),
+      keep: [...document.querySelectorAll('button')].some(b => /keep the original/i.test(b.textContent || '')),
+    }));
+    check('the bench opens on the saved photograph', bench.shown && bench.keep, '');
+  }
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(400);
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(400);
+}
+
 /* ============ the obsidian room ============ */
 {
   await page.goto(`${ORIGIN}/#/settings`, { waitUntil: 'domcontentloaded' });
