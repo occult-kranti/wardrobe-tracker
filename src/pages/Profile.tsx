@@ -163,7 +163,7 @@ export default function Profile() {
           ))}
 
           <div className="mt-4">
-            <Button onClick={() => setRoofOpen(true)}>Join wardrobes under a roof</Button>
+            <Button wrap onClick={() => setRoofOpen(true)}>Join wardrobes under a roof</Button>
           </div>
           <p className="text-[13px] text-text-2 mt-3 leading-snug">
             A household is ids and a kind, nothing else — no roles, no shape, no locks.

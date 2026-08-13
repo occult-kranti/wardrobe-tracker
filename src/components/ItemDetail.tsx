@@ -464,8 +464,11 @@ export default function ItemDetail({ itemId, onClose, onAmend }: Props) {
                         compact
                         tone="destructive"
                         onClick={() => {
-                          deleteItem(item.id);
-                          showToast('Deleted. Nothing kept.', 'info');
+                          const putBack = deleteItem(item.id);
+                          showToast(`Deleted. "${item.name}" and its record.`, 'info', {
+                            label: 'Undo',
+                            run: putBack,
+                          });
                           onClose();
                         }}
                       >

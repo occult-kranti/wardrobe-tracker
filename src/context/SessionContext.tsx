@@ -22,6 +22,11 @@ import {
   saveWardrobe,
   loadTheme,
   saveTheme,
+  applyTheme,
+  stampOpened,
+  uniqueWardrobeName,
+  handleFor,
+  hasLegacyWardrobe,
   THEME_KEY,
 } from '../lib/accounts';
 import { buildPersonaState, PERSONAS, PERSONA_SEED_VERSION } from '../lib/personaWardrobe';
@@ -47,7 +52,10 @@ interface SessionValue {
   ready: boolean;
   signIn: (id: string) => void;
   signOut: () => void;
-  createAccount: (draft: Omit<Account, 'id' | 'createdAt' | 'monogram' | 'color'> & { monogram?: string }) => Account;
+  createAccount: (
+    draft: Omit<Account, 'id' | 'createdAt' | 'monogram' | 'color' | 'handle'>
+      & { monogram?: string; handle?: string },
+  ) => Account;
   updateAccount: (id: string, updates: Partial<Account>) => void;
   removeAccount: (id: string) => void;
   setCommunity: (next: CommunityState | ((prev: CommunityState) => CommunityState)) => void;
@@ -73,11 +81,26 @@ function monogramFor(name: string): string {
 }
 
 export function SessionProvider({ children }: { children: ReactNode }) {
-  const [accounts, setAccounts] = useState<Account[]>([]);
-  const [activeId, setActiveId] = useState<string | null>(null);
+  // localStorage is synchronous, so the registry is read in the initializers
+  // rather than in an effect. Reading it a frame later meant the very first
+  // paint of every load was a frame of nothing.
+  const [accounts, setAccounts] = useState<Account[]>(() => loadAccounts());
+  const [activeId, setActiveId] = useState<string | null>(() => {
+    const stored = loadActiveId();
+    return stored && loadAccounts().some(a => a.id === stored) ? stored : null;
+  });
   const [community, setCommunityState] = useState<CommunityState>(() => loadCommunity());
   const [theme, setThemeState] = useState<Theme>(() => loadTheme());
-  const [ready, setReady] = useState(false);
+  // Only a pre-accounts closet awaiting adoption holds the door shut, and only
+  // for the one tick the adoption takes.
+  const [ready, setReady] = useState(() => !hasLegacyWardrobe());
+
+  // The theme is stamped here rather than in Layout, whose scope never covered
+  // the signed-out screens: the door had no theme at all and the whole screen
+  // flipped on sign-in.
+  useEffect(() => {
+    applyTheme(theme);
+  }, [theme]);
 
   // First paint: read the registry, adopting any pre-accounts closet.
   useEffect(() => {
@@ -150,6 +173,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const signIn = useCallback((id: string) => {
     setActiveId(id);
     saveActiveId(id);
+    stampOpened(id);
   }, []);
 
   const signOut = useCallback(() => {
@@ -159,19 +183,30 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   const createAccount = useCallback<SessionValue['createAccount']>(draft => {
     const id = `w-${crypto.randomUUID().slice(0, 8)}`;
+    // A blank name is never a dead end: it becomes "Wardrobe", then
+    // "Wardrobe 2". The primary button is therefore never disabled.
+    const name = draft.name.trim() || uniqueWardrobeName('Wardrobe', accounts);
     const account: Account = {
       ...draft,
+      name,
+      handle: draft.handle?.trim() || handleFor(name),
       id,
-      monogram: draft.monogram?.slice(0, 2).toUpperCase() || monogramFor(draft.name),
+      monogram: draft.monogram?.slice(0, 2).toUpperCase() || monogramFor(name),
       color: ACCOUNT_COLORS[accounts.length % ACCOUNT_COLORS.length],
       createdAt: new Date().toISOString().slice(0, 10),
     };
     // A wardrobe starts genuinely empty — value at item #1 is the cold-start rule.
     saveWardrobe(id, initialState);
-    persist([...accounts, account]);
-    signIn(id);
+    const next = [...accounts, account];
+    // Opened in the same write, not via signIn(): signIn maps over an
+    // `accounts` that does not yet contain this one, and would persist the
+    // list without it.
+    persist(next);
+    setActiveId(id);
+    saveActiveId(id);
+    stampOpened(id);
     return account;
-  }, [accounts, persist, signIn]);
+  }, [accounts, persist]);
 
   const updateAccount = useCallback((id: string, updates: Partial<Account>) => {
     persist(accounts.map(a => (a.id === id ? { ...a, ...updates } : a)));

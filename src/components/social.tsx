@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import type { Account, SharedLook, SharedPiece } from '../types';
+import { DEFAULT_CATEGORIES, type Account, type SharedLook, type SharedPiece } from '../types';
 import { GarmentPlate, TagPortrait } from './art';
 
 /**
@@ -24,7 +24,9 @@ export function AccountMark({ account, size = 36 }: { account: Account; size?: n
 
 export function AccountLine({ account, meta }: { account: Account; meta?: string }) {
   return (
-    <Link to={`/profile/${account.id}`} className="flex items-center gap-2.5 min-h-11 group">
+    // min-w-0 on the link itself: without it a long wardrobe name shoves the
+    // row's right-hand controls off a 390px screen instead of truncating.
+    <Link to={`/profile/${account.id}`} className="flex items-center gap-2.5 min-h-11 min-w-0 group">
       <AccountMark account={account} size={26} />
       <span className="min-w-0">
         <span className="block text-[14px] text-text group-hover:underline underline-offset-[3px] truncate">
@@ -45,6 +47,11 @@ export function AccountLine({ account, meta }: { account: Account; meta?: string
  * someone already saw should not silently change under them.
  */
 export function LookCard({ look, compact }: { look: SharedLook; compact?: boolean }) {
+  // A snapshot with no piece list threw on `.length` during render and blanked
+  // the ENTIRE app — feed, navigation, no way out. A missing field in someone
+  // else's record must never be able to do that.
+  const pieces = look.pieces ?? [];
+  const name = look.name || 'A look';
   return (
     <div className={`border border-border rounded-[2px] overflow-hidden ${compact ? 'flex gap-3' : ''}`}>
       {/* Capped: uncapped w-full inside the max-w-5xl column rendered each post
@@ -55,21 +62,21 @@ export function LookCard({ look, compact }: { look: SharedLook; compact?: boolea
         style={{ aspectRatio: '4 / 5' }}
       >
         {look.imageUrl ? (
-          <img src={look.imageUrl} alt={look.name} className="w-full h-full object-cover" />
+          <img src={look.imageUrl} alt={name} className="w-full h-full object-cover" />
         ) : (
           <GarmentPlate categoryId="dresses" />
         )}
       </span>
       <div className={compact ? 'py-2 pr-3 min-w-0' : 'p-3'}>
         <p className={`text-text leading-snug ${compact ? 'text-[14px] truncate' : 'text-[15px]'}`}>
-          {look.name}
+          {name}
         </p>
         {look.occasion ? (
           <p className="type-ledger text-[11px] text-text-2 mt-1 line-clamp-1">{look.occasion}</p>
         ) : null}
-        {!compact && look.pieces.length > 0 ? (
+        {!compact && pieces.length > 0 ? (
           <p className="type-ledger text-[11px] text-text-2 mt-2 leading-relaxed">
-            {look.pieces.join(' · ')}
+            {pieces.join(' · ')}
           </p>
         ) : null}
       </div>
@@ -88,18 +95,50 @@ export function PieceCard({ piece }: { piece: SharedPiece }) {
         )}
       </span>
       <span className="py-2 pr-3 min-w-0">
-        <span className="block text-[14px] text-text truncate">{piece.name}</span>
+        <span className="block text-[14px] text-text truncate">{piece.name || 'A piece'}</span>
         {piece.category ? (
-          <span className="type-ledger text-[11px] text-text-2 block mt-0.5">{piece.category}</span>
+          <span className="type-ledger text-[11px] text-text-2 block mt-0.5">
+            {sharedCategoryLabel(piece.category)}
+          </span>
         ) : null}
       </span>
     </div>
   );
 }
 
+/**
+ * The name of a category on someone else's piece.
+ *
+ * Read from the house defaults, never from the reader's own settings — the
+ * piece belongs to another wardrobe, and a reader who renamed 'dresses' has
+ * not renamed it for them. An id we do not know passes through verbatim.
+ * This used to print the raw id: 'dresses' where 'One-pieces' was meant.
+ */
+export function sharedCategoryLabel(id: string): string {
+  return DEFAULT_CATEGORIES.find(c => c.id === id)?.label ?? id;
+}
+
 /** 'YYYY-MM-DD' → 'Aug 9'. Local, never parsed as UTC. */
-export function shortDate(date: string): string {
+export function shortDate(date: string | undefined): string {
+  if (!date) return '';
   const d = new Date(`${date}T00:00:00`);
   if (Number.isNaN(d.getTime())) return date;
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+/**
+ * Comparators that tolerate a record with no date.
+ *
+ * An undated row used to be enough to throw inside the sort and blank the page
+ * it was on. Undated sorts last, and the id breaks every tie so the order is
+ * stable between renders.
+ */
+export function newestFirst<T extends { date?: string; id: string }>(a: T, b: T): number {
+  const d = (b.date ?? '').localeCompare(a.date ?? '');
+  return d !== 0 ? d : a.id.localeCompare(b.id);
+}
+
+export function oldestFirst<T extends { date?: string; id: string }>(a: T, b: T): number {
+  const d = (a.date ?? '').localeCompare(b.date ?? '');
+  return d !== 0 ? d : a.id.localeCompare(b.id);
 }

@@ -5,7 +5,7 @@ import { useWardrobe } from '../context/WardrobeContext';
 import { Button, Card, EmptyState, Field, LinkButton, Masthead, Modal, SectionTitle, inputClass, selectClass } from '../components/ui';
 import { Basting, PlateEmptyWishlist } from '../components/art';
 import { IconChevronLeft, IconPlus } from '../components/icons';
-import { AccountMark, LookCard, PieceCard, shortDate } from '../components/social';
+import { AccountMark, LookCard, PieceCard, shortDate, oldestFirst } from '../components/social';
 import { todayLocal } from '../lib/dates';
 import type { BorrowStatus, ChatMessage, SharedLook, SharedPiece } from '../types';
 
@@ -51,6 +51,10 @@ export default function Chats() {
     );
     if (existing && !isGroup) {
       setStarting(false);
+      // The ticks were cleared on the other branch only, so reopening the
+      // modal after landing on an existing thread showed a stale selection.
+      setPicked([]);
+      setGroupName('');
       navigate(`/chats/${existing.id}`);
       return;
     }
@@ -79,7 +83,7 @@ export default function Chats() {
       .map(c => {
         const messages = community.messages
           .filter(m => m.conversationId === c.id)
-          .sort((a, b) => a.date.localeCompare(b.date));
+          .sort(oldestFirst);
         return { conversation: c, last: messages[messages.length - 1], count: messages.length };
       })
       .sort((a, b) => (b.last?.date ?? '').localeCompare(a.last?.date ?? ''));
@@ -107,7 +111,7 @@ export default function Chats() {
               others.length > 0 ? (
                 <Button tone="primary" onClick={() => setStarting(true)}>Start one</Button>
               ) : (
-                <LinkButton to="/profile" tone="primary">Join wardrobes under a roof</LinkButton>
+                <LinkButton to="/profile" tone="primary" wrap>Join wardrobes under a roof</LinkButton>
               )
             }
           />
@@ -208,11 +212,22 @@ export function ChatThread() {
   const [askNote, setAskNote] = useState('');
 
   const byId = useMemo(() => new Map(accounts.map(a => [a.id, a])), [accounts]);
-  const conversation = community.conversations.find(c => c.id === id);
+  const found = community.conversations.find(c => c.id === id);
+  /**
+   * Membership, checked in one place.
+   *
+   * There was no check at all: typing another pair's conversation id opened
+   * their entire thread with a live compose box, and a message sent from there
+   * landed in their conversation while never appearing in the sender's own
+   * list. A thread you are not in must read the same as a thread that is gone.
+   */
+  const conversation = found && activeId && found.memberIds.includes(activeId) ? found : undefined;
   const messages = useMemo(
     () => community.messages
       .filter(m => m.conversationId === id)
-      .sort((a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id)),
+      // oldestFirst tolerates an undated message; the raw comparator threw on
+      // one and blanked the page.
+      .sort(oldestFirst),
     [community.messages, id]
   );
 
@@ -232,8 +247,11 @@ export function ChatThread() {
     );
   }
 
-  const others = conversation.memberIds.filter(m => m !== activeId).map(m => byId.get(m));
-  const title = conversation.isGroup ? conversation.name ?? 'The group' : others[0]?.name ?? 'Someone';
+  // `withYou`, not `others` — the page-level list of every other wardrobe is
+  // also called `others`, and this was shadowing it.
+  const withYou = conversation.memberIds.filter(m => m !== activeId).map(m => byId.get(m));
+  const present = withYou.filter(Boolean);
+  const title = conversation.isGroup ? conversation.name ?? 'The group' : withYou[0]?.name ?? 'Someone';
 
   const send = () => {
     if (!draft.trim() && !attached.look && !attached.piece) return;
@@ -291,7 +309,11 @@ export function ChatThread() {
     <div className="space-y-6">
       <Masthead
         title={title}
-        meta={conversation.isGroup ? `${conversation.memberIds.length} wardrobes` : others[0]?.handle}
+        meta={conversation.isGroup ? `${conversation.memberIds.length} wardrobes` : withYou[0]?.handle}
+        // The way out used to be forty messages down the page.
+        action={
+          <LinkButton to="/chats" compact icon={<IconChevronLeft size={16} />}>Conversations</LinkButton>
+        }
       />
       {conversation.about ? (
         <p className="type-editorial text-[19px] leading-snug text-balance -mt-2">{conversation.about}</p>
@@ -321,10 +343,14 @@ export function ChatThread() {
                     <div className="border border-border rounded-[2px] px-3 py-2.5 mt-2 flex flex-wrap items-center gap-x-3 gap-y-2">
                       <span className="text-[14px] text-text">{message.request.pieceName}</span>
                       <span className="type-ledger text-[11px] text-text-2">
-                        {STATUS_LABELS[message.request.status]}
+                        {/* A status we do not have a label for is written as it
+                            stands, rather than leaving an empty gap. */}
+                        {STATUS_LABELS[message.request.status] ?? message.request.status}
                       </span>
                       {message.request.ownerId === activeId && message.request.status === 'asked' ? (
-                        <span className="flex items-center gap-2 ml-auto">
+                        // The pair needs 232px and has 229px even at 390px, so
+                        // without wrapping it spilled past its own bubble.
+                        <span className="flex flex-wrap items-center gap-2 ml-auto">
                           <Button compact onClick={() => advance(message.id, 'lent')}>Lend it</Button>
                           <Button compact onClick={() => advance(message.id, 'declined')}>It stays home</Button>
                         </span>
@@ -366,9 +392,13 @@ export function ChatThread() {
             value={draft}
             onChange={e => setDraft(e.target.value)}
           />
-          <Button type="button" compact onClick={() => { setAskOwner(others[0]?.id ?? ''); setAsking(true); }}>
-            Ask after a piece
-          </Button>
+          {/* Hidden when nobody in the thread is still on the device: the modal
+              opened onto an empty picker with Ask permanently disabled. */}
+          {present.length > 0 ? (
+            <Button type="button" compact onClick={() => { setAskOwner(present[0]?.id ?? ''); setAsking(true); }}>
+              Ask after a piece
+            </Button>
+          ) : null}
           <Button type="button" compact onClick={() => setAttaching('look')}>Attach a look</Button>
           <Button type="button" compact onClick={() => setAttaching('piece')}>Attach a piece</Button>
           <Button tone="primary" type="submit" disabled={!draft.trim() && !attached.look && !attached.piece}>
@@ -385,7 +415,7 @@ export function ChatThread() {
         <div className="space-y-5 mt-5">
           <Field label="Whose piece" htmlFor="ask-owner">
             <select id="ask-owner" className={selectClass} value={askOwner} onChange={e => setAskOwner(e.target.value)}>
-              {others.map(a => a ? <option key={a.id} value={a.id}>{a.name}</option> : null)}
+              {present.map(a => <option key={a!.id} value={a!.id}>{a!.name}</option>)}
             </select>
           </Field>
           <Field label="Which piece" htmlFor="ask-piece" hint="As they would call it.">

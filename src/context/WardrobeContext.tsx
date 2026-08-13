@@ -25,7 +25,8 @@ interface WardrobeContextType extends AppState {
   activeItems: ClothingItem[];
   addItem: (item: Omit<ClothingItem, 'id' | 'dateAdded' | 'wearCount' | 'laundryStatus'>) => void;
   updateItem: (id: string, updates: Partial<ClothingItem>) => void;
-  deleteItem: (id: string) => void;
+  /** Removes the piece and everything naming it; returns the way to put it back. */
+  deleteItem: (id: string) => () => void;
   retireItem: (id: string, reason?: string) => void;
   unretireItem: (id: string) => void;
   toggleFavoriteItem: (id: string) => void;
@@ -98,12 +99,41 @@ export function WardrobeProvider({ accountId, children }: { accountId: string; c
     }));
   }, [setState]);
 
+  /**
+   * "Delete for good" — and it means every trace, not just the row.
+   *
+   * It used to remove the item and strip it from outfits, but leave every wear
+   * log still naming it. Calendar and Dashboard render piecesPhrase over the
+   * COUNT OF IDS, not of resolved pieces, so a deleted piece left a phantom day
+   * on the calendar reading "1 piece" with no thumbnail, no name, and an UNDO
+   * for a wear of nothing. Now the id comes out of every log, a log left with
+   * nothing on it is dropped with it, and the piece comes off the borrow list.
+   *
+   * The whole previous state is handed back so the caller can offer to put it
+   * back — see `showToast`'s action. This is the answer to the complaint that
+   * follows every rival in the category: things vanish and cannot be recovered.
+   */
   const deleteItem = useCallback((id: string) => {
-    setState(prev => ({
-      ...prev,
-      items: prev.items.filter(item => item.id !== id),
-      outfits: prev.outfits.map(o => ({ ...o, itemIds: o.itemIds.filter(iid => iid !== id) })),
-    }));
+    let before: AppState | null = null;
+    setState(prev => {
+      before = prev;
+      const logs = prev.wearLogs
+        .map(log => ({ ...log, itemIds: log.itemIds.filter(iid => iid !== id) }))
+        .filter(log => log.itemIds.length > 0 || log.outfitId);
+      return {
+        ...prev,
+        items: prev.items.filter(item => item.id !== id),
+        outfits: prev.outfits.map(o => ({ ...o, itemIds: o.itemIds.filter(iid => iid !== id) })),
+        wearLogs: logs,
+        circle: {
+          ...prev.circle,
+          profiles: prev.circle.profiles.map(p =>
+            p.isMe ? { ...p, lendable: p.lendable.filter(l => l.itemId !== id) } : p
+          ),
+        },
+      };
+    });
+    return () => { if (before) setState(before); };
   }, [setState]);
 
   // Retiring keeps every wear the piece ever earned — the history is the point.
@@ -448,12 +478,17 @@ export function WardrobeProvider({ accountId, children }: { accountId: string; c
   const setLendable = useCallback((itemId: string, lendable: boolean) => {
     setState(prev => {
       const me = prev.circle.profiles.find(p => p.isMe);
+      if (!me) return prev;
       const item = prev.items.find(i => i.id === itemId);
-      if (!me || !item) return prev;
+      // Offering needs the piece; WITHDRAWING must not. Requiring it for both
+      // directions meant any piece that left the closet stayed on the
+      // open-to-borrow list permanently — removal needed the item to exist,
+      // and it no longer did.
+      if (lendable && !item) return prev;
       const has = me.lendable.some(l => l.itemId === itemId);
       if (has === lendable) return prev;
       const nextLendable = lendable
-        ? [...me.lendable, { itemId, name: item.name, category: item.category }]
+        ? [...me.lendable, { itemId, name: item!.name, category: item!.category }]
         : me.lendable.filter(l => l.itemId !== itemId);
       return {
         ...prev,

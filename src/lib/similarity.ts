@@ -1,5 +1,5 @@
 import type { ClothingItem, CategoryId, Occasion } from '../types';
-import { costPerWear, formatMoney, formatPerWear } from './cost';
+import { costBasis, costPerWear, formatMoney, formatPerWear } from './cost';
 
 // "Do I already own something like this?" — the engine behind Before You Buy.
 // Similarity is deliberately explainable: same category is a hard gate, then
@@ -131,7 +131,12 @@ export function findSimilarItems(items: ClothingItem[], query: SimilarityQuery, 
 export function matchSummary(matches: SimilarMatch[]): string | null {
   if (matches.length === 0) return null;
   const wears = matches.reduce((sum, m) => sum + m.item.wearCount, 0);
-  const spent = matches.reduce((sum, m) => sum + (m.item.cost ?? 0), 0);
+  // costBasis, not item.cost. lib/cost.ts states the contract: every consumer
+  // reads the basis, so when repairs land they propagate everywhere at once —
+  // and this was the only reader going around it, on the one screen whose job
+  // is totalling what you already own. It also stops trusting the raw field:
+  // two matches with one string cost among them concatenated to "$42,050".
+  const spent = matches.reduce((sum, m) => sum + (costBasis(m.item) ?? 0), 0);
   const pieces = `${matches.length} similar ${matches.length === 1 ? 'piece' : 'pieces'}`;
   if (spent > 0) {
     return `You own ${pieces}. Total spent: ${formatMoney(spent)}. Total wears: ${wears}.`;

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation, Outlet } from 'react-router-dom';
+import { nextTheme } from '../lib/accounts';
 import {
   IconToday, IconCloset, IconOutfits, IconCalendar, IconLedger,
   IconWishlist, IconCompare, IconRail, IconSettings, IconPlus, IconTheme, IconMenu, IconClose,
@@ -41,6 +42,19 @@ const navItems: NavItem[] = [
 // Five slots in the thumb zone; the rest live behind "More".
 const mobilePrimary = ['/', '/closet', '/outfits', '/feed'];
 
+/**
+ * Does this nav entry own the address we are at?
+ *
+ * Exact equality was wrong at all three nav sites: a conversation lives at
+ * /chats/:id and a neighbour's rail at /rail/:id, so opening either used to
+ * unlight the entire navigation and leave the chrome saying nothing about
+ * where you were.
+ */
+function owns(path: string, here: string): boolean {
+  if (path === '/') return here === '/';
+  return here === path || here.startsWith(`${path}/`);
+}
+
 export default function Layout() {
   const [addOpen, setAddOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
@@ -49,23 +63,17 @@ export default function Layout() {
   const { active, theme, setTheme } = useSession();
 
   useEffect(() => {
-    const root = document.documentElement;
-    if (theme === 'system') root.removeAttribute('data-theme');
-    else root.setAttribute('data-theme', theme);
-  }, [theme]);
-
-  useEffect(() => {
     setMoreOpen(false);
   }, [location.pathname]);
 
-  // Three rooms and the device's own choice, in order.
-  const cycleTheme = () => {
-    const order = ['dark', 'obsidian', 'dyehouse', 'salon', 'gilt', 'light', 'system'] as const;
-    setTheme(order[(order.indexOf(theme as typeof order[number]) + 1) % order.length]);
-  };
+  // The rooms, in the house's order — the dye house first, then the obsidian.
+  const cycleTheme = () => setTheme(nextTheme(theme));
 
   const primaryNav = navItems.filter(n => mobilePrimary.includes(n.path));
   const secondaryNav = navItems.filter(n => !mobilePrimary.includes(n.path));
+  // On /ledger or /wishlist the always-on-screen chrome said nothing about
+  // where you were, because the page that owns the address is behind More.
+  const moreHolds = secondaryNav.some(n => owns(n.path, location.pathname));
 
   return (
     <div className="flex min-h-dvh bg-bg pattern-paper">
@@ -84,7 +92,7 @@ export default function Layout() {
       </div>
       {/* Mobile masthead */}
       <header className="lg:hidden fixed top-0 inset-x-0 z-50 bg-bg/95 backdrop-blur-sm border-b border-border safe-t">
-        <div className="flex items-center justify-between h-14 px-4">
+        <div className="flex items-center justify-between masthead-bar px-4">
           <Link to="/" className="flex items-center gap-2 text-text min-h-11 py-1" aria-label="Toile — home">
             <TagMark size={22} />
             <Wordmark className="w-[64px]" />
@@ -113,7 +121,7 @@ export default function Layout() {
         <nav className="flex-1 min-h-0 overflow-y-auto px-3 space-y-0.5" aria-label="Main">
           {navItems.map(item => {
             const Icon = item.icon;
-            const active = location.pathname === item.path;
+            const active = owns(item.path, location.pathname);
             return (
               <Link
                 key={item.path}
@@ -161,7 +169,7 @@ export default function Layout() {
       </aside>
 
       {/* Main */}
-      <main className="relative z-10 flex-1 min-w-0 pt-14 lg:pt-0 pad-rail lg:pb-0">
+      <main className="relative z-10 flex-1 min-w-0 pad-masthead lg:pt-0 pad-rail lg:pb-0">
         {/* Keyed by path: each page arrives like a plate set on the table. */}
         <div key={location.pathname} className="v2-route max-w-5xl mx-auto px-4 sm:px-6 lg:px-10 py-6 lg:py-10">
           <Outlet />
@@ -170,23 +178,26 @@ export default function Layout() {
 
       {/* Mobile bottom rail — thumb zone */}
       <nav
-        className="lg:hidden fixed bottom-0 inset-x-0 z-50 h-14 bg-bg border-t border-border flex safe-b box-content"
+        className="lg:hidden fixed bottom-0 inset-x-0 z-50 nav-rail bg-bg border-t border-border flex"
         aria-label="Main"
       >
         {primaryNav.map(item => {
           const Icon = item.icon;
-          const active = location.pathname === item.path;
+          const active = owns(item.path, location.pathname);
           return (
             <Link
               key={item.path}
               to={item.path}
               aria-current={active ? 'page' : undefined}
-              className={`relative flex-1 flex flex-col items-center justify-center gap-0.5 ${
+              // min-w-0 or the longest word steals width from its neighbours
+              // and the five slots stop being equal (69.7 vs 68.8, measured).
+              // pb-1 reserves the lane the active dot sits in.
+              className={`relative flex-1 min-w-0 flex flex-col items-center justify-center gap-1 pb-1 ${
                 active ? 'text-text' : 'text-text-2'
               }`}
             >
-              <Icon size={20} />
-              <span className="type-label whitespace-nowrap">
+              <Icon size={24} />
+              <span className="type-label-rail whitespace-nowrap">
                 {item.shortLabel ?? item.label}
               </span>
               {active ? (
@@ -199,20 +210,23 @@ export default function Layout() {
           onClick={() => setMoreOpen(v => !v)}
           aria-expanded={moreOpen}
           aria-label={moreOpen ? 'Close more menu' : 'More pages'}
-          className={`flex-1 flex flex-col items-center justify-center gap-0.5 ${
-            moreOpen ? 'text-text' : 'text-text-2'
+          className={`relative flex-1 min-w-0 flex flex-col items-center justify-center gap-1 pb-1 ${
+            moreOpen || moreHolds ? 'text-text' : 'text-text-2'
           }`}
         >
-          {moreOpen ? <IconClose size={20} /> : <IconMenu size={20} />}
-          <span className="type-label whitespace-nowrap">More</span>
+          {moreOpen ? <IconClose size={24} /> : <IconMenu size={24} />}
+          <span className="type-label-rail whitespace-nowrap">More</span>
+          {moreHolds && !moreOpen ? (
+            <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-accent" />
+          ) : null}
         </button>
       </nav>
 
       {moreOpen && (
-        <div className="lg:hidden fixed above-rail inset-x-0 z-50 bg-surface border-t border-border animate-slip max-h-[60vh] pane">
+        <div className="lg:hidden fixed above-rail inset-x-0 z-50 bg-surface border-t border-border animate-slip max-h-[60dvh] pane">
           {secondaryNav.map(item => {
             const Icon = item.icon;
-            const active = location.pathname === item.path;
+            const active = owns(item.path, location.pathname);
             return (
               <Link
                 key={item.path}

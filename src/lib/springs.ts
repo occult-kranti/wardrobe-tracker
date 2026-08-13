@@ -47,6 +47,15 @@ let raf = 0;
 let last = 0;
 
 function tick(now: number) {
+  // Cleared FIRST, not at the end.
+  //
+  // An onUpdate can push a target at another spring during this frame. While
+  // `raf` still held the running frame's id, wake() saw the loop as already
+  // running and scheduled nothing — so if every other spring happened to
+  // settle this frame, the loop stopped with a spring awake and never touched
+  // it again. The end-of-frame schedule below is now conditional on `raf`
+  // still being 0, so a wake() during the frame wins.
+  raf = 0;
   // Clamp the step: a background tab can hand us seconds of "elapsed" time,
   // and a spring integrated over that explodes.
   const dt = Math.min((now - last) / 1000, 1 / 30);
@@ -72,7 +81,7 @@ function tick(now: number) {
     }
     s.onUpdate(s.value);
   }
-  raf = awake > 0 ? requestAnimationFrame(tick) : 0;
+  if (awake > 0 && raf === 0) raf = requestAnimationFrame(tick);
 }
 
 function wake() {

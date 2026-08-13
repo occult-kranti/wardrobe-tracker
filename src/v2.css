@@ -19,11 +19,15 @@
   --sheen-strength: 0.16;
 }
 
-/* The page becomes a stage: content floats over the deep ground. */
-.v2 body,
-.v2 .pattern-paper {
-  perspective: 1200px;
-}
+/* Depth belongs to the thing that leans, NOT to the page.
+   `perspective` on an ancestor establishes a containing block for every
+   fixed-position descendant — exactly as `transform` does — so this rule,
+   sitting on the app's root element, quietly re-anchored the mobile tab rail
+   to the bottom of the DOCUMENT instead of the bottom of the viewport. On a
+   long page the rail was being drawn eight thousand pixels below the fold:
+   the bar "disappearing" was this line, not the bar.
+   The tilt now carries its own perspective inside its transform, which is
+   self-contained and cannot reach anything else. */
 
 /* Glass plates: the token surface at partial alpha over blur, a top-lit
    1px light edge, and room for the sheen layer. */
@@ -50,8 +54,7 @@
 /* Tilt wrapper: driven by --tilt-x/--tilt-y springs. Opaque tiles only —
    glass doesn't bend. */
 .v2 .v2-tilt {
-  transform: rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
-  transform-style: preserve-3d;
+  transform: perspective(1000px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
   will-change: transform;
 }
 

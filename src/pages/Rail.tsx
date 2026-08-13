@@ -5,6 +5,7 @@ import { categoryLabel, type BorrowStatus, type CircleMessage, type CircleProfil
 import { Button, Card, Chip, EmptyState, LinkButton, Masthead, SectionTitle, inputClass } from '../components/ui';
 import { Basting, GarmentPlate, PlateEmptyWishlist, TagPortrait } from '../components/art';
 import { IconChevronLeft } from '../components/icons';
+import { oldestFirst, shortDate } from '../components/social';
 
 /**
  * THE SHARED RAIL — borrowing between people who already know each other.
@@ -64,7 +65,7 @@ function RequestSlip({
 }
 
 export function Rail() {
-  const { circle, activeItems, sendRailMessage, setRequestStatus, returnLoan } = useWardrobe();
+  const { circle, getItem, sendRailMessage, setRequestStatus, returnLoan } = useWardrobe();
   const [draft, setDraft] = useState('');
 
   const me = circle.profiles.find(p => p.isMe);
@@ -78,7 +79,7 @@ export function Rail() {
       group
         ? circle.messages
             .filter(m => m.groupId === group.id)
-            .sort((a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id))
+            .sort(oldestFirst)
         : [],
     [circle.messages, group]
   );
@@ -93,9 +94,14 @@ export function Rail() {
           <EmptyState
             plate={<PlateEmptyWishlist />}
             title="The rail is empty."
-            body="Borrowing between closets that trust each other — who has what, and when it came home. Profiles here are records you keep on this device, like a contact book. The sample wardrobe includes a working rail."
+            body="A rail is the record of what goes out and what comes home — who has your black coat, and since when. It fills as you lend, and lending starts with a conversation."
             action={
-              <LinkButton to="/settings" tone="primary">Load the sample</LinkButton>
+              // This used to say "Load the sample" and point at Settings, where
+              // that button REPLACES the open wardrobe. Only the legacy demo
+              // ever writes `circle`, so EVERY wardrobe — all three samples and
+              // any real one — landed on a dead page whose single offer was
+              // quietly destructive. Borrowing actually happens in Conversations.
+              <LinkButton to="/chats" tone="primary">Go to conversations</LinkButton>
             }
           />
         </Card>
@@ -164,7 +170,7 @@ export function Rail() {
                       <span className="mx-1.5">·</span>
                       {author?.handle}
                       <span className="mx-1.5">·</span>
-                      <span className="tabular">{message.date.slice(5)}</span>
+                      <span className="tabular">{shortDate(message.date)}</span>
                     </p>
                     <p className="text-[15px] text-text mt-1 leading-relaxed">{message.text}</p>
                     <RequestSlip
@@ -209,7 +215,9 @@ export function Rail() {
           <ul>
             {[...out, ...back].map(loan => {
               const other = byId.get(loan.withId);
-              const item = loan.itemId ? activeItems.find(i => i.id === loan.itemId) : undefined;
+              // getItem, not activeItems: a piece retired while it is still out
+              // keeps its photograph in the record of where it went.
+              const item = loan.itemId ? getItem(loan.itemId) : undefined;
               return (
                 <li key={loan.id} className="flex items-center gap-3 min-h-[56px] py-2">
                   <span className="block w-11 h-14 shrink-0 bg-mat overflow-hidden rounded-[2px]">
@@ -223,8 +231,10 @@ export function Rail() {
                     <span className="block text-[15px] text-text truncate">{loan.pieceName}</span>
                     <span className="type-ledger text-[11px] text-text-2 block mt-0.5 tabular">
                       {loan.direction === 'to' ? 'with' : 'from'} {other?.name ?? 'someone'} · since{' '}
-                      {loan.since.slice(5)}
-                      {loan.returned ? ` · home ${loan.returned.slice(5)}` : ''}
+                      {/* Through shortDate like every other surface. A raw
+                          slice printed '07-23'. */}
+                      {shortDate(loan.since)}
+                      {loan.returned ? ` · home ${shortDate(loan.returned)}` : ''}
                     </span>
                   </span>
                   {!loan.returned ? (
@@ -267,13 +277,24 @@ export function RailProfile() {
     );
   }
 
-  const showcased = profile.showcase
-    .map(outfitId => outfits.find(o => o.id === outfitId))
-    .filter((o): o is NonNullable<typeof o> => o !== undefined);
+  // Only this closet's own showcase resolves against this closet's outfits. A
+  // neighbour's showcase id that happened to match one of mine would have put
+  // my outfit, my wear count and my photograph on their profile.
+  const showcased = profile.isMe
+    ? profile.showcase
+        .map(outfitId => outfits.find(o => o.id === outfitId))
+        .filter((o): o is NonNullable<typeof o> => o !== undefined)
+    : [];
 
   return (
     <div className="space-y-6">
-      <Masthead title={profile.name} meta={profile.handle} />
+      <Masthead
+        title={profile.name}
+        meta={profile.handle}
+        action={
+          <LinkButton to="/rail" compact icon={<IconChevronLeft size={16} />}>The rail</LinkButton>
+        }
+      />
 
       <Card>
         <div className="flex items-start gap-5">

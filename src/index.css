@@ -511,13 +511,40 @@
      values are 0 on hardware without insets, so nothing moves on a desktop
      or an older phone. */
 
-  .safe-b { padding-bottom: env(safe-area-inset-bottom, 0px); }
-  .safe-t { padding-top: env(safe-area-inset-top, 0px); }
+  /* The shell's geometry, declared once. Four hand-copied calc()s used to
+     carry these numbers, and they had already drifted apart: .above-rail
+     said 3.5rem where the rail measures 57px, so the More sheet was laid
+     1px ON the rail and the two hairlines doubled. Stating them as
+     properties is also what makes the insets testable at all. */
+  :root {
+    --safe-t: env(safe-area-inset-top, 0px);
+    --safe-b: env(safe-area-inset-bottom, 0px);
+    --masthead-h: 3.5rem;
+    --rail-h: 3.75rem;
+    --masthead-total: calc(var(--masthead-h) + 1px + var(--safe-t));
+    --rail-total: calc(var(--rail-h) + 1px + var(--safe-b));
+  }
+
+  .safe-b { padding-bottom: var(--safe-b); }
+  .safe-t { padding-top: var(--safe-t); }
+
+  /* The rail pads BELOW its tabs, so a home indicator never eats into the
+     taps. content-box keeps the declared height the height of the tabs. */
+  .nav-rail {
+    box-sizing: content-box;
+    height: var(--rail-h);
+    padding-bottom: var(--safe-b);
+  }
+  .masthead-bar { height: var(--masthead-h); }
+
   /* Content has to clear the rail AND the inset under it. */
-  .pad-rail { padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px)); }
+  .pad-rail { padding-bottom: calc(var(--rail-total) + 1.25rem); }
+  /* main used a flat pt-14 that counted the bar and not the top inset, so on
+     a notched handset every screen opened with its own title already hidden. */
+  .pad-masthead { padding-top: var(--masthead-total); }
   /* Sheets and toasts sit above the rail, so they clear both too. */
-  .above-rail { bottom: calc(3.5rem + env(safe-area-inset-bottom, 0px)); }
-  .above-rail-toast { bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px)); }
+  .above-rail { bottom: var(--rail-total); }
+  .above-rail-toast { bottom: calc(var(--rail-total) + 0.75rem); }
 
   /* 100dvh, not 100vh: a mobile browser's retracting toolbar changes the
      visual viewport, and a screen measured against the LARGE viewport hides
@@ -786,6 +813,18 @@
     font-weight: 600;
     font-size: 13px;
     letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  /* The rail's own label size. Measured cause: at the house's 13px, OUTFITS
+     rendered 69.7px inside a 69.7px slot at 360px — edge to edge in the
+     fallback face that is on screen until Switzer loads. 11px leaves air. */
+  .type-label-rail {
+    font-family: var(--font-ui);
+    font-weight: 600;
+    font-size: 11px;
+    line-height: 1.2;
+    letter-spacing: 0.04em;
     text-transform: uppercase;
   }
 }

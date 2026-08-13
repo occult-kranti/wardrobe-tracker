@@ -908,8 +908,11 @@ export default function Closet() {
                     tone="destructive"
                     compact
                     onClick={() => {
-                      deleteItem(retiring.id);
-                      showToast('Deleted.', 'info');
+                      const putBack = deleteItem(retiring.id);
+                      showToast(`Deleted. "${retiring.name}" and its record.`, 'info', {
+                        label: 'Undo',
+                        run: putBack,
+                      });
                       closeRetire();
                     }}
                   >

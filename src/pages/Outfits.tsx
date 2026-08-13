@@ -111,14 +111,7 @@ function OutfitCard({
   return (
     <Card className="flex flex-col">
       <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <h3 className="type-editorial text-[19px] leading-tight break-words">{outfit.name}</h3>
-          {outfit.occasion ? (
-            <span className="inline-flex mt-2">
-              <Chip as="span">{displayTag(outfit.occasion)}</Chip>
-            </span>
-          ) : null}
-        </div>
+        <h3 className="type-editorial text-[19px] leading-tight break-words min-w-0">{outfit.name}</h3>
         <div className="flex items-center shrink-0 -mt-2 -mr-2">
           <IconButton
             label={outfit.favorite ? `Unpin "${outfit.name}"` : `Pin "${outfit.name}"`}
@@ -133,6 +126,24 @@ function OutfitCard({
           </IconButton>
         </div>
       </div>
+
+      {/* The occasion gets its own row, under the title rather than beside the
+          buttons, and the row is a block-level flex container so the chip has a
+          DEFINITE width to be clamped against.
+
+          Both halves matter. An occasion is free text and the sample wardrobes
+          keep whole sentences in it; a tag is nowrap by design, so the chip's
+          min-content width was the whole sentence — 475px inside the 179px
+          column it used to share with the pin and the shears, which is where
+          /outfits' 139px of sideways scroll came from. Sharing that column also
+          meant that even once clamped, a tag had barely a third of the card to
+          say anything in. Given the full width it keeps about twice as many
+          words before the ellipsis, and hovering still shows the rest. */}
+      {outfit.occasion ? (
+        <div className="flex mt-2">
+          <Chip as="span" title={displayTag(outfit.occasion)}>{displayTag(outfit.occasion)}</Chip>
+        </div>
+      ) : null}
 
       {members.length > 0 ? (
         <>

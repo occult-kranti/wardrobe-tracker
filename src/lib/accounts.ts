@@ -65,20 +65,96 @@ export function saveActiveId(activeId: string | null): void {
 }
 
 /**
+ * The rooms, in the order the theme control walks them. The house opens in the
+ * dye house and steps into the obsidian next; the rest follow.
+ *
+ * The default is the first entry rather than a second constant, so the default
+ * and the cycle order cannot drift apart — they used to, and an unknown stored
+ * theme hit indexOf === -1 and wrapped the cycler to 'system'.
+ */
+export const THEME_ORDER = ['dyehouse', 'obsidian', 'dark', 'salon', 'gilt', 'light', 'system'] as const;
+
+export const DEFAULT_THEME: Theme = THEME_ORDER[0];
+
+/**
  * The theme is a property of the screen, not of a wardrobe. Keeping it in
  * AppSettings meant opening a different closet could flip the whole interface
  * from dark to light mid-session.
  */
 export function loadTheme(): Theme {
   const stored = read<{ theme?: Theme }>(THEME_KEY, {}).theme;
-  return stored === 'light' || stored === 'dark' || stored === 'salon' || stored === 'gilt' || stored === 'dyehouse' || stored === 'obsidian' || stored === 'system'
-    ? stored
-    // V2 wakes up in the obsidian — the room the glass was cut for.
-    : 'obsidian';
+  return (THEME_ORDER as readonly string[]).includes(stored as string)
+    ? (stored as Theme)
+    : DEFAULT_THEME;
 }
 
 export function saveTheme(theme: Theme): void {
   write(THEME_KEY, { theme });
+}
+
+/**
+ * Stamped on the root element. Called once before React mounts as well as from
+ * the session, so no load starts in the light room and flips a beat later.
+ */
+export function applyTheme(theme: Theme): void {
+  const root = document.documentElement;
+  if (theme === 'system') root.removeAttribute('data-theme');
+  else root.setAttribute('data-theme', theme);
+}
+
+/** The next room along, from wherever we are. */
+export function nextTheme(theme: Theme): Theme {
+  const at = (THEME_ORDER as readonly string[]).indexOf(theme);
+  return THEME_ORDER[(at + 1) % THEME_ORDER.length];
+}
+
+/** When a wardrobe was last opened. Stored beside the registry, not inside it. */
+const OPENED_KEY = 'toile-opened';
+
+export function lastOpenedAt(accountId: string): string | null {
+  return read<Record<string, string>>(OPENED_KEY, {})[accountId] ?? null;
+}
+
+export function stampOpened(accountId: string): void {
+  const all = read<Record<string, string>>(OPENED_KEY, {});
+  all[accountId] = new Date().toISOString();
+  write(OPENED_KEY, all);
+}
+
+/** Most recently opened first; never opened sorts last, by name. */
+export function byLastOpened(a: Account, b: Account): number {
+  const at = lastOpenedAt(a.id);
+  const bt = lastOpenedAt(b.id);
+  if (at && bt) return bt.localeCompare(at);
+  if (at) return -1;
+  if (bt) return 1;
+  return a.name.localeCompare(b.name);
+}
+
+/** "Wardrobe", then "Wardrobe 2" — so a blank name is never a dead end. */
+export function uniqueWardrobeName(base: string, accounts: Account[]): string {
+  const taken = new Set(accounts.map(a => a.name.trim().toLowerCase()));
+  if (!taken.has(base.toLowerCase())) return base;
+  for (let n = 2; n < 500; n++) {
+    const tried = `${base} ${n}`;
+    if (!taken.has(tried.toLowerCase())) return tried;
+  }
+  return `${base} ${Date.now()}`;
+}
+
+/** A handle derived from whatever name was finally used. */
+export function handleFor(name: string): string {
+  const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '').slice(0, 18);
+  return `@${slug || 'wardrobe'}`;
+}
+
+/** Is there a pre-accounts closet still waiting to be adopted? */
+export function hasLegacyWardrobe(): boolean {
+  try {
+    return window.localStorage.getItem(LEGACY_KEY) !== null;
+  } catch {
+    return false;
+  }
 }
 
 export function loadCommunity(): CommunityState {

@@ -14,6 +14,8 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   tone?: ButtonTone;
   compact?: boolean;
   icon?: ReactNode;
+  /** Let a sentence-length label take a second line instead of widening the page. */
+  wrap?: boolean;
 }
 
 const toneClasses: Record<ButtonTone, string> = {
@@ -36,19 +38,25 @@ const toneClasses: Record<ButtonTone, string> = {
 };
 
 /** The button's whole appearance, so an anchor can wear it without being one. */
-export function buttonClass(tone: ButtonTone = 'secondary', compact = false, extra = ''): string {
+export function buttonClass(tone: ButtonTone = 'secondary', compact = false, extra = '', wrap = false): string {
   // 44px is the floor, not 40 — the accessibility directive outranks the
   // original 40px figure in the component law, so "compact" only narrows the
   // padding, never the hit area.
   const height = compact ? 'h-11 px-3 [--btn-underline-inset:8px]' : 'h-11 px-5';
   const base = tone === 'tertiary' ? 'min-h-11 py-1' : height;
-  return `type-label whitespace-nowrap inline-flex items-center justify-center gap-2 rounded-[2px] transition-[opacity,filter,background-color] duration-150 active:translate-y-px disabled:opacity-40 disabled:pointer-events-none ${base} ${toneClasses[tone]} ${extra}`;
+  // A wrapping button keeps the 44px floor as a MINIMUM and lets the label
+  // take a second line. `whitespace-nowrap` moved out of the shared prefix and
+  // into the non-wrap branch, so every existing call site renders unchanged.
+  const flow = wrap
+    ? `min-h-11 py-2 ${compact ? 'px-3' : 'px-5'} whitespace-normal text-center`
+    : `${base} whitespace-nowrap`;
+  return `type-label inline-flex items-center justify-center gap-2 rounded-[2px] transition-[opacity,filter,background-color] duration-150 active:translate-y-px disabled:opacity-40 disabled:pointer-events-none ${flow} ${toneClasses[tone]} ${extra}`;
 }
 
-export function Button({ tone = 'secondary', compact, icon, children, className = '', onPointerDown, ...rest }: ButtonProps) {
+export function Button({ tone = 'secondary', compact, icon, wrap, children, className = '', onPointerDown, ...rest }: ButtonProps) {
   return (
     <button
-      className={buttonClass(tone, compact, className)}
+      className={buttonClass(tone, compact, className, wrap)}
       // V2: controls carry mass, and mass makes a sound. The tick fires on
       // press, not click, so the ear and the finger agree on the moment.
       onPointerDown={e => {
@@ -75,6 +83,7 @@ export function LinkButton({
   tone = 'secondary',
   compact,
   icon,
+  wrap,
   children,
   className = '',
 }: {
@@ -82,11 +91,12 @@ export function LinkButton({
   tone?: ButtonTone;
   compact?: boolean;
   icon?: ReactNode;
+  wrap?: boolean;
   children: ReactNode;
   className?: string;
 }) {
   return (
-    <Link to={to} className={buttonClass(tone, compact, `${tone === 'tertiary' ? '' : 'no-underline'} ${className}`)}>
+    <Link to={to} className={buttonClass(tone, compact, `${tone === 'tertiary' ? '' : 'no-underline'} ${className}`, wrap)}>
       {icon}
       {children}
     </Link>
@@ -133,7 +143,13 @@ export function Chip({
   // the 44px floor, because the accessibility directive governs interactive
   // elements and a filter row is the most-tapped surface in the app.
   const height = as === 'span' ? 'h-8' : 'h-11';
-  const cls = `type-ledger inline-flex items-center gap-1.5 ${height} pl-2 pr-3 text-[11px] rounded-[2px] border transition-colors duration-150 whitespace-nowrap ${
+  // max-w-full, and a label that may ellipsize. An occasion is free text and the
+  // sample wardrobes keep whole sentences in it; a tag is nowrap by design, so
+  // the chip's min-content width WAS that whole sentence, and a card holding one
+  // pushed /outfits 139px sideways on a 390px screen. A tag that cannot fit the
+  // card now says as much as it can and keeps the rest in its tooltip, rather
+  // than dragging the page out from under the reader.
+  const cls = `type-ledger inline-flex items-center gap-1.5 ${height} pl-2 pr-3 text-[11px] rounded-[2px] border transition-colors duration-150 whitespace-nowrap max-w-full ${
     selected
       ? 'bg-ink text-on-ink border-transparent'
       : 'bg-sunken text-text-2 border-border hover:text-text'
@@ -145,10 +161,14 @@ export function Chip({
   // repeats more than any other.
   const inner = (
     <>
-      <span className={selected ? 'text-accent-on-ink' : 'opacity-60'}>
+      <span className={`shrink-0 ${selected ? 'text-accent-on-ink' : 'opacity-60'}`}>
         {selected ? <IconEyeletFilled size={10} /> : <IconEyelet size={10} />}
       </span>
-      {children}
+      {/* min-w-0 is what lets the label shrink at all: a flex item refuses to go
+          below its min-content width without it, and nowrap text has no smaller
+          min-content than the whole string. The eyelet never shrinks — it is the
+          brand's mark, not a label. */}
+      <span className="min-w-0 truncate">{children}</span>
     </>
   );
   if (as === 'span') return <span className={cls} title={title}>{inner}</span>;
