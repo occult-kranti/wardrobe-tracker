@@ -1,7 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Room } from '../components/Room';
-import { drawChair } from '../lib/furnitureArt';
 import { Tilt } from '../components/Glass';
 import { useWardrobe } from '../context/WardrobeContext';
 import ItemDetail from '../components/ItemDetail';
@@ -14,7 +13,7 @@ import {
   IconEyelet, IconEyeletFilled, IconCamera,
 } from '../components/icons';
 import {
-  Basting, GarmentPlate, PlateEmptyCloset, PlateEmptyMending, PlateRetired,
+  Basting, DressingRoomBand, GarmentPlate, PlateEmptyCloset, PlateEmptyMending, PlateRetired,
 } from '../components/art';
 import {
   BENCHED_STATUSES, LAUNDRY_LABELS, PRESET_COLORS, RETIRE_REASONS, SEASON_LABELS, SOURCE_LABELS,
@@ -353,14 +352,6 @@ export default function Closet() {
     });
   }, [browsable, search, activeCategory, filterSeason, filterOccasion, filterColor, showFavoritesOnly, benchFilter]);
 
-  /** Derived at render from laundryStatus. The chair is never stored, and is
-      never a place — giving a Tuesday a permanent address would turn it into a
-      fact about how somebody lives. */
-  const chairDrawing = useMemo(
-    () => drawChair(activeItems.filter(i => i.laundryStatus === 'worn').length),
-    [activeItems],
-  );
-
   const retiredItems = useMemo(
     () => items.filter(i => i.retired)
       .sort((a, b) => (b.retired?.date ?? '').localeCompare(a.retired?.date ?? '')),
@@ -424,7 +415,7 @@ export default function Closet() {
   return (
     <div>
       <Masthead
-        title="Dressing room"
+        title="Closet"
         meta={closetEmpty ? undefined : countLabel}
         // The fastest road into a closet there is: one photograph of what you
         // already have on. It sits beside the count rather than as a second
@@ -442,6 +433,8 @@ export default function Closet() {
           </span>
         )}
       />
+
+      <DressingRoomBand seed={activeId ?? ''} />
 
       {closetEmpty ? (
         <EmptyState
@@ -632,55 +625,11 @@ export default function Closet() {
           {/* Wash day used to be sixty taps — the State rail could show
               "Needs a wash 12" but could do nothing about it. With the filter
               active, the filter becomes the verb. */}
-          {/* THE CHAIR.
-              Every home has the one where the clothes that are neither clean
-              nor dirty end up, and this is the app's picture of that state.
-
-              Where it sits is the whole of what keeps it kind. It rides the row
-              that ALREADY only appears once you have tapped the wash filter —
-              you asked about the wash and the chair answers; nobody is shown
-              their own laundry unprompted. And it is a VERB: tapping it does
-              what the button does. A drawing that reports a pile is a comment
-              on your housekeeping; one that clears it is a tool.
-
-              The pile is literal up to twelve and stops counting after that.
-              Nineteen and twenty-three are the same picture — the number lives
-              in the sentence beside it, never in the drawing. */}
-          {benchFilter === 'worn' && benchCounts.worn > 0 ? (
-            <div className="flex items-center gap-4 bg-surface plate rounded-[2px] px-4 py-3">
-              <button
-                type="button"
-                onClick={() => {
-                  const n = advanceLaundry('worn', 'washing');
-                  showToast(`In the wash. ${n} ${n === 1 ? 'piece' : 'pieces'}.`, 'info');
-                }}
-                aria-label={`Send the ${benchCounts.worn} pieces on the chair to the wash`}
-                className="shrink-0 w-[76px] text-text focus-visible:outline-2"
-              >
-                <span
-                  className="block"
-                  dangerouslySetInnerHTML={{
-                    __html: `<svg viewBox="${chairDrawing.viewBox}" class="w-full h-auto block" aria-hidden="true">${chairDrawing.svg}</svg>`,
-                  }}
-                />
-              </button>
-              <div className="min-w-0 flex-1">
-                <p className="text-[13px] text-text-2 leading-snug">
-                  {benchCounts.worn} {benchCounts.worn === 1 ? 'piece is' : 'pieces are'} waiting on the basket.
-                </p>
-                <Button
-                  compact
-                  className="mt-2"
-                  onClick={() => {
-                    const n = advanceLaundry('worn', 'washing');
-                    showToast(`In the wash. ${n} ${n === 1 ? 'piece' : 'pieces'}.`, 'info');
-                  }}
-                >
-                  Send them all to the wash
-                </Button>
-              </div>
-            </div>
-          ) : null}
+          {/* The worn pile used to have a row of its own here, with the chair
+              drawn in it and the button beside it. Both now stand in the room
+              above — which is where a chair is in a bedroom, and which stops
+              the page carrying two pictures of one room. The wash-is-done row
+              stays: a machine that has finished is an event, not an object. */}
           {benchFilter === 'washing' && benchCounts.washing > 0 ? (
             <div className="flex items-center justify-between gap-3 bg-surface plate rounded-[2px] px-4 py-3">
               <p className="text-[13px] text-text-2">

@@ -253,22 +253,33 @@ export default function Calendar() {
            * day should sit further back than an unsettled one, not shout that
            * it is finished.
            *
-           * So the cell sinks instead, and sinks further the longer ago it was:
-           * 20% of the way to the sunken surface for the most recent day
-           * recorded, 30% for the oldest in the week. Toward SUNKEN rather than
-           * toward black, because "sunken" is a recessed surface in every room
-           * by definition — a literal darkening would recede in the pattern
-           * room and glare in the atelier.
+           * So the cell sinks instead, and sinks further the longer ago it was.
+           *
+           * TOWARD THE PAGE GROUND, and the direction was measured rather than
+           * chosen. The first version mixed toward --color-sunken, which is
+           * wrong twice: sunken is DARKER than surface in the pattern room and
+           * LIGHTER than it in the atelier, so the shadow ran uphill in half
+           * the house; and the two are close enough in the dark rooms that the
+           * whole week spanned a contrast ratio of 1.0045 in obsidian — which
+           * is not subtle, it is absent. --color-bg is darker than --color-surface
+           * in all six rooms, so mixing toward it is a shadow everywhere.
+           *
+           * 35% for the most recent day recorded, 75% for the oldest in the
+           * week. Measured span, deepest against shallowest: obsidian 1.026,
+           * dyehouse 1.039, atelier 1.032, pattern room 1.032, salon 1.068,
+           * gilding room 1.059. Past 75% the mix approaches the ground
+           * asymptotically and buys almost nothing — 90% moves obsidian to
+           * 1.028 and costs the salon a visible step.
            */
           const depth = recorded
-            ? 20 + Math.round((10 * (days.length - 1 - index)) / Math.max(1, days.length - 1))
+            ? 35 + Math.round((40 * (days.length - 1 - index)) / Math.max(1, days.length - 1))
             : 0;
 
           return (
             <div
               key={date}
               style={depth
-                ? { backgroundColor: `color-mix(in srgb, var(--color-sunken) ${depth}%, var(--color-surface))` }
+                ? { backgroundColor: `color-mix(in srgb, var(--color-bg) ${depth}%, var(--color-surface))` }
                 : undefined}
               className={`bg-surface rounded-[2px] p-2.5 flex flex-col sm:min-h-[168px] ${
                 isToday ? 'plate-ink' : 'plate'

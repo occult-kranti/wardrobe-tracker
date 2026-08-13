@@ -525,9 +525,12 @@ check('the weather never asks for your location', !after.asked, '');
     const svg = document.querySelector('svg[viewBox]');
     return !!svg && !!search && svg.compareDocumentPosition(search) === Node.DOCUMENT_POSITION_FOLLOWING;
   });
-  check('the dressing room opens on the room', roomFirst, '');
-  check('the page is called the dressing room',
-    /Dressing room/i.test(await page.evaluate(() => document.body.innerText)), '');
+  check('the closet opens on the room', roomFirst, '');
+  // The CLOSET is the clothes; the DRESSING ROOM is the furniture. Two words
+  // for two things, and neither borrows the other's.
+  const closetText = await page.evaluate(() => document.body.innerText);
+  check('the closet is still called the closet',
+    /Closet/.test(closetText) && !/^Dressing room/m.test(closetText), '');
 
   const hide = page.getByRole('button', { name: /hide the room/i }).first();
   check('the room can be put away', await hide.count() === 1, '');
@@ -548,42 +551,84 @@ check('the weather never asks for your location', !after.asked, '');
   check('and comes back when asked', await page.evaluate(() =>
     document.querySelector('button[aria-expanded]')?.getAttribute('aria-expanded') === 'true'), '');
 
-  // THE CHAIR is behind a pull: it appears only once somebody has asked about
-  // the wash. Nobody is shown their own laundry unprompted.
-  const unprompted = await page.evaluate(() =>
-    !document.querySelector('button[aria-label*="on the chair"]'));
-  check('the chair does not appear unprompted', unprompted, '');
+  // THE CHAIR STANDS IN THE ROOM, with the furniture — the owner's decision,
+  // and truer to a bedroom than a strip of its own under it. What keeps it kind
+  // is unchanged: it is absent at zero, it is ink rather than alarm, it says
+  // nothing about the person, and it is a VERB — tapping it sends the pile to
+  // the wash rather than reporting on it.
+  const chair = await page.evaluate(() => {
+    const btn = document.querySelector('button[aria-label*="on the chair"]');
+    // Its OWN container, not the first svg on the page — the decorative band
+    // above the room is also an svg with a viewBox, and it comes first.
+    const host = btn?.parentElement;
+    const roomSvg = host?.querySelector('svg[viewBox]');
+    return {
+      shown: !!btn,
+      label: btn?.getAttribute('aria-label') ?? '',
+      inTheRoom: !!btn && !!roomSvg && getComputedStyle(btn).position === 'absolute',
+      numerals: !!roomSvg?.querySelector('text'),
+      // It stands among the furniture: the room's other targets are links.
+      besideFurniture: (host?.querySelectorAll('a[href^="#/furniture/"]').length ?? 0) > 0,
+    };
+  });
+  check('the chair stands in the room, among the furniture',
+    chair.shown && chair.inTheRoom && chair.besideFurniture, chair.label);
+  check('and the room draws no numbers', !chair.numerals, '');
 
-  const washChip = page.getByRole('button', { name: /needs wash \d+/i }).first();
-  if (await washChip.count()) {
-    await washChip.click();
-    await page.waitForTimeout(700);
-    const chair = await page.evaluate(() => {
-      const btn = document.querySelector('button[aria-label*="on the chair"]');
-      const svg = btn?.querySelector('svg');
-      return {
-        shown: !!btn,
-        paths: svg?.querySelectorAll('path').length ?? 0,
-        // The number must live in the sentence, never in the drawing.
-        numerals: !!svg?.querySelector('text'),
-        label: btn?.getAttribute('aria-label') ?? '',
-      };
+  const before = await page.evaluate(key =>
+    JSON.parse(localStorage.getItem(key)).items.filter(i => i.laundryStatus === 'worn').length,
+    await activeKey());
+  await page.locator('button[aria-label*="on the chair"]').first().click();
+  await page.waitForTimeout(1000);
+  const after = await page.evaluate(key =>
+    JSON.parse(localStorage.getItem(key)).items.filter(i => i.laundryStatus === 'worn').length,
+    await activeKey());
+  check('tapping the chair sends the pile to the wash', before > 0 && after === 0, `${before} → ${after} worn`);
+
+  // And at zero it is simply not there. A chair that is always drawn is a
+  // scoreboard in both directions — a gold star when clear, a standing
+  // reproach when full.
+  await page.waitForTimeout(600);
+  const gone = await page.evaluate(() => !document.querySelector('button[aria-label*="on the chair"]'));
+  check('with nothing on it the chair is not drawn', gone, '');
+}
+
+/* ============ nothing is a dead end ============ */
+{
+  // THE DEFECT THIS CHECKS FOR: the dressing room has no tab of its own — it
+  // is reached from inside the closet — and it shipped with no way back out.
+  // On a home-screen install there is no browser chrome to escape with, so a
+  // page with no exit is a page you close the app from.
+  await page.goto(`${ORIGIN}/#/furniture`, { waitUntil: 'domcontentloaded' });
+  await page.locator('h1, h2').first().waitFor({ state: 'attached', timeout: 15000 });
+  const room = await page.evaluate(() => ({
+    titled: /Dressing room/i.test(document.body.innerText),
+    // Scoped to MAIN. Unscoped this matched the navigation rail, which every
+    // page carries — so it passed with the back button deleted, which is
+    // exactly the defect it was written to catch.
+    back: [...document.querySelectorAll('main a')].some(a => a.getAttribute('href') === '#/closet'),
+  }));
+  check('the furniture feature is called the dressing room', room.titled, '');
+  check('and it can be left again', room.back, '');
+
+  // Every route that is NOT in the navigation must offer an in-page way back.
+  // The ones in the rail have the rail; these have nothing but the browser's
+  // own back button, which a home-screen install does not show.
+  const stranded = [];
+  for (const route of ['#/furniture', '#/intake', '#/open']) {
+    await page.goto(`${ORIGIN}/${route}`, { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(500);
+    const ways = await page.evaluate(() => {
+      const here = location.hash;
+      // MAIN only, for the same reason: every route sits inside Layout and
+      // inherits its rail, so an unscoped count can never reach zero and the
+      // check could never fail.
+      return [...document.querySelectorAll('main a[href^="#/"]')]
+        .filter(a => a.getAttribute('href') !== here).length;
     });
-    check('asking about the wash shows the chair', chair.shown, chair.label);
-    check('the chair is drawn, not counted', chair.paths > 6 && !chair.numerals,
-      `${chair.paths} paths`);
-
-    // And it is a verb: tapping it sends the pile to the wash.
-    const before = await page.evaluate(key =>
-      JSON.parse(localStorage.getItem(key)).items.filter(i => i.laundryStatus === 'worn').length,
-      await activeKey());
-    await page.locator('button[aria-label*="on the chair"]').first().click();
-    await page.waitForTimeout(900);
-    const after = await page.evaluate(key =>
-      JSON.parse(localStorage.getItem(key)).items.filter(i => i.laundryStatus === 'worn').length,
-      await activeKey());
-    check('and tapping the chair clears it', before > 0 && after === 0, `${before} → ${after} worn`);
+    if (ways === 0) stranded.push(route);
   }
+  check('no route is a dead end', stranded.length === 0, stranded.join(', ') || 'all have a way onward');
 }
 
 /* ============ the rooms, in one order ============ */

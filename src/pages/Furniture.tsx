@@ -402,7 +402,10 @@ export default function Furniture() {
   if (furniture.length === 0) {
     return (
       <>
-        <Masthead title="Furniture" />
+        <Masthead
+          title="Dressing room"
+          action={<LinkButton to="/closet" compact icon={<IconChevronLeft size={16} />}>Closet</LinkButton>}
+        />
         <Card>
           <EmptyState
             plate={<PlateEmptyCloset />}
@@ -423,12 +426,20 @@ export default function Furniture() {
   return (
     <div className="space-y-6">
       <Masthead
-        title="Furniture"
+        title="Dressing room"
         meta={`${furniture.length} ${furniture.length === 1 ? 'place' : 'places'}`}
         action={
-          <Button compact icon={<IconPlus size={16} />} onClick={() => setDrawing(true)}>
-            Draw a place
-          </Button>
+          <span className="flex flex-wrap items-center gap-2">
+            {/* THE WAY BACK. This page has no tab of its own — it is reached
+                from inside the Closet — so without this the only exit was the
+                browser's own back button, which a person on a home-screen
+                install does not have. Every other page reached from within
+                another page in this app carries exactly this control. */}
+            <LinkButton to="/closet" compact icon={<IconChevronLeft size={16} />}>Closet</LinkButton>
+            <Button compact icon={<IconPlus size={16} />} onClick={() => setDrawing(true)}>
+              Draw a place
+            </Button>
+          </span>
         }
       />
 
@@ -506,13 +517,13 @@ export function FurniturePiece() {
   if (!piece) {
     return (
       <div className="space-y-6">
-        <Masthead title="Furniture" />
+        <Masthead title="Dressing room" />
         <Card>
           <EmptyState
             plate={<PlateEmptyCloset />}
             title="No record of this place."
             body="It may have been removed. Nothing filed in it was lost — those pieces simply stopped having an address."
-            action={<LinkButton to="/furniture" tone="primary" icon={<IconChevronLeft size={16} />}>Back to furniture</LinkButton>}
+            action={<LinkButton to="/furniture" tone="primary" icon={<IconChevronLeft size={16} />}>Back to the dressing room</LinkButton>}
           />
         </Card>
       </div>
@@ -553,7 +564,7 @@ export function FurniturePiece() {
       <Masthead
         title={piece.name}
         meta={`${piece.slots.length} ${piece.slots.length === 1 ? noun[0] : noun[1]}`}
-        action={<LinkButton to="/furniture" compact icon={<IconChevronLeft size={16} />}>Furniture</LinkButton>}
+        action={<LinkButton to="/furniture" compact icon={<IconChevronLeft size={16} />}>Dressing room</LinkButton>}
       />
 
       <div className="grid lg:grid-cols-[380px_1fr] gap-8 items-start">

@@ -23,10 +23,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { path: '/', label: 'Today', icon: IconToday },
-  // "Dressing room" is the place; "the closet" stays the word for the
-  // collection of clothes, which is what every line of copy in the app means
-  // by it. shortLabel because the five-slot thumb rail cannot hold two words.
-  { path: '/closet', label: 'Dressing room', shortLabel: 'Dressing', icon: IconCloset },
+  { path: '/closet', label: 'Closet', icon: IconCloset },
   { path: '/outfits', label: 'Outfits', icon: IconOutfits },
   { path: '/calendar', label: 'Calendar', icon: IconCalendar },
   { path: '/ledger', label: 'Ledger', icon: IconLedger },
@@ -40,6 +37,9 @@ const navItems: NavItem[] = [
   { path: '/profile', label: 'Profile', icon: IconProfile },
   { path: '/rail', label: 'Shared rail', shortLabel: 'Rail', icon: IconRail },
   { path: '/settings', label: 'Settings', icon: IconSettings },
+  // Its only other entry is the desktop rail's footer, which is `hidden lg:flex`
+  // — so below 1024px switching wardrobes meant typing the address.
+  { path: '/open', label: 'Wardrobes', icon: IconCloset },
 ];
 
 /**
@@ -64,9 +64,24 @@ const mobilePrimary = ['/', '/closet', '/outfits', '/feed'];
  * unlight the entire navigation and leave the chrome saying nothing about
  * where you were.
  */
+/**
+ * Addresses reached from INSIDE a page, which that page's tab keeps lit.
+ *
+ * The dressing room and the photo bench have no tab of their own — they are
+ * doors on the Closet — so without this, walking into either put every nav item
+ * out and the chrome that is always on screen said nothing about where you
+ * were. It is the same defect owns() was already patched for once, for a
+ * conversation and a neighbour's rail; it failed here because these two are in
+ * no nav list at all.
+ */
+const HELD_BY: Record<string, string[]> = {
+  '/closet': ['/furniture', '/intake'],
+};
+
 function owns(path: string, here: string): boolean {
   if (path === '/') return here === '/';
-  return here === path || here.startsWith(`${path}/`);
+  if (here === path || here.startsWith(`${path}/`)) return true;
+  return (HELD_BY[path] ?? []).some(p => here === p || here.startsWith(`${p}/`));
 }
 
 export default function Layout() {

@@ -302,6 +302,109 @@ function escapeXml(value: string): string {
 const SIDEBAR_W = 220;
 const CONTENT_W = 1024; // max-w-5xl
 
+
+/**
+ * THE DRESSING ROOM BAND — the one piece of artwork every width gets.
+ *
+ * A focus group of twelve women who dress people for a living was asked what
+ * belongs at the top of the closet, and the finding that mattered was not about
+ * taste. It was that **this app's curated composition already existed and was
+ * switched off on phones**: GroundFrieze, HangingRail, GutterFigure and
+ * ScatterField are all `hidden lg:*`, so a desktop already had a hung cheval
+ * mirror, a vanity, a screen and scattered heels — and a phone, which is nearly
+ * everyone, had a bare page. "The top of my closet feels dead" was a true report
+ * of a real gap.
+ *
+ * WHAT IS IN IT, and the rule that decided it: **nothing here is a container.**
+ * The panel voted nine to three for a curated composition and every yes was
+ * conditional on it holding no wardrobe, chest, shelf or box the owner does not
+ * own — a drawn container can lie about what you have, and the house's law is
+ * that the app never implies you own too little. A mirror is not a container. A
+ * chair is not a place. Nothing is filed to either, so neither can be wrong
+ * about your inventory:
+ *
+ *   · a cheval mirror, left, feet on the floor — the most-used object in any
+ *     real dressing room, and the only one here about the person rather than
+ *     the clothes. Never a reflection in it: a figure in the glass is a body.
+ *   · one wardrobe, the tallest thing, varying per wardrobe rather than per
+ *     render — so "multiple types" is honoured across the app's life instead of
+ *     lined up on one wall. Three almirahs side by side is a showroom.
+ *   · the chair, EMPTY. Every home has the one where clothes land, and drawn
+ *     empty it is furniture and it is warm. Drawn full it is a comment on
+ *     somebody's housekeeping — which is why the loaded chair lives behind the
+ *     wash filter and is a verb, and why this one has nothing on it.
+ *   · one soft tote over the chair's back rail. Not on the floor: in a great
+ *     many of the homes this app will open in, a bag on the floor is money
+ *     leaving the house.
+ *
+ * IT NEVER CHANGES — not with furniture, not with the item count, not with
+ * wears. It is the room, not the record, which is what makes it impossible to
+ * read as a reward and impossible to read as a scold.
+ */
+export function DressingRoomBand({ seed = '' }: { seed?: string }) {
+  // NO WARDROBE IN HERE, and this is the condition the whole band rests on.
+  //
+  // The focus group's nine votes for a curated composition were every one of
+  // them conditional on it holding no container — a drawn wardrobe can lie
+  // about what you own, and this app never implies you own too little. Then the
+  // designer found the same thing from the other end by measuring: a ghosted
+  // armoire in this band sat forty pixels above the person's REAL almirah in
+  // the room below, at a quarter of its ink, and the faded one read as the
+  // loading state of the solid one. Two pictures of one bedroom.
+  //
+  // So the band is the things a dressing room has that hold nothing: the
+  // mirror, the screen you change behind, the chair, and the bag over its back.
+  // The wardrobes are in the room underneath, generated from what is actually
+  // there — which is where "multiple types of wardrobe" was always coming from.
+  const screens = ['screen', 'coatstand'];
+  const second = screens[Math.floor(jitter(seed, 'second') * screens.length) % screens.length];
+  const floor = 210;
+  const at = (piece: string, x: number, k: number, metal = false, y?: number) =>
+    `<g transform='translate(${x} ${Math.round(y ?? floor - 500 * k)}) scale(${k})'` +
+    `${metal ? " style='--color-artline: var(--color-artline-2)'" : ''}>${FRIEZE_PIECES[piece]}</g>`;
+
+  /**
+   * TWO LAYOUTS, because one cannot serve both widths.
+   *
+   * The band fills its plate by SLICING, and a phone's plate is a third the
+   * aspect of a desktop's — so a single composition either gets cropped to two
+   * objects on a phone or sits as a small cluster in the middle of a wide band
+   * with dead margins either side. Both were built and both were wrong. So the
+   * narrow layout packs the four objects tight and the wide one spreads them
+   * across the whole run, and CSS picks. The objects, their scales and their
+   * order are identical; only the spacing differs.
+   */
+  const compose = (xs: number[], ks: number[], floorFrom: number, floorTo: number) => [
+    at('cheval', xs[0], ks[0]),
+    at(second, xs[1], ks[1], true),
+    at('chair', xs[2], ks[2]),
+    // Off the CORNER of the chair back, not centred on it — centred, the bag's
+    // body lay over the slats and the two shapes read as one muddle.
+    at('tote', xs[3], ks[3], false, Math.round(floor - 500 * ks[2] + 118 * ks[2])),
+    `<path d='M${floorFrom} ${floor}h${floorTo - floorFrom}' fill='none' stroke='var(--color-artline)' stroke-width='2' stroke-opacity='0.24' stroke-linecap='butt'/>`,
+  ].join('');
+
+  const narrow = compose([300, 430, 640, 706], [0.40, 0.46, 0.34, 0.20], 240, 960);
+  const wide = compose([60, 380, 800, 866], [0.40, 0.46, 0.34, 0.20], 20, 1180);
+
+  return (
+    <div aria-hidden="true" className="pointer-events-none select-none">
+      <svg
+        viewBox="0 40 1200 190"
+        preserveAspectRatio="xMidYMax slice"
+        className="w-full h-[92px] block sm:hidden"
+        dangerouslySetInnerHTML={{ __html: narrow }}
+      />
+      <svg
+        viewBox="0 40 1200 190"
+        preserveAspectRatio="xMidYMax slice"
+        className="w-full h-[128px] hidden sm:block"
+        dangerouslySetInnerHTML={{ __html: wide }}
+      />
+    </div>
+  );
+}
+
 export function GroundFrieze({ name, page = '/' }: { name?: string; page?: string }) {
   const first = escapeXml((name ?? 'Almari').trim().split(/\s+/)[0] || 'Almari');
   const key = '/' + (page.split('/')[1] ?? '');

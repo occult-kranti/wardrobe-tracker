@@ -2,9 +2,9 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useWardrobe } from '../context/WardrobeContext';
 import { showToast } from '../components/Toast';
-import { Button, Chip, Masthead, EmptyState, Field, inputClass } from '../components/ui';
+import { Button, Chip, LinkButton, Masthead, EmptyState, Field, inputClass } from '../components/ui';
 import { Basting, GarmentPlate, PlateEmptyCloset } from '../components/art';
-import { IconCheck, IconClose, IconImport, IconCopy, IconCamera } from '../components/icons';
+import { IconCheck, IconClose, IconImport, IconCopy, IconCamera, IconChevronLeft } from '../components/icons';
 import { categoryLabel, SEASON_LABELS, type CategoryId } from '../types';
 import {
   readIntake, draftToItem, findDuplicates,
@@ -241,6 +241,10 @@ export default function Intake() {
       <Masthead
         title="Catalogue from photos"
         meta={result && !result.error ? `${drafts.length} found` : undefined}
+        // Reached from inside the Closet and in no nav list, so without this the
+        // only exit is the browser's own back button — which a person running
+        // this from their home screen does not have.
+        action={<LinkButton to="/closet" compact icon={<IconChevronLeft size={16} />}>Closet</LinkButton>}
       />
 
       {!result || result.error ? (

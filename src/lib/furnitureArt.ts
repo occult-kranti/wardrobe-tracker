@@ -128,6 +128,17 @@ function hanger(cx: number, top: number, k: number, reg: string): string {
 const R1 = 'fill="none" stroke="var(--color-text-2)" stroke-width="2.5" stroke-linecap="butt" stroke-linejoin="miter"';
 const R2 = 'fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter"';
 const R3 = 'fill="none" stroke="var(--color-text-2)" stroke-width="2" stroke-dasharray="4 3" stroke-linecap="butt"';
+/**
+ * THE METAL. A fourth register, and the only colour in any of these drawings.
+ *
+ * --color-gold is the house's decorative token: "never text, never labeled
+ * fills". So it is used here for exactly the marks that are metal on the real
+ * object and that the drawing would still read without — a ring pull, a
+ * keyhole's escutcheon, the rings on a bangle stand. Never an outline, never a
+ * division, never anything a finger aims at, because gold measures about 2:1
+ * against these surfaces and a control needs 3:1.
+ */
+const RM = 'fill="none" stroke="var(--color-gold)" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter"';
 
 export interface DrawnSlot {
   id: string;
@@ -216,6 +227,20 @@ function drawChest(f: Furniture, counts: Record<string, number>, scale: number):
 
   const parts: string[] = [];
   const slots: DrawnSlot[] = [];
+
+  // A JEWELLERY STAND on the top, when the chest is short enough to have a top
+  // to stand it on. A seven-drawer chest reaches y=34 and there is no room
+  // above it — which is true of a seven-drawer chest in a bedroom too.
+  if (y0 - 8 >= 120) {
+    const sx = CASE_X0 + 62;
+    const base = y0 - 8;
+    parts.push(`<path d="M${sx - 26} ${base}h52" ${R1}/>`);
+    parts.push(`<path d="M${sx - 3} ${base}v-58h6v58" ${R1}/>`);
+    parts.push(`<path d="M${sx - 18} ${base - 58}h36" ${R1}/>`);
+    // Two rings hung on the post — the metal, and the only colour here.
+    parts.push(`<path d="M${sx - 15} ${base - 20}a15 6 0 1 0 30 0a15 6 0 1 0 -30 0" ${RM}/>`);
+    parts.push(`<path d="M${sx - 11} ${base - 34}a11 5 0 1 0 22 0a11 5 0 1 0 -22 0" ${RM}/>`);
+  }
 
   // Plinth and feet — the piece stands on the frieze's floor.
   parts.push(`<path d="M${CASE_X0} 482h${CASE_W}" ${R1}/>`);
@@ -515,6 +540,7 @@ function drawAlmirah(
       const ky = part.y + part.h / 2;
       out.push(`<path d="M${kx} ${ky - 5}a5 5 0 1 1 0 10a5 5 0 1 1 0-10" ${reg}/>`);
       out.push(`<path d="M${kx} ${ky + 5}v8" ${reg}/>`);
+      out.push(`<path d="M${kx - 9} ${ky - 11}h18v22h-18z" ${RM}/>`);
       out.push(band(part.x + 22, part.x + part.w, part.y + part.h / 2 + fs * 0.36, slot.label, count, filled, fs));
       return;
     }
@@ -921,8 +947,8 @@ function drawBox(f: Furniture, counts: Record<string, number>, scale: number): D
     // The two dividers across the tray — the thing that makes it a tray.
     out.push(`<path d="M${B_X0 + 88} ${y + 6}v${hh - 12}M${B_X1 - 88} ${y + 6}v${hh - 12}" ${filled ? R2 : R3}/>`);
     if (filled) {
-      // A ring pull, so a full tray is one you would open.
-      out.push(`<path d="M${(B_X0 + B_X1) / 2 - 9} ${y + hh - 14}a9 9 0 0 0 18 0" ${R2}/>`);
+      // A ring pull, so a full tray is one you would open. In the metal.
+      out.push(`<path d="M${(B_X0 + B_X1) / 2 - 9} ${y + hh - 14}a9 9 0 0 0 18 0" ${RM}/>`);
     }
     out.push(band(B_X0, B_X1, y + 24, slot.label, count, filled, fs));
   });
@@ -1016,7 +1042,7 @@ function drawStand(f: Furniture, counts: Record<string, number>, scale: number):
         const rx = 46 - r * 7;
         // A whole ring, seen nearly edge on. Half an arc read as a scribble.
         out.push(
-          `<path d="M${CX - rx} ${ry}a${rx} 8 0 1 0 ${rx * 2} 0a${rx} 8 0 1 0 -${rx * 2} 0" ${reg}/>`
+          `<path d="M${CX - rx} ${ry}a${rx} 8 0 1 0 ${rx * 2} 0a${rx} 8 0 1 0 -${rx * 2} 0" ${filled ? RM : reg}/>`
         );
       }
     }
@@ -1053,11 +1079,23 @@ function drawRack(f: Furniture, counts: Record<string, number>, scale: number): 
     out.push(`<path d="M${X0} ${y + hh - 8}h${X1 - X0}" ${R1}/>`);
     out.push(`<path d="M${X0 + 4} ${y + hh - 26}h${X1 - X0 - 8}" ${reg}/>`);
     if (filled) {
-      // A pair, seen from the side, toe to the right.
-      for (const sx of [X0 + 46, X0 + 150]) {
-        out.push(
-          `<path d="M${sx} ${y + hh - 10}v-22q0-10 12-10h30q22 0 40 22l14 10z" ${R2}/>`
-        );
+      if (i < 2) {
+        // THE TOP TWO TIERS HOLD BAGS, not shoes. A rack's upper shelves are
+        // above the knee and nobody bends up to a shoe — so that is where the
+        // handbags stand, which is what these shelves hold in every hallway.
+        for (const bx of [X0 + 72, X0 + 172]) {
+          out.push(`<path d="M${bx - 24} ${y + hh - 10}v-30h48v30z" ${R2}/>`);
+          // The handle sits INSIDE the top of the body rather than above it:
+          // above it, the arc reached into the tier's own label.
+          out.push(`<path d="M${bx - 13} ${y + hh - 40}q13 18 26 0" ${RM}/>`);
+        }
+      } else {
+        // A pair, seen from the side, toe to the right.
+        for (const sx of [X0 + 46, X0 + 150]) {
+          out.push(
+            `<path d="M${sx} ${y + hh - 10}v-22q0-10 12-10h30q22 0 40 22l14 10z" ${R2}/>`
+          );
+        }
       }
     }
     out.push(band(X0, X1, y + 22, slot.label, count, filled, fs));

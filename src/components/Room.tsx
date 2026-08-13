@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useWardrobe } from '../context/WardrobeContext';
 import { drawRoom } from '../lib/roomArt';
 import { IconDown, IconUp } from './icons';
+import { showToast } from './Toast';
 
 /**
  * The dressing room, and the things in it you can walk to.
@@ -28,7 +29,7 @@ function readShown(): boolean {
 }
 
 export function Room() {
-  const { furniture, activeItems } = useWardrobe();
+  const { furniture, activeItems, advanceLaundry } = useWardrobe();
   const hostRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(326);
   // Shown by default. Somebody who does not want it hides it once and it stays
@@ -64,10 +65,21 @@ export function Room() {
     return activeItems.filter(i => !i.place || !known.has(i.place.furnitureId)).length;
   }, [furniture, activeItems]);
 
-  const room = useMemo(
-    () => drawRoom(furniture, counts, width, loose),
-    [furniture, counts, width, loose],
+  /** Derived at render, never stored, and never a place. */
+  const worn = useMemo(
+    () => activeItems.filter(i => i.laundryStatus === 'worn').length,
+    [activeItems],
   );
+
+  const room = useMemo(
+    () => drawRoom(furniture, counts, width, loose, worn),
+    [furniture, counts, width, loose, worn],
+  );
+
+  const sendToWash = () => {
+    const n = advanceLaundry('worn', 'washing');
+    showToast(`In the wash. ${n} ${n === 1 ? 'piece' : 'pieces'}.`, 'info');
+  };
 
   const toggle = () => {
     setShown(next => {
@@ -106,10 +118,31 @@ export function Room() {
               focusable="false"
               dangerouslySetInnerHTML={{ __html: room.svg }}
             />
+            {room.chair ? (
+              <button
+                type="button"
+                onClick={sendToWash}
+                aria-label={`Send the ${room.chair.count} pieces on the chair to the wash`}
+                className="absolute registered rounded-[2px] focus-visible:outline-2"
+                style={{
+                  left: `${room.chair.left}%`, width: `${room.chair.width}%`,
+                  top: `${room.chair.top}%`, height: `${room.chair.height}%`,
+                }}
+              />
+            ) : null}
+
             {room.bays.map(bay => (
               <Link
                 key={bay.id || 'rail'}
-                to={bay.id ? `/furniture/${bay.id}` : '#everything'}
+                to={bay.id ? `/furniture/${bay.id}` : '/closet'}
+                onClick={bay.id ? undefined : e => {
+                  // The bare room's rail stands in for clothes with no address,
+                  // and they are in the grid below. Nothing in this app scrolls
+                  // to a hash, so it is done here rather than promised in an
+                  // href that does nothing.
+                  e.preventDefault();
+                  document.getElementById('everything')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }}
                 className="absolute registered rounded-[2px] focus-visible:outline-2"
                 style={{
                   left: `${bay.left}%`, width: `${bay.width}%`,
@@ -129,8 +162,21 @@ export function Room() {
               ? 'Everything hangs on the rail for now. '
               : `${room.bays.map(b => b.name).join(', ')}${room.beyond > 0 ? `, and ${room.beyond} more through the door` : ''}. `}
             <Link to="/furniture" className="text-accent underline underline-offset-[3px]">
-              {room.bare ? 'Draw a place' : 'Every place'}
+              {room.bare ? 'Draw a place' : 'The dressing room'}
             </Link>
+            {room.chair ? (
+              <>
+                {' · '}
+                {room.chair.count} {room.chair.count === 1 ? 'piece is' : 'pieces are'} on the chair.{' '}
+                <button
+                  type="button"
+                  onClick={sendToWash}
+                  className="text-accent underline underline-offset-[3px]"
+                >
+                  Send them to the wash
+                </button>
+              </>
+            ) : null}
           </p>
         </>
       ) : (
@@ -139,8 +185,23 @@ export function Room() {
             ? 'Nothing has an address yet. '
             : `${furniture.length} ${furniture.length === 1 ? 'place' : 'places'}, and what is in them. `}
           <Link to="/furniture" className="text-accent underline underline-offset-[3px]">
-            {furniture.length === 0 ? 'Draw a place' : 'Every place'}
+            {furniture.length === 0 ? 'Draw a place' : 'The dressing room'}
           </Link>
+          {/* Putting the wash away behind the drawing would mean hiding the
+              room hides a function. The sentence carries it either way. */}
+          {worn > 0 ? (
+            <>
+              {' · '}
+              {worn} on the chair.{' '}
+              <button
+                type="button"
+                onClick={sendToWash}
+                className="text-accent underline underline-offset-[3px]"
+              >
+                Send to the wash
+              </button>
+            </>
+          ) : null}
         </p>
       )}
     </div>

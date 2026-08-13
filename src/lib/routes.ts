@@ -10,7 +10,10 @@ export const ROUTES: { path: string; name: string }[] = [
   { path: '/', name: 'today' },
   { path: '/closet', name: 'the closet' },
   { path: '/outfits', name: 'outfits' },
-  { path: '/furniture', name: 'the furniture' },
+  // The ROUTE keeps its old spelling on purpose — it is a bookmarkable address
+  // that already exists, and renaming a path to match a label is a 404 for
+  // somebody. The words change; the door does not move.
+  { path: '/furniture', name: 'the dressing room' },
   { path: '/furniture/:id', name: 'a place' },
   { path: '/calendar', name: 'the calendar' },
   { path: '/events', name: 'events' },
