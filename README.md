@@ -10,8 +10,6 @@ subscription, no shop links. Everything lives on your device.
 
 **Live:** https://occult-kranti.github.io/wardrobe-tracker/ · **V2 (glass):** https://occult-kranti.github.io/wardrobe-tracker/v2/ · **Mobile design pack:** https://occult-kranti.github.io/wardrobe-tracker/mobile_version_v1/
 
-**The company:** [the plan, published in the open](https://occult-kranti.github.io/wardrobe-tracker/company/) · [the workroom](https://occult-kranti.github.io/wardrobe-tracker/company/tracker.html) — the launch plan as assignable work. Written up in full at [`docs/28-the-company.md`](docs/28-the-company.md).
-
 ---
 
 ## See it move
