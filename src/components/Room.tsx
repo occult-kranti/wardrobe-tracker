@@ -101,7 +101,7 @@ export function Room() {
           type="button"
           onClick={toggle}
           aria-expanded={shown}
-          className="type-ledger text-[10px] text-text-2 hover:text-text transition-colors min-h-11 inline-flex items-center gap-1.5 px-1"
+          className="type-label text-[13px] text-text-2 hover:text-text transition-colors min-h-11 inline-flex items-center gap-1.5 px-1"
         >
           {shown ? 'Hide the room' : 'Show the room'}
           {shown ? <IconUp size={14} /> : <IconDown size={14} />}

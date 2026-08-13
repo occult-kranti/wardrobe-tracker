@@ -133,9 +133,6 @@ export interface Room {
   bare: boolean;
 }
 
-const esc = (s: string) =>
-  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-
 /** The rail that stands in for a wardrobe nobody has described yet. */
 const THE_RAIL: Furniture = {
   id: '', name: 'The rail', form: 'rail', dateAdded: '',
@@ -300,14 +297,3 @@ export function drawRoom(
   return { svg: out.join(''), w: W, h: H, bays, chair, beyond, bare };
 }
 
-/** What the line under the room says. Kept here so the drawing and its sentence
-    cannot drift apart. */
-export function roomCaption(room: Room, places: number): string {
-  if (room.bare) return 'Everything hangs on the rail for now.';
-  const shown = room.bays.length;
-  const named = room.bays.map(b => esc(b.name)).join(', ');
-  if (room.beyond > 0) {
-    return `${named}, and ${room.beyond} more through the door.`;
-  }
-  return shown === places ? `${named}.` : `${named}.`;
-}

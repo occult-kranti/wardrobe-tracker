@@ -169,10 +169,10 @@ export const FORM_MAX_SLOTS: Record<FurnitureForm, number> = {
 /**
  * How many places one wardrobe may hold.
  *
- * The room drawing shows the first eight along its wall and the rest through
- * the door, so this is the point past which the door stops meaning "more" and
- * starts meaning "a filing cabinet". Twenty-four is four bedrooms' worth. It is
- * a ceiling nobody will meet, which is what a good ceiling is.
+ * The room draws what fits along its floor and puts the rest through the door,
+ * so this is the point past which the door stops meaning "more" and starts
+ * meaning "a filing cabinet". Twenty-four is four bedrooms' worth. It is a
+ * ceiling nobody will meet, which is what a good ceiling is.
  */
 export const MAX_FURNITURE = 24;
 
