@@ -428,7 +428,18 @@ check('the weather never asks for your location', !after.asked, '');
   });
 
   await page.getByRole('button', { name: /pack this away/i }).first().click();
-  await page.waitForTimeout(900);
+  // Wait for the CONSEQUENCE, not for a number of milliseconds. The write path
+  // coalesces before it reaches storage, and a fixed sleep here made this check
+  // fail on a cold first run and pass on every warm one — which is a defect in
+  // the test, not weather.
+  await page.waitForFunction(() => {
+    const key = Object.keys(localStorage).find(k => k.startsWith('wardrobe-tracker:'));
+    if (!key) return false;
+    try {
+      return JSON.parse(localStorage.getItem(key)).furniture
+        .some(f => f.slots.some(x => x.packed === true));
+    } catch { return false; }
+  }, null, { timeout: 15000 }).catch(() => {});
 
   const packed = await page.evaluate(() => {
     const key = Object.keys(localStorage).find(k => k.startsWith('wardrobe-tracker:'));
@@ -462,6 +473,38 @@ check('the weather never asks for your location', !after.asked, '');
   check('what is packed away is not offered for today',
     day.packedNames.length > 0 && day.offered.length === 0,
     `${day.packedNames.length} packed, ${day.offered.length} still offered`);
+}
+
+/* ============ the rooms, in one order ============ */
+{
+  // The picker used to carry its own order and disagree with the button: it
+  // opened on the pattern room while the button cycled to the dye house first.
+  // Two orders for one set of rooms cannot be fixed by sorting one of them, so
+  // the order has a single declaration now — this asserts the person sees it.
+  await page.goto(`${ORIGIN}/#/settings`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(700);
+  const rooms = await page.evaluate(() => {
+    const names = ['Dye house', 'Obsidian', 'Atelier', 'Salon', 'Gilding room', 'Pattern room', 'System'];
+    const shown = [...document.querySelectorAll('button')]
+      .map(b => (b.textContent || '').trim())
+      .filter(t => names.includes(t));
+    return shown;
+  });
+  check('the picker lists the rooms in the order the button walks them',
+    rooms.join(' · ') === 'Dye house · Obsidian · Atelier · Salon · Gilding room · Pattern room · System',
+    rooms.join(' · ') || 'no rooms found');
+
+  // And the cycle's first step must be the same room the picker leads with.
+  const cycled = await page.evaluate(async () => {
+    localStorage.removeItem('toile-theme');
+    const before = document.documentElement.getAttribute('data-theme');
+    const btn = [...document.querySelectorAll('button')]
+      .find(b => /theme|room/i.test(b.getAttribute('aria-label') || ''));
+    btn?.click();
+    await new Promise(r => setTimeout(r, 300));
+    return { before, after: document.documentElement.getAttribute('data-theme') };
+  });
+  check('and the house opens in the dye house', cycled.before === 'dyehouse', `data-theme=${cycled.before}`);
 }
 
 /* ============ the obsidian room ============ */

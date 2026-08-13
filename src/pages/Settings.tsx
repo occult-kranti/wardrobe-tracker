@@ -4,6 +4,7 @@ import { useWardrobe } from '../context/WardrobeContext';
 import { useSession } from '../context/SessionContext';
 import { SCHEMA_VERSION, displayTag, initialState, type AppState, type Theme } from '../types';
 import { daysSince, formatLocalDate, todayLocal } from '../lib/dates';
+import { THEME_ORDER } from '../lib/accounts';
 import { migrate } from '../lib/migrate';
 import { buildDemoState, DEMO_SUMMARY } from '../lib/demoData';
 import {
@@ -234,15 +235,32 @@ function KeyRow() {
   );
 }
 
-const THEMES: { value: Theme; label: string }[] = [
-  { value: 'light', label: 'Pattern room' },
-  { value: 'salon', label: 'Salon' },
-  { value: 'gilt', label: 'Gilding room' },
-  { value: 'dyehouse', label: 'Dye house' },
-  { value: 'obsidian', label: 'Obsidian' },
-  { value: 'dark', label: 'Atelier' },
-  { value: 'system', label: 'System' },
-];
+/**
+ * The rooms, named — but NOT ordered here.
+ *
+ * This list used to carry its own order, and it disagreed with the one the
+ * theme button cycles through: the picker opened on the pattern room while the
+ * button went to the dye house first. Two orders for one set of rooms is a bug
+ * that cannot be fixed by sorting one of them, because the next person to add a
+ * room will put it in whichever list they happen to be editing. So the ORDER
+ * has exactly one declaration — THEME_ORDER, in lib/accounts.ts, which is also
+ * what nextTheme() walks — and this file supplies only the words.
+ *
+ * Record<Theme, string> is doing real work: add a room to the union in types.ts
+ * and this stops compiling until it has a name.
+ */
+const THEME_LABELS: Record<Theme, string> = {
+  dyehouse: 'Dye house',
+  obsidian: 'Obsidian',
+  dark: 'Atelier',
+  salon: 'Salon',
+  gilt: 'Gilding room',
+  light: 'Pattern room',
+  system: 'System',
+};
+
+const THEMES: { value: Theme; label: string }[] =
+  THEME_ORDER.map(value => ({ value, label: THEME_LABELS[value] }));
 
 /* ---------- the page ---------- */
 

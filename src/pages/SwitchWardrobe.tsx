@@ -4,7 +4,7 @@ import { useSession } from '../context/SessionContext';
 import { Button, Card, Field, LinkButton, Masthead, SectionTitle, inputClass } from '../components/ui';
 import { Basting } from '../components/art';
 import { IconPlus } from '../components/icons';
-import { WardrobeList, StartWardrobeForm, START_LEDE } from './SignIn';
+import { WardrobeList, StartWardrobeForm, START_LEDE } from './Door';
 
 /**
  * Switching wardrobes. Nothing is written and nothing is lost — every mutation

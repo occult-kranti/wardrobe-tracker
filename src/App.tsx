@@ -2,7 +2,7 @@ import { HashRouter, Routes, Route, Navigate, useLocation } from 'react-router-d
 import { SessionProvider, useSession } from './context/SessionContext';
 import { WardrobeProvider } from './context/WardrobeContext';
 import Layout from './components/Layout';
-import Door from './pages/SignIn';
+import Door from './pages/Door';
 import Dashboard from './pages/Dashboard';
 import Closet from './pages/Closet';
 import Outfits from './pages/Outfits';
