@@ -18,10 +18,26 @@ const BOARD_KEY = 'workbench';
 const BOARD_KEY_WAS = 'cuttingroom';
 const BOARD_TITLE = 'The Tech Workbench';
 
+/* SHARED, and deliberately wide open. The three policies on this table are the
+   `using (true)` set, so the key below grants read AND write to anyone who has
+   it — and it is committed to a public repository, so that is everyone who
+   finds the URL. Verified on 13 Aug 2026: anonymous insert returns 201,
+   anonymous update returns 204. Delete is the only thing refused, and only
+   because no delete policy exists.
+
+   This is a knowing trade for a test on an unlisted URL. It stops being
+   acceptable the moment this board holds anything about a real person — a
+   tester's email, a candidate's name, a journalist's number — because at that
+   point it is a personal-data breach and the company answers for it.
+
+   To close it: turn on Supabase Auth, invite the team, replace the three
+   policies with the `auth.uid() is not null` versions commented in
+   company/README-SYNC.md, and rotate this key. Rotating is required, not
+   optional — it is in the git history permanently. */
 const SYNC = {
   // Same table as the Workroom, a different row. See company/README-SYNC.md.
-  url: '',
-  key: '',
+  url: 'https://wvupsqfevlrmhqfjreyx.supabase.co',
+  key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind2dXBzcWZldmxybWhxZmpyZXl4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY2NTAzMzMsImV4cCI6MjEwMjIyNjMzM30.BaCK355UlbgyJuN7qBywmN0-tAKd6yrwFd_67nfzJVw',
   table: 'almari_workroom',
   row: 2,
   pollMs: 5000,

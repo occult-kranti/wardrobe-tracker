@@ -24,7 +24,18 @@ const server = createServer(async (req, res) => {
     ? join(ROOT, 'public', path)
     : join(ROOT, path.replace(/^\/+/, ''));
   try {
-    const body = await readFile(file);
+    let body = await readFile(file);
+    /* The boards now carry live Supabase credentials, and this suite signs in,
+       marks tasks done and posts comments. Served as-is, every test run would
+       push that straight into the team's real board. Blank the credentials on
+       the way out so the suite exercises the local path, deterministically,
+       against nobody's data but its own. Shared mode is verified separately,
+       against the deployed site, by hand. */
+    if (/(tracker|build)\.js$/.test(file)) {
+      body = Buffer.from(String(body)
+        .replace(/url: 'https:\/\/[^']*'/, "url: ''")
+        .replace(/key: 'ey[^']*'/, "key: ''"));
+    }
     res.writeHead(200, { 'Content-Type': TYPES[extname(file)] || 'application/octet-stream' });
     res.end(body);
   } catch { res.writeHead(404).end('not found'); }

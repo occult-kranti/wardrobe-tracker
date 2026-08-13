@@ -17,11 +17,22 @@
 const BOARD_KEY = 'workroom';
 const BOARD_TITLE = 'The Workroom';
 
+/* SHARED. Same project and same table as the Tech Workbench, row 1 rather than
+   row 2, so the two boards sync independently without seeing each other.
+
+   The old comment here said the anon key was "safe in a page; RLS guards it".
+   That is only true when RLS is actually guarding something. The three policies
+   on this table are the `using (true)` set, which guard nothing: verified on
+   13 Aug 2026 that an anonymous caller can insert (201) and update (204). The
+   key is committed to a public repository, so anyone who finds the URL can read
+   and rewrite this board.
+
+   Knowing trade for a test. See the note in company/build.js for how to close
+   it, and note that the key must be ROTATED when you do — it is in the git
+   history permanently. */
 const SYNC = {
-  // Paste these two from Supabase → Project Settings → API. Until then the
-  // portal runs per-device and says so plainly in the header.
-  url: '',            // https://<project>.supabase.co
-  key: '',            // the anon / publishable key (safe in a page; RLS guards it)
+  url: 'https://wvupsqfevlrmhqfjreyx.supabase.co',
+  key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind2dXBzcWZldmxybWhxZmpyZXl4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY2NTAzMzMsImV4cCI6MjEwMjIyNjMzM30.BaCK355UlbgyJuN7qBywmN0-tAKd6yrwFd_67nfzJVw',
   table: 'almari_workroom',
   row: 1,
   pollMs: 5000,
