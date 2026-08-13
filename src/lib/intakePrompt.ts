@@ -80,6 +80,17 @@ part you can see and add "box" to "uncertain". If you genuinely cannot place
 it, put the piece in "skipped" rather than inventing coordinates: a wrong box
 crops someone's closet to a picture of a floor.
 
+
+BACKGROUND is one word describing what the piece is lying on or hanging
+against, judged for one purpose: the app cuts the piece out along your box
+and then tries to lift it off its background on the device. Tell it whether
+that will work.
+  plain   an even sheet, wall, floor or seamless studio ground — will lift
+  busy    a patterned duvet, a rug, a crowded rail, another garment behind it
+  none    already cut out, on white or transparent — nothing to lift
+Say "busy" whenever the piece and what it lies on are close in colour, even
+if the surface itself is plain. A wrong "plain" costs the owner a sleeve.
+
 RETURN EXACTLY THIS SHAPE:
 {
   "toileIntake": 1,
@@ -100,6 +111,7 @@ RETURN EXACTLY THIS SHAPE:
       "occasion": ["casual", "work"],
       "confidence": 0.88,
       "uncertain": ["material"],
+      "background": "plain",
       "box": [0.12, 0.30, 0.26, 0.34]
     }
   ],
@@ -110,7 +122,8 @@ RETURN EXACTLY THIS SHAPE:
 
 "ref" is unique across the file. "pattern", "material", "brand",
 "uncertain" and "skipped" may be omitted when they have nothing to say.
-Every other field, "box" included, is required on every piece.`;
+Every other field, "box" and "background" included, is required on every
+piece.`;
 
 /**
  * The worn-outfit prompt — a mirror selfie, or anything showing an outfit on
@@ -211,6 +224,18 @@ shoes, box both together. For a piece hidden behind an arm, box what shows
 and add "box" to "uncertain". If you cannot place it, skip the piece rather
 than invent coordinates.
 
+BACKGROUND is one word describing what the piece is lying on or hanging
+against, judged for one purpose: the app cuts the piece out along your box
+and then tries to lift it off its background on the device. Tell it whether
+that will work.
+  plain   an even sheet, wall, floor or seamless studio ground — will lift
+  busy    a patterned duvet, a rug, a crowded rail, another garment behind it
+  none    already cut out, on white or transparent — nothing to lift
+Say "busy" whenever the piece and what it lies on are close in colour, even
+if the surface itself is plain. A wrong "plain" costs the owner a sleeve.
+A worn photograph is almost always "busy": there is a room behind the person,
+and the garments touch each other. Say so.
+
 THE OUTFIT ITSELF gets a short plain name — where it was going, or what it
 is, in two to five words: "Friday office", "Airport day", "Wedding lunch".
 No compliments and no evaluation of the outfit.
@@ -242,6 +267,7 @@ RETURN EXACTLY THIS SHAPE:
       "seen": 0.72,
       "confidence": 0.86,
       "uncertain": ["material"],
+      "background": "busy",
       "box": [0.31, 0.18, 0.36, 0.29]
     }
   ],
@@ -252,7 +278,7 @@ RETURN EXACTLY THIS SHAPE:
 
 "ref" is unique across the file. "pattern", "material", "brand" and
 "uncertain" may be omitted when they have nothing to say. Every other field,
-"box" and "seen" included, is required on every piece.
+"box", "seen" and "background" included, is required on every piece.
 
 Last, because it is the rule that matters most: not one word about the
 person wearing these clothes.`;

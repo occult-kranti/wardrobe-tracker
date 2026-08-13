@@ -38,10 +38,28 @@ async function open(size) {
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', e => errors.push(String(e).split('\n')[0].slice(0, 140)));
+  // A browser probes /favicon.ico on its own, and a static host answers 404.
+  // The console message for that carries no URL — "Failed to load resource:
+  // the server responded with a status of 404 ()" — so filtering the TEXT
+  // cannot tell it apart from a real missing asset. Watch responses instead,
+  // where the URL is known, and let the console line through only when a
+  // genuine 404 was seen.
+  const missing = [];
+  page.on('response', r => {
+    if (r.status() === 404 && !/favicon\.ico/i.test(r.url())) missing.push(r.url());
+  });
   page.on('console', m => {
-    if (m.type() === 'error' && !/favicon|manifest/i.test(m.text())) {
-      errors.push('console: ' + m.text().slice(0, 140));
+    if (m.type() !== 'error') return;
+    const text = m.text();
+    if (/favicon|manifest/i.test(text)) return;
+    // A bare 404 line is only an error if a non-favicon 404 actually happened —
+    // and when it did, say WHICH file, because "404 ()" is unactionable.
+    if (/status of 404/.test(text)) {
+      if (missing.length === 0) return;
+      errors.push('404: ' + missing[missing.length - 1]);
+      return;
     }
+    errors.push('console: ' + text.slice(0, 140));
   });
   return { ctx, page, errors };
 }

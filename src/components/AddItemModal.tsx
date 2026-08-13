@@ -271,17 +271,6 @@ export default function AddItemModal({ open, onClose, editItem }: Props) {
                     It is stored on this device with the rest of the closet.
                   </p>
                   <div className="flex flex-wrap gap-2 mt-3">
-                    {/* The category's headline feature, done on the device.
-                        Offered rather than performed: an automatic cut that
-                        eats a sleeve and cannot be refused is worse than no
-                        cut at all. */}
-                    <Button
-                      type="button"
-                      compact
-                      onClick={() => setCutting(c => !c)}
-                    >
-                      {cutting ? 'Close the bench' : 'Lift off the background'}
-                    </Button>
                     <Button
                       type="button"
                       compact
@@ -348,6 +337,18 @@ export default function AddItemModal({ open, onClose, editItem }: Props) {
                     onClick={() => { void readThisPhoto(); }}
                   >
                     {reading ? 'Reading the photograph…' : 'Fill this in from the photo'}
+                  </Button>
+                  {/* The other half of the same photograph, and the one that
+                      needs no key at all. Sitting beside the AI button because
+                      they are the two things you can do with a photo here, and
+                      because trying the cut is how you find out whether it
+                      works on YOUR bedspread. */}
+                  <Button
+                    type="button"
+                    compact
+                    onClick={() => setCutting(c => !c)}
+                  >
+                    {cutting ? 'Close the bench' : 'Try lifting the background'}
                   </Button>
                   {hasKey() ? (
                     <span className="type-ledger text-[10px] text-text-2">

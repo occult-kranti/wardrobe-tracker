@@ -131,7 +131,7 @@ check('the weather never asks for your location', !after.asked, '');
     }
   });
 
-  const lift = page.getByRole('button', { name: /lift off the background/i }).first();
+  const lift = page.getByRole('button', { name: /lift(ing)? the background|lift off the background/i }).first();
   check('the cutout is offered once a photograph is attached', await lift.count() === 1, '');
   await lift.click();
   // The bench debounces, then runs a full pass over ~1MP.

@@ -84,12 +84,30 @@ export async function harvest(
       const crop = await cropBox(photo, draft.box!);
       let lifted: string | undefined;
       let note: string | undefined;
-      try {
-        const cut = await cutOut(crop);
-        if (cut.good) lifted = cut.url;
-        else note = 'kept as photographed — the background would not lift cleanly';
-      } catch {
-        note = 'kept as photographed';
+
+      /**
+       * The model was asked what the piece is lying on, and the answer decides
+       * whether we attempt the cut at all.
+       *
+       * This is the cheap half of the problem solved by the expensive half.
+       * A flood fill cannot tell a grey shirt from a grey duvet; a model
+       * looking at the photograph can, and says so in one word. Attempting a
+       * lift the model already called 'busy' costs a second of work and takes
+       * a sleeve off with the sheet — and the person then has to notice.
+       * 'none' means it arrived already cut out, so there is nothing to do.
+       */
+      if (draft.background === 'busy') {
+        note = 'kept as photographed — the model read the background as busy, so a lift would have cut into the piece';
+      } else if (draft.background === 'none') {
+        note = undefined;
+      } else {
+        try {
+          const cut = await cutOut(crop);
+          if (cut.good) lifted = cut.url;
+          else note = 'kept as photographed — the background would not lift cleanly';
+        } catch {
+          note = 'kept as photographed';
+        }
       }
       out.set(draft.ref, { ref: draft.ref, crop, lifted, picture: lifted ?? crop, note });
     } catch {

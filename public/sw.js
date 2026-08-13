@@ -29,6 +29,12 @@ self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys()
       .then(names => Promise.all(names.filter(n => n !== CACHE).map(n => caches.delete(n))))
+      // Drop the cached shell whenever a worker activates. Vite hashes asset
+      // names, so a shell held from a previous build points at filenames the
+      // server no longer has — serve it once and every script and stylesheet
+      // 404s. The assets themselves are safe to keep (a changed file is a
+      // changed URL); only the document that names them can go stale.
+      .then(() => caches.open(CACHE).then(c => c.delete(SHELL)))
       .then(() => self.clients.claim()),
   );
 });

@@ -1,6 +1,6 @@
 # Competitive benchmark — the wardrobe-app category
 
-*Researched 12–13 August 2026. Every figure below is sourced; where a number is
+*Two research passes, 12–13 August 2026 — the second read changelogs, Google Play Data Safety filings and roughly 800 store and forum reviews. Every figure below is sourced; where a number is
 self-reported by the company or comes from a rival's marketing page, it says so.
 Where sources disagree, both numbers are printed rather than averaged.*
 
@@ -231,6 +231,80 @@ corrected.
 Also note that the market-size figures circulating for this category are
 worthless: SEO "market report" vendors variously price it at $144M, $2.7B and
 $3.5B for the same year. None are cited here as fact.
+
+---
+
+## 9. Second pass — what changed the picture
+
+**The seam nobody has closed: there is no "I wore this" button in this category.**
+Every rival routes wear-logging through a calendar. Whering has no wear action
+at all — its help centre says an outfit is marked worn *"once the day of your
+choice has passed"*, six to seven taps away, and a single piece cannot be
+logged without first building a whole outfit. GetWardrobe's documentation
+describes scheduling forward and never recording backward. Stylebook makes you
+add each item to a day individually. Cladwell caps you at one outfit a day,
+four items, one of which must be shoes. Toile's two-tap Today is the daily
+loop the category forgot to build.
+
+**Google Photos shipped Wardrobe in June 2026** — a closet assembled
+automatically from the photo library you already have. It is gated to Google
+One AI Pro subscribers, Android only, three countries. That gating is the
+window, not the safety.
+
+**Two deaths worth citing.** Google killed **Doppl** on 30 April 2026 with
+about five weeks' notice: *"After April 30, your Doppl data will no longer be
+accessible."* **Save Your Wardrobe** left consumers entirely to sell aftercare
+software to brands. The consumer wardrobe app is hard to fund — which is
+exactly the argument for a thing with no server and no burn rate.
+
+**Maintenance is now a differentiator.** Stylebook has been dormant 424 days
+with known regressions unfixed. Cladwell shipped two bug-fix builds in twelve
+months and no feature since May 2025; its written reviews average **2.8★**
+against a 4.3 store rating. Pureple's Android build has been silent since
+November 2025 with its core "Style Me" feature broken. Combyne quietly changed
+owners — Munich's combyne GmbH to **SIA URSTYLE** in Riga — after going from 27
+staff to 5.
+
+**The complaint taxonomy, from ~800 reviews:**
+
+1. **The paywall lands after the labour.** Acloset's 100-item cap arrived with
+   no warning and, worse, blocked the exit: users could not delete their way
+   back under the cap because deleting was itself paywalled. *"For me to use the
+   app to qualify for a cheaper or free subscription, I would have to pay the
+   highest subscription just to enable me to delete my stuff!"*
+2. **The fear is losing the work, not being watched.** *"I used to upload to
+   Polyvore. When that was ripped out from under our feet by SSENSE overnight, I
+   vowed never to entrust my closet to an app again."* A defensive workflow has
+   emerged: people archive their own cutouts outside any app so they can migrate
+   when the next one dies. **This reframes our positioning.** Almost nobody says
+   "privacy"; a great many say *ownership, portability, permanence*. Sell
+   **"your closet outlives the app"**, not "we don't upload your photos".
+3. **AI creep is driving churn right now.** *"Is there a way to turn the AI crap
+   completely off?"* — Alta. *"The algorithm refuses to learn. Nothing you tell
+   the app changes the nonsense it produces."* — Cladwell. Indyx shipped an AI
+   photo "enhance" and was accused of degrading users' own photos then upselling
+   the fix; one review is titled *"Don't call my closet ugly."* **"No AI, no
+   subscription" is now stated as a purchase reason.** Our vision feature must
+   stay opt-in, off the daily path, and never touch a photograph unasked.
+4. **Ads at the point of use.** Pureple rationed *background removal itself* by
+   ad inventory — one user hit "no reward ads available, try again later" and
+   could not cut out a garment. Acloset put a 20-second unskippable ad between a
+   person and their own trousers.
+5. **Desktop is the loudest unmet request** — 60 upvotes, two dead threads, and
+   a whole cohort who gave up and moved to spreadsheets, Airtable and Notion for
+   schema freedom and a big screen. Toile is a web page; it already works there.
+
+**Two features nobody serves that we already have:** clean/dirty/mending state
+(*"I haven't been able to find that feature in any apps"*) and photo-free entry
+(46 upvotes asking for text-only tracking; every answer was a spreadsheet).
+
+**On the sources.** Nearly every "Best Wardrobe Apps 2026" article is written by
+a wardrobe app and ranks itself first without disclosure. And check privacy
+claims against the labels: SELION.AI's blog claims a local-first encrypted
+on-device database while its App Store label declares location, contacts, photos
+and identifiers all linked to identity. Distribution is poisoned too —
+r/femalefashionadvice removes vendor posts weekly and the community openly
+refers to "the Alta astroturfers".
 
 ---
 

@@ -46,6 +46,11 @@ export interface IntakeDraft {
   box?: [number, number, number, number];
   /** Worn photographs only: how much of the piece was visible, 0–1. */
   seen?: number;
+  /**
+   * What the piece is lying on, judged for one purpose: whether the on-device
+   * cutout will work. 'plain' lifts, 'busy' does not, 'none' is already cut.
+   */
+  background?: 'plain' | 'busy' | 'none';
 }
 
 export interface IntakeSkip {
@@ -254,6 +259,9 @@ export function readIntake(text: string): IntakeRead {
       // How much of the garment was actually visible. Only a worn photograph
       // has this; a flat lay shows the whole piece by definition.
       seen: typeof p.seen === 'number' ? Math.min(1, Math.max(0, p.seen)) : undefined,
+      background: p.background === 'plain' || p.background === 'busy' || p.background === 'none'
+        ? p.background
+        : undefined,
     });
   });
 
