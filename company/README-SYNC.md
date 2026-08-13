@@ -39,10 +39,28 @@ This is the five-minute fix. It costs nothing at this size.
    ```
 
    Those three policies say: anyone holding the anon key may read and write this
-   one table. That is the right trade for a small trusted team and the wrong one
-   for anything with real secrets in it. **Do not put anything in the workroom you
-   would not put in a shared document** — no passwords, no bank details, no
-   customer data.
+   one table. **Read that sentence again before you use it.**
+
+   ⚠️ **The anon key cannot go in this repository.** `occult-kranti/wardrobe-tracker`
+   is public, so committing the key into `company/tracker.js` publishes
+   world-readable *and world-writable* access to the board to everyone on the
+   internet. For task titles that is untidy. The moment the board holds anything
+   about a real person — a tester's email, a journalist's phone number, a
+   contributor's address — it is a personal-data breach, and under the DPDP Act
+   the company is the one answering for it.
+
+   Two honest options:
+
+   - **Private host.** Serve the board from a private GitHub Pages site, a
+     private Netlify/Cloudflare deploy, or just locally. The key still leaks to
+     anyone who can open the page, so this only works if the audience is the team.
+   - **Real auth.** Replace `using (true)` with `using (auth.uid() is not null)`
+     on all three policies and turn on Supabase Auth with invite-only signups.
+     Four magic-link accounts is an hour of work and it is the only version that
+     is safe on a public URL.
+
+   Either way: **never put passwords, bank details, or anything about a person
+   who has not consented into this board.**
 
 3. **Copy the two values** from Project Settings → API: the **Project URL** and the
    **anon** (publishable) key. The anon key is designed to sit in a page; row-level

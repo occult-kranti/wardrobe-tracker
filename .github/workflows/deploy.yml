@@ -43,11 +43,17 @@ jobs:
       - run: npm run build
       # The mobile design pack ships beside the app at /mobile_version_v1/.
       - run: node scripts/build-mobile-gallery.mjs
-      # The company plan and the workroom live in company/ but are DELIBERATELY
-      # NOT PUBLISHED here. They carry the trademark position, the rename gate,
-      # the budgets and the equity conversation, and the workroom names the
-      # team. They are meant for a private host. Do not restore a copy step
-      # into this workflow without deciding that disclosure question again.
+      # The team boards ship at /company/; the company PLAN PAGE deliberately
+      # does not. company/index.html carries the trademark position, the rename
+      # gate and the budgets, and it is the one file here that reads as an
+      # opponent's opening paragraph. Copy files by name, never the folder, so
+      # adding a document to company/ can never publish it by accident.
+      - name: Copy the team boards into dist/company
+        run: |
+          set -eu
+          mkdir -p dist/company
+          cp company/almari.css company/tracker.html company/tracker.js dist/company/
+          cp company/build.html company/build.js dist/company/
       # V2 lives on its own branch and is served under /v2/. It builds with
       # base './' so it can sit at any subpath. Building it here means every
       # deploy of main re-publishes v2 alongside it — before this step, any

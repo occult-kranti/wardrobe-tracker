@@ -154,6 +154,27 @@ check('search narrows the board', searched >= 1 && searched < taskCount, `${sear
 await page.locator('#search').fill('');
 await page.waitForTimeout(150);
 
+// --- folding ------------------------------------------------------------
+const firstToggle = page.locator('.phase-toggle').first();
+const firstPhase = page.locator('.phase').first();
+await firstToggle.click();
+await page.waitForTimeout(150);
+check('a phase folds shut', (await firstPhase.getAttribute('class')).includes('shut') &&
+  !(await firstPhase.locator('.tasks').isVisible()));
+check('the fold is announced to assistive tech', (await page.locator('.phase-toggle').first().getAttribute('aria-expanded')) === 'false');
+await page.reload({ waitUntil: 'networkidle' });
+await page.waitForTimeout(250);
+check('the fold survives a reload', (await page.locator('.phase').first().getAttribute('class')).includes('shut'));
+await page.locator('.phase-toggle').first().click();
+await page.waitForTimeout(150);
+check('a phase opens again', !(await page.locator('.phase').first().getAttribute('class')).includes('shut'));
+await page.locator('#foldBtn').click();
+await page.waitForTimeout(200);
+check('fold all folds every phase', (await page.locator('.phase.shut').count()) === (await page.locator('.phase').count()));
+await page.locator('#foldBtn').click();
+await page.waitForTimeout(200);
+check('fold all again opens them', (await page.locator('.phase.shut').count()) === 0);
+
 // --- shareable views ----------------------------------------------------
 await page.locator('[data-filter="status:blocked"]').click();
 await page.locator('[data-filter="tag:legal"]').click();
@@ -212,6 +233,42 @@ const revenueVisible = await pm.evaluate(() => {
   return r.right <= window.innerWidth + 1 && r.width > 0;
 });
 check('the annual-revenue column is readable at 390px', revenueVisible);
+
+// --- the unassigned filter (was matching nothing) -----------------------
+const u = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+await u.goto(TRACKER, { waitUntil: 'networkidle' });
+await u.locator('[data-filter="person:unassigned"]').click();
+await u.waitForTimeout(200);
+const unassignedShown = await u.locator('.task').count();
+const unassignedReal = await u.evaluate(() => SEED_TASKS.filter(t => !(t.a || []).length).length);
+check('the unassigned filter finds unassigned work', unassignedShown > 0 && unassignedShown === unassignedReal,
+  `${unassignedShown} shown, ${unassignedReal} in the seed`);
+
+// --- the second board ---------------------------------------------------
+const b = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+const buildErrors = [];
+b.on('pageerror', e => buildErrors.push(String(e)));
+await b.goto('http://127.0.0.1:4180/company/build.html', { waitUntil: 'networkidle' });
+check('the cutting room renders its tasks', (await b.locator('.task').count()) > 30, `${await b.locator('.task').count()} tasks`);
+check('the cutting room renders every phase', (await b.locator('.phase').count()) === (await b.evaluate(() => GROUPS.length)));
+check('the cutting room throws nothing', buildErrors.length === 0, buildErrors.slice(0, 2).join(' | '));
+check('the two boards do not share storage', await b.evaluate(() => BOARD_KEY) !== await u.evaluate(() => BOARD_KEY));
+const bSeed = await b.evaluate(() => {
+  const groups = new Set(GROUPS.map(g => g.id)); const people = new Set(PEOPLE.map(p => p.id)); const tags = new Set(TAGS);
+  const titles = SEED_TASKS.map(t => t.t);
+  return {
+    badGroup: SEED_TASKS.filter(t => !groups.has(t.g)).map(t => t.t),
+    badPerson: SEED_TASKS.flatMap(t => (t.a || []).filter(a => !people.has(a))),
+    badTag: SEED_TASKS.flatMap(t => (t.tags || []).filter(x => !tags.has(x))),
+    dupes: titles.filter((t, i) => titles.indexOf(t) !== i),
+    noWhy: SEED_TASKS.filter(t => !t.why).map(t => t.t),
+  };
+});
+check('cutting room: every task sits in a real phase', bSeed.badGroup.length === 0, bSeed.badGroup.join(', '));
+check('cutting room: every assignee is on the roster', bSeed.badPerson.length === 0, bSeed.badPerson.join(', '));
+check('cutting room: every tag is declared', bSeed.badTag.length === 0, bSeed.badTag.join(', '));
+check('cutting room: no duplicate titles', bSeed.dupes.length === 0, bSeed.dupes.join(', '));
+check('cutting room: every task says why', bSeed.noWhy.length === 0, bSeed.noWhy.join(', '));
 
 await browser.close();
 server.close();
