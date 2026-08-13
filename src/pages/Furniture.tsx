@@ -5,7 +5,6 @@ import { Button, Card, Chip, EmptyState, Field, LinkButton, Masthead, Modal, Sec
 import { Basting, GarmentPlate, PlateEmptyCloset } from '../components/art';
 import { IconCamera, IconChevronLeft, IconPlus } from '../components/icons';
 import { showToast } from '../components/Toast';
-import { Room } from '../components/Room';
 import { drawFurniture, defaultSlotLabels, FORM_LABELS, FORM_NOTES, SLOT_NOUN, maxSlotsFor } from '../lib/furnitureArt';
 import { FURNITURE_PROMPT, readFurniture, type FurnitureRead } from '../lib/furniturePrompt';
 import { hasKey, keyLooksWrong, prepareImage, readPhotograph, saveKey } from '../lib/anthropic';
@@ -38,15 +37,23 @@ function FurniturePlate({
   counts,
   openSlot,
   onSlot,
+  max = 326,
+  labels = true,
 }: {
   piece: FurniturePiece;
   counts: Record<string, number>;
   openSlot?: string | null;
   onSlot?: (slotId: string) => void;
+  /** Rendered width cap, px. The index draws small; the detail page draws big. */
+  max?: number;
+  labels?: boolean;
 }) {
-  const drawing = useMemo(() => drawFurniture(piece, counts), [piece, counts]);
+  const drawing = useMemo(
+    () => drawFurniture(piece, counts, 0.709, { labels }),
+    [piece, counts, labels],
+  );
   return (
-    <div className="relative w-full max-w-[326px] mx-auto text-text">
+    <div className="relative w-full mx-auto text-text" style={{ maxWidth: max }}>
       <svg
         viewBox={drawing.viewBox}
         className="w-full h-auto block"
@@ -395,28 +402,20 @@ export default function Furniture() {
         title="Furniture"
         meta={`${furniture.length} ${furniture.length === 1 ? 'place' : 'places'}`}
         action={
-          <Button tone="primary" compact icon={<IconPlus size={16} />} onClick={() => setDrawing(true)}>
+          <Button compact icon={<IconPlus size={16} />} onClick={() => setDrawing(true)}>
             Draw a place
           </Button>
         }
       />
 
-      {/* THE ROOM, ON THE PAGE THAT IS ABOUT THE ROOM.
-          It opened the Closet tab for a week and was wrong there: a grid of
-          photographs is what a closet is, and a drawn wall in front of it was
-          something to get past. Here it is the answer to the question the page
-          asks — where does everything live — and the cards below are the same
-          answer written out. */}
-      <div className="bg-surface plate rounded-[2px] p-4 sm:p-5">
-        <Room />
-        <p className="text-[13px] text-text-2 mt-3 leading-snug">
-          Tap a piece to open it. Everything you own is still in{' '}
-          <Link to="/closet" className="text-accent underline underline-offset-[3px]">the closet</Link>,
-          filed or not.
-        </p>
-      </div>
-
-      <ul className="grid sm:grid-cols-2 gap-5 v2-rise">
+      {/* AN ELEVATION, NOT A GALLERY.
+          Every form is drawn into the same 460×560 box standing on the same
+          floor, so rendering them at equal widths gives true relative heights
+          for nothing: the almirah is visibly the tall one and the jewellery box
+          the small one, which is the whole payload the drawn room was reaching
+          for with its perspective. Insertion order, always — sorting somebody's
+          furniture by how full it is would be a league table of their bedroom. */}
+      <ul className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-7 v2-rise">
         {furniture.map(piece => (
           <li key={piece.id}>
             <FurnitureCard piece={piece} />
@@ -448,17 +447,18 @@ function FurnitureCard({ piece }: { piece: FurniturePiece }) {
   const noun = SLOT_NOUN[piece.form];
   return (
     <Link to={`/furniture/${piece.id}`} className="block group">
-      <Card>
-        <FurniturePlate piece={piece} counts={counts} />
-        <Basting className="my-4" />
-        <p className="type-masthead text-[22px] leading-none group-hover:underline underline-offset-[3px]">
-          {piece.name}
-        </p>
-        <p className="type-ledger text-[11px] text-text-2 mt-2 tabular">
-          {piece.slots.length} {piece.slots.length === 1 ? noun[0] : noun[1]} · {total}{' '}
-          {total === 1 ? 'piece' : 'pieces'}
-        </p>
-      </Card>
+      <FurniturePlate piece={piece} counts={counts} max={240} labels={false} />
+      {/* The floor stops where the piece stops. A rule that ran on past the
+          last object would be a shelf with room left on it, which is a
+          capacity nobody asked to see. */}
+      <Basting className="mt-3 mb-2" />
+      <p className="text-[15px] leading-snug text-text group-hover:underline underline-offset-[3px]">
+        {piece.name}
+      </p>
+      <p className="type-ledger text-[10px] text-text-2 mt-1 tabular">
+        {piece.slots.length} {piece.slots.length === 1 ? noun[0] : noun[1]} · {total}{' '}
+        {total === 1 ? 'piece' : 'pieces'}
+      </p>
     </Link>
   );
 }

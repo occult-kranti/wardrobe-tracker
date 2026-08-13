@@ -319,7 +319,8 @@ check('the weather never asks for your location', !after.asked, '');
   // An almirah is not N of the same thing: its compartments are the parts of the
   // object, named after themselves, in the order the parts are in.
   const almirahLabels = await page.evaluate(() => {
-    const svg = [...document.querySelectorAll('svg[aria-label]')]
+    const modal = document.querySelector('[role="dialog"]') ?? document.body;
+    const svg = [...modal.querySelectorAll('svg[aria-label]')]
       .find(s => /compartment/i.test(s.getAttribute('aria-label') || ''));
     return [...(svg?.querySelectorAll('text') ?? [])].map(t => t.textContent);
   });
@@ -415,61 +416,59 @@ check('the weather never asks for your location', !after.asked, '');
 
 /* ============ the room, and packing away ============ */
 {
-  // The room lives on the furniture page now, not in front of the closet.
+  // THE INDEX IS AN ELEVATION. Every form is drawn into the same box on the
+  // same floor, so at equal widths the tall object is visibly the tall one.
+  // That replaced a drawn perspective room which was 91% empty at every width
+  // and which was a SECOND generator for objects this app already draws — it
+  // drifted within one commit of a form being added, rendering that form as
+  // nothing at all.
   await page.goto(`${ORIGIN}/#/furniture`, { waitUntil: 'domcontentloaded' });
-  await page.locator('a.registered').first().waitFor({ state: 'attached', timeout: 15000 });
-  const room = await page.evaluate(() => {
-    const links = [...document.querySelectorAll('a')]
-      .filter(a => /\/furniture/.test(a.getAttribute('href') || ''));
-    const walkable = links.filter(a => a.className.includes('registered'));
-    const boxes = walkable.map(a => a.getBoundingClientRect());
+  await page.locator('svg[aria-label]').first().waitFor({ state: 'attached', timeout: 15000 });
+  const strip = await page.evaluate(() => {
+    const draw = [...document.querySelectorAll('a[href^="#/furniture/"] svg[aria-label]')];
+    const boxes = draw.map(s => {
+      // getBBox is the bounding box of what is DRAWN, in user units — the
+      // element's own rect is the shared 460×560 frame and is the same for
+      // every form by construction.
+      const ink = s.getBBox();
+      return { label: s.getAttribute('aria-label'), w: s.getBoundingClientRect().width, ink };
+    });
     return {
-      walkable: walkable.length,
-      smallest: boxes.length ? Math.min(...boxes.map(b => Math.min(b.width, b.height))) : 0,
-      named: walkable.map(a => a.textContent.trim()).filter(Boolean),
-      text: document.body.innerText.slice(0, 600),
+      count: boxes.length,
+      widths: [...new Set(boxes.map(b => Math.round(b.w)))],
+      tallest: boxes.slice().sort((a, b) => b.ink.height - a.ink.height)[0]?.label ?? '',
+      shortest: boxes.slice().sort((a, b) => a.ink.height - b.ink.height)[0]?.label ?? '',
+      floors: [...new Set(boxes.map(b => Math.round(b.ink.y + b.ink.height)))],
+      labelled: draw.some(s => s.querySelector('text')),
     };
   });
-  check('the room is somewhere you can walk into', room.walkable >= 2, `${room.walkable} ways in`);
-  check('every way in is a legal tap target', room.smallest >= 44, `smallest ${Math.round(room.smallest)}px`);
+  check('the index draws every place', strip.count >= 3, `${strip.count} drawings`);
+  check('all at one width, so height means size',
+    strip.widths.length === 1, strip.widths.join('/') || 'none');
+  check('and the almirah is the tall one', /almirah/i.test(strip.tallest),
+    `tallest ${strip.tallest} · shortest ${strip.shortest}`);
+  // Everything stands on one floor, which is what makes the heights comparable
+  // rather than merely different.
+  check('every piece stands on the same floor',
+    Math.max(...strip.floors) - Math.min(...strip.floors) <= 20, strip.floors.join('/'));
+  // At index scale an in-drawing label lands near 9px, under the contract's
+  // 13px floor. The card prints the name in real typography instead.
+  check('no label is set below the legible floor', !strip.labelled, '');
 
-  // THE CHECK THAT CATCHES A HIT LAYER IN THE WRONG PLACE.
-  // Measuring a link's box only proves it is big. It has to be OVER the thing
-  // it opens — the first version of this divided both axes by the plate's WIDTH,
-  // so every target floated up into the ceiling band with three pixels of the
-  // furniture inside it, and passed every check but this one.
-  const overlap = await page.evaluate(() => {
-    const link = [...document.querySelectorAll('a.registered')]
-      .find(a => /\/furniture\//.test(a.getAttribute('href') || ''));
-    if (!link) return null;
-    const svg = link.closest('div')?.querySelector('svg');
-    const paths = [...(svg?.querySelectorAll('path') ?? [])].map(p => p.getBoundingClientRect());
-    const box = link.getBoundingClientRect();
-    // How much of the drawing's ink falls inside this link's box, vertically.
-    const inside = paths.filter(p =>
-      p.width > 0 && p.right > box.left && p.left < box.right
-      && p.bottom > box.top + 2 && p.top < box.bottom - 2).length;
-    return { inside, drawn: paths.length };
-  });
-  check('and it sits over the furniture it opens, not above it',
-    !!overlap && overlap.inside >= 4, overlap ? `${overlap.inside} strokes inside the target` : 'no bay link');
-
-  // Tapping one has to arrive at that piece, not at the index.
-  const walkedTo = await page.evaluate(() => {
-    const link = [...document.querySelectorAll('a.registered')]
-      .find(a => /\/furniture\//.test(a.getAttribute('href') || ''));
-    return link?.getAttribute('href') ?? '';
-  });
-  await page.locator('a.registered').filter({ hasText: /piece/ }).first().click();
+  // Arranging still works, which is the point of keeping the feature at all.
+  await page.locator('a[href^="#/furniture/"]').first().click();
   await page.waitForTimeout(900);
-  const arrived = await page.evaluate(() => ({ hash: location.hash, text: document.body.innerText.slice(0, 80) }));
-  check('walking to a piece opens that piece',
-    walkedTo.includes(arrived.hash.replace('#', '')) && /#\/furniture\/./.test(arrived.hash),
-    arrived.hash);
-  check('and each one says what it is, for a screen reader',
-    room.named.some(t => /piece/i.test(t)), room.named[0] ?? '');
-  // A room is not a scoreboard. No percentage, no "x of y", no meter.
-  check('the room never scores you', !/\d+%|\d+ of \d+/.test(room.text), '');
+  const opened = await page.evaluate(() => ({
+    hash: location.hash,
+    labelled: !!document.querySelector('svg[aria-label] text'),
+  }));
+  check('a place still opens to its own drawing', /#\/furniture\/./.test(opened.hash), opened.hash);
+  check('and there the drawing carries its labels', opened.labelled, '');
+
+  await page.goto(`${ORIGIN}/#/furniture`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(600);
+  await page.getByRole('link', { name: /bedroom chest/i }).first().click().catch(() => {});
+  await page.waitForTimeout(700);
 
   // PACKED AWAY — the seasonal case, which is the whole reason a place is worth
   // having. Nothing leaves the closet; it stops being suggested.

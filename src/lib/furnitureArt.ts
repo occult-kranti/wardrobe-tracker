@@ -972,7 +972,20 @@ export function drawFurniture(
   f: Furniture,
   counts: Record<string, number>,
   scale = 0.709,
+  opts: { labels?: boolean } = {},
 ): Drawing {
+  // WITHOUT LABELS, for anywhere the drawing renders smaller than its own plate.
+  //
+  // SVG text is sized in user units against a fixed scale, so a drawing built
+  // for a 326px plate and rendered at 240px puts its labels at 9.6px — under
+  // the 13px floor the contract sets for a label on a control. The index draws
+  // small and prints the name in the page's real typography underneath, which
+  // is better typography anyway; only the detail page, where the drawing IS the
+  // control, draws them.
+  if (opts.labels === false) {
+    const full = drawFurniture(f, counts, scale);
+    return { ...full, svg: full.svg.replace(/<text[\s\S]*?<\/text>/g, '') };
+  }
   switch (f.form) {
     case 'rail': return drawRail(f, counts, scale);
     case 'shelves': return drawShelves(f, counts, scale);
