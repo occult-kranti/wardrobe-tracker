@@ -566,6 +566,7 @@ export function buildPersonaState(persona: PersonaSeed): AppState {
     wishlist: [],
     circle: EMPTY_CIRCLE,
     events: buildEvents(persona, outfits),
+    furniture: [],
     settings: {
       categories: categoriesFor(persona),
       occasions: occasionsFor(persona),

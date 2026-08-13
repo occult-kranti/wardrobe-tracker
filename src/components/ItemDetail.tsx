@@ -85,6 +85,8 @@ export default function ItemDetail({ itemId, onClose, onAmend }: Props) {
     unretireItem,
     deleteItem,
     updateItem,
+    furniture,
+    filePiece,
   } = useWardrobe();
 
   const item = getItem(itemId);
@@ -201,6 +203,35 @@ export default function ItemDetail({ itemId, onClose, onAmend }: Props) {
                   </div>
                 ) : null}
               </dl>
+            ) : null}
+
+            {/* Where it lives. Only ever shown once there is furniture to
+                file it in — the feature does not exist until someone draws a
+                place, so a wardrobe that never wants it never sees it. */}
+            {furniture.length > 0 ? (
+              <div className="flex gap-3">
+                <span className="type-ledger text-[11px] text-text-2 w-[92px] shrink-0 pt-3">Where it lives</span>
+                <select
+                  aria-label={`Where ${item.name} lives`}
+                  className={selectClass}
+                  value={item.place ? `${item.place.furnitureId}::${item.place.slotId}` : ''}
+                  onChange={e => {
+                    const v = e.target.value;
+                    if (!v) return filePiece(item.id, null);
+                    const [furnitureId, slotId] = v.split('::');
+                    filePiece(item.id, { furnitureId, slotId });
+                  }}
+                >
+                  <option value="">Not filed anywhere</option>
+                  {furniture.map(f => (
+                    <optgroup key={f.id} label={f.name}>
+                      {f.slots.map(s => (
+                        <option key={s.id} value={`${f.id}::${s.id}`}>{s.label}</option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+              </div>
             ) : null}
 
             {item.fitsLike ? (

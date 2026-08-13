@@ -1,6 +1,7 @@
 import { createContext, useContext, useCallback, useMemo, type ReactNode } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { showToast } from '../components/Toast';
+import { defaultSlotLabels, MAX_SLOTS } from '../lib/furnitureArt';
 import { todayLocal, isFutureDate, addDays } from '../lib/dates';
 import { migrate } from '../lib/migrate';
 import { wardrobeKey } from '../lib/accounts';
@@ -19,6 +20,7 @@ import {
   type WardrobeEvent,
   type WearLog,
   type WishlistItem,
+  type FurnitureForm,
 } from '../types';
 
 interface WardrobeContextType extends AppState {
@@ -60,6 +62,17 @@ interface WardrobeContextType extends AppState {
   setCategoryQuiet: (id: CategoryId, quiet: boolean) => void;
   moveCategory: (id: CategoryId, direction: -1 | 1) => void;
   addOccasion: (tag: string) => void;
+  /* ---------- furniture: where a piece lives ---------- */
+  /** Returns the new piece's id, so a caller can open it straight away. */
+  addFurniture: (name: string, form: FurnitureForm, slotCount: number) => string;
+  renameFurniture: (id: string, name: string) => void;
+  renameSlot: (furnitureId: string, slotId: string, label: string) => void;
+  /** Removes the furniture, never the clothes. Returns the way to put it back. */
+  removeFurniture: (id: string) => () => void;
+  /** One piece. null takes it out of wherever it was. */
+  filePiece: (itemId: string, place: ClothingItem['place'] | null) => void;
+  /** A shelf's worth, in ONE committed state. Returns how many moved. */
+  filePieces: (itemIds: string[], place: ClothingItem['place'] | null) => number;
   replaceState: (next: AppState) => void;
   markExported: () => void;
   getItem: (id: string) => ClothingItem | undefined;
@@ -489,6 +502,117 @@ export function WardrobeProvider({ accountId, children }: { accountId: string; c
   }, [setState]);
 
   /** Put a piece of this closet on, or take it off, my open-to-borrow list. */
+  /* ---------- furniture ---------- */
+
+  const addFurniture = useCallback((name: string, form: FurnitureForm, slotCount: number) => {
+    const id = `f-${crypto.randomUUID().slice(0, 8)}`;
+    const count = Math.max(1, Math.min(MAX_SLOTS, Math.round(slotCount)));
+    const labels = defaultSlotLabels(form, count);
+    const piece = {
+      id,
+      name: name.trim() || 'A place',
+      form,
+      slots: labels.map((label, i) => ({ id: `${id}-s${i + 1}`, label })),
+      dateAdded: todayLocal(),
+    };
+    setState(prev => ({ ...prev, furniture: [...prev.furniture, piece] }));
+    return id;
+  }, [setState]);
+
+  const renameFurniture = useCallback((id: string, name: string) => {
+    setState(prev => ({
+      ...prev,
+      furniture: prev.furniture.map(f => (f.id === id ? { ...f, name } : f)),
+    }));
+  }, [setState]);
+
+  const renameSlot = useCallback((furnitureId: string, slotId: string, label: string) => {
+    setState(prev => ({
+      ...prev,
+      furniture: prev.furniture.map(f => f.id !== furnitureId ? f : {
+        ...f,
+        slots: f.slots.map(s => (s.id === slotId ? { ...s, label } : s)),
+      }),
+    }));
+  }, [setState]);
+
+  /**
+   * Removing furniture is a chest leaving the room. It is NOT clothes leaving
+   * the closet.
+   *
+   * deleteItem takes a piece's wear logs with it because a log naming a piece
+   * that no longer exists is a phantom day on the calendar. The rule that sets
+   * is "remove every trace of the thing removed" — and the only trace of a
+   * chest is the line saying where a garment sleeps. Nothing else about a
+   * garment changes: not its name, its photograph, its wears, its cost, its
+   * history. It simply stops having an address.
+   *
+   * The whole previous state comes back in the closure so the toast can offer
+   * Undo, exactly as deleteItem does — never a field-by-field inverse, which is
+   * how half-restores happen. Every rival's reviews carry the same sentence
+   * about archive and storage features: it deleted my things and I could not
+   * get them back.
+   */
+  const removeFurniture = useCallback((id: string) => {
+    let before: AppState | null = null;
+    setState(prev => {
+      before = prev;
+      return {
+        ...prev,
+        furniture: prev.furniture.filter(f => f.id !== id),
+        items: prev.items.map(item => {
+          if (item.place?.furnitureId !== id) return item;
+          const { place: _gone, ...rest } = item;
+          return rest;
+        }),
+      };
+    });
+    return () => { if (before) setState(before); };
+  }, [setState]);
+
+  const filePiece = useCallback((itemId: string, place: ClothingItem['place'] | null) => {
+    setState(prev => ({
+      ...prev,
+      items: prev.items.map(item => {
+        if (item.id !== itemId) return item;
+        if (!place) {
+          const { place: _gone, ...rest } = item;
+          return rest;
+        }
+        return { ...item, place };
+      }),
+    }));
+  }, [setState]);
+
+  /**
+   * A shelf's worth in ONE committed state.
+   *
+   * Deliberately not a loop of filePiece: the whole wardrobe is serialised once
+   * per committed state, so twelve separate calls would rebuild and re-serialise
+   * a closet full of photographs twelve times inside one coalescing window.
+   * advanceLaundry does the same thing for the same reason.
+   */
+  const filePieces = useCallback((itemIds: string[], place: ClothingItem['place'] | null) => {
+    const wanted = new Set(itemIds);
+    let moved = 0;
+    setState(prev => {
+      moved = prev.items.filter(i => wanted.has(i.id)).length;
+      if (moved === 0) return prev;
+      return {
+        ...prev,
+        items: prev.items.map(item => {
+          if (!wanted.has(item.id)) return item;
+          if (!place) {
+            const { place: _gone, ...rest } = item;
+            return rest;
+          }
+          return { ...item, place };
+        }),
+      };
+    });
+    return moved;
+  }, [setState]);
+
   const setLendable = useCallback((itemId: string, lendable: boolean) => {
     setState(prev => {
       const me = prev.circle.profiles.find(p => p.isMe);
@@ -615,6 +739,7 @@ export function WardrobeProvider({ accountId, children }: { accountId: string; c
       addEvent, updateEvent, removeEvent,
       updateSettings, addCategory, renameCategory, setCategoryQuiet, moveCategory, addOccasion,
       sendRailMessage, setRequestStatus, returnLoan, setLendable,
+      addFurniture, renameFurniture, renameSlot, removeFurniture, filePiece, filePieces,
       replaceState, markExported,
       getItem, getOutfit,
       getMostWorn, getLeastWorn, getUnwornItems, getWearablePool,

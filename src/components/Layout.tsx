@@ -4,7 +4,7 @@ import { nextTheme } from '../lib/accounts';
 import {
   IconToday, IconCloset, IconOutfits, IconCalendar, IconLedger,
   IconWishlist, IconCompare, IconRail, IconSettings, IconPlus, IconTheme, IconMenu, IconClose,
-  IconEvents, IconFeed, IconChats, IconProfile,
+  IconEvents, IconFeed, IconChats, IconProfile, IconChest,
 } from './icons';
 import { GroundFrieze, HangingRail, GutterFigure, ScatterField, Wordmark, TagMark } from './art';
 import { useWardrobe } from '../context/WardrobeContext';
@@ -25,6 +25,7 @@ const navItems: NavItem[] = [
   { path: '/', label: 'Today', icon: IconToday },
   { path: '/closet', label: 'Closet', icon: IconCloset },
   { path: '/outfits', label: 'Outfits', icon: IconOutfits },
+  { path: '/furniture', label: 'Furniture', icon: IconChest },
   { path: '/calendar', label: 'Calendar', icon: IconCalendar },
   { path: '/ledger', label: 'Ledger', icon: IconLedger },
   { path: '/wishlist', label: 'Wishlist', icon: IconWishlist },

@@ -58,7 +58,7 @@ const v1 = {
 
 const m = migrate(v1);
 const checks = [
-  ['schemaVersion set', m.schemaVersion === 5],
+  ['schemaVersion set', m.schemaVersion === 6],
   // v4 adds events. A pre-v4 export must gain an empty, valid list rather than
   // an undefined the Events page would crash on, and an export that already
   // carries events must round-trip with its reservations intact.
@@ -128,6 +128,69 @@ const checks = [
   ['performance in defaults', m.settings.occasions.includes('performance')],
   ['unknown top-level key preserved', m.someFutureKey?.keep === 'me'],
   ['theme defaults to dark', m.settings.theme === 'dark'],
+
+  // v6: furniture — where a piece physically lives. The whole risk of this
+  // feature is that a storage feature can lose clothes, so every case below is
+  // about the record surviving furniture being wrong, missing, or from a build
+  // we have never seen.
+  ['furniture seeded empty', Array.isArray(m.furniture) && m.furniture.length === 0],
+  ['no seeded furniture', (() => {
+    // A dresser nobody owns is a lie in the record. An old export must gain an
+    // EMPTY list, never a helpful default.
+    const fresh = migrate({ items: [] });
+    return Array.isArray(fresh.furniture) && fresh.furniture.length === 0;
+  })()],
+  ['furniture round-trips', (() => {
+    const withF = migrate({ ...v1, furniture: [
+      { id: 'f1', name: 'Bedroom chest', form: 'chest', dateAdded: '2026-08-01',
+        slots: [{ id: 's1', label: 'Top drawer' }, { id: 's2', label: 'Shirts' }] },
+    ] });
+    const f = withF.furniture[0];
+    return f.name === 'Bedroom chest' && f.form === 'chest' && f.slots.length === 2
+      && f.slots[1].label === 'Shirts';
+  })()],
+  ['unknown fields on furniture survive', (() => {
+    // The newer-backup case: a v7 field must round-trip through a v6 build.
+    const withF = migrate({ ...v1, furniture: [
+      { id: 'f1', name: 'Chest', form: 'chest', slots: [{ id: 's1', label: 'A', depth: 'deep' }], roomId: 'attic' },
+    ] });
+    return withF.furniture[0].roomId === 'attic' && withF.furniture[0].slots[0].depth === 'deep';
+  })()],
+  ['malformed furniture is dropped, never thrown', (() => {
+    const a = migrate({ ...v1, furniture: 'nonsense' });
+    const b = migrate({ ...v1, furniture: [null, 42, {}, { id: 'ok', slots: [] }] });
+    return a.furniture.length === 0 && b.furniture.length === 1 && b.furniture[0].id === 'ok';
+  })()],
+  ['a nameless piece is named after itself', (() => {
+    // Repair, never discard: it still holds clothes.
+    const withF = migrate({ ...v1, furniture: [{ id: 'f9', slots: [] }] });
+    return withF.furniture[0].name === 'f9';
+  })()],
+  ['a piece with no slots gains one', (() => {
+    // Zero slots is a piece of furniture nothing can be filed in — an object
+    // that exists and cannot be used. One slot is the floor.
+    const withF = migrate({ ...v1, furniture: [{ id: 'f1', name: 'Rail', form: 'rail', slots: [] }] });
+    return withF.furniture[0].slots.length === 1;
+  })()],
+  ['duplicate furniture ids collapse to one', (() => {
+    const withF = migrate({ ...v1, furniture: [
+      { id: 'f1', name: 'A', slots: [{ id: 's', label: 'x' }] },
+      { id: 'f1', name: 'B', slots: [{ id: 's', label: 'y' }] },
+    ] });
+    return withF.furniture.length === 1 && withF.furniture[0].name === 'A';
+  })()],
+  ['an unknown place on a piece is PRESERVED', (() => {
+    // Losslessness. An id we cannot resolve is a filing we cannot READ, not a
+    // filing that is wrong — clearing it would lose the grouping for good.
+    const withP = migrate({ ...v1, items: [{ ...v1.items[0], place: { furnitureId: 'ghost', slotId: 'x' } }] });
+    return withP.items[0].place?.furnitureId === 'ghost';
+  })()],
+  ['a malformed place is dropped', (() => {
+    const bad = migrate({ ...v1, items: [{ ...v1.items[0], place: 42 }] });
+    const half = migrate({ ...v1, items: [{ ...v1.items[0], place: { furnitureId: 'f1' } }] });
+    return bad.items[0].place === undefined && half.items[0].place === undefined;
+  })()],
+  ['no place stays none', m.items[0].place === undefined],
 ];
 
 // Idempotency: migrating twice must be a no-op.

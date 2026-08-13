@@ -236,6 +236,79 @@ check('the weather never asks for your location', !after.asked, '');
   await page.waitForTimeout(400);
 }
 
+/* ============ furniture — where a garment physically lives ============ */
+{
+  // Invisible until built. A wardrobe that never wants this must never see it.
+  await page.goto(`${ORIGIN}/#/closet`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(700);
+  const quiet = await page.evaluate(() => !/Where it lives/i.test(document.body.innerText));
+  check('the feature is invisible until a place is drawn', quiet, '');
+
+  await page.goto(`${ORIGIN}/#/furniture`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(700);
+  const empty = await page.evaluate(() => document.body.innerText);
+  check('the empty state names a rail, not a dresser',
+    /A rail is a place/i.test(empty) && !/you should own/i.test(empty), '');
+
+  await page.getByRole('button', { name: /draw a place/i }).first().click();
+  await page.waitForTimeout(600);
+  await page.fill('#fp-name', 'Bedroom chest');
+  // Three drawers by default; add one and confirm the drawing itself changed.
+  // The preview specifically — `svg` alone would match a nav icon. The drawing
+  // carries an aria-label naming the piece and its drawers.
+  const previewSize = () => page.evaluate(() =>
+    [...document.querySelectorAll('svg[aria-label]')]
+      .find(s => /drawer/i.test(s.getAttribute('aria-label') || ''))?.innerHTML.length ?? 0);
+  const beforeDraw = await previewSize();
+  await page.getByRole('button', { name: /one more drawer/i }).first().click();
+  await page.waitForTimeout(400);
+  const afterDraw = await previewSize();
+  check('the drawing is generated from the drawer count', afterDraw > beforeDraw && beforeDraw > 0,
+    `${beforeDraw} → ${afterDraw} chars of path`);
+
+  await page.getByRole('button', { name: /^draw it$/i }).first().click();
+  await page.waitForTimeout(900);
+  const opened = await page.evaluate(() => ({ hash: location.hash, text: document.body.innerText.slice(0, 120) }));
+  check('drawing a place opens it', /#\/furniture\//.test(opened.hash), opened.hash);
+
+  // Put four pieces away in one gesture — the whole reason bulk exists.
+  await page.getByRole('button', { name: /put things in/i }).first().click();
+  await page.waitForTimeout(800);
+  await page.evaluate(() => {
+    const tiles = [...document.querySelectorAll('button[aria-pressed]')].slice(0, 4);
+    tiles.forEach(t => t.click());
+  });
+  await page.waitForTimeout(400);
+  const fileBtn = page.getByRole('button', { name: /file 4 pieces here/i }).first();
+  check('a shelf-full is filed in one gesture, not four', await fileBtn.count() === 1, '');
+  await fileBtn.click();
+  await page.waitForTimeout(900);
+
+  const filled = await page.evaluate(() => document.body.innerText);
+  check('the drawer now holds them', /4 pieces/i.test(filled), '');
+
+  // THE CHECK THIS FEATURE EXISTS TO SURVIVE.
+  const countPieces = () => page.evaluate(async () => {
+    const key = Object.keys(localStorage).find(k => k.startsWith('wardrobe-tracker:'));
+    return JSON.parse(localStorage.getItem(key)).items.length;
+  });
+  const beforeRemove = await countPieces();
+  await page.getByRole('button', { name: /remove this place/i }).first().click();
+  await page.waitForTimeout(1200);
+  const afterRemove = await countPieces();
+  check('removing furniture never removes clothes', beforeRemove === afterRemove,
+    `${beforeRemove} → ${afterRemove} pieces`);
+
+  const undo = page.getByRole('button', { name: /^undo$/i }).first();
+  check('and the removal offers Undo', await undo.count() === 1, '');
+  if (await undo.count()) {
+    await undo.click();
+    await page.waitForTimeout(900);
+    const back = await page.evaluate(() => document.body.innerText);
+    check('Undo puts the place back with its contents', /Bedroom chest/i.test(back), '');
+  }
+}
+
 /* ============ the obsidian room ============ */
 {
   await page.goto(`${ORIGIN}/#/settings`, { waitUntil: 'domcontentloaded' });

@@ -10,6 +10,8 @@ export const ROUTES: { path: string; name: string }[] = [
   { path: '/', name: 'today' },
   { path: '/closet', name: 'the closet' },
   { path: '/outfits', name: 'outfits' },
+  { path: '/furniture', name: 'the furniture' },
+  { path: '/furniture/:id', name: 'a place' },
   { path: '/calendar', name: 'the calendar' },
   { path: '/events', name: 'events' },
   { path: '/ledger', name: 'the ledger' },

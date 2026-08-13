@@ -147,6 +147,17 @@ export const IconCloset = (p: IconProps) => (
   </Icon>
 );
 
+export const IconChest = (p: IconProps) => (
+  <Icon {...p}>
+    {/* a chest of drawers, straight on: cap slab, three faces, two feet */}
+    <path d="M3.5 5.5h17v13h-17z" />
+    <path d="M3.5 9.8h17M3.5 14.1h17" />
+    <path d="M10 7.6h4M10 12h4M10 16.3h4" />
+    <path d="M6 18.5v2M18 18.5v2" />
+    <Notch x={18.5} y={3.5} />
+  </Icon>
+);
+
 export const IconOutfits = (p: IconProps) => (
   <Icon {...p}>
     {/* stacked pattern pieces */}

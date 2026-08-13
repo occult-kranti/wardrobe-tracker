@@ -774,6 +774,7 @@ export function buildDemoState(): AppState {
 
   return {
     schemaVersion: SCHEMA_VERSION,
+    furniture: [],
     items,
     outfits,
     wearLogs,

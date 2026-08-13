@@ -18,6 +18,7 @@ import Profile from './pages/Profile';
 import SwitchWardrobe, { StartWardrobe } from './pages/SwitchWardrobe';
 import Settings from './pages/Settings';
 import Intake from './pages/Intake';
+import Furniture, { FurniturePiece } from './pages/Furniture';
 import { LinkButton, Masthead } from './components/ui';
 import { ROUTES, safeNext } from './lib/routes';
 
@@ -26,6 +27,8 @@ const ELEMENTS: Record<string, React.ReactElement> = {
   '/': <Dashboard />,
   '/closet': <Closet />,
   '/outfits': <Outfits />,
+  '/furniture': <Furniture />,
+  '/furniture/:id': <FurniturePiece />,
   '/calendar': <Calendar />,
   '/events': <Events />,
   '/ledger': <Statistics />,

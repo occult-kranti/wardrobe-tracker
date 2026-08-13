@@ -41,6 +41,47 @@ export interface ClothingItem {
       moment it was offered, never a live link into the giver's wardrobe. The
       giver keeps their own wears; this is the memory that travels. */
   provenance?: { from: string; wearsInTheirRecord?: number; passedOn: string };
+  /**
+   * Where the piece physically lives — which drawer of which chest.
+   *
+   * Absent is a real answer and by far the commonest one. An unfiled piece must
+   * never read as an error, a warning, or a chore: no badge, no count bubble,
+   * no percentage filed. The focus group vetoed all three by name, and the
+   * house already bans progress-as-achievement.
+   */
+  place?: { furnitureId: string; slotId: string };
+}
+
+/**
+ * FURNITURE — the thing a garment lives in.
+ *
+ * Three forms, deliberately. A rail is first because the panel's studio-flat
+ * seat put it plainly: "I have a rail and a chair. I am not typing 'chair' into
+ * a dropdown that offers me 'dresser'." Nobody is short of furniture, and the
+ * app must never imply someone owns too little of it.
+ *
+ * What is NOT here, and never will be: a capacity, a size, a fullness
+ * percentage. Every one of the three panels struck it independently — a drawer
+ * that knows when it is full is inventory software, and a fullness meter is a
+ * completion meter under another name. How full a drawer is gets DRAWN, from
+ * the count of what is in it, and is never stored.
+ */
+export type FurnitureForm = 'rail' | 'chest' | 'shelves';
+
+export interface FurnitureSlot {
+  id: string;
+  /** Always non-empty — generated on creation, editable afterwards. */
+  label: string;
+}
+
+export interface Furniture {
+  id: string;
+  name: string;
+  form: FurnitureForm;
+  /** One to seven. Seven is the tallest chest that fits the drawing's box. */
+  slots: FurnitureSlot[];
+  note?: string;
+  dateAdded: string;
 }
 
 export interface WishlistItem {
@@ -446,13 +487,16 @@ export interface AppState {
   wishlist: WishlistItem[];
   circle: CircleState;
   events: WardrobeEvent[];
+  /** The furniture a piece can be filed in. Empty until someone draws one. */
+  furniture: Furniture[];
   settings: AppSettings;
 }
 
 // v3: the Shared Rail (circle). v4: events, for outfits reserved against a trip
-// or a festival. Migration seeds both on older exports — scripts/test-migrate.mjs
-// holds a case for each.
-export const SCHEMA_VERSION = 5;
+// or a festival. v5: provenance on a hand-me-down. v6: furniture — where a piece
+// physically lives. Migration seeds each on older exports; scripts/test-migrate.mjs
+// holds a case for every one, written before the field existed.
+export const SCHEMA_VERSION = 6;
 
 export const DEFAULT_CATEGORIES: UserCategory[] = [
   { id: 'tops', label: 'Tops' },
@@ -478,6 +522,7 @@ export const initialState: AppState = {
   wishlist: [],
   circle: EMPTY_CIRCLE,
   events: [],
+  furniture: [],
   settings: {
     categories: DEFAULT_CATEGORIES,
     occasions: DEFAULT_OCCASIONS,

@@ -41,6 +41,19 @@ function migrateItem(raw: Loose): ClothingItem {
   if (typeof item.laundryStatus !== 'string') item.laundryStatus = 'clean';
   if (typeof item.imageUrl !== 'string') item.imageUrl = '';
   if (typeof item.dateAdded !== 'string') item.dateAdded = new Date().toISOString();
+  // v6: where it lives. A place that is not a usable pair is dropped; one that
+  // names furniture we have never heard of is KEPT. An unknown id is a filing
+  // we cannot READ, not a filing that is wrong — clearing it would lose the
+  // grouping for good, which is the exact failure that made Whering's archive
+  // feature "the last straw" for its own users.
+  const rawPlace: unknown = (item as Loose).place;
+  if (rawPlace !== undefined) {
+    const p = rawPlace as Loose;
+    const ok = !!p && typeof p === 'object'
+      && typeof p.furnitureId === 'string' && !!p.furnitureId
+      && typeof p.slotId === 'string' && !!p.slotId;
+    if (!ok) delete item.place;
+  }
   return item as ClothingItem;
 }
 
@@ -116,6 +129,36 @@ export function migrate(raw: unknown): AppState {
     .filter((e): e is AppState['events'][number] => !!e && typeof e === 'object')
     .map(e => ({ ...e, reservations: Array.isArray(e.reservations) ? e.reservations : [] }));
 
+  // v6: furniture. Repair, never discard — a piece of furniture that arrives
+  // malformed still holds clothes, so it is fixed where it can be and dropped
+  // only when it has no usable id at all. Unknown fields are spread through
+  // untouched so a newer build's furniture round-trips through this one.
+  const seenFurniture = new Set<string>();
+  const furniture = (Array.isArray(state.furniture) ? state.furniture : [])
+    .flatMap((raw): AppState['furniture'] => {
+      if (!raw || typeof raw !== 'object') return [];
+      const f = { ...(raw as Loose) } as unknown as AppState['furniture'][number];
+      if (typeof f.id !== 'string' || !f.id) return [];
+      if (seenFurniture.has(f.id)) return [];
+      seenFurniture.add(f.id);
+      // A nameless piece is named after itself rather than thrown away.
+      if (typeof f.name !== 'string' || !f.name.trim()) f.name = f.id;
+      if (f.form !== 'rail' && f.form !== 'chest' && f.form !== 'shelves') f.form = 'chest';
+      const slots = (Array.isArray(f.slots) ? f.slots : [])
+        .flatMap((s): AppState['furniture'][number]['slots'] => {
+          if (!s || typeof s !== 'object') return [];
+          const slot = { ...(s as unknown as Loose) } as unknown as AppState['furniture'][number]['slots'][number];
+          if (typeof slot.id !== 'string' || !slot.id) return [];
+          if (typeof slot.label !== 'string' || !slot.label.trim()) slot.label = slot.id;
+          return [slot];
+        });
+      // Zero slots is furniture nothing can be filed in — an object that exists
+      // and cannot be used. One is the floor.
+      f.slots = slots.length > 0 ? slots : [{ id: `${f.id}-1`, label: 'Inside' }];
+      if (typeof f.dateAdded !== 'string') f.dateAdded = new Date().toISOString().slice(0, 10);
+      return [f];
+    });
+
   return {
     ...state,
     schemaVersion: SCHEMA_VERSION,
@@ -125,6 +168,7 @@ export function migrate(raw: unknown): AppState {
     wishlist,
     circle,
     events,
+    furniture,
     settings: {
       ...storedSettings,
       categories: adopted,
