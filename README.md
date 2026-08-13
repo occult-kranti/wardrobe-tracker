@@ -24,9 +24,13 @@ subscription, no shop links. Everything lives on your device.
 ## Why this exists
 
 The wardrobe-app category has a trust problem. Apps ask users to spend eight hours
-photographing their closets, then paywall the analytics that made the labor worth
-it — or lock the wardrobe to one device. Meanwhile ~78% of users abandon closet apps
-within six weeks because logging a wear takes longer than the habit can survive.
+photographing their closets, then paywall the analytics that made the labor worth it
+(Indyx, $74.99/yr; Cladwell, $95.88/yr) — or cap the free closet at exactly 100 items
+(Acloset, GetWardrobe), or charge for backup. The ones that stay free stay free
+because they earn when you buy: Whering's lead investor is eBay, and Alta holds
+4,000 brand partnerships. Meanwhile fashion apps average about 28% retention at
+90 days, because logging a wear takes longer than the habit can survive.
+[The full benchmark of eleven apps](docs/24-competitive-benchmark.md) has the numbers.
 
 Toile takes the opposite bet: give away everything the others charge for
 (cost-per-wear, utilization, the full ledger), keep the daily loop under two taps,
@@ -76,6 +80,7 @@ It was designed against a documented contract rather than taste alone:
 | [`docs/05-brand-identity.md`](docs/05-brand-identity.md) | The binding design contract — palette (AA-verified, light + dark), typography, icon grammar, art direction, component law |
 | [`docs/06-focus-group-requirements.md`](docs/06-focus-group-requirements.md) | Feature requirements and copy law from the focus group |
 | [`docs/01-market-research.md`](docs/01-market-research.md) | Competitive analysis |
+| [`docs/24-competitive-benchmark.md`](docs/24-competitive-benchmark.md) | Sourced benchmark of eleven wardrobe apps — pricing, users, reviews, data practices |
 | [`docs/02-design-psychology.md`](docs/02-design-psychology.md) | Color and interaction psychology |
 | [`skills/wardrobe-brand/SKILL.md`](skills/wardrobe-brand/SKILL.md) | The operational digest — load before any UI change |
 
