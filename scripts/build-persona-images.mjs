@@ -12,6 +12,7 @@
  *
  * Usage: node scripts/build-persona-images.mjs <personas-dir> <brands-dir>
  */
+import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, readdirSync, existsSync, writeFileSync, statSync } from 'node:fs';
 import { join, basename, extname } from 'node:path';
@@ -22,7 +23,7 @@ if (!personasDir) {
   process.exit(2);
 }
 
-const OUT = new URL('../public/wardrobe/', import.meta.url).pathname;
+const OUT = fileURLToPath(new URL('../public/wardrobe/', import.meta.url));
 
 /** Outfit renders are shown at 4:5 tiles and full width on a profile page. */
 const OUTFIT = { w: 640, h: 960, q: 76 };

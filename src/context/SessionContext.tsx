@@ -59,7 +59,7 @@ interface SessionValue {
   updateAccount: (id: string, updates: Partial<Account>) => void;
   removeAccount: (id: string) => void;
   setCommunity: (next: CommunityState | ((prev: CommunityState) => CommunityState)) => void;
-  /** Puts the three sample wardrobes on this device, if they are not already here. */
+  /** Puts the sample wardrobes on this device, if they are not already here. */
   installSamples: () => void;
 }
 

@@ -8,10 +8,11 @@
  *
  * Usage: node scripts/check-brand.mjs
  */
+import { fileURLToPath } from 'node:url';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative, extname } from 'node:path';
 
-const ROOT = new URL('..', import.meta.url).pathname;
+const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const SRC = join(ROOT, 'src');
 
 function walk(dir) {
@@ -23,8 +24,11 @@ function walk(dir) {
 
 const files = walk(SRC).filter(f => ['.ts', '.tsx', '.css'].includes(extname(f)));
 const violations = [];
+// Allowlists are written with forward slashes; path.relative emits backslashes
+// on Windows, so normalise before any comparison.
+const rel2posix = (file) => relative(ROOT, file).split('\\').join('/');
 const add = (file, line, rule, detail) =>
-  violations.push({ file: relative(ROOT, file), line, rule, detail });
+  violations.push({ file: rel2posix(file), line, rule, detail });
 
 // Files allowed to define raw colour values: the token sheet, the icon/art
 // studio (which paints seals and swatches), and the demo seed data.
@@ -80,7 +84,7 @@ const controlByteAt = s => {
 };
 
 for (const file of files) {
-  const rel = relative(ROOT, file);
+  const rel = rel2posix(file);
   const text = readFileSync(file, 'utf8');
   const lines = text.split('\n');
 

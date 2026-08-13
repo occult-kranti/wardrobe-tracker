@@ -7,15 +7,16 @@
  * closet does not contain, two pieces sharing an id. Every one of those is
  * invisible until somebody is looking at the wardrobe it broke.
  */
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { build } from 'esbuild';
 import { mkdtempSync } from 'fs'; import { tmpdir } from 'os'; import { join } from 'path';
 
 const out = join(mkdtempSync(join(tmpdir(), 'cast-')), 'cast.mjs');
 await build({
-  entryPoints: [new URL('../src/lib/personaCast.ts', import.meta.url).pathname],
+  entryPoints: [fileURLToPath(new URL('../src/lib/personaCast.ts', import.meta.url))],
   bundle: true, format: 'esm', outfile: out, logLevel: 'error',
 });
-const { CAST, CAST_BRIEFS } = await import(out);
+const { CAST, CAST_BRIEFS } = await import(pathToFileURL(out).href);
 
 let fail = 0;
 const check = (label, ok, detail = '') => {

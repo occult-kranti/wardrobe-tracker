@@ -9,10 +9,11 @@
  * Usage: node scripts/build-mobile-gallery.mjs [outDir]
  *        (default dist/mobile_version_v1)
  */
+import { fileURLToPath } from 'node:url';
 import { cp, mkdir, writeFile, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 
-const ROOT = new URL('..', import.meta.url).pathname;
+const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const SRC = join(ROOT, 'design-mobile/mockups');
 const OUT = process.argv[2] ?? join(ROOT, 'dist/mobile_version_v1');
 

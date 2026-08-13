@@ -10,6 +10,7 @@
  * wearable pieces at all. A prompt that cannot say "nothing here" is a prompt
  * that will happily invent a wardrobe, so the empty answers are tests too.
  */
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { build } from 'esbuild';
 import { mkdtempSync, readFileSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -17,17 +18,17 @@ import { join } from 'node:path';
 
 const out = join(mkdtempSync(join(tmpdir(), 'intake-')), 'i.mjs');
 await build({
-  entryPoints: [new URL('../src/lib/intake.ts', import.meta.url).pathname],
+  entryPoints: [fileURLToPath(new URL('../src/lib/intake.ts', import.meta.url))],
   bundle: true,
   format: 'esm',
   outfile: out,
   logLevel: 'error',
 });
-const { readIntake, draftToItem, findDuplicates } = await import(out);
+const { readIntake, draftToItem, findDuplicates } = await import(pathToFileURL(out).href);
 
 // The fixtures ARE the files the app ships and loads, so the suite tests
 // exactly what a user can open in the sample bench.
-const FIXTURES = new URL('../public/intake-samples/', import.meta.url).pathname;
+const FIXTURES = fileURLToPath(new URL('../public/intake-samples/', import.meta.url));
 const read = name => readIntake(readFileSync(join(FIXTURES, name), 'utf8'));
 
 let failed = 0;
@@ -154,7 +155,8 @@ check('messy file: the blank name is dropped with a reason', messy.dropped.some(
 /* ---------- the prompt the app copies is the prompt the doc prints ---------- */
 
 {
-  const promptTs = readFileSync(new URL('../src/lib/intakePrompt.ts', import.meta.url).pathname, 'utf8');
+  const promptTs = readFileSync(fileURLToPath(new URL('../src/lib/intakePrompt.ts', import.meta.url)), 'utf8')
+    .replace(/\r\n/g, '\n');
 
   /** The body of one named template literal, unescaped. */
   const literal = name => {
@@ -172,7 +174,10 @@ check('messy file: the blank name is dropped with a reason', messy.dropped.some(
   check('both prompts are readable in the source', intake.length > 500 && outfit.length > 500,
     `${intake.length} / ${outfit.length} chars`);
 
-  const doc = readFileSync(new URL('../docs/23-photo-intake.md', import.meta.url).pathname, 'utf8');
+  // Normalised: a Windows checkout hands us CRLF, and the fence regex and the
+  // char-for-char prompt comparison below both assume LF.
+  const doc = readFileSync(fileURLToPath(new URL('../docs/23-photo-intake.md', import.meta.url)), 'utf8')
+    .replace(/\r\n/g, '\n');
   const fences = [...doc.matchAll(/> ```\n([\s\S]*?)\n> ```/g)].map(m =>
     m[1].split('\n').map(l => (l.startsWith('> ') ? l.slice(2) : l.replace(/^>/, ''))).join('\n').trim());
   check('docs/23 prints both prompts', fences.length >= 2, `${fences.length} fenced blocks`);
@@ -209,12 +214,12 @@ check('messy file: the blank name is dropped with a reason', messy.dropped.some(
 /* ---------- every sample the bench offers has a file behind it ---------- */
 
 {
-  const samples = readFileSync(new URL('../src/lib/intakeSamples.ts', import.meta.url).pathname, 'utf8');
+  const samples = readFileSync(fileURLToPath(new URL('../src/lib/intakeSamples.ts', import.meta.url)), 'utf8');
   // A sample may decline to bundle its photograph (the owner's own); what it
   // may not do is name one that isn't there.
   const photos = [...samples.matchAll(/^\s*photo: '([^']+)'/gm)].map(m => m[1]);
   const filesRef = [...samples.matchAll(/file: '([^']+)'/g)].map(m => m[1]);
-  const pub = new URL('../public/', import.meta.url).pathname;
+  const pub = fileURLToPath(new URL('../public/', import.meta.url));
   const { existsSync } = await import('node:fs');
   check('every sample names a file that exists', filesRef.every(f => existsSync(join(pub, f))), filesRef.filter(f => !existsSync(join(pub, f))).join(','));
   const missingPhotos = photos.filter(f => !existsSync(join(pub, f)));

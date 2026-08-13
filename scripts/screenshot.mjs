@@ -1,5 +1,6 @@
 // Screenshot harness: seeds demo wardrobe data, captures every route at
 // mobile + desktop sizes. Usage: node screenshot.mjs <baseUrl> <outDir>
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { chromium } from 'playwright';
 import { mkdirSync } from 'fs';
 
@@ -11,8 +12,8 @@ import { mkdtempSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 const bundled = join(mkdtempSync(join(tmpdir(), 'demo-')), 'd.mjs');
-await build({ entryPoints: [new URL('../src/lib/demoData.ts', import.meta.url).pathname], bundle: true, format: 'esm', outfile: bundled, logLevel: 'error' });
-const { buildDemoState } = await import(bundled);
+await build({ entryPoints: [fileURLToPath(new URL('../src/lib/demoData.ts', import.meta.url))], bundle: true, format: 'esm', outfile: bundled, logLevel: 'error' });
+const { buildDemoState } = await import(pathToFileURL(bundled).href);
 const state = buildDemoState();
 
 const routes = ['/', '/closet', '/outfits', '/calendar', '/ledger', '/wishlist', '/compare', '/rail', '/rail/c-priya', '/settings'];

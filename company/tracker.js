@@ -1,0 +1,962 @@
+/* ============================================================================
+   ALMARI — THE WORKROOM
+   Project tracking portal. Seed data + application.
+
+   The seed below is the launch plan (docs/28-the-company.md) decomposed into
+   assignable work, in dependency order, with the external gates marked. Every
+   task's `why` is the reason it exists in the plan, so nobody has to re-read
+   80 pages to know why they are doing something.
+
+   STORAGE. Two modes, chosen by whether SYNC.url is filled in below:
+     · local  — this browser only. Honest default; nothing to set up.
+     · shared — one Supabase table, polled; everyone sees everyone's edits.
+   See README-SYNC.md in this folder for the five-minute setup.
+   ========================================================================== */
+
+const SYNC = {
+  // Paste these two from Supabase → Project Settings → API. Until then the
+  // portal runs per-device and says so plainly in the header.
+  url: '',            // https://<project>.supabase.co
+  key: '',            // the anon / publishable key (safe in a page; RLS guards it)
+  table: 'almari_workroom',
+  row: 1,
+  pollMs: 5000,
+};
+
+/* ---------------------------------------------------------------- people -- */
+
+const PEOPLE = [
+  { id: 'hm',     name: 'Hrudayangam', initials: 'HM', role: 'Founder — product, code, design', tint: 'ink' },
+  { id: 'kunjal', name: 'Kunjal',      initials: 'K',  role: 'To be set at the 22 Aug meeting', tint: 'blue' },
+  { id: 'nimesh', name: 'Nimesh',      initials: 'N',  role: 'To be set at the 22 Aug meeting', tint: 'green' },
+  { id: 'raksha', name: 'Raksha',      initials: 'R',  role: 'To be set at the 22 Aug meeting', tint: 'gold' },
+];
+
+/* ---------------------------------------------------------------- phases -- */
+
+const GROUPS = [
+  { id: 'now',       name: 'This fortnight',      window: '13–22 Aug 2026',  note: 'Before the plan starts: the two meetings that set it.' },
+  { id: 'company',   name: 'The company',         window: 'M1–M2 · Sep–Oct', note: 'Incorporation and the statutory clock it starts.' },
+  { id: 'mark',      name: 'The mark',            window: 'M1–M8',           note: 'Clearance, filing, and the opposition gate. External gate.' },
+  { id: 'p0',        name: 'P0 — hardening',      window: 'M1–M2',           note: 'The repo’s own next-steps ledger, cleared.' },
+  { id: 'p1',        name: 'P1 — the tutorial',   window: 'M2–M3',           note: 'docs/27, built to spec.' },
+  { id: 'p3',        name: 'P3 — the native port', window: 'M3–M6',          note: 'Capacitor. Storage moves early so the alpha tests what ships.' },
+  { id: 'p2',        name: 'P2 — offline & sync', window: 'M6–M7',           note: 'True offline, then sync-you-own.' },
+  { id: 'test',      name: 'Alpha & beta',        window: 'M5–M9',           note: 'Measurement by consent — the app will never phone home.' },
+  { id: 'launch',    name: 'The stores',          window: 'M9–M10',          note: 'App Review is the second external gate.' },
+  { id: 'money',     name: 'Money',               window: 'M2–M12',          note: 'Grants are the raise. VC is a named fork, off by default.' },
+  { id: 'market',    name: 'Marketing',           window: 'M7–M12',          note: 'Organic-first, because a one-time price cannot outbid subscriptions.' },
+
+  { id: 'ip',        name: 'Licence & IP defence',  window: 'M0–M9 · Aug–May', note: 'The repo is public with no licence, and the chain of title stops at the founder.' },
+  { id: 'safety',    name: 'Data safety & release', window: 'M1–M6',           note: 'The app’s worst enemy is its own migrations; everything here is insurance against them.' },
+  { id: 'ops',       name: 'Money & operations',    window: 'M1–M8 · Sep–Apr', note: 'Being incorporated and being able to take money are three months apart.' },
+  { id: 'team',      name: 'People & governance',   window: 'M0–M3 · Aug–Nov', note: 'Four people and no instruments: every item here is cheap now and unfixable later.' },
+  { id: 'support',   name: 'Support & the user law', window: 'M2–M10',         note: 'With no telemetry and no accounts, the mail and the listing are the whole customer relationship.' },
+];
+
+const TAGS = ['meeting', 'legal', 'critical-path', 'external-gate', 'product', 'design', 'mobile', 'testing', 'launch', 'money', 'marketing', 'research', 'compliance'];
+
+/* ----------------------------------------------------------------- tasks -- */
+/* status: next | ongoing | done | blocked      current: the pinned focus      */
+
+const SEED_TASKS = [
+  /* ---- this fortnight ------------------------------------------------- */
+  { g: 'now', t: 'Meet Kunjal — plan next steps, finalise the roadmap', due: '2026-08-15',
+    a: ['hm', 'kunjal'], tags: ['meeting', 'critical-path'], status: 'next', current: true, est: 'half a day',
+    why: 'The first working session on this plan. Everything downstream assumes the roadmap has been agreed by two people, not one.',
+    check: 'Walk the eleven phases below · agree what P0 actually contains · decide which of the two of you owns the company formation track · set the agenda for the 22nd' },
+  { g: 'now', t: 'Meet Kunjal, Nimesh and Raksha — finalise team, distribute work, consult legalities', due: '2026-08-22',
+    a: ['hm', 'kunjal', 'nimesh', 'raksha'], tags: ['meeting', 'legal', 'critical-path'], status: 'next', est: 'a day',
+    why: 'The team meeting. Roles here become the assignees on every task in this portal, and the legal questions raised here are what the attorney and CA get briefed on in month one.',
+    check: 'Roles and equity conversation · who is a director, who is a shareholder, who is a contractor · brief the legal questions: the four Almari collisions, the founder assignment deed, whether anyone joining is a non-resident (FEMA) · assign the M1 company tasks below' },
+
+  /* ---- the company ---------------------------------------------------- */
+  { g: 'company', t: 'Reserve the name and buy DSCs for both directors', due: '2026-09-04',
+    a: ['hm'], tags: ['legal'], status: 'next', est: '2 days', dep: 'Meet Kunjal, Nimesh and Raksha',
+    why: 'First step of SPICe+. Name reservation covers two options — have a fallback ready in case the mark clearance goes badly.',
+    check: 'Two name options filed · DSC for each director (₹1,500–2,500 each)' },
+  { g: 'company', t: 'File SPICe+ — Private Limited, authorised capital ₹10 lakh', due: '2026-09-12',
+    a: ['hm'], tags: ['legal', 'critical-path'], status: 'next', est: '1 week to certificate',
+    why: 'Pvt Ltd over LLP/OPC because only a company can issue CCPS and grant ESOPs — the optionality the funding fork needs. ₹10L keeps us in the zero-MCA-fee slab.',
+    check: 'Capital ≤ ₹15L so the MCA fee is nil · budget to the itemised high end ≈ ₹34K · certificate expected 10–20 working days' },
+  { g: 'company', t: 'Open the current account and deposit subscription capital',
+    a: ['hm'], tags: ['legal'], status: 'next', est: '2 days',
+    why: 'INC-20A cannot be filed until the subscription money is actually in the company account.' },
+  { g: 'company', t: 'File ADT-1 — first auditor, within 30 days', due: '2026-10-12',
+    a: ['hm'], tags: ['legal', 'compliance'], status: 'next', est: '1 day',
+    why: 'Statutory, 30 days from incorporation. A missed filing is the cheapest possible own goal.' },
+  { g: 'company', t: 'File INC-20A — commencement of business, within 180 days',
+    a: ['hm'], tags: ['legal', 'compliance'], status: 'next', est: '1 day',
+    why: 'Late means ₹50,000 on the company plus ₹1,000/day per officer. There is no version of this worth being casual about.' },
+  { g: 'company', t: 'Shops & Establishments registration and Professional Tax enrolment',
+    a: ['hm'], tags: ['legal', 'compliance'], status: 'next', est: '2 days',
+    why: 'Mandatory at state level within ~30 days of commencing business, including from a home office. Missed by most first-time founders and by the plan’s own first draft.' },
+  { g: 'company', t: 'Udyam / MSME registration', a: ['hm'], tags: ['legal'], status: 'next', est: '1 hour',
+    why: 'Free, and independently unlocks the small-entity trademark fee — a costless hedge if DPIIT recognition is slow.' },
+  { g: 'company', t: 'DPIIT Startup India recognition', due: '2026-09-25',
+    a: ['hm'], tags: ['legal', 'money'], status: 'next', est: '2–10 working days',
+    why: 'Chiefly for the 50% trademark rebate and SISFS eligibility. Apply the week the certificate of incorporation arrives — but never delay the TM filing waiting for it.',
+    check: 'Free via NSWS · unlocks SISFS · 80-IAC is a separate IMB application and a lottery ticket, not a plan' },
+  { g: 'company', t: 'Founder IP assignment deed — on stamp paper, with consideration set',
+    a: ['hm'], tags: ['legal', 'critical-path'], status: 'next', est: '3 days',
+    why: 'The codebase predates the company, so the company owns none of it by default. An unstamped deed is inadmissible in evidence, which defeats its entire purpose in diligence.',
+    check: 'Asset schedule: code, SVG plates, names, domains · counsel splits copyright vs mark/goodwill for duty · CA fixes defensible consideration (s.56(2)(x)) · board approval papered' },
+  { g: 'company', t: 'Confirm the second shareholder is resident', a: ['hm'], tags: ['legal', 'compliance'], status: 'next', est: '1 hour',
+    why: 'Keeps the cap table FEMA-clean until a foreign raise is a deliberate decision rather than an accident with a 30-day filing attached.' },
+
+  /* ---- the mark ------------------------------------------------------- */
+  { g: 'mark', t: 'Attorney clearance search on ALMARI', due: '2026-09-20',
+    a: ['hm'], tags: ['legal', 'external-gate', 'critical-path'], status: 'next', current: true, est: '1–2 weeks',
+    why: 'Four live collisions are already known: a 2019 garment-storage startup of the same name, a secondhand-clothing app, a preloved marketplace, and a saree brand. Plus the word means "wardrobe", which invites a descriptiveness objection. This search happens before a rupee of brand spend.',
+    check: 'ALMARI / ALMAARI / ALMIRAH across classes 9, 42, 35, 25 · registered vs unregistered status of all four · passing-off exposure from the 2019 user specifically · common-law: app stores, MCA, handles, domains' },
+  { g: 'mark', t: 'Decide the use claim and open the use-evidence file', a: ['hm'], tags: ['legal'], status: 'next', est: '1 day',
+    why: 'Proposed-to-be-used versus a claimed user date is a decision with consequences for both the acquired-distinctiveness argument and any future prior-user defence. The evidence file needs to start on day one, not when it is needed.' },
+  { g: 'mark', t: 'Rename decision gate', a: ['hm', 'kunjal'], tags: ['legal', 'external-gate'], status: 'next', est: '1 day',
+    why: 'Renaming now costs ₹25–75K. Renaming after launch costs store listings, ASO history, press pointing at the wrong name, and possibly years of opposition defence. The gate exists so attachment to the name cannot outvote the search result.' },
+  { g: 'mark', t: 'File TM-A — word and device, classes 9 + 42, expedited', due: '2026-11-06',
+    a: ['hm'], tags: ['legal', 'critical-path'], status: 'next', est: '2 days',
+    why: 'Device mark alongside the word, because a device is registrable where a semi-descriptive word is weak. Class 35 is where the marketplaces trade; the design contract bars commerce forever, so we never enter it.',
+    check: '₹9,000 at the recognised-startup rate · expedited examination ₹20,000 surfaces objections before launch · Shop Almari likely overlaps class 9 — the search must resolve it' },
+  { g: 'mark', t: 'Opposition-window status check — before any launch spend', due: '2027-04-30',
+    a: ['hm'], tags: ['legal', 'external-gate', 'critical-path'], status: 'next', est: '1 day',
+    why: 'A passed clearance search does not prevent opposition. If a credible senior user opposes, the rename gate is invoked here — before store listings and PR money are spent, not after.' },
+
+  /* ---- P0 ------------------------------------------------------------- */
+  { g: 'p0', t: 'Photograph the five briefed wardrobes from open-licence museum collections',
+    a: [], tags: ['product', 'design'], status: 'next', est: '3–5 days',
+    why: 'The repo’s own ledger calls this the single biggest visible improvement. Four of the five period wardrobes currently show drawn flats where a real photograph exists in the public domain.',
+    check: 'Met Open Access · Rijksmuseum · LACMA · add PHOTO_RULES entries · keep every image bundled, no network access' },
+  { g: 'p0', t: 'Closet masthead — make Today’s outfit the primary action', a: [], tags: ['design'], status: 'next', est: '1 day',
+    why: 'The masthead costs 181px and carries no primary. Roughly 70px comes back and the page gains the one primary button the component law requires.' },
+  { g: 'p0', t: 'Closet empty state — three CTAs down to one', a: [], tags: ['design'], status: 'next', est: '2 hours',
+    why: 'The contract says exactly one action per empty screen. This one has three.' },
+  { g: 'p0', t: 'Room frame sizing bug', a: [], tags: ['product'], status: 'next', est: '2 hours',
+    why: 'The frame is sized to the plate rather than to the furniture, so wall lines land wrong on small rooms.' },
+  { g: 'p0', t: 'The dress form versus "never draw bodies"', a: [], tags: ['design'], status: 'next', est: '1 day',
+    why: 'A dress form may violate the oldest rule in the contract. Either redraw it as a coat stand or amend the clause on the record — but decide, rather than leaving a silent exception.' },
+  { g: 'p0', t: 'Room shows oldest furniture first', a: [], tags: ['product'], status: 'next', est: '3 hours',
+    why: 'Insertion order means a newly drawn piece can be invisible. Widen the frame or mark the newest — do not sort, because the room’s order is meaningful.' },
+
+  /* ---- P1 ------------------------------------------------------------- */
+  { g: 'p1', t: 'PlateFirstFitting and the coach-mark chip into art.tsx / ui.tsx',
+    a: [], tags: ['design', 'product'], status: 'next', est: '2 days',
+    why: 'Both are drawn and specified in docs/27 Appendix A — the tailor’s table plate and the chip-plus-leader-line geometry. This is a paste-and-wire job, not a design job.' },
+  { g: 'p1', t: 'TutorialLayer — five stops, toile-toured flag', a: [], tags: ['product'], status: 'next', est: '3 days',
+    why: 'The tour is an annotation layer, not a modal: no scrim, page stays live, one mark at a time, anchored by data-tour attributes.',
+    check: 'Today · the closet · the ledger · the wishlist · Settings export · missing anchor skips silently' },
+  { g: 'p1', t: 'Welcome sheet on first entry, and the Settings re-entry row', a: [], tags: ['product'], status: 'next', est: '1 day',
+    why: 'One sheet, once, with two equally final exits. Re-entry lives in Settings so the tour is discoverable without ever nagging.' },
+  { g: 'p1', t: 'First-log toast behind toile-first-log', a: [], tags: ['product'], status: 'next', est: '2 hours',
+    why: '"Logged. The record has begun." Once per device, on the first real wear. Then nothing, forever.' },
+  { g: 'p1', t: 'Screenshots and a design-critic pass on all five stops', a: [], tags: ['design', 'testing'], status: 'next', est: '1 day',
+    why: 'Standing rule for any UI change: both themes, 390px and desktop, critic before merge.' },
+
+  /* ---- P3 ------------------------------------------------------------- */
+  { g: 'p3', t: 'Capacitor 8 scaffold — iOS and Android', a: [], tags: ['mobile'], status: 'next', est: '3 days',
+    why: 'Capacitor over a React Native rewrite: the entire Tailwind/DOM UI and the SVG design system would have to be rebuilt in RN primitives for no user-visible gain. Start on 8.x — v7 left maintenance in June 2026 and Xcode 26 SDK builds are mandatory since April.' },
+  { g: 'p3', t: 'Storage migration — localStorage to SQLite and Preferences', a: [], tags: ['mobile', 'critical-path'], status: 'next', est: '1–2 weeks',
+    why: 'The real port work. WebView storage is transient — the OS reclaims it under disk pressure and iOS offers no persisted opt-out. This moves the source of truth to native ground, early, so the alpha tests the architecture that will actually ship.',
+    check: 'Reuse the existing lossless migration layer, do not write a second one · settings to Preferences · wardrobe to SQLite · localStorage demoted to cache' },
+  { g: 'p3', t: 'Native plugins — camera, filesystem, share, haptics', a: [], tags: ['mobile'], status: 'next', est: '3 days',
+    why: 'Each is also Guideline 4.2 armour: a wrapper with no platform features is the top rejection vector. Share turns the lossless export promise into a real file the person can put somewhere.' },
+  { g: 'p3', t: 'Biometric app lock', a: [], tags: ['mobile'], status: 'next', est: '2 days',
+    why: 'A privacy feature that fits an app with no account, and one more piece of 4.2 armour. Ship with honest copy — the data underneath is still device storage.' },
+  { g: 'p3', t: 'Cloud build pipeline, signing, versioning discipline', a: [], tags: ['mobile'], status: 'next', est: '3 days',
+    why: 'No Mac is owned. Capawesome or Codemagic drives iOS signing; fastlane on Windows is Android-lanes-only.',
+    check: 'Version single-sourced from package.json · monotonic Android versionCode · tags cut from CI only · the 100+ checks and the brand contract gate every store build' },
+  { g: 'p3', t: 'Apple Developer Program enrolment (organisation)', a: ['hm'], tags: ['mobile', 'legal'], status: 'next', est: '1–3 weeks',
+    why: 'Organisation enrolment needs the D-U-N-S number, which needs the company. $99/year, and the long pole is verification, not payment.' },
+  { g: 'p3', t: 'Google Play organisation account — and verify the 12-tester exemption', a: ['hm'], tags: ['mobile', 'legal'], status: 'next', est: '1 week',
+    why: 'A personal account created after Nov 2023 must run 12 testers for 14 continuous days before production. An organisation account should exempt us — verify at creation, because if it does not, that clock has to start months earlier.' },
+
+  /* ---- P2 ------------------------------------------------------------- */
+  { g: 'p2', t: 'Finish the service worker — true offline', a: [], tags: ['product'], status: 'next', est: '3 days',
+    why: 'The manifest and icons shipped; the worker did not. Genuine offline is both a user promise and the honest answer to Guideline 4.2.' },
+  { g: 'p2', t: 'Sync you own — file-based, between devices', a: [], tags: ['product'], status: 'next', est: '1 week',
+    why: 'The largest remaining gap against every rival, and the migration layer already round-trips losslessly. A file the person controls — never an account, never a server.' },
+
+  /* ---- testing -------------------------------------------------------- */
+  { g: 'test', t: 'Write the research-data protocol', a: [], tags: ['testing', 'legal', 'compliance'], status: 'next', est: '2 days',
+    why: 'The moment a tester’s export lands in a company inbox, the company is processing personal data — a wardrobe export contains photographs, travel dates and household members. The no-server privacy argument does not cover the research programme unless this exists.',
+    check: 'Written consent per tester · 18+ only · fixed deletion date · segregated storage · a redacted research-export variant that ships schema and counts, not photographs' },
+  { g: 'test', t: 'Recruit the alpha cohorts', a: [], tags: ['testing'], status: 'next', est: '2 weeks',
+    why: 'The original focus group set the contract; the same archetypes continue, plus India metro Gen-Z (who actually pay for apps) and a privacy-community cohort.' },
+  { g: 'test', t: 'Internal TestFlight', a: [], tags: ['testing', 'mobile'], status: 'next', est: 'ongoing',
+    why: '100 testers, instant, included in the membership. First real build in real hands.' },
+  { g: 'test', t: 'Moderated alpha sessions and diary study #1', a: [], tags: ['testing', 'research'], status: 'next', est: '2 weeks',
+    why: 'The app will never phone home, so measurement is by consent: watch people use it, and ask them to keep a week’s log.',
+    check: 'Stopwatch the two-tap promise · note where the tutorial’s five stops land or fail' },
+  { g: 'test', t: 'Play closed track QA', a: [], tags: ['testing', 'mobile'], status: 'next', est: '2 weeks',
+    why: 'Android-side shakeout. If the organisation-account exemption failed, this is also where the 14-day clock runs.' },
+  { g: 'test', t: 'Open beta and diary study #2', a: [], tags: ['testing'], status: 'next', est: '4 weeks',
+    why: 'Play open track and TestFlight external. Wider cohort, same consented measurement.' },
+  { g: 'test', t: 'Pre-register the launch gates', a: [], tags: ['testing', 'research'], status: 'next', est: '1 day',
+    why: 'Absolute thresholds on our own cohorts, decided before the data arrives so they cannot be moved afterwards. The category’s 28% retention figure does not survive sourcing and appears in no gate, pitch, or listing.',
+    check: '≥40% of the alpha cohort logs a wear in week 12 · ≥60% complete diary week one · median assisted log ≤ two taps' },
+
+  /* ---- launch --------------------------------------------------------- */
+  { g: 'launch', t: 'Store listings and ASO copy — under the copy law', a: [], tags: ['launch', 'marketing'], status: 'next', est: '3 days',
+    why: 'The copy law travels: no exclamation points, no urgency, address the clothes. Store convention is the opposite, so anyone writing this copy has to be told.' },
+  { g: 'launch', t: 'Resolve the BYOK question, then file the privacy declarations', a: [], tags: ['launch', 'legal'], status: 'next', est: '3 days',
+    why: 'Today the app truthfully declares no data collected. Bring-your-own-key intake sends photographs off-device to the user’s own provider — that has to be reconciled with both stores’ definitions before it ships, or the label becomes a misdeclaration.',
+    check: 'Either ship v1 without BYOK and keep the clean label, or declare the optional user-initiated flow · the get-a-key link carries no referral code, ever' },
+  { g: 'launch', t: 'GST registration and TCS reconciliation', a: ['hm'], tags: ['legal', 'money'], status: 'next', est: '1 week',
+    why: 'Indian app sales attract 18% GST and Google deducts TCS. This is settled with the CA before the first paid sale, not after.' },
+  { g: 'launch', t: 'App Review submission — one rejection cycle budgeted', due: '2027-05-31',
+    a: [], tags: ['launch', 'external-gate', 'critical-path'], status: 'next', est: '2–4 weeks',
+    why: 'The second external gate. Guideline 4.2 is the risk; the armour is the native work in P3 plus genuine offline.' },
+  { g: 'launch', t: 'Launch on both platforms', a: [], tags: ['launch'], status: 'next', est: '1 week',
+    why: 'First revenue. The web app is unchanged and still free — that is the point, not a concession.' },
+
+  /* ---- money ---------------------------------------------------------- */
+  { g: 'money', t: 'Shortlist three DPIIT incubators and apply to SISFS', a: [], tags: ['money'], status: 'next', est: '3 weeks',
+    why: 'Up to ₹20L grant plus ₹50L in convertible instruments. Non-dilutive money fits a company shaped like this one — but the convertible half is not free, and the application will be read by people who screen for scale intent.',
+    check: 'Which incubators have funded a utility or privacy-first app before?' },
+  { g: 'money', t: 'MeitY GENESIS application', a: [], tags: ['money'], status: 'next', est: '2 weeks',
+    why: '₹10L early-stage with no match required; the ₹50L tranche needs matching capital we do not have.' },
+  { g: 'money', t: 'Karnataka Elevate — the M12 window', due: '2027-08-15',
+    a: [], tags: ['money'], status: 'next', est: '3 weeks',
+    why: 'Up to ₹50L, one annual window (mid-Aug to mid-Sep). Missing it costs a year, which is why it is dated here rather than left to memory.' },
+  { g: 'money', t: 'Write the FEMA gate into the funding process', a: ['hm'], tags: ['legal', 'money', 'compliance'], status: 'next', est: '1 day',
+    why: 'The most common compliance miss in a first Indian raise. Any non-resident money in any instrument means a valuation report, FC-GPR within 30 days of allotment, and the FLA return annually thereafter.' },
+  { g: 'money', t: 'Raise or no-raise decision', due: '2027-08-31',
+    a: ['hm'], tags: ['money'], status: 'next', est: '1 week',
+    why: 'Default is no raise. Venture money would require adding a cloud or B2B line the design contract forbids — so taking it is a decision to renegotiate the contract in the open, never a drift.' },
+
+  /* ---- marketing ------------------------------------------------------ */
+  { g: 'market', t: 'Verification pass, then publish the competitive benchmark', a: [], tags: ['marketing', 'research'], status: 'next', est: '1 week',
+    why: 'It is genuinely good standalone content, but published under the company name it becomes comparative advertising. Unverified prices and characterisations of competitors’ health are a disparagement risk and, worse for a trust brand, a chance to be publicly wrong.',
+    check: 'Re-verify every price and cap against live listings with dated screenshots · "as of" header · observable facts only, no "dormant" or "died" · the 28% figure deleted · attorney reads it as marketing' },
+  { g: 'market', t: 'Brief every external surface on the copy law', a: [], tags: ['marketing'], status: 'next', est: '1 day',
+    why: 'A contractor paid from the marketing line will write "Organize your closet today!" unless told otherwise. Waste statistics describe the industry in aggregate, never the reader’s own wardrobe — the moment they point at the reader they are a shame mechanic.' },
+  { g: 'market', t: 'Nano and micro collaborations', a: [], tags: ['marketing'], status: 'next', est: 'ongoing',
+    why: 'Honest wardrobe audits, not promo codes — there is nothing to code. Nano tier carries the best engagement for the money.' },
+  { g: 'market', t: 'Press on the craft', a: [], tags: ['marketing'], status: 'next', est: 'ongoing',
+    why: 'Three angles: ownership and permanence, the thirty-wears arithmetic, and the hand-drawn plates. The sample wardrobes are pitched as costume-design-grade briefs — nobody confirms, denies, or hints at a source work, on the record or off it.' },
+
+
+  /* ---- licence & IP defence ------------------------------------------- */
+  { g: 'ip', t: 'Choose the licence and commit LICENSE to the public repo', due: '2026-09-30',
+    a: [], tags: ['legal', 'critical-path'], status: 'next', current: true, est: '2 days',
+    why: 'The repo is public and carries no licence at all: no LICENSE file, no license field in package.json, and GitHub’s API reports license null. Default copyright still protects us, but ambiguity is the worst thing to hold when filing a store takedown against a clone, and with no contributor terms a merged outside pull request puts unassigned third-party copyright into the company’s only asset.',
+    check: 'BUSL 1.1 with an Additional Use Grant, or PolyForm Shield if the four-year clock is unwanted; not MIT or Apache, which grant away the one thing being sold · an abandonment clause converting to Apache 2.0 on wind-up or 24 months without a release · package.json license field set, since every SBOM scanner currently reads UNLICENSED · CONTRIBUTING states outside pull requests are not accepted, or accepted only under a DCO sign-off · move the Capacitor shell and the signing config to a private repo so store credentials never sit in public · an Indian court has not tested a source-available licence; the lever being bought here is the platform takedown form, not litigation' },
+  { g: 'ip', t: 'Sign the pre-incorporation IP assignments and moonlighting warranties', due: '2026-08-22',
+    a: ['hm'], tags: ['meeting', 'legal', 'critical-path'], status: 'next', current: true, est: 'half a day',
+    why: 'The company does not exist until mid-September, so anything Kunjal, Nimesh or Raksha write, draw or name between 22 August and incorporation belongs to them personally, with no chain to the company at all. Section 17 gives a contractor first ownership of their own work unless a signed assignment says otherwise.',
+    check: 'Assignment to HM personally in the interim, ratified by the company after incorporation · a written warranty from each: no conflicting IP obligation, no employer time, equipment or confidential information · an employer NOC where an existing employment contract is broad, because no deed they sign with us cures an employer’s prior claim · separate machines and separate accounts from day one' },
+  { g: 'ip', t: 'Put assignment, confidentiality and AI-output clauses in every engagement letter',
+    a: [], tags: ['legal'], status: 'next', est: '1 week to templates', dep: 'Meet Kunjal, Nimesh and Raksha',
+    why: 'The plan answers every hiring instinct with a contractor line of ₹60,000–2,00,000 a month, so the cost strategy is also the title risk: absent a signed assignment, the contractor owns the work. One lawyer engagement at ₹15,000–40,000 buys a template set that is reused forever.',
+    check: 'State a duration, or s.19(5) deems it five years and it lapses in 2031 · state a territory, or s.19(6) deems it India only, which is the wrong half of the map for a $4.99 sale · stamp every deed at ₹500–2,000, since an unstamped deed is inadmissible · take the moral-rights waiver under s.57 and treat its enforceability as unsettled · company-paid AI seats for anyone touching code, because output rights assign to the account holder, not to us · record three flags per contractor at engagement: GST-registered, Udyam-registered, non-resident' },
+  { g: 'ip', t: 'Register copyright in the source and in the drawn plates',
+    a: ['hm'], tags: ['legal'], status: 'next', est: '2 days to file',
+    why: 'A takedown form asks the filer to establish ownership, and a registration certificate is prima facie evidence where a deed alone invites an argument with a reviewer who is not a lawyer. Form XIV, ₹500 for the source as a literary work and ₹500 for the plates as artistic works, plus an agent’s fee. This is the backstop that still works if the mark does not.' },
+  { g: 'ip', t: 'Generate THIRD-PARTY-NOTICES in CI and open the asset provenance ledger',
+    a: [], tags: ['legal', 'mobile'], status: 'next', est: '2 days',
+    why: 'The 153 packages in the lockfile are MIT, Apache and BSD, and every one requires its notice to travel with a binary distribution; Settings has no licences row today. The OFL fonts in public/fonts happen to permit app embedding, which is luck: most commercial webfont licences cover web serving only and would have been a launch blocker.',
+    check: 'Notices built from the lockfile in CI and rendered in a Settings licences screen · a per-asset ledger from the first download: source URL, licence, retrieval date, required attribution string · Met Open Access and Rijksmuseum are clean, CC BY-NC is unusable in a paid app · standing rule: any font, icon or image has its app-embedding rights checked before it enters the repo · retrofitting provenance for 200 images at month 9 is a week of misery' },
+  { g: 'ip', t: 'Pre-draft the cease-and-desist reply and calendar the monthly mark watch', due: '2027-05-15',
+    a: [], tags: ['legal', 'external-gate'], status: 'next', est: '2 days',
+    why: 'A cease-and-desist can arrive in launch week, from press the launch itself generated, which is the worst imaginable time to start drafting. Separately, when someone else files a confusingly similar mark you have four months from journal publication to oppose, and nobody notifies you.',
+    check: 'Two pages: different class, different function, no commerce, no clothing sold, distinct device mark, dated use evidence from the file already opened · a decision rule agreed while calm for what triggers a rename rather than a reply · monthly search of tmrsearch.ipindia.gov.in for ALMARI, ALMAARI, ALMIRAH across classes 9, 42, 35, 25 · monthly app-store search for the same terms, because a copycat listing does more commercial damage than a registry filing · never use the name in a class 25 or 35 sense anywhere, including ASO keywords · renewal at ten years, calendared in whatever survives the founder' },
+
+  /* ---- data safety & release engineering ------------------------------- */
+  { g: 'safety', t: 'Snapshot the pre-migration bytes before any migration writes', due: '2026-11-30',
+    a: [], tags: ['product', 'critical-path'], status: 'next', current: true, est: '2 days',
+    why: 'src/hooks/useLocalStorage.ts runs migrate() on read at line 43, and the debounced writer commits the migrated state back over the same key at line 76, so the original bytes are gone within 250 ms. Nothing anywhere in the tree snapshots them; the only backup is an export the user had to remember to take. From month 3 that exposure is every paying wardrobe at once, in the localStorage to SQLite move.',
+    check: 'Raw pre-migration bytes written verbatim to a separate store, keyed snapshot-v{from}-{iso8601} · keep the last two · delete only after the app has launched and written cleanly five times on the new version · Restore from automatic snapshot in Settings · snapshot before confirmImport too, which replaces the whole wardrobe on one click' },
+  { g: 'safety', t: 'Make every migration validate its own output and refuse on mismatch',
+    a: [], tags: ['product', 'critical-path'], status: 'next', est: '3 days',
+    why: 'With no server there is no kill switch, so the release gate has to live inside the migration itself. A migration that refuses and changes nothing is infinitely better than one that half-succeeds, and on iOS a bad build stays live for the whole of App Review because neither store can roll back.',
+    check: 'Record counts match · no item loses a field it had · every id survives · on any mismatch leave the old store untouched and say so plainly: this version cannot safely upgrade your data, your closet is unchanged · write to a new key or table and keep the old one read-only for one full release cycle · prompt an export before a schema-changing update applies' },
+  { g: 'safety', t: 'Build the migration corpus and the adversarial fixtures',
+    a: [], tags: ['testing', 'critical-path'], status: 'next', est: '1–2 weeks', dep: 'Storage migration',
+    why: 'scripts/test-migrate.mjs tests one hand-written v1 fixture against a few spot fields, which is nowhere near enough for the SQLite move. At ₹60,000–2,00,000 of the contractor line it is the cheapest insurance in the budget, and it has to land before the migration ships to alpha, not after.',
+    check: 'Real exports from every schema version the app has ever written, committed as fixtures · 10,000 items; 50 MB of base64 photos; a truncated payload, which the app’s own quota toast proves exists in the wild; Devanagari and emoji names; NUL bytes; duplicate ids; dates in 1970 and 2099 · losslessness asserted by full-object set equality, not spot fields · property test: migrate(serialize(migrate(x))) deep-equals migrate(x), and no key ever disappears' },
+  { g: 'safety', t: 'Move the repo into a company organisation and lock main', due: '2026-09-04',
+    a: ['hm'], tags: ['product', 'critical-path'], status: 'next', est: '1 day',
+    why: 'deploy.yml triggers on every push to main and force-pushes gh-pages, so one bad push is instantly the live public site, and main has no branch protection, no rulesets and no Dependabot alerts today. The repo also sits in a personal namespace, which the month-2 deed will flatly contradict by asserting the company owns it. One engineer-day, ₹0.',
+    check: 'Company org, at least two owners, before any contributor gets access · no force-push, no deletion, pull request required · required checks: lint, which carries check-brand.mjs and is currently the only enforcement of the design contract, plus test:migrate, test:demo, test:intake and build · CODEOWNERS on migrate.ts, types.ts, useLocalStorage.ts and the design-system files · Dependabot alerts on, weekly dependabot.yml for npm and actions · SECURITY.md: a contact, 90 days, explicitly no bounty · a scheduled git push --mirror to a second host, since docs/ is the company brain' },
+  { g: 'safety', t: 'Ship the error boundary, the error ring buffer and the diagnostics export',
+    a: [], tags: ['product', 'testing'], status: 'next', est: '1 week',
+    why: 'There is no React error boundary in src/App.tsx, and migrate.ts’s own comments describe a white screen produced by a string cost value reaching .toFixed(). The one failure the app does catch, a refused write, goes to a toast and is forgotten, so a user who hit quota on Tuesday has nothing to send on Friday. Nothing here transmits: the file goes to the share sheet and the person chooses the destination.',
+    check: 'The boundary offers export first, built straight from storage so it never depends on the crashed subtree, then copy diagnostics, then reload, then the support address · diagnostics carry version, build, git SHA, SCHEMA_VERSION, platform, WebView, storage backend, DB size, migration history with counts before and after · the last ~200 errors, capped ~200 KB, held in Preferences and not SQLite so a corrupt database does not take the log with it · a CI assertion that fails if a garment name, a photo, a data: URI or the BYOK key can ever appear · the same redactor produces the structure-only repro export: real counts and shapes, names replaced with Item 1 to n' },
+  { g: 'safety', t: 'Archive dSYMs, mapping files and source maps for every store build', due: '2027-01-31',
+    a: [], tags: ['mobile'], status: 'next', est: '1 day',
+    why: 'Play Console vitals and Xcode Organizer crash reports are platform-side aggregate data and are already inside the boundary rule, but a stack is an undecodable hex dump without that exact build’s dSYM bundle, mapping.txt and source maps, and cloud CI silently deletes its artifacts on a retention window, often 30 days. It must exist before the first TestFlight upload.',
+    check: 'IPA and AAB, dSYM zip, mapping.txt, Vite source maps, the git SHA and the lockfile, stored outside CI; a private repo using Releases is free · verify sourcemap is false in the shipped bundle, because a public source map inside a paid binary is a free decompile · write into the plan that console crash data is permitted, so nobody later argues the telemetry ban forbids it, or that it justifies an SDK' },
+  { g: 'safety', t: 'Keep a pre-staged rollback build and write the staged-rollout ladder',
+    a: [], tags: ['mobile', 'launch'], status: 'next', est: '2 days',
+    why: 'Neither store rolls back: Play refuses a lower versionCode and Apple cannot un-ship a version, so the only iOS reversal is a new build of the old code at a higher number, through App Review. The only lever we can actually hold is a signed predecessor build, uploadable within an hour of a decision rather than a day.',
+    check: 'Play: 1%, hold 48 hours, then 5, 10, 20, 50, 100, with the halt criterion written before the release rather than during it · Apple phased release governs automatic updates only, so day-one exposure is never zero · do not plan around getting an expedited review · CI asserts the git tag, package.json, the iOS build number and the monotonic Android versionCode all agree; package.json still reads 0.0.0, and a versionCode collision lands during a rollback' },
+  { g: 'safety', t: 'Buy the test device fleet and prove storage survives the OEM cleaners',
+    a: [], tags: ['mobile', 'testing'], status: 'next', est: '1 week',
+    why: 'The biometric lock cannot be validated in the Simulator, which fakes enrolment but not lockout, passcode fallback or a revoked permission, and the low-disk eviction test already owed before external TestFlight cannot be run on a simulator or a borrowed phone. Separately, HyperOS and One UI ship deep-clean routines that purge cache directories on exactly the budget Indian devices this app is aimed at.',
+    check: 'Old low-RAM Android, a current mid Android, one Xiaomi or Samsung specifically, an old iPhone for Touch ID, a current iPhone which doubles as a second Apple trusted device: ₹60,000–99,000 · buy on the company GSTIN once registered, since 18% of ₹99,000 is roughly ₹15,000 of input credit forfeited purely to sequencing · verify the SQLite file and the snapshots sit in internal storage under Directory.Data, never a cache directory, never external · a cloud device farm for the month 5 to 7 window only, for breadth' },
+  { g: 'safety', t: 'Ship scheduled local backup to a folder the person picks',
+    a: [], tags: ['product', 'mobile'], status: 'next', est: '1 week',
+    why: 'The question this product will be asked most often is what happens when the phone is lost, and today the honest answer is hope you exported. A weekly automatic export written through the filesystem plugin to a folder chosen once through the system picker is user-initiated, has no sync and no server, and is a better paid-tier argument than Face ID.',
+    check: 'The folder can be the person’s own iCloud Drive or Google Drive; we never see it · decide Android Auto Backup and iOS backup inclusion deliberately at the same time, rather than leaving a default nobody read · whatever is chosen is reflected in the privacy page and the Play Data safety form, and adds a second qualification to the marketing claim alongside the BYOK one' },
+
+  /* ---- money & operations ---------------------------------------------- */
+  { g: 'ops', t: 'Procure the registered office before the SPICe+ filing', due: '2026-09-04',
+    a: ['hm'], tags: ['legal', 'critical-path'], status: 'next', est: '1 week',
+    why: 'The filing needs a utility bill under two months old, a rent or leave-and-licence agreement and the owner’s NOC, and a Bengaluru landlord who refuses is a two-week slip on the plan’s very first task. A home address also becomes public: Play publishes a developer address on every listing, Apple’s EU trader verification displays one, and the TM journal prints it, permanently, for a brand built on privacy.',
+    check: 'Three quotes; the tier that survives a GST physical verification is ₹2,000–4,000 a month, not the ₹1,000 mailbox · ask each provider how many GST registrations have succeeded at that address in the last twelve months and whether they attend verification · a company phone number at ₹200–400 a month for bank OTPs, Aadhaar, the store accounts and the trader listing · changing it later means INC-22, a GST amendment, PAN and TAN correction, bank KYC again and amended TM records · s.12(8) is ₹1,000 a day up to ₹1 lakh, with strike-off exposure' },
+  { g: 'ops', t: 'Apply for the D-U-N-S number the week the incorporation certificate arrives',
+    a: ['hm'], tags: ['money', 'critical-path'], status: 'next', est: '5–30 days to issue', dep: 'File SPICe+',
+    why: 'Apple organisation enrolment cannot start without it, enrolment gates the Paid Applications Agreement, and that gates being paid at all. It is free and nominally five working days, realistically up to thirty, and the tracker currently treats it as instantaneous.',
+    check: 'The D-U-N-S record must match the RoC name character for character, including Private Limited spelled out; a mismatch is the usual reason enrolment stalls for three to six weeks, and it is fixed by a D&B support ticket rather than by anything we control' },
+  { g: 'ops', t: 'Complete the Paid Applications Agreement, W-8BEN-E and both payout profiles', due: '2027-02-26',
+    a: ['hm'], tags: ['money', 'critical-path'], status: 'next', est: '2 weeks of back-and-forth', dep: 'Apply for the D-U-N-S number',
+    why: 'An app can pass App Review and still not be purchasable: the agreement stays pending until legal entity, bank and tax forms are all accepted, and that verification takes weeks. Doing it in the launch window is exactly when it bites, and first cash lands 45 to 75 days after launch regardless.',
+    check: 'W-8BEN-E, not W-8BEN, which is the individual form · the Foreign TIN field takes the company’s PAN, not the founder’s and not the CIN; a blank or a mismatch means 30% US withholding, not practically recoverable without filing a US return · the bank must issue an e-FIRA per inward credit, clear recurring USD card charges, and not demand a ₹1,00,000 average balance · whether store proceeds are royalties or business profits under the India-US treaty is genuinely contested; ask the CA, do not budget an assumed rate · ask in writing whether SOFTEX or EDPMS applies to store payouts' },
+  { g: 'ops', t: 'Set up the director’s loan before the first company rupee is spent',
+    a: ['hm'], tags: ['money', 'legal'], status: 'next', est: '1 day',
+    why: 'Months 1 to 10 are funded entirely by the founder, since grants are back-loaded and revenue starts in month 10. Personal spend that never touches the company is not deductible, does not carry forward, and is invisible as founder commitment at SISFS in month 4 and in any angel conversation.',
+    check: 'A one-page loan agreement; interest-free is fine · the director’s written declaration that the funds are her own and not borrowed, which is what keeps it outside the deposit rules · a board resolution accepting it · every founder rupee goes in as a numbered tranche, never as personal spend · DPT-3 becomes mandatory, due 30 June · get the company card working before the Apple and CI subscriptions start, because foreign spend on a personal card is the founder’s LRS remittance and not the company’s' },
+  { g: 'ops', t: 'Register on TRACES and start deducting TDS from the first payment',
+    a: ['hm'], tags: ['money', 'compliance'], status: 'next', est: '2 days',
+    why: 'Director’s remuneration that is not salary attracts 10% under 194J(1)(ba) from the first rupee with no threshold at all, and professional fees attract 194J above the annual threshold. TDS not deposited before the ITR due date disallows 30% of the expense under s.40(a)(ia): on ₹10 lakh of contractor spend that is ₹3 lakh of taxable income the company never earned.',
+    check: 'Decide once with the CA whether the stipend is salary under s.192 or remuneration under 194J(1)(ba), then stay consistent · deposit by the 7th, March by 30 April; late deduction 1% a month, late deposit 1.5% · 26Q and 24Q on 31 Jul, 31 Oct, 31 Jan, 31 May, with a ₹200 a day late fee · Form 16A from TRACES within 15 days of each return · never let an invoice from a Udyam-registered supplier age past 45 days, or s.43B(h) disallows it for the whole year · 194J and 194C thresholds have moved recently; confirm the FY 2026-27 figures' },
+  { g: 'ops', t: 'Ask the CA to price early GST registration against the contractor line',
+    a: [], tags: ['money', 'compliance'], status: 'next', est: '1 hour to ask',
+    why: 'The plan registers at monetisation, but the contractor line is front-loaded into months 3 to 6 at ₹60,000–2,00,000 a month, and registered contractors charge 18% on top: unregistered, that is a dead cost of ₹43,200 to ₹1,44,000. Against it, six extra months of returns at ₹2,000–4,000 a month. The plan does not currently ask the question at all.',
+    check: 'This is a number the CA runs once the contractor mix is known, not a memo decision · elect QRMP under the ₹5 crore threshold, which roughly halves the recurring retainer · the ₹20-lakh-threshold framing is probably the wrong mental model for supplies through an e-commerce operator; ask which limb of s.24 applies · the LUT must pre-date the first export, filed for FY 2027-28 · Google’s TCS does not auto-credit; it has to be accepted and claimed' },
+  { g: 'ops', t: 'Put the books in audit-trail software and close them by the 10th each month',
+    a: ['hm'], tags: ['money', 'compliance'], status: 'next', est: '1 day to set up',
+    why: 'Books must be kept in software whose edit log cannot be disabled, and the statutory auditor has to report on whether it was used, so a spreadsheet earns a qualification in the first audited accounts a grant committee ever reads. Zoho Books’ Indian free tier covers the whole 18 months at the Low scenario.',
+    check: 'Give the CA collaborator access rather than emailing statements · the close is 60 to 90 minutes: bank reconciled, TDS challan confirmed paid rather than assumed, GST status checked, one page circulated to the second director · pre-launch the number is months of runway at trailing-3-month burn; post-launch it is units to stand still, fixed burn divided by ₹267.5 net per unit, roughly 390 a month in maintenance mode · a founder who does not close monthly finds a burn overrun three to four months late, which at the top of the range is ₹6–16 lakh' },
+  { g: 'ops', t: 'Build the recurring compliance calendar',
+    a: ['hm'], tags: ['compliance', 'legal'], status: 'next', est: 'half a day',
+    why: 'This tracker holds dated tasks; none of the recurring statutory dates exist anywhere in it. ROC lateness is ₹100 a day per form and uncapped, and DIR-3 KYC missed on 30 September is ₹5,000 per director with the DIN deactivated until it is paid.',
+    check: 'TDS deposit 7th · GST monthly or QRMP quarterly · TDS returns 31 Jul, 31 Oct, 31 Jan, 31 May, Form 16A 15 days after each · advance tax from 15 Sep 2027, which lands in the same month as the raise gate · DIR-3 KYC by 30 Sep · AGM by 30 Sep, AOC-4 within 30 days, MGT-7 within 60 · DPT-3 by 30 Jun · MSME Form 1 on 31 Oct and 30 Apr · books and vouchers kept eight years under s.128 · do not elect 115BAA: it saves about one point and forfeits the 80-IAC option irreversibly' },
+  { g: 'ops', t: 'Issue share certificates within two months of incorporation', due: '2026-11-15',
+    a: ['hm'], tags: ['legal', 'compliance'], status: 'next', est: '1 day',
+    why: 'Section 56(4)(a) gives two months from incorporation, on Form SH-1, signed by two directors and stamped. The duty on a lakh of subscribed capital is a rounding error; the point is that at the first diligence the certificates either exist or they do not, and non-issue carries a penalty on the company and every officer in default.',
+    check: 'The Register of Members in MGT-1 is the legal record of ownership, not a spreadsheet · registers of directors, transfers and charges, plus the minute books, kept at the registered office · BEN-1 declarations on file · SISFS in month 4 asks for a cap table and a board resolution authorising the application, so the registers have to exist by then · a part-time practising CS at ₹15,000–35,000 a year is who actually maintains this' },
+
+  /* ---- people & governance --------------------------------------------- */
+  { g: 'team', t: 'Take docs/28 and company/ out of the public deploy', due: '2026-08-21',
+    a: ['hm'], tags: ['legal', 'critical-path'], status: 'next', est: 'half a day',
+    why: 'The deploy workflow copies company/ into dist/company and force-pushes it to gh-pages, so the launch plan and this board are served as a public website. That publishes a dated statement of our own awareness of a prior user in the same field, which is usable material for an opponent’s counsel, along with the rename gate and its price, the budget and the stipend band; it also signals intent to adopt the name months before the month-3 filing.',
+    check: 'Private repo for docs/28 and company/; the app itself stays public · purge from gh-pages and redeploy · git history and any existing forks persist, so this reduces exposure going forward rather than erasing it; ask counsel at the month-1 engagement whether what is already published affects the TM-A strategy · do not enable the Supabase sync as documented while this board holds the equity and legal items, since the sample policies let anyone with the anon key read, insert and update' },
+  { g: 'team', t: 'Circulate and sign a mutual NDA before the 22 August agenda', due: '2026-08-21',
+    a: ['hm'], tags: ['meeting', 'legal'], status: 'next', est: '1 hour',
+    why: 'The agenda is the four Almari collisions, the rename gate, the budget and the grant strategy. Once those are said aloud with no NDA in place, none of it is confidential information anyone can later enforce. A two-page mutual NDA is a template and costs nothing.',
+    check: 'Name the sensitive items explicitly: the trademark position and the rename gate, the research-protocol data, the grant applications, unreleased product plans · a no-announcement rule until the month-8 opposition check clears: no LinkedIn post, no handle registrations, no domains bought in personal names, which is what an enthusiastic joiner does within the hour' },
+  { g: 'team', t: 'Sign a one-page founders term sheet, and issue no equity on the day', due: '2026-08-22',
+    a: ['hm'], tags: ['meeting', 'legal', 'critical-path'], status: 'next', est: 'half a day',
+    why: 'As scheduled, the meeting produces oral equity promises with three witnesses and no document, which is the most common Indian founder dispute and is unfalsifiable eighteen months later when one person remembers 5% and another remembers 2%. Issued shares cannot simply be unvested: buyback under s.68 needs free reserves a pre-revenue company does not have.',
+    check: 'Binding on three things only: confidentiality, that everything created from today assigns to the company on incorporation, and that no equity is granted until the SHA is executed · splits, roles and titles recorded as agreed intent, subject to the SHA · a directorship is a legal office carrying personal liability for filings someone else makes, at ₹1,000 a day per officer; say that before anyone accepts one, because a reasonable person may decline · agree the shape, issue nothing' },
+  { g: 'team', t: 'Have counsel draft the SHA and bespoke Articles before SPICe+ is filed', due: '2026-09-10',
+    a: ['hm'], tags: ['legal', 'critical-path'], status: 'next', est: '2 weeks', dep: 'Meet Kunjal, Nimesh and Raksha',
+    why: 'The moment SPICe+ is filed, subscriber shares are issued under whatever Articles are attached; under stock Table F they are fully vested from minute one, freely transferable, and subject to no call option, and the retrofit then needs the consent of the person being restricted. Transfer restrictions that live only in a shareholders’ agreement and are not mirrored in the Articles have been held unenforceable against the company.',
+    check: '48 months, 12-month cliff, monthly thereafter, for all four · a founder vesting credit for the app that already exists, with the remainder on the same schedule as everyone else · good leaver and bad leaver defined; death and incapacity handled, or a spouse inherits a veto over the design contract · implemented as a compulsory-transfer call option at par, never as a buyback · ROFR, tag, drag, lock-up · the never-list as a reserved matter amendable only by unanimous written consent · the founder deed stays unconditional, with no reversion on ceasing to be engaged · ₹35,000–1,00,000, two quotes; the band is market experience, not a sourced figure' },
+  { g: 'team', t: 'Hold and minute the first board meeting within 30 days', due: '2026-10-12',
+    a: ['hm'], tags: ['legal', 'compliance'], status: 'next', est: '1 day',
+    why: 'The auditor appointment, the bank mandate, the ratification of pre-incorporation spend and each director’s MBP-1 and DIR-8 disclosures are all transacted here. Unratified pre-incorporation rupees are simply gone, and unminuted meetings are the most common thing a diligence process finds missing; a small company needs only two board meetings a year, so the few there are have to carry weight.',
+    check: 'Keep a dated expense schedule with receipts from today, so there is something to ratify · adopt the spending authority: founder alone to ₹25,000, above that the second director in writing, no annual-billed plans in year one · dual bank signatory, never sole, decided at account opening · an SH-13 nomination from every shareholder on file, or a death freezes every shareholder resolution until probate, which in India runs months · resolve now that at six months of runway the company drops to maintenance mode unless the board resolves otherwise in writing' },
+  { g: 'team', t: 'Create company-owned identities and put every credential in a shared manager',
+    a: ['hm'], tags: ['compliance', 'legal'], status: 'next', est: '1 day',
+    why: 'The Apple Developer Program has exactly one Account Holder, and only that Apple ID can accept new agreement versions; until someone accepts, paid distribution stops. Documentation does not sign an AAB. Bus-factor-1 on a paid app means people who paid ₹299 lose the ability to ever receive an update, which is the precise opposite of what the price was charged for.',
+    check: 'developer@ and admin@ on Workspace as the Apple Account Holder and Play owner, never a personal Apple ID or Gmail; a second Admin on both consoles · opt into Play App Signing at first upload, which turns a lost upload key into a support reset rather than the end of the app · Bitwarden Teams at about ₹382 a user a month or 1Password at about ₹763, set up before the first shared account exists · the custody list: DSC tokens, bank, GST, TRACES, Apple, Play, GitHub org, registrar with lock and auto-renew on, upload keystore and its passwords, Workspace super-admin, each with a holder and a recovery contact · two trusted phone numbers, a printed recovery key held by the second director, two FIDO2 keys · a written runbook for the founder being unreachable for 30 days' },
+  { g: 'team', t: 'Decide the ESOP or direct-allotment route before anyone is promised options',
+    a: ['hm'], tags: ['legal', 'money'], status: 'next', est: '1 week',
+    why: 'Contractors cannot hold ESOPs: Rule 12 limits them to permanent employees and directors, so the plan’s central cost strategy, contractors instead of hires, is directly incompatible with its central compensation strategy. Promoters and directors above 10% are excluded too, with a DPIIT-startup exemption whose current duration the CS has to confirm rather than anyone assuming it.',
+    check: 'Direct allotment under the SHA, sweat equity under s.54 with a special resolution and a registered-valuer report at ₹15,000–40,000, or making the person an actual employee · exercise is taxed as a perquisite at fair market value, so people get a tax bill on shares they cannot sell; say that out loud before anyone accepts options · scheme, resolutions, grant letters and the SH-6 register run ₹25,000–60,000 if options are the answer · a person paid only in equity is neither employee nor contractor and needs the most paper, not the least' },
+
+  /* ---- support, store & the user-facing law ---------------------------- */
+  { g: 'support', t: 'Open the support inbox and write the retention rule that governs it',
+    a: [], tags: ['compliance', 'launch'], status: 'next', est: '1 day',
+    why: 'Both stores require a support address on the listing, and the month-5 alpha puts a build in strangers’ hands with nowhere to write. Support mail is also the only place this company holds personal data at all: an address, and inevitably screenshots of people’s clothes and homes. It needs a rule before it has contents.',
+    check: 'A role address on the already-budgeted Workspace as a collaborative inbox, never a personal Gmail; open it in month 2 so it is aged and reachable by the time it appears on a listing · 12-month auto-delete configured and written into the privacy policy · a standing canned line asking people not to send exports or photographs, because we cannot use them and would rather not hold them · a published target of three working days, which is keepable, rather than 24 hours, which is not · decide the answer language and say it · a public issue template: version, build, platform, steps, expected and actual' },
+  { g: 'support', t: 'Brief counsel on the privacy policy, terms and a custom EULA', due: '2026-12-31',
+    a: [], tags: ['legal', 'compliance'], status: 'next', est: '2 days to brief',
+    why: 'Both stores block submission on a policy URL that does not resolve, and an external TestFlight build needs one before it ships. For this company the policy is not a checkbox; it is the product’s central claim in legally operative form, and a false privacy representation is an unfair trade practice under the CPA 2019 as well as grounds for store removal.',
+    check: 'Apple applies its standard EULA by default; Play applies none at all, so absent ours the only governing document is Play’s own ToS · the clause that matters most: the company holds no copy of your data and cannot recover it, with liability capped at the ₹299 purchase price, since a total exclusion may be struck as unfair under s.2(46) · write the BYOK section as a flow the user initiates and directs, or the policy itself argues we determine purpose and means · no US-style arbitration or foreign-forum clause against an Indian consumer · publish a named grievance contact and a 48-hour acknowledgement, whether or not the E-Commerce Rules bind us, which is untested · version the policy with a public dated changelog · the marketing site keeps zero analytics, including anything a contractor adds' },
+  { g: 'support', t: 'Write the help site, including the page about how you can lose your data',
+    a: [], tags: ['product', 'launch'], status: 'next', est: '1 week',
+    why: 'Apple rejects placeholder or dead Support URLs under Guideline 1.5, which would burn the single budgeted rejection cycle for an entirely avoidable reason. Roughly a third of expected tickets are how-do-I questions and a fifth are lost-phone questions; both are answered by pages that do not exist yet, which makes the help site the support strategy rather than a support cost.',
+    check: 'Ten pages: getting started, the three intake paths, the ledger and cost per wear, backup and changing your phone, export and import, your own AI key, troubleshooting, what ₹299 buys over the free web app, accessibility, privacy · bundled in the binary as well as hosted, because a local-first app must work offline exactly when the user needs help · the honest page says it without hedging: no server, no account, no recovery, the export file is the backup, there is no sync at launch · written from real beta mail by whoever wrote the tutorial copy · consider an export prompt as the sixth stop of the tour, since a docs page is not the real fix' },
+  { g: 'support', t: 'Run the VoiceOver and TalkBack pass and fix the Dynamic Type path',
+    a: [], tags: ['product', 'testing'], status: 'next', est: '1 week',
+    why: 'The AA contrast harness is real and better than most shipped apps have, but contrast is one success criterion of roughly fifty. iOS WKWebView does not scale CSS rem with Dynamic Type while Android WebView does apply the system font scale, so one build carries two opposite bugs and neither is visible on a desktop. Do it in months 5 to 6, before the port hardens, because it is a change to the type system rather than a polish item.',
+    check: 'aria-live appears in exactly one file, Toast.tsx, so the two-tap log currently confirms nothing to a screen reader · extend test-contrast.mjs to non-text contrast at 3:1, which matters on an app made almost entirely of drawn SVG, and add a focus-trap check across the five modals; a CI gate is worth more than a one-off audit · verify reduced motion survives the port · never declare Larger Text in an accessibility label the build does not support · the EAA microenterprise position and the RPwD question go to counsel; the ₹0 hedge is restricting EU availability at launch' },
+  { g: 'support', t: 'Run store asset production as a four-week workstream', due: '2027-04-30',
+    a: [], tags: ['launch', 'design'], status: 'next', est: '4 weeks',
+    why: 'The plan budgets three days at month 9 for what is three to four weeks of design work, which is the single most avoidable way to slip a launch by a month. Capture is nearly free because scripts/screenshot.mjs and snap-states.mjs already exist; the weeks go on composition, captions, ordering, dark and light variants, and re-cutting when the port changes the UI. Start in month 7.',
+    check: 'Apple: a 6.9in set, plus iPad only if iPad is supported, which is a second design pass and not a checkbox · Play: a phone set, tablet sets if declared, and the 1024x500 feature graphic, the most forgotten asset on the store · iOS 26 wants light, dark and tinted icon layers through Icon Composer, Android wants adaptive plus monochrome; public/icon.svg is PWA-grade and sufficient for neither · the existing demo videos are the wrong length and the wrong capture provenance, so budget a re-cut at ₹15,000–40,000 · captions written under the copy law, which is the exact opposite of store convention · what ₹299 buys goes in the first screenshot caption and the first line of the description' },
+  { g: 'support', t: 'Pin the price bands in both consoles and allocate the promo codes', due: '2027-04-30',
+    a: [], tags: ['money', 'launch'], status: 'next', est: '1 day',
+    why: 'Apple generates every storefront from one base, so a $4.99 base prices India at roughly ₹449–499 rather than ₹299, and the whole blended ₹267.5 per unit arithmetic assumes a manual override nobody currently owns. Verify at month 4 that ₹299 exists on the Apple India grid; it is very likely and it is unverified, and if it does not the plan’s most load-bearing number changes.',
+    check: 'Pin India manually and disable FX-driven automatic price updates, which otherwise move it later without asking · three bands, not 175 storefronts: India at ₹299, developed markets at $4.99, South Asia and large low-ARPU markets at $1.99–2.99 · charm endings held manually on Play, which does not enforce them · one price, no sales, ever, published as a policy, because a launch discount is urgency framing and there is no recurring relationship in which to make it up · 100 Apple promo codes per version: every alpha and beta tester gets one, and so does every reviewer' },
+  { g: 'support', t: 'Assemble the submission-form pack for both stores', due: '2027-05-24',
+    a: [], tags: ['launch', 'compliance'], status: 'next', est: '2 days',
+    why: 'These are trivial forms that block a submission, and by default they are discovered at the form. The encryption declaration is the sharpest: if SQLCipher ships it is third-party cryptography, which voids the exemption most apps rely on, so that decision belongs in month 3 with its export-compliance consequence attached, not at the upload screen.',
+    check: 'IARC and Apple rating questionnaires; BYOK may pull the app out of the 4+ and Everyone buckets by introducing third-party content transfer · export-compliance classification, ₹0–40,000 if a filing is needed · privacy labels and the Play Data safety form, both gated on the BYOK answer, which therefore has a hard month-8 deadline rather than a vague one · the store name string decided with the attorney, since Apple rejects names confusingly similar to existing listings and Shop Almari already occupies that search · localise the listing, ship the app in English, and say so plainly · publish the commit SHA and the SHA-256 of the built bundle with the release, because the trust claim gets tested the day it is made' },
+  { g: 'support', t: 'Start the weekly review-reply slot and the monthly support ledger',
+    a: [], tags: ['launch', 'marketing'], status: 'next', est: 'ongoing',
+    why: 'With no telemetry, support mail and store reviews are the product analytics, and a developer reply is the only visible evidence that anyone is home. The app also launches with zero ratings on both stores against competitors holding tens of thousands, and the design contract rules out the rating prompt that would fix that; accept the cost on the record rather than by drift.',
+    check: 'Thirty minutes weekly: reply to every 1 to 3 star review and every review carrying a question, never templated, never asking anyone to change a rating · Google routes refunds to the developer after 48 hours, so Android refunds are real recurring work, while Apple is merchant of record and the reply is a link · one row per ticket, tagged, read monthly against the roadmap, and every ticket that reveals a confusion becomes a docs page rather than just a reply · a named owner and a launch-week rota agreed in month 9, since the Mid case is about 20 hours a week during the spike' },
+];
+
+/* ========================================================================== */
+/* STATE                                                                      */
+/* ========================================================================== */
+
+const uid = () => 't' + Math.random().toString(36).slice(2, 9);
+const nowISO = () => new Date().toISOString();
+
+function buildSeed() {
+  const tasks = SEED_TASKS.map((s, i) => ({
+    id: 'seed-' + i,
+    title: s.t,
+    group: s.g,
+    status: s.status || 'next',
+    current: !!s.current,
+    assignees: s.a || [],
+    tags: s.tags || [],
+    due: s.due || '',
+    est: s.est || '',
+    why: s.why || '',
+    check: s.check || '',
+    dep: s.dep || '',
+    comments: [],
+    updatedAt: nowISO(),
+    order: i,
+  }));
+  return { version: 1, tasks, people: PEOPLE.slice(), updatedAt: nowISO() };
+}
+
+let STATE = buildSeed();
+let ME = null;
+let VIEW = { group: 'all', person: 'all', tag: 'all', status: 'all', q: '', mode: 'board' };
+let SELECTED = new Set();
+let OPEN_TASK = null;
+let SYNCING = false;
+let LAST_SYNC = null;
+
+/* ------------------------------------------------------------- storage --- */
+
+const LOCAL_KEY = 'almari-workroom-state';
+const ME_KEY = 'almari-workroom-me';
+const shared = () => !!(SYNC.url && SYNC.key);
+
+function loadLocal() {
+  try {
+    const raw = localStorage.getItem(LOCAL_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && Array.isArray(parsed.tasks)) return parsed;
+    }
+  } catch { /* fall through to seed */ }
+  return null;
+}
+
+function saveLocal() {
+  try { localStorage.setItem(LOCAL_KEY, JSON.stringify(STATE)); } catch { /* private mode */ }
+}
+
+/* Shared mode: one JSON row, merged per task on write so two people editing
+   different tasks never clobber each other. Last write wins per task. */
+async function pullShared() {
+  const r = await fetch(`${SYNC.url}/rest/v1/${SYNC.table}?id=eq.${SYNC.row}&select=doc`, {
+    headers: { apikey: SYNC.key, Authorization: `Bearer ${SYNC.key}` },
+  });
+  if (!r.ok) throw new Error('pull ' + r.status);
+  const rows = await r.json();
+  return rows && rows[0] && rows[0].doc ? rows[0].doc : null;
+}
+
+async function pushShared(doc) {
+  const r = await fetch(`${SYNC.url}/rest/v1/${SYNC.table}?on_conflict=id`, {
+    method: 'POST',
+    headers: {
+      apikey: SYNC.key, Authorization: `Bearer ${SYNC.key}`,
+      'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates',
+    },
+    body: JSON.stringify({ id: SYNC.row, doc, updated_at: nowISO() }),
+  });
+  if (!r.ok) throw new Error('push ' + r.status);
+}
+
+function mergeDocs(mine, theirs) {
+  if (!theirs) return mine;
+  const byId = new Map(theirs.tasks.map(t => [t.id, t]));
+  for (const t of mine.tasks) {
+    const other = byId.get(t.id);
+    if (!other || (t.updatedAt || '') >= (other.updatedAt || '')) byId.set(t.id, t);
+  }
+  const people = [...theirs.people];
+  for (const p of mine.people) if (!people.some(x => x.id === p.id)) people.push(p);
+  return { version: 1, tasks: [...byId.values()].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)), people, updatedAt: nowISO() };
+}
+
+async function persist() {
+  STATE.updatedAt = nowISO();
+  saveLocal();
+  if (!shared()) return;
+  try {
+    SYNCING = true; paintSyncState();
+    const remote = await pullShared();
+    STATE = mergeDocs(STATE, remote);
+    await pushShared(STATE);
+    LAST_SYNC = new Date();
+    saveLocal();
+  } catch (e) {
+    console.warn('sync failed', e);
+  } finally { SYNCING = false; paintSyncState(); render(); }
+}
+
+async function poll() {
+  if (!shared() || SYNCING) return;
+  try {
+    const remote = await pullShared();
+    if (!remote) return;
+    if ((remote.updatedAt || '') > (STATE.updatedAt || '')) {
+      STATE = mergeDocs(STATE, remote);
+      saveLocal(); render();
+    }
+    LAST_SYNC = new Date(); paintSyncState();
+  } catch { /* offline; the portal keeps working */ }
+}
+
+/* ========================================================================== */
+/* HELPERS                                                                    */
+/* ========================================================================== */
+
+const $ = sel => document.querySelector(sel);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const personById = id => STATE.people.find(p => p.id === id);
+const groupById = id => GROUPS.find(g => g.id === id);
+
+function fmtDate(d) {
+  if (!d) return '';
+  const dt = new Date(d + 'T00:00:00');
+  if (isNaN(dt)) return d;
+  return dt.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+function daysUntil(d) {
+  if (!d) return null;
+  const dt = new Date(d + 'T00:00:00');
+  if (isNaN(dt)) return null;
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  return Math.round((dt - today) / 86400000);
+}
+
+function touch(task) { task.updatedAt = nowISO(); }
+
+/* ========================================================================== */
+/* RENDER                                                                     */
+/* ========================================================================== */
+
+function visibleTasks() {
+  const q = VIEW.q.trim().toLowerCase();
+  return STATE.tasks.filter(t => {
+    if (VIEW.group !== 'all' && t.group !== VIEW.group) return false;
+    if (VIEW.person !== 'all' && !(t.assignees || []).includes(VIEW.person)) return false;
+    if (VIEW.person === 'unassigned' && (t.assignees || []).length) return false;
+    if (VIEW.tag !== 'all' && !(t.tags || []).includes(VIEW.tag)) return false;
+    if (VIEW.status !== 'all' && t.status !== VIEW.status) return false;
+    if (q && !(`${t.title} ${t.why} ${t.check}`.toLowerCase().includes(q))) return false;
+    return true;
+  });
+}
+
+function paintSyncState() {
+  const el = $('#syncState'); if (!el) return;
+  if (!shared()) {
+    el.innerHTML = `<span class="dot local"></span>This device only · <a href="#setup" id="setupLink">make it shared</a>`;
+  } else if (SYNCING) {
+    el.innerHTML = `<span class="dot sync"></span>Saving to the team…`;
+  } else {
+    el.innerHTML = `<span class="dot ok"></span>Shared${LAST_SYNC ? ' · ' + LAST_SYNC.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : ''}`;
+  }
+}
+
+function avatar(id, size) {
+  const p = personById(id);
+  if (!p) return '';
+  return `<span class="av ${p.tint} ${size || ''}" title="${esc(p.name)}">${esc(p.initials)}</span>`;
+}
+
+function taskRow(t) {
+  const g = groupById(t.group);
+  const d = daysUntil(t.due);
+  const overdue = d !== null && d < 0 && t.status !== 'done';
+  const soon = d !== null && d >= 0 && d <= 7 && t.status !== 'done';
+  return `
+  <article class="task ${t.status} ${t.current ? 'is-current' : ''} ${SELECTED.has(t.id) ? 'is-sel' : ''}" data-id="${t.id}">
+    <label class="pick"><input type="checkbox" ${SELECTED.has(t.id) ? 'checked' : ''} data-pick="${t.id}" aria-label="Select"></label>
+    <div class="task-body" data-open="${t.id}">
+      <div class="task-top">
+        <span class="st st-${t.status}">${t.status === 'ongoing' ? 'On now' : t.status === 'done' ? 'Done' : t.status === 'blocked' ? 'Blocked' : 'Next'}</span>
+        ${t.current ? '<span class="pin">Current focus</span>' : ''}
+        ${g && VIEW.group === 'all' ? `<span class="gtag">${esc(g.name)}</span>` : ''}
+      </div>
+      <h4>${esc(t.title)}</h4>
+      ${t.why ? `<p class="why">${esc(t.why)}</p>` : ''}
+      <div class="task-meta">
+        ${(t.assignees || []).length ? `<span class="avs">${t.assignees.map(a => avatar(a, 'sm')).join('')}</span>` : '<span class="unassigned">Unassigned</span>'}
+        ${t.due ? `<span class="due ${overdue ? 'overdue' : soon ? 'soon' : ''}">${esc(fmtDate(t.due))}${d !== null && t.status !== 'done' ? ` · ${d < 0 ? `${-d}d late` : d === 0 ? 'today' : `in ${d}d`}` : ''}</span>` : ''}
+        ${t.est ? `<span class="est">${esc(t.est)}</span>` : ''}
+        ${(t.tags || []).map(x => `<span class="tg">${esc(x)}</span>`).join('')}
+        ${(t.comments || []).length ? `<span class="cm">${t.comments.length} note${t.comments.length > 1 ? 's' : ''}</span>` : ''}
+      </div>
+    </div>
+  </article>`;
+}
+
+function renderBoard() {
+  const tasks = visibleTasks();
+  const groups = VIEW.group === 'all' ? GROUPS : GROUPS.filter(g => g.id === VIEW.group);
+  let html = '';
+  for (const g of groups) {
+    const mine = tasks.filter(t => t.group === g.id).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    if (!mine.length) continue;
+    const done = mine.filter(t => t.status === 'done').length;
+    html += `
+    <section class="phase">
+      <header class="phase-head">
+        <div>
+          <h3>${esc(g.name)}</h3>
+          <p class="phase-note">${esc(g.note)}</p>
+        </div>
+        <div class="phase-meta">
+          <span class="win">${esc(g.window)}</span>
+          <span class="count">${done}/${mine.length} done</span>
+        </div>
+      </header>
+      <div class="tasks">${mine.map(taskRow).join('')}</div>
+    </section>`;
+  }
+  return html || `<p class="empty">Nothing matches those filters.</p>`;
+}
+
+function renderTimeline() {
+  const dated = visibleTasks().filter(t => t.due).sort((a, b) => a.due.localeCompare(b.due));
+  const undated = visibleTasks().filter(t => !t.due);
+  const byMonth = new Map();
+  for (const t of dated) {
+    const k = t.due.slice(0, 7);
+    if (!byMonth.has(k)) byMonth.set(k, []);
+    byMonth.get(k).push(t);
+  }
+  let html = '<div class="timeline">';
+  for (const [month, list] of byMonth) {
+    const label = new Date(month + '-01T00:00:00').toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+    html += `<section class="tl-month"><h3>${esc(label)}</h3>`;
+    for (const t of list) {
+      const d = daysUntil(t.due);
+      html += `
+      <div class="tl-row ${t.status} ${t.current ? 'is-current' : ''}" data-open="${t.id}">
+        <span class="tl-date">${esc(fmtDate(t.due))}</span>
+        <span class="tl-bar"></span>
+        <span class="tl-title">${esc(t.title)}</span>
+        <span class="tl-people">${(t.assignees || []).map(a => avatar(a, 'sm')).join('')}</span>
+        ${d !== null && t.status !== 'done' ? `<span class="tl-when ${d < 0 ? 'overdue' : d <= 7 ? 'soon' : ''}">${d < 0 ? `${-d}d late` : d === 0 ? 'today' : `in ${d}d`}</span>` : ''}
+      </div>`;
+    }
+    html += `</section>`;
+  }
+  if (undated.length) {
+    html += `<section class="tl-month"><h3>No date yet</h3>
+      ${undated.map(t => `<div class="tl-row ${t.status}" data-open="${t.id}"><span class="tl-date">—</span><span class="tl-bar"></span><span class="tl-title">${esc(t.title)}</span><span class="tl-people">${(t.assignees || []).map(a => avatar(a, 'sm')).join('')}</span></div>`).join('')}
+    </section>`;
+  }
+  return html + '</div>';
+}
+
+function renderPeople() {
+  const html = STATE.people.map(p => {
+    const mine = STATE.tasks.filter(t => (t.assignees || []).includes(p.id));
+    const open = mine.filter(t => t.status !== 'done');
+    const now = mine.filter(t => t.status === 'ongoing' || t.current);
+    return `
+    <section class="plate person-card">
+      <div class="person-head">${avatar(p.id, 'lg')}<div><h3>${esc(p.name)}</h3><p class="phase-note">${esc(p.role || '')}</p></div></div>
+      <p class="person-nums"><b>${open.length}</b> open · <b>${now.length}</b> on now · <b>${mine.length - open.length}</b> done</p>
+      <div class="tasks compact">${mine.length ? mine.slice(0, 40).map(taskRow).join('') : '<p class="empty">Nothing assigned yet.</p>'}</div>
+    </section>`;
+  }).join('');
+  return html;
+}
+
+function render() {
+  const main = $('#main');
+  main.innerHTML = VIEW.mode === 'timeline' ? renderTimeline()
+    : VIEW.mode === 'people' ? renderPeople()
+    : renderBoard();
+
+  const total = STATE.tasks.length;
+  const done = STATE.tasks.filter(t => t.status === 'done').length;
+  const ongoing = STATE.tasks.filter(t => t.status === 'ongoing').length;
+  const blocked = STATE.tasks.filter(t => t.status === 'blocked').length;
+  $('#stats').innerHTML = `<b>${done}</b>/${total} done · <b>${ongoing}</b> on now${blocked ? ` · <b>${blocked}</b> blocked` : ''}`;
+
+  $('#bulkbar').hidden = SELECTED.size === 0;
+  $('#bulkcount').textContent = `${SELECTED.size} selected`;
+  paintSyncState();
+  if (OPEN_TASK) paintDrawer();
+}
+
+/* ------------------------------------------------------------- drawer ---- */
+
+function paintDrawer() {
+  const t = STATE.tasks.find(x => x.id === OPEN_TASK);
+  const dr = $('#drawer');
+  if (!t) { dr.hidden = true; OPEN_TASK = null; return; }
+  dr.hidden = false;
+  const g = groupById(t.group);
+  dr.innerHTML = `
+    <div class="dr-head">
+      <span class="kicker">${esc(g ? g.name : '')} · ${esc(g ? g.window : '')}</span>
+      <button class="x" id="drClose" aria-label="Close">✕</button>
+    </div>
+    <input class="dr-title" id="drTitle" value="${esc(t.title)}" ${ME ? '' : 'disabled'}>
+    <div class="dr-row">
+      <label>Status</label>
+      <div class="segs" id="drStatus">
+        ${['next', 'ongoing', 'blocked', 'done'].map(s => `<button class="seg ${t.status === s ? 'on' : ''}" data-status="${s}" ${ME ? '' : 'disabled'}>${s === 'ongoing' ? 'On now' : s[0].toUpperCase() + s.slice(1)}</button>`).join('')}
+      </div>
+    </div>
+    <div class="dr-row">
+      <label>Current focus</label>
+      <button class="toggle ${t.current ? 'on' : ''}" id="drCurrent" ${ME ? '' : 'disabled'}>${t.current ? 'Pinned as current' : 'Pin as current'}</button>
+    </div>
+    <div class="dr-row">
+      <label>Assigned to</label>
+      <div class="chips" id="drPeople">
+        ${STATE.people.map(p => `<button class="chip ${(t.assignees || []).includes(p.id) ? 'on' : ''}" data-person="${p.id}" ${ME ? '' : 'disabled'}>${avatar(p.id, 'sm')} ${esc(p.name)}</button>`).join('')}
+      </div>
+    </div>
+    <div class="dr-row">
+      <label>Tags</label>
+      <div class="chips" id="drTags">
+        ${TAGS.map(x => `<button class="chip ${(t.tags || []).includes(x) ? 'on' : ''}" data-tag="${x}" ${ME ? '' : 'disabled'}>${esc(x)}</button>`).join('')}
+      </div>
+    </div>
+    <div class="dr-row two">
+      <div><label>Due</label><input type="date" id="drDue" value="${esc(t.due || '')}" ${ME ? '' : 'disabled'}></div>
+      <div><label>Estimate</label><input id="drEst" value="${esc(t.est || '')}" placeholder="e.g. 3 days" ${ME ? '' : 'disabled'}></div>
+    </div>
+    <div class="dr-row"><label>Why this exists</label><textarea id="drWhy" rows="4" ${ME ? '' : 'disabled'}>${esc(t.why || '')}</textarea></div>
+    <div class="dr-row"><label>Checklist / notes</label><textarea id="drCheck" rows="3" ${ME ? '' : 'disabled'}>${esc(t.check || '')}</textarea></div>
+    ${t.dep ? `<p class="dep">Waits on: ${esc(t.dep)}</p>` : ''}
+    <div class="dr-row">
+      <label>Notes from the team</label>
+      <div class="comments">
+        ${(t.comments || []).length ? t.comments.map(c => `
+          <div class="comment">${avatar(c.by, 'sm')}<div><b>${esc(personById(c.by)?.name || c.by)}</b> <span class="ts">${new Date(c.at).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span><p>${esc(c.text)}</p></div></div>`).join('')
+          : '<p class="empty small">No notes yet.</p>'}
+      </div>
+      ${ME ? `<div class="add-comment"><textarea id="drComment" rows="2" placeholder="Add a note as ${esc(personById(ME)?.name)}…"></textarea><button class="btn" id="drAddComment">Add note</button></div>`
+        : '<p class="empty small">Sign in to add a note.</p>'}
+    </div>
+    <p class="dr-foot">Last change ${new Date(t.updatedAt).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</p>
+  `;
+  wireDrawer(t);
+}
+
+function wireDrawer(t) {
+  const save = () => { touch(t); persist(); render(); };
+  $('#drClose').onclick = () => { OPEN_TASK = null; $('#drawer').hidden = true; };
+  if (!ME) return;
+  $('#drTitle').onchange = e => { t.title = e.target.value.trim() || t.title; save(); };
+  $('#drDue').onchange = e => { t.due = e.target.value; save(); };
+  $('#drEst').onchange = e => { t.est = e.target.value; save(); };
+  $('#drWhy').onchange = e => { t.why = e.target.value; save(); };
+  $('#drCheck').onchange = e => { t.check = e.target.value; save(); };
+  $('#drCurrent').onclick = () => { t.current = !t.current; save(); };
+  $('#drStatus').onclick = e => {
+    const b = e.target.closest('[data-status]'); if (!b) return;
+    t.status = b.dataset.status; save();
+  };
+  $('#drPeople').onclick = e => {
+    const b = e.target.closest('[data-person]'); if (!b) return;
+    const id = b.dataset.person;
+    t.assignees = (t.assignees || []).includes(id) ? t.assignees.filter(x => x !== id) : [...(t.assignees || []), id];
+    save();
+  };
+  $('#drTags').onclick = e => {
+    const b = e.target.closest('[data-tag]'); if (!b) return;
+    const x = b.dataset.tag;
+    t.tags = (t.tags || []).includes(x) ? t.tags.filter(y => y !== x) : [...(t.tags || []), x];
+    save();
+  };
+  const add = $('#drAddComment');
+  if (add) add.onclick = () => {
+    const box = $('#drComment');
+    const text = box.value.trim(); if (!text) return;
+    t.comments = [...(t.comments || []), { by: ME, at: nowISO(), text }];
+    box.value = ''; save();
+  };
+}
+
+/* ========================================================================== */
+/* IDENTITY                                                                   */
+/* ========================================================================== */
+
+function paintIdentity() {
+  const el = $('#who');
+  if (ME) {
+    const p = personById(ME);
+    el.innerHTML = `${avatar(ME, 'sm')} <span>${esc(p ? p.name : ME)}</span> <button class="link" id="signOut">not you?</button>`;
+    $('#signOut').onclick = () => { ME = null; localStorage.removeItem(ME_KEY); paintIdentity(); render(); };
+  } else {
+    el.innerHTML = `<button class="btn small" id="signIn">Sign in</button>`;
+    $('#signIn').onclick = openSignIn;
+  }
+  $('#newTaskBtn').disabled = !ME;
+}
+
+function openSignIn() {
+  const m = $('#modal');
+  m.hidden = false;
+  m.innerHTML = `
+    <div class="sheet">
+      <h3>Who is working?</h3>
+      <p class="phase-note">This is a name badge, not a password. Anyone with the link can pick any name — it labels your edits and notes so the team knows who did what.</p>
+      <div class="who-list">
+        ${STATE.people.map(p => `<button class="who-btn" data-who="${p.id}">${avatar(p.id, 'lg')}<span><b>${esc(p.name)}</b><small>${esc(p.role || '')}</small></span></button>`).join('')}
+      </div>
+      <div class="add-person">
+        <input id="newPersonName" placeholder="Someone else — their name">
+        <button class="btn" id="addPersonBtn">Add them</button>
+      </div>
+      <button class="link" id="closeModal">Cancel</button>
+    </div>`;
+  m.querySelectorAll('[data-who]').forEach(b => b.onclick = () => {
+    ME = b.dataset.who; localStorage.setItem(ME_KEY, ME);
+    m.hidden = true; paintIdentity(); render();
+  });
+  $('#closeModal').onclick = () => { m.hidden = true; };
+  $('#addPersonBtn').onclick = () => {
+    const name = $('#newPersonName').value.trim(); if (!name) return;
+    const tints = ['ink', 'blue', 'green', 'gold', 'plum'];
+    const p = {
+      id: 'p' + Math.random().toString(36).slice(2, 7),
+      name,
+      initials: name.split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase(),
+      role: 'Added ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }),
+      tint: tints[STATE.people.length % tints.length],
+    };
+    STATE.people.push(p); ME = p.id; localStorage.setItem(ME_KEY, ME);
+    persist(); m.hidden = true; paintIdentity(); render();
+  };
+}
+
+/* ========================================================================== */
+/* WIRING                                                                     */
+/* ========================================================================== */
+
+function newTask() {
+  if (!ME) return;
+  const t = {
+    id: uid(), title: 'New task', group: VIEW.group === 'all' ? 'now' : VIEW.group,
+    status: 'next', current: false, assignees: [], tags: [], due: '', est: '',
+    why: '', check: '', dep: '', comments: [], updatedAt: nowISO(),
+    order: STATE.tasks.length + 1,
+  };
+  STATE.tasks.push(t); persist(); OPEN_TASK = t.id; render(); paintDrawer();
+}
+
+function bulk(fn) {
+  for (const id of SELECTED) {
+    const t = STATE.tasks.find(x => x.id === id);
+    if (t) { fn(t); touch(t); }
+  }
+  SELECTED.clear(); persist(); render();
+}
+
+function exportJSON() {
+  const blob = new Blob([JSON.stringify(STATE, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `almari-workroom-${new Date().toISOString().slice(0, 10)}.json`;
+  a.click(); URL.revokeObjectURL(a.href);
+}
+
+function wire() {
+  $('#main').addEventListener('click', e => {
+    const pick = e.target.closest('[data-pick]');
+    if (pick) {
+      const id = pick.dataset.pick;
+      SELECTED.has(id) ? SELECTED.delete(id) : SELECTED.add(id);
+      render(); return;
+    }
+    const open = e.target.closest('[data-open]');
+    if (open) { OPEN_TASK = open.dataset.open; paintDrawer(); }
+  });
+
+  $('#filters').addEventListener('click', e => {
+    const b = e.target.closest('[data-filter]'); if (!b) return;
+    const [k, v] = b.dataset.filter.split(':');
+    VIEW[k] = v;
+    $('#filters').querySelectorAll(`[data-filter^="${k}:"]`).forEach(x => x.classList.toggle('on', x === b));
+    render();
+  });
+
+  $('#modeBoard').onclick = () => setMode('board');
+  $('#modeTimeline').onclick = () => setMode('timeline');
+  $('#modePeople').onclick = () => setMode('people');
+  $('#search').oninput = e => { VIEW.q = e.target.value; render(); };
+  $('#newTaskBtn').onclick = newTask;
+  $('#exportBtn').onclick = exportJSON;
+
+  $('#bulkNext').onclick = () => bulk(t => t.status = 'next');
+  $('#bulkOngoing').onclick = () => bulk(t => t.status = 'ongoing');
+  $('#bulkDone').onclick = () => bulk(t => t.status = 'done');
+  $('#bulkCurrent').onclick = () => bulk(t => t.current = true);
+  $('#bulkMine').onclick = () => { if (ME) bulk(t => { if (!t.assignees.includes(ME)) t.assignees.push(ME); }); };
+  $('#bulkClear').onclick = () => { SELECTED.clear(); render(); };
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { $('#modal').hidden = true; if (OPEN_TASK) { OPEN_TASK = null; $('#drawer').hidden = true; } }
+  });
+}
+
+function setMode(m) {
+  VIEW.mode = m;
+  ['Board', 'Timeline', 'People'].forEach(x => $('#mode' + x).classList.toggle('on', x.toLowerCase() === m));
+  render();
+}
+
+function buildFilters() {
+  const groupBtns = [`<button class="fchip on" data-filter="group:all">All phases</button>`]
+    .concat(GROUPS.map(g => `<button class="fchip" data-filter="group:${g.id}">${esc(g.name)}</button>`)).join('');
+  const peopleBtns = [`<button class="fchip on" data-filter="person:all">Everyone</button>`]
+    .concat(STATE.people.map(p => `<button class="fchip" data-filter="person:${p.id}">${esc(p.name)}</button>`))
+    .concat([`<button class="fchip" data-filter="person:unassigned">Unassigned</button>`]).join('');
+  const statusBtns = ['all', 'next', 'ongoing', 'blocked', 'done']
+    .map(s => `<button class="fchip ${s === 'all' ? 'on' : ''}" data-filter="status:${s}">${s === 'all' ? 'Any status' : s === 'ongoing' ? 'On now' : s[0].toUpperCase() + s.slice(1)}</button>`).join('');
+  const tagBtns = [`<button class="fchip on" data-filter="tag:all">Any tag</button>`]
+    .concat(TAGS.map(x => `<button class="fchip" data-filter="tag:${x}">${esc(x)}</button>`)).join('');
+  $('#filters').innerHTML = `
+    <div class="frow">${groupBtns}</div>
+    <div class="frow">${peopleBtns}</div>
+    <div class="frow">${statusBtns}${tagBtns}</div>`;
+}
+
+/* ------------------------------------------------------------------ boot -- */
+
+async function boot() {
+  const local = loadLocal();
+  if (local) STATE = local;
+  ME = localStorage.getItem(ME_KEY);
+
+  if (shared()) {
+    try {
+      const remote = await pullShared();
+      if (remote) STATE = mergeDocs(STATE, remote);
+      else await pushShared(STATE);
+      LAST_SYNC = new Date();
+    } catch (e) { console.warn('initial sync failed', e); }
+    setInterval(poll, SYNC.pollMs);
+  }
+
+  buildFilters(); wire(); paintIdentity(); render();
+}
+
+document.addEventListener('DOMContentLoaded', boot);

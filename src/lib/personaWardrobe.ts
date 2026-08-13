@@ -11,10 +11,11 @@ import {
   type UserCategory,
   type WardrobeEvent,
   type WearLog,
+  type WishlistItem,
 } from '../types';
 import { todayLocal, addDays } from './dates';
 import { PERSONAS as GENERATED, BRAND_SHOTS, type PersonaSeed } from './personaData';
-import { CAST } from './personaCast';
+import { CAST, CAST_ARCS } from './personaCast';
 
 /**
  * The three generated wardrobes, and the five authored ones.
@@ -66,7 +67,7 @@ const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Frida
  * Bumped whenever the generated wardrobes change shape — photographs, bench
  * states, costs. Samples recording an older number are rebuilt at boot.
  */
-export const PERSONA_SEED_VERSION = 6;
+export const PERSONA_SEED_VERSION = 7;
 
 /** How far back the generated rotation runs, in days. */
 const HISTORY_DAYS = 250;
@@ -615,11 +616,45 @@ export function buildPersonaState(persona: PersonaSeed): AppState {
     laundryStatus: laundryFor(seed),
   }));
 
+  /* ---------- the character arc, applied over the derived state ----------
+     Sources, provenance, favorites and retirements are facts about a life the
+     log cannot derive; they are authored in personaCast.ts. Applied before the
+     bench errands below so a piece that has left the closet is never also at
+     the tailor. */
+  const arc = CAST_ARCS[persona.id];
+  if (arc) {
+    for (const item of items) {
+      for (const [pattern, source] of arc.sources ?? []) {
+        if (pattern.test(item.name)) item.source = source;
+      }
+      for (const [pattern, brand] of arc.brands ?? []) {
+        if (pattern.test(item.name)) item.brand = brand;
+      }
+      for (const [pattern, p] of arc.provenance ?? []) {
+        if (pattern.test(item.name)) {
+          item.provenance = {
+            from: p.from,
+            wearsInTheirRecord: p.wearsInTheirRecord,
+            passedOn: addDays(today, -p.passedOnDaysAgo),
+          };
+        }
+      }
+      if ((arc.favorites ?? []).some(p => p.test(item.name))) item.favorite = true;
+      for (const [pattern, r] of arc.retired ?? []) {
+        if (pattern.test(item.name)) {
+          item.retired = { date: addDays(today, -r.daysAgo), reason: r.reason };
+          // A piece that has left the closet holds no place in the wash queue.
+          item.laundryStatus = 'clean';
+        }
+      }
+    }
+  }
+
   // Exactly one structured piece is at the tailor — the most-worn tailored
   // garment that is not already benched. One, because "at the tailor" is an
   // errand, and a wardrobe with four errands open reads as staged.
   const tailorable = items
-    .filter(i => i.laundryStatus === 'clean' && i.wearCount >= 4)
+    .filter(i => !i.retired && i.laundryStatus === 'clean' && i.wearCount >= 4)
     .filter(i => /blazer|jacket|bandhgala|sherwani|suit|coat|trouser|kurta/i.test(i.name))
     .sort((a, b) => b.wearCount - a.wearCount);
   if (tailorable.length > 0) tailorable[0].laundryStatus = 'at-tailor';
@@ -631,11 +666,34 @@ export function buildPersonaState(persona: PersonaSeed): AppState {
   for (const state of ['worn', 'washing', 'needs-repair'] as const) {
     if (items.some(i => i.laundryStatus === state)) continue;
     const candidate = items
-      .filter(i => i.laundryStatus === 'clean')
+      .filter(i => !i.retired && i.laundryStatus === 'clean')
       .filter(i => !['jewellery', 'accessories'].includes(i.category))
       .sort((a, b) => b.wearCount - a.wearCount)[0];
     if (candidate) candidate.laundryStatus = state;
   }
+
+  /* ---------- the wishlist, from the same arc ----------
+     Authored in day-offsets so every state stays live: one wait still
+     running, one expired ask, a kept, a let-go in the stayed-yours ledger,
+     and the coat that waited two winters and was bought. */
+  const wishlist: WishlistItem[] = (arc?.wishlist ?? []).map((w, i) => ({
+    id: `${persona.id}-wish-${i + 1}`,
+    name: w.name,
+    category: w.category,
+    color: w.color,
+    brand: w.brand,
+    price: w.price,
+    priority: w.priority,
+    dateAdded: addDays(today, -w.addedDaysAgo),
+    notes: w.notes,
+    status: w.status,
+    coolingOff: w.endsInDays !== undefined
+      ? { endsAt: addDays(today, w.endsInDays), asked: w.asked ?? false }
+      : undefined,
+    releasedAt: w.releasedDaysAgo !== undefined
+      ? addDays(today, -w.releasedDaysAgo)
+      : undefined,
+  }));
 
   const outfits: Outfit[] = persona.outfits.map(o => ({
     id: o.id,
@@ -661,7 +719,7 @@ export function buildPersonaState(persona: PersonaSeed): AppState {
     items: furnished.items,
     outfits,
     wearLogs: logs,
-    wishlist: [],
+    wishlist,
     circle: EMPTY_CIRCLE,
     events: buildEvents(persona, outfits),
     furniture: furnished.furniture,
