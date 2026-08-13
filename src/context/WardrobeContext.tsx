@@ -24,7 +24,8 @@ import {
 interface WardrobeContextType extends AppState {
   /** Active (non-retired) items — what every browse surface should use. */
   activeItems: ClothingItem[];
-  addItem: (item: Omit<ClothingItem, 'id' | 'dateAdded' | 'wearCount' | 'laundryStatus'>) => void;
+  /** Returns the new piece's id, so a caller writing several can then relate them. */
+  addItem: (item: Omit<ClothingItem, 'id' | 'dateAdded' | 'wearCount' | 'laundryStatus'>) => string;
   updateItem: (id: string, updates: Partial<ClothingItem>) => void;
   /** Removes the piece and everything naming it; returns the way to put it back. */
   deleteItem: (id: string) => () => void;
@@ -102,6 +103,7 @@ export function WardrobeProvider({ accountId, children }: { accountId: string; c
       laundryStatus: 'clean',
     };
     setState(prev => ({ ...prev, items: [...prev.items, newItem] }));
+    return newItem.id;
   }, [setState]);
 
   const updateItem = useCallback((id: string, updates: Partial<ClothingItem>) => {

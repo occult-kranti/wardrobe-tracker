@@ -155,18 +155,55 @@ check('messy file: the blank name is dropped with a reason', messy.dropped.some(
 
 {
   const promptTs = readFileSync(new URL('../src/lib/intakePrompt.ts', import.meta.url).pathname, 'utf8');
-  const inCode = promptTs.slice(promptTs.indexOf('`') + 1, promptTs.lastIndexOf('`'))
-    .replace(/\\`/g, '`').replace(/\\\$\{/g, '${').replace(/\\\\/g, '\\');
+
+  /** The body of one named template literal, unescaped. */
+  const literal = name => {
+    const at = promptTs.indexOf(`export const ${name} = \``);
+    if (at < 0) return '';
+    const open = promptTs.indexOf('`', at);
+    const close = promptTs.indexOf('`;', open + 1);
+    return promptTs.slice(open + 1, close)
+      .replace(/\\`/g, '`').replace(/\\\$\{/g, '${').replace(/\\\\/g, '\\')
+      .trim();
+  };
+
+  const intake = literal('INTAKE_PROMPT');
+  const outfit = literal('OUTFIT_PROMPT');
+  check('both prompts are readable in the source', intake.length > 500 && outfit.length > 500,
+    `${intake.length} / ${outfit.length} chars`);
+
   const doc = readFileSync(new URL('../docs/23-photo-intake.md', import.meta.url).pathname, 'utf8');
-  const fenced = doc.match(/> ```\n([\s\S]*?)\n> ```/);
-  const inDoc = fenced
-    ? fenced[1].split('\n').map(l => (l.startsWith('> ') ? l.slice(2) : l.replace(/^>/, ''))).join('\n').trim()
-    : '';
-  check('the prompt in the app matches the prompt in docs/23', inCode.trim() === inDoc, `${inCode.trim().length} vs ${inDoc.length} chars`);
-  check('the prompt still forbids gendered wording', /never "wom/i.test(inCode));
-  check('the prompt still forbids markdown fences', /no markdown\s*\n?\s*fences/i.test(inCode));
-  check('the prompt still names all eight categories',
-    ['tops','bottoms','dresses','layers','outerwear','shoes','jewellery','accessories'].every(c => inCode.includes(c)));
+  const fences = [...doc.matchAll(/> ```\n([\s\S]*?)\n> ```/g)].map(m =>
+    m[1].split('\n').map(l => (l.startsWith('> ') ? l.slice(2) : l.replace(/^>/, ''))).join('\n').trim());
+  check('docs/23 prints both prompts', fences.length >= 2, `${fences.length} fenced blocks`);
+
+  // The prompt the app sends is the prompt the doc prints. The outfit prompt
+  // interpolates its vetoed-word list, so the doc holds the resolved text —
+  // compare on the resolved form, which is what a reader would paste.
+  const vetoed = promptTs.match(/const VETOED_WORDS = '([^']*(?:\\'[^']*)*)'/);
+  const resolved = vetoed
+    ? outfit.replace('${VETOED_WORDS}', vetoed[1].replace(/\\'/g, "'"))
+    : outfit;
+
+  check('the flat-lay prompt matches docs/23', fences.includes(intake),
+    `${intake.length} chars, doc has ${fences.map(f => f.length).join('/')}`);
+  check('the worn-outfit prompt matches docs/23', fences.includes(resolved),
+    `${resolved.length} chars, doc has ${fences.map(f => f.length).join('/')}`);
+
+  check('the flat-lay prompt still forbids gendered wording', /never "wom/i.test(intake));
+  check('the flat-lay prompt still forbids markdown fences', /no markdown\s*\n?\s*fences/i.test(intake));
+  check('the flat-lay prompt still names all eight categories',
+    ['tops','bottoms','dresses','layers','outerwear','shoes','jewellery','accessories'].every(c => intake.includes(c)));
+
+  // The rule that matters most in the worn prompt, asserted where it cannot
+  // be quietly softened later.
+  check('the worn prompt refuses to describe the person',
+    /THE PERSON IS NOT THE SUBJECT/.test(outfit) && /not one word about the\s*\n?\s*person/i.test(outfit));
+  check('the worn prompt names the vetoed vocabulary it forbids', /VETOED_WORDS/.test(outfit));
+  check('the worn prompt still names all eight categories',
+    ['tops','bottoms','dresses','layers','outerwear','shoes','jewellery','accessories'].every(c => outfit.includes(c)));
+  check('both prompts require a box, because the app crops along it',
+    /BOX is required/.test(intake) && /BOX is required/.test(outfit));
 }
 
 /* ---------- every sample the bench offers has a file behind it ---------- */

@@ -5,11 +5,11 @@ import { useWardrobe } from '../context/WardrobeContext';
 import ItemDetail from '../components/ItemDetail';
 import AddItemModal from '../components/AddItemModal';
 import { showToast } from '../components/Toast';
-import { Button, IconButton, Chip, Masthead, Modal, EmptyState, TagRail } from '../components/ui';
+import { Button, IconButton, Chip, LinkButton, Masthead, Modal, EmptyState, TagRail } from '../components/ui';
 import {
   IconSearch, IconClose, IconCheck, IconPin, IconFilter, IconMenu,
   IconDown, IconUp, IconWash, IconPatch, IconPlus,
-  IconEyelet, IconEyeletFilled,
+  IconEyelet, IconEyeletFilled, IconCamera,
 } from '../components/icons';
 import {
   Basting, GarmentPlate, PlateEmptyCloset, PlateEmptyMending, PlateRetired,
@@ -413,7 +413,18 @@ export default function Closet() {
 
   return (
     <div>
-      <Masthead title="Closet" meta={closetEmpty ? undefined : countLabel} />
+      <Masthead
+        title="Closet"
+        meta={closetEmpty ? undefined : countLabel}
+        // The fastest road into a closet there is: one photograph of what you
+        // already have on. It sits beside the count rather than as a second
+        // shout beneath it (§8.4 — one CTA to a screen).
+        action={closetEmpty ? undefined : (
+          <LinkButton to="/intake?worn=1" compact icon={<IconCamera size={16} />}>
+            Today&rsquo;s outfit
+          </LinkButton>
+        )}
+      />
 
       {closetEmpty ? (
         <EmptyState
@@ -429,10 +440,16 @@ export default function Closet() {
                   photograph it than type it. One CTA still, per §8.4 — this
                   is the quiet second road, not a second shout. */}
               <Link
-                to="/intake"
+                to="/intake?worn=1"
                 className="type-ledger text-[11px] text-accent underline underline-offset-[3px] min-h-11 inline-flex items-center"
               >
-                Or catalogue from photographs
+                Or photograph what you are wearing
+              </Link>
+              <Link
+                to="/intake"
+                className="type-ledger text-[11px] text-text-2 underline underline-offset-[3px] min-h-11 inline-flex items-center"
+              >
+                Or catalogue a whole layout at once
               </Link>
             </div>
           }

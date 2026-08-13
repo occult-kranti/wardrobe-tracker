@@ -27,6 +27,7 @@ import {
 } from '../components/icons';
 import { showToast } from '../components/Toast';
 import { useInstall } from '../lib/install';
+import { hasKey, keyLooksWrong, loadKey, saveKey } from '../lib/anthropic';
 
 /**
  * SETTINGS — stewardship, not preferences.
@@ -169,6 +170,67 @@ function InstallRow() {
         )
       }
     />
+  );
+}
+
+/**
+ * The key, and the one honest sentence about what it is for.
+ *
+ * This is the only place in the app where a network call is possible at all,
+ * so the row says so at full weight rather than in a hint. Nothing is sent
+ * because a key exists — only when a photograph is handed over on purpose.
+ */
+function KeyRow() {
+  const [key, setKey] = useState(() => loadKey());
+  const [held, setHeld] = useState(() => hasKey());
+
+  return (
+    <div className="space-y-3">
+      <Row
+        title="Your Anthropic key"
+        body={
+          held
+            ? 'Held on this device, and used only when you hand over a photograph on the intake bench. It is never sent anywhere but Anthropic, and only with a photograph you chose.'
+            : 'Optional. With a key, Toile can read a photograph for you on the bench. Without one, copy the prompt into the model you already use — the bench works either way.'
+        }
+        control={
+          held ? (
+            <Button
+              onClick={() => { saveKey(''); setKey(''); setHeld(false); showToast('Key removed from this device.', 'info'); }}
+            >
+              Remove it
+            </Button>
+          ) : null
+        }
+      />
+      {held ? null : (
+        <div className="max-w-[420px]">
+          <Field label="Key" htmlFor="set-key" hint="Stored in this browser only. Keys begin with sk-ant-.">
+            <input
+              id="set-key"
+              type="password"
+              className={inputClass}
+              value={key}
+              onChange={e => setKey(e.target.value)}
+              placeholder="sk-ant-…"
+              autoComplete="off"
+              spellCheck={false}
+            />
+          </Field>
+          <div className="flex flex-wrap items-center gap-3 mt-3">
+            <Button
+              disabled={!key.trim() || keyLooksWrong(key)}
+              onClick={() => { saveKey(key); setHeld(true); showToast('Key kept on this device.', 'success'); }}
+            >
+              Keep the key
+            </Button>
+            {keyLooksWrong(key) ? (
+              <span className="type-ledger text-[10px] text-danger">Keys begin with sk-ant-</span>
+            ) : null}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -539,9 +601,11 @@ export default function Settings() {
         <SectionTitle aside="the first hour">Catalogue from photos</SectionTitle>
         <Row
           title="From a photograph"
-          body="Lay the clothes out, photograph them, and hand the photograph to whatever vision model you already use with the prompt from docs/23. Drop the file it writes here and every piece arrives as a draft to check. The photograph never passes through us."
-          control={<LinkButton to="/intake">Open the bench</LinkButton>}
+          body="Photograph what you are wearing, or a whole layout at once. Every piece is found, cut out of the photograph on this device, and arrives as a draft to check."
+          control={<LinkButton to="/intake?worn=1">Open the bench</LinkButton>}
         />
+        <Basting className="my-4" />
+        <KeyRow />
       </Card>
 
       {/* ---------- on this device ---------- */}

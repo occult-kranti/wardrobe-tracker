@@ -161,6 +161,72 @@ check('the weather never asks for your location', !after.asked, '');
   check('both answers are offered — take it, or keep the original',
     bench.hasUse && bench.hasKeep, '');
   check('nothing left the device while cutting', sent.length === 0, sent.slice(0, 2).join(' '));
+
+  // Close the sheet, or it stays over the closet and eats the next click.
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(500);
+}
+
+/* ============ today's outfit, and the one step that uses the network ============ */
+{
+  await page.goto(`${ORIGIN}/#/closet`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(700);
+  const todays = page.getByRole('link', { name: /today.s outfit/i }).first();
+  check('the closet offers to read what you are wearing', await todays.count() === 1, '');
+  await todays.click();
+  await page.waitForTimeout(900);
+
+  const bench = await page.evaluate(() => ({
+    hash: location.hash,
+    worn: /Photograph what you are wearing/i.test(document.body.innerText),
+    // The honest sentence must be on screen BEFORE the button that sends
+    // anything, not in a tooltip and not after the fact.
+    warns: /This one step uses the network/i.test(document.body.innerText),
+    saysWhere: /goes to Anthropic, with your key/i.test(document.body.innerText),
+    saysLocal: /cutting, the background removal and the writing all happen on this/i.test(document.body.innerText),
+    keyField: !!document.querySelector('#intake-key'),
+    stillOffersPrompt: /Copy the prompt/i.test(document.body.innerText),
+  }));
+
+  check("today's outfit opens the bench in worn mode", bench.hash.includes('worn=1') && bench.worn, bench.hash);
+  check('the network step is declared before the button that takes it', bench.warns && bench.saysWhere, '');
+  check('and it says what stays on the device', bench.saysLocal, '');
+  check('a key can be given right there', bench.keyField, '');
+  check('the do-it-yourself prompt is still offered', bench.stillOffersPrompt, '');
+
+  // With no key stored, pressing the button must not touch the network.
+  const calls = [];
+  page.on('request', r => { if (/anthropic/i.test(r.url())) calls.push(r.url()); });
+  await page.getByRole('button', { name: /read what I am wearing/i }).first().click();
+  await page.waitForTimeout(900);
+  const refused = await page.evaluate(() => /Add a key below first/i.test(document.body.innerText));
+  check('with no key it asks for one instead of failing at the network', refused, '');
+  check('and nothing was sent', calls.length === 0, calls.join(' '));
+}
+
+/* ============ the obsidian room ============ */
+{
+  await page.goto(`${ORIGIN}/#/settings`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(600);
+  const room = await page.evaluate(() => {
+    document.documentElement.setAttribute('data-theme', 'obsidian');
+    const s = getComputedStyle(document.documentElement);
+    const plate = document.querySelector('.plate');
+    const ps = plate ? getComputedStyle(plate) : null;
+    return {
+      artline: s.getPropertyValue('--color-artline').trim(),
+      artline2: s.getPropertyValue('--color-artline-2').trim(),
+      silver: s.getPropertyValue('--color-silver').trim(),
+      outline: ps?.outlineWidth ?? '',
+      ornament: (ps?.backgroundImage ?? '').includes('svg'),
+      sheen: getComputedStyle(document.documentElement).getPropertyValue('--sheen-strength').trim(),
+    };
+  });
+  check('obsidian hangs its frieze in gold', room.artline.toLowerCase() === '#e7c46a', room.artline);
+  check('and answers it in silver', room.artline2.toLowerCase() === '#cfd6e0' && room.silver !== '', room.artline2);
+  check('obsidian takes the double mounting', room.outline === '1px', room.outline);
+  check('obsidian carries the corner ornament', room.ornament, '');
+  check('the pointer light is softened', Number(room.sheen) <= 0.12, room.sheen);
 }
 
 /* ============ installable, and offline ============ */

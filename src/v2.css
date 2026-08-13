@@ -16,7 +16,12 @@
 :root {
   --glass-blur: 14px;
   --glass-alpha: 0.72;
-  --sheen-strength: 0.16;
+  /* The light under the pointer. It was 0.16, which read as a lamp being
+     carried across the room rather than as the room's own metal catching —
+     the eye went to the highlight instead of to the card it was on. Softened,
+     and the pool widened a little below, so what remains is a suggestion of
+     depth rather than an effect. */
+  --sheen-strength: 0.10;
 }
 
 /* Depth belongs to the thing that leans, NOT to the page.
@@ -34,7 +39,13 @@
 .v2 .plate,
 .v2 .plate-ink {
   position: relative;
-  background:
+  /* background-COLOR, never the shorthand. The shorthand resets
+     background-image to none, and every room's corner ornament — the dye
+     house's brass hooks, the obsidian's gold and silver — is a
+     background-image set in index.css. This rule loads after those, so for
+     the whole of v2 the glass was quietly erasing the ornament in every
+     themed room. Setting only the channel we mean leaves the art alone. */
+  background-color:
     color-mix(in srgb, var(--color-surface) calc(var(--glass-alpha) * 100%), transparent);
   -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.15);
   backdrop-filter: blur(var(--glass-blur)) saturate(1.15);
@@ -47,7 +58,7 @@
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .v2 .plate,
   .v2 .plate-ink {
-    background: var(--color-surface);
+    background-color: var(--color-surface);
   }
 }
 
@@ -74,10 +85,12 @@
   /* The light is the ROOM'S metal, not white — rose gold moves across the
      obsidian, brass across the dye house, gold across the gilding room. A
      white highlight read as glare; the metal reads as the room reflecting. */
+  /* A wider pool at a lower strength: the same amount of light spread over
+     more card, which is what stops it reading as a spot. */
   background: radial-gradient(
-    420px circle at var(--sheen-x, 50%) var(--sheen-y, 50%),
+    520px circle at var(--sheen-x, 50%) var(--sheen-y, 50%),
     color-mix(in srgb, var(--color-gold) calc(var(--sheen-strength) * 100%), transparent),
-    transparent 62%
+    transparent 70%
   );
 }
 

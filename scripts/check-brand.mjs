@@ -113,8 +113,13 @@ for (const file of files) {
     if (SHADOW.test(line)) {
       add(file, n, 'no-drop-shadow', `${line.match(SHADOW)[0]} — depth is plate/plate-ink`);
     }
+    // A line marked `forbids-word` is allowed to NAME a banned word, for the
+    // same reason `scrubs-gendered` is: the instruction that forbids flattery
+    // has to say the word "flattering", and a prompt that spelled it around
+    // the check would be a prompt no one could read or widen. The marker has
+    // to be on the line, so nothing is exempted by accident.
     for (const word of BANNED_WORDS) {
-      if (line.toLowerCase().includes(word)) {
+      if (line.toLowerCase().includes(word) && !/forbids-word/.test(line)) {
         add(file, n, 'banned-copy', `"${word}"`);
       }
     }

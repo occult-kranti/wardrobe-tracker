@@ -1,17 +1,19 @@
-import { useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useWardrobe } from '../context/WardrobeContext';
 import { showToast } from '../components/Toast';
-import { Button, Chip, Masthead, EmptyState } from '../components/ui';
+import { Button, Chip, Masthead, EmptyState, Field, inputClass } from '../components/ui';
 import { Basting, GarmentPlate, PlateEmptyCloset } from '../components/art';
-import { IconCheck, IconClose, IconImport, IconCopy } from '../components/icons';
+import { IconCheck, IconClose, IconImport, IconCopy, IconCamera } from '../components/icons';
 import { categoryLabel, SEASON_LABELS, type CategoryId } from '../types';
 import {
   readIntake, draftToItem, findDuplicates,
   type IntakeDraft, type IntakeRead,
 } from '../lib/intake';
-import { INTAKE_PROMPT } from '../lib/intakePrompt';
+import { INTAKE_PROMPT, OUTFIT_PROMPT } from '../lib/intakePrompt';
 import { INTAKE_SAMPLES, type IntakeSample } from '../lib/intakeSamples';
+import { hasKey, keyLooksWrong, loadKey, prepareImage, readPhotograph, saveKey } from '../lib/anthropic';
+import { harvest, type Harvested } from '../lib/harvest';
 
 /**
  * CATALOGUE FROM PHOTOS — the review bench.
@@ -34,10 +36,20 @@ function confidenceWord(c: number): string {
   return 'a guess';
 }
 
+/** What the reader is doing right now, said plainly rather than as a spinner. */
+type Working =
+  | { at: 'idle' }
+  | { at: 'sending' }
+  | { at: 'cutting'; done: number; total: number };
+
 export default function Intake() {
-  const { addItem, activeItems, settings } = useWardrobe();
+  const { addItem, addOutfit, activeItems, settings } = useWardrobe();
   const navigate = useNavigate();
+  const [params] = useSearchParams();
+  // Arriving from "Today's outfit" in the closet.
+  const worn = params.get('worn') === '1';
   const fileRef = useRef<HTMLInputElement>(null);
+  const photoRef = useRef<HTMLInputElement>(null);
 
   const [text, setText] = useState('');
   const [result, setResult] = useState<IntakeRead | null>(null);
@@ -45,6 +57,24 @@ export default function Intake() {
   const [edited, setEdited] = useState<Record<string, Partial<IntakeDraft>>>({});
   const [copied, setCopied] = useState(false);
   const [tried, setTried] = useState<IntakeSample | null>(null);
+
+  /* ---------- reading a photograph here, rather than sending you elsewhere ---------- */
+  const [key, setKey] = useState(() => loadKey());
+  const [working, setWorking] = useState<Working>({ at: 'idle' });
+  const [failure, setFailure] = useState<string | null>(null);
+  /** The photograph that was read, kept so the bench can show what it came from. */
+  const [source, setSource] = useState<string | null>(null);
+  /** One picture per piece, cut from that photograph on this device. */
+  const [pictures, setPictures] = useState<Map<string, Harvested>>(new Map());
+  const [saveLook, setSaveLook] = useState(true);
+
+  // The closet's "Today's outfit" opens the camera straight away — the button
+  // was the decision; making someone press a second one is just friction.
+  useEffect(() => {
+    if (worn && !result) photoRef.current?.click();
+    // Once, on arrival.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const duplicates = useMemo(
     () => (result ? findDuplicates(result.drafts, activeItems) : new Set<string>()),
@@ -72,6 +102,71 @@ export default function Intake() {
     readFile(raw);
   };
 
+  /**
+   * Read a photograph, end to end.
+   *
+   * One journey out: the photograph goes to Anthropic with the person's own
+   * key and comes back as coordinates and words. Everything after that —
+   * cropping each piece, lifting it off its background, writing it into the
+   * closet — happens here, on this device.
+   */
+  const onPhoto = async (file: File | undefined) => {
+    if (!file) return;
+    setFailure(null);
+    if (!hasKey()) {
+      setFailure('Add a key below first, or copy the prompt and use the model you already have.');
+      return;
+    }
+    if (!file.type.startsWith('image/')) {
+      setFailure('That file is not a photograph. A JPG or PNG works.');
+      return;
+    }
+
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = e => resolve((e.target?.result as string) ?? '');
+      reader.onerror = () => reject(new Error('That photograph would not open.'));
+      reader.readAsDataURL(file);
+    }).catch(() => '');
+    if (!dataUrl) {
+      setFailure('That photograph would not open. Try another.');
+      return;
+    }
+
+    try {
+      setWorking({ at: 'sending' });
+      const image = await prepareImage(dataUrl);
+      const { text: answer } = await readPhotograph(image, worn ? OUTFIT_PROMPT : INTAKE_PROMPT);
+      setText(answer);
+
+      const read = readIntake(answer);
+      if (read.error) {
+        setWorking({ at: 'idle' });
+        setFailure(`${read.error} The model's answer is in the box below if you want to look.`);
+        setResult(read);
+        return;
+      }
+
+      // The crop reads from the image that was actually sent, so the boxes and
+      // the pixels are the same picture.
+      setSource(image.dataUrl);
+      setWorking({ at: 'cutting', done: 0, total: read.drafts.filter(d => d.box).length });
+      const cut = await harvest(image.dataUrl, read.drafts, (done, total) =>
+        setWorking({ at: 'cutting', done, total }));
+      setPictures(cut);
+
+      setResult(read);
+      setEdited({});
+      const dupes = findDuplicates(read.drafts, activeItems);
+      setTicked(new Set(read.drafts.filter(d => d.confidence >= 0.55 && !dupes.has(d.ref)).map(d => d.ref)));
+      setTried(null);
+      setWorking({ at: 'idle' });
+    } catch (e) {
+      setWorking({ at: 'idle' });
+      setFailure(e instanceof Error ? e.message : 'That did not work. Nothing was changed.');
+    }
+  };
+
   const toggle = (ref: string) =>
     setTicked(prev => {
       const next = new Set(prev);
@@ -82,7 +177,7 @@ export default function Intake() {
 
   const copyPrompt = async () => {
     try {
-      await navigator.clipboard.writeText(INTAKE_PROMPT);
+      await navigator.clipboard.writeText(worn ? OUTFIT_PROMPT : INTAKE_PROMPT);
     } catch {
       // Clipboard permission can be refused; the prompt is still readable in
       // docs/23, so say what happened rather than pretending it worked.
@@ -106,7 +201,31 @@ export default function Intake() {
   const commit = () => {
     if (!result) return;
     const chosen = result.drafts.filter(d => ticked.has(d.ref)).map(view);
-    for (const d of chosen) addItem({ ...draftToItem(d), favorite: false });
+    const written: string[] = [];
+    for (const d of chosen) {
+      written.push(addItem({
+        ...draftToItem(d),
+        // The picture cut from the photograph, when there is one.
+        imageUrl: pictures.get(d.ref)?.picture ?? '',
+        favorite: false,
+      }));
+    }
+
+    // A worn photograph is a look as well as a row of pieces. Saving it as one
+    // is offered, never assumed — some days are just a record of clothes.
+    const look = result.outfit;
+    if (look && saveLook && written.length > 1) {
+      addOutfit({
+        name: look.name,
+        itemIds: written,
+        occasion: look.occasion[0],
+        favorite: false,
+        // The mirror shot itself, kept as the look's own picture.
+        imageUrl: source ?? undefined,
+        notes: 'Read from a photograph.',
+      });
+    }
+
     showToast(
       `Catalogued. ${chosen.length} ${chosen.length === 1 ? 'piece is' : 'pieces are'} on record.`,
       'seal'
@@ -128,27 +247,125 @@ export default function Intake() {
         <div className="space-y-5">
           <div className="bg-surface plate p-5 rounded-[2px]">
             <p className="type-editorial text-[20px] leading-snug text-balance">
-              Lay the clothes out, photograph them, and let a model do the typing.
+              {worn
+                ? 'Photograph what you are wearing, and let it come apart into its pieces.'
+                : 'Lay the clothes out, photograph them, and let a model do the typing.'}
             </p>
             <p className="text-[14px] text-text-2 mt-3 leading-relaxed">
-              The prompt lives in <span className="type-ledger text-[11px]">docs/23-photo-intake.md</span>.
-              Paste it into whatever vision model you already use, attach your
-              photographs, and drop the file it returns here. The photograph
-              never passes through us — we only read the file.
+              {worn
+                ? 'A mirror shot is enough. Each piece is found, cut out of the photograph on this device, and arrives as a draft to check — the shirt, not the shoulders it is on.'
+                : 'Every piece is found, cut out of the photograph on this device, and arrives as a draft to check. Nothing is written until you say so.'}
             </p>
+
             <Basting className="my-5" />
-            <div className="flex flex-wrap items-center gap-3">
-              <input
-                ref={fileRef}
-                type="file"
-                accept="application/json,.json,text/plain"
-                className="sr-only"
-                onChange={e => onFile(e.target.files?.[0])}
-              />
-              <Button icon={<IconCopy size={16} />} onClick={copyPrompt}>
+
+            {/* The one thing in Toile that leaves the device, said before the
+                button that does it — never after, and never in a tooltip. */}
+            <div className="rounded-[2px] border border-accent/60 bg-sunken p-4">
+              <p className="type-ledger text-[11px] text-accent">This one step uses the network</p>
+              <p className="text-[13px] text-text-2 mt-2 leading-relaxed">
+                The photograph goes to Anthropic, with your key, on your account, and comes back as
+                words and coordinates. Nothing passes through us — there is no server here to pass
+                through. The cutting, the background removal and the writing all happen on this
+                device, and the photograph makes exactly one journey.
+              </p>
+
+              {hasKey() ? (
+                <p className="type-ledger text-[10px] text-text-2 mt-3">
+                  Key held on this device · change it in Settings
+                </p>
+              ) : (
+                <div className="mt-3">
+                  <Field label="Your Anthropic key" htmlFor="intake-key" hint="Stored on this device only, never sent anywhere but Anthropic.">
+                    <input
+                      id="intake-key"
+                      type="password"
+                      className={inputClass}
+                      value={key}
+                      onChange={e => setKey(e.target.value)}
+                      placeholder="sk-ant-…"
+                      autoComplete="off"
+                      spellCheck={false}
+                    />
+                  </Field>
+                  <div className="flex flex-wrap items-center gap-3 mt-3">
+                    <Button
+                      compact
+                      disabled={!key.trim() || keyLooksWrong(key)}
+                      onClick={() => { saveKey(key); showToast('Key kept on this device.', 'success'); }}
+                    >
+                      Keep the key
+                    </Button>
+                    {keyLooksWrong(key) ? (
+                      <span className="type-ledger text-[10px] text-danger">Keys begin with sk-ant-</span>
+                    ) : null}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <input
+              ref={photoRef}
+              type="file"
+              accept="image/*"
+              className="sr-only"
+              onChange={e => { void onPhoto(e.target.files?.[0]); if (e.target) e.target.value = ''; }}
+            />
+            <input
+              ref={fileRef}
+              type="file"
+              accept="application/json,.json,text/plain"
+              className="sr-only"
+              onChange={e => onFile(e.target.files?.[0])}
+            />
+
+            <div className="flex flex-wrap items-center gap-3 mt-4">
+              <Button
+                tone="primary"
+                icon={<IconCamera size={16} />}
+                disabled={working.at !== 'idle'}
+                onClick={() => {
+                  // Asked BEFORE the file dialog. Opening a picker, letting
+                  // someone find a photograph, and only then saying "no key"
+                  // wastes the one action they came here to take.
+                  if (!hasKey()) {
+                    setFailure('Add a key below first, or copy the prompt and use the model you already have.');
+                    return;
+                  }
+                  photoRef.current?.click();
+                }}
+              >
+                {working.at === 'sending'
+                  ? 'Reading the photograph…'
+                  : working.at === 'cutting'
+                    ? `Cutting ${working.done} of ${working.total}…`
+                    : worn ? 'Read what I am wearing' : 'Read a photograph'}
+              </Button>
+              {working.at !== 'idle' ? (
+                <span className="type-ledger text-[10px] text-text-2">
+                  {working.at === 'sending' ? 'One journey out, then everything else is local' : 'On this device'}
+                </span>
+              ) : null}
+            </div>
+
+            {failure ? (
+              <p className="text-[13px] text-danger mt-3 leading-snug">{failure}</p>
+            ) : null}
+
+            <Basting className="my-5" />
+
+            {/* Still here, and deliberately: no key, another model you prefer,
+                or simply no wish to send a photograph anywhere. */}
+            <p className="type-ledger text-[11px] text-text-2">Or do it yourself</p>
+            <p className="text-[13px] text-text-2 mt-2 leading-relaxed">
+              Take the prompt to whatever model you already use, and bring the file back. Nothing
+              here touches the network at all.
+            </p>
+            <div className="flex flex-wrap items-center gap-3 mt-3">
+              <Button compact icon={<IconCopy size={16} />} onClick={copyPrompt}>
                 {copied ? 'Prompt copied' : 'Copy the prompt'}
               </Button>
-              <Button tone="primary" icon={<IconImport size={16} />} onClick={() => fileRef.current?.click()}>
+              <Button compact icon={<IconImport size={16} />} onClick={() => fileRef.current?.click()}>
                 Choose the file
               </Button>
               <span className="type-ledger text-[11px] text-text-2">or paste it below</span>
@@ -273,6 +490,37 @@ export default function Intake() {
               </span>
             </div>
           ) : null}
+          {/* What was read, and what it became. */}
+          {source ? (
+            <div className="bg-surface plate p-4 rounded-[2px] flex flex-wrap items-start gap-4">
+              <span className="w-24 shrink-0 bg-mat overflow-hidden rounded-[2px] border border-border" style={{ aspectRatio: '3 / 4' }}>
+                <img src={source} alt="The photograph that was read" className="w-full h-full object-cover" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-[15px] text-text">
+                  {result.outfit ? result.outfit.name : 'This photograph'}
+                </p>
+                <p className="text-[13px] text-text-2 mt-1 leading-snug">
+                  {drafts.length} {drafts.length === 1 ? 'piece' : 'pieces'} found and cut out on this
+                  device. The photograph itself stays here.
+                </p>
+                {result.outfit && drafts.length > 1 ? (
+                  <label className="flex items-center gap-2.5 mt-3 min-h-11 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={saveLook}
+                      onChange={e => setSaveLook(e.target.checked)}
+                      className="w-4 h-4 accent-[var(--color-accent)]"
+                    />
+                    <span className="text-[14px] text-text-2">
+                      Keep these together as an outfit, &ldquo;{result.outfit.name}&rdquo;
+                    </span>
+                  </label>
+                ) : null}
+              </div>
+            </div>
+          ) : null}
+
           <div className="bg-surface plate p-4 rounded-[2px] flex flex-wrap items-center gap-3">
             <p className="text-[14px] text-text-2 flex-1 min-w-[200px]">
               Every piece below is a draft. Untick anything the model got wrong —
@@ -303,8 +551,19 @@ export default function Intake() {
                       {on ? <IconCheck size={18} /> : <IconClose size={16} />}
                     </button>
 
+                    {/* The piece as it was actually cut out of the photograph,
+                        or the drawn flat when no picture could be made. The
+                        flat is a finished state here too, not a gap. */}
                     <span className="w-14 h-[70px] shrink-0 bg-mat overflow-hidden rounded-[2px]">
-                      <GarmentPlate categoryId={d.category} color={d.color} name={d.name} />
+                      {pictures.get(d.ref) ? (
+                        <img
+                          src={pictures.get(d.ref)!.picture}
+                          alt={d.name}
+                          className="w-full h-full object-contain"
+                        />
+                      ) : (
+                        <GarmentPlate categoryId={d.category} color={d.color} name={d.name} />
+                      )}
                     </span>
 
                     <div className="min-w-0 flex-1">
@@ -332,11 +591,17 @@ export default function Intake() {
                         ) : null}
                       </div>
 
-                      {(d.uncertain.length > 0 || d.repairs.length > 0 || dupe) ? (
+                      {(d.uncertain.length > 0 || d.repairs.length > 0 || dupe
+                        || pictures.get(d.ref)?.note
+                        || (d.seen !== undefined && d.seen < 0.4)) ? (
                         <p className="type-ledger text-[10px] text-text-2 mt-2 leading-relaxed">
                           {dupe ? 'A piece with this name is already in the closet. ' : ''}
+                          {d.seen !== undefined && d.seen < 0.4
+                            ? 'Mostly hidden in the photograph. '
+                            : ''}
                           {d.uncertain.length ? `Guessed: ${d.uncertain.join(', ')}. ` : ''}
                           {d.repairs.join(' ')}
+                          {pictures.get(d.ref)?.note ? ` ${pictures.get(d.ref)!.note}.` : ''}
                         </p>
                       ) : null}
 

@@ -331,25 +331,31 @@
   --color-bg-deep: #050609;
   --color-text: #EDEEF3;         /* blued chalk (17.2:1 on bg) */
   --color-text-2: #A9ADBC;       /* 8.5:1 on bg */
-  --color-border: #4A343A;       /* the hairlines struck in rose gold, cooled to near-black */
+  --color-border: #4A4234;       /* the hairlines struck in gold, cooled to near-black */
   --color-accent: #85C0E2;       /* washing blue on cold glass (9.9:1) */
   --color-accent-hover: #9FCCE8;
   --color-accent-fill: #0F5F7D;
   --color-on-accent: #FFFDF6;
   --color-accent-on-ink: #0F5F7D; /* the fill inverts to blued chalk */
   --color-seal: #CE2545;         /* the wax cooled for glass: 3.72:1 on bg, chalk T 4.85:1 */
-  --color-artline: #D39A85;      /* the frieze in rose gold — the dye house's warmth on glass */
-  --color-artline-2: #E9C0AC;    /* paired with pale rose gold */
+  /* The obsidian's two metals. The dye house hangs its frieze in one warm
+     metal and its pale twin; on glass the pair is the colder, brighter one —
+     gold against silver, struck on black, which is the only room in the house
+     where both metals read at once. */
+  --color-artline: #E7C46A;      /* gold */
+  --color-artline-2: #CFD6E0;    /* silver */
   --color-success: #63B08F;
   --color-warning: #D9A93F;
   --color-danger: #F2A9B4;       /* danger TEXT only */
   --color-danger-fill: #8C1B32;
-  --color-gold: #D5A08A;         /* rose gold; decorative only, never text */
+  --color-gold: #E7C46A;         /* gold; decorative only, never text */
+  /* The second metal, for the ornament that answers the gold across the card. */
+  --color-silver: #CFD6E0;
   --color-charcoal: #161921;
   --color-chalk: #F4F5F8;
   --color-ink-fill: #EDEEF3;     /* inverts: blued-chalk fill, glass label */
   --color-on-ink: #0A0B0F;
-  --pattern-ink: 224, 205, 200;  /* the grid scribed in the glass, warmed rose */
+  --pattern-ink: 226, 205, 158;  /* the grid scribed in the glass, struck gold */
   --pattern-alpha: 0.04;
   color-scheme: dark;
 }
@@ -623,10 +629,13 @@
     background-size: 40px 40px;
     background-repeat: no-repeat;
   }
-  /* The obsidian takes the dye house's ornament, struck in rose gold on the
-     glass — warm metal against the coldest room in the house. */
+  /* The obsidian takes the dye house's ornament, and takes it in BOTH metals:
+     the top-right corner struck in gold, the bottom-left answering in silver.
+     This is the only room where two metals are allowed to meet — on black,
+     gold and silver read as two materials rather than as an inconsistency,
+     and the diagonal keeps them from touching. */
   :root[data-theme="obsidian"] .plate {
-    background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2048%2048'%3E%3Cg%20fill='none'%20stroke='%23D39A85'%20stroke-width='1.75'%20stroke-opacity='0.42'%20stroke-linecap='butt'%20transform='rotate(90%2024%2024)'%3E%3Cpath%20d='M3%2045V16Q3%203%2016%203h29'/%3E%3Cpath%20d='M10%2042V26a6%206%200%20016-6%206%206%200%20016-6%206%206%200%20016-6h14'/%3E%3C/g%3E%3C/svg%3E"), url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2048%2048'%3E%3Cg%20fill='none'%20stroke='%23D39A85'%20stroke-width='1.75'%20stroke-opacity='0.42'%20stroke-linecap='butt'%20transform='rotate(270%2024%2024)'%3E%3Cpath%20d='M3%2045V16Q3%203%2016%203h29'/%3E%3Cpath%20d='M10%2042V26a6%206%200%20016-6%206%206%200%20016-6%206%206%200%20016-6h14'/%3E%3C/g%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2048%2048'%3E%3Cg%20fill='none'%20stroke='%23E7C46A'%20stroke-width='1.75'%20stroke-opacity='0.50'%20stroke-linecap='butt'%20transform='rotate(90%2024%2024)'%3E%3Cpath%20d='M3%2045V16Q3%203%2016%203h29'/%3E%3Cpath%20d='M10%2042V26a6%206%200%20016-6%206%206%200%20016-6%206%206%200%20016-6h14'/%3E%3C/g%3E%3C/svg%3E"), url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2048%2048'%3E%3Cg%20fill='none'%20stroke='%23CFD6E0'%20stroke-width='1.75'%20stroke-opacity='0.38'%20stroke-linecap='butt'%20transform='rotate(270%2024%2024)'%3E%3Cpath%20d='M3%2045V16Q3%203%2016%203h29'/%3E%3Cpath%20d='M10%2042V26a6%206%200%20016-6%206%206%200%20016-6%206%206%200%20016-6h14'/%3E%3C/g%3E%3C/svg%3E");
     background-position: right 5px top 5px, left 5px bottom 5px;
     background-size: 40px 40px;
     background-repeat: no-repeat;
@@ -664,10 +673,19 @@
     background: color-mix(in srgb, var(--color-gold) 60%, transparent);
   }
 
-  /* The obsidian does NOT take the double mounting — tried, and beside the
-     rose-gold border every card wore four lines at each edge. On glass the
-     frame is a single stringy hairline: the border itself, tight to the card,
-     with only the masthead's thin second rule struck in the rose. */
+  /* The obsidian now takes the mounting too, and takes it in both metals: the
+     card's own gold hairline, then a second rule floated 3px outside it in
+     silver. It was refused once, when the border was rose gold and the two
+     warm lines read as one thick smudge; gold against silver separates
+     cleanly, which is the whole reason the metals were changed. */
+  :root[data-theme="obsidian"] .plate {
+    outline: 1px solid color-mix(in srgb, var(--color-silver) 26%, transparent);
+    outline-offset: 3px;
+  }
+  :root[data-theme="obsidian"] .plate-ink {
+    outline: 1px solid color-mix(in srgb, var(--color-silver) 40%, transparent);
+    outline-offset: 3px;
+  }
   :root[data-theme="obsidian"] .rule-double::after {
     background: color-mix(in srgb, var(--color-gold) 65%, transparent);
   }

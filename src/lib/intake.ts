@@ -44,6 +44,8 @@ export interface IntakeDraft {
   repairs: string[];
   photo?: number;
   box?: [number, number, number, number];
+  /** Worn photographs only: how much of the piece was visible, 0–1. */
+  seen?: number;
 }
 
 export interface IntakeSkip {
@@ -59,6 +61,10 @@ export interface IntakeRead {
   dropped: Array<{ index: number; reason: string }>;
   photos: Array<{ n: number; note?: string }>;
   capturedAt?: string;
+  /** Set when the file came from one outfit worn, rather than a flat lay. */
+  worn?: boolean;
+  /** The outfit these pieces were worn as, so the day can be saved as one. */
+  outfit?: { name: string; occasion: Occasion[] };
   /** Fatal problems with the file itself. When set, drafts is empty. */
   error?: string;
 }
@@ -89,13 +95,36 @@ const SHORT_HEX = /^#[0-9a-f]{3}$/i;
 /** Gendered wording never enters the record; docs/06 §veto. */
 const GENDERED = /\b(wom[ae]n'?s|m[ae]n'?s|ladies'?|girls'?|boys'?|unisex|his|hers)\b/gi; // scrubs-gendered
 
+/**
+ * Words about a BODY, struck out on the way in.
+ *
+ * The worn-outfit prompt forbids these at length, and the prompt is the first
+ * line of defence — but a prompt is a request and this is a guarantee. A
+ * photograph of a person is exactly where a model is most likely to slip into
+ * describing the person, and the house rule is absolute: garments, never
+ * bodies. So the reader strikes them whatever the model sends, and says it
+ * did in "repairs", where the bench shows it.
+ */
+const ABOUT_A_BODY =
+  /\b(flatter(?:ing|s)?|slim(?:ming)?|petite|plus[- ]size|curvy|athletic build|figure|physique|silhouette of (?:her|his|their) \w+|toned|slender|tall|short|young|old|middle[- ]aged|attractive|pretty|handsome|beautiful|elegant[- ]looking|skin tone|complexion|hair)\b/gi; // scrubs-bodies
+
 function cleanText(value: unknown, max: number): string {
   if (typeof value !== 'string') return '';
   return value
     .replace(GENDERED, '')
+    .replace(ABOUT_A_BODY, '')
     .replace(/\s+/g, ' ')
+    .replace(/\s+([,.;])/g, '$1')
+    .replace(/^[,.;\s]+/, '')
     .trim()
     .slice(0, max);
+}
+
+/** Did the reader have to strike something out of this row? */
+function saysSomethingAboutABody(value: unknown): boolean {
+  if (typeof value !== 'string') return false;
+  ABOUT_A_BODY.lastIndex = 0;
+  return ABOUT_A_BODY.test(value); // scrubs-bodies
 }
 
 function readColor(value: unknown, repairs: string[]): string {
@@ -175,6 +204,12 @@ export function readIntake(text: string): IntakeRead {
     const p = raw as Record<string, unknown>;
     const repairs: string[] = [];
 
+    // Struck before anything else, and recorded — a row that described the
+    // wearer arrives with that plainly stated rather than quietly cleaned.
+    if (saysSomethingAboutABody(p.name) || saysSomethingAboutABody(p.description)) {
+      repairs.push('described the person wearing it — struck out; this record is about clothes');
+    }
+
     const name = cleanText(p.name, 60);
     if (!name) {
       dropped.push({ index: i, reason: 'no name — a piece has to be called something' });
@@ -216,6 +251,9 @@ export function readIntake(text: string): IntakeRead {
       repairs,
       photo: typeof p.photo === 'number' ? p.photo : undefined,
       box,
+      // How much of the garment was actually visible. Only a worn photograph
+      // has this; a flat lay shows the whole piece by definition.
+      seen: typeof p.seen === 'number' ? Math.min(1, Math.max(0, p.seen)) : undefined,
     });
   });
 
@@ -241,12 +279,22 @@ export function readIntake(text: string): IntakeRead {
       })
     : [];
 
+  // The outfit, when the file came from one worn look rather than a flat lay.
+  const outfitRaw = root.outfit && typeof root.outfit === 'object'
+    ? root.outfit as Record<string, unknown>
+    : null;
+  const outfitName = outfitRaw ? cleanText(outfitRaw.name, 40) : '';
+
   return {
     drafts,
     skipped,
     dropped,
     photos,
     capturedAt: typeof root.capturedAt === 'string' ? root.capturedAt : undefined,
+    worn: root.worn === true || undefined,
+    outfit: outfitName
+      ? { name: outfitName, occasion: readList<Occasion>(outfitRaw!.occasion, OCCASIONS) }
+      : undefined,
   };
 }
 
