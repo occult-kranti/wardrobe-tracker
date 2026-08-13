@@ -124,11 +124,14 @@ body { font-size: 16px; }
    wrapper hides overflow; visibility takes the folded rows out of the tab
    order so a shut phase cannot be tabbed into. */
 .tasks-wrap { display: grid; grid-template-rows: 1fr; transition: grid-template-rows 200ms ease-out; }
-.tasks-wrap > .tasks { overflow: hidden; min-height: 0; }
+/* Any child, not just .tasks — the Now view folds lane grids through the same
+   mechanism, and a rule that only knew about one of them silently left the
+   other unfoldable. */
+.tasks-wrap > * { overflow: hidden; min-height: 0; }
 .phase.shut .tasks-wrap { grid-template-rows: 0fr; }
-.phase.shut .tasks-wrap > .tasks { visibility: hidden; transition: visibility 0s linear 200ms; }
+.phase.shut .tasks-wrap > * { visibility: hidden; transition: visibility 0s linear 200ms; }
 @media (prefers-reduced-motion: reduce) {
-  .chev, .tasks-wrap, .phase.shut .tasks-wrap > .tasks { transition: none; }
+  .chev, .tasks-wrap, .phase.shut .tasks-wrap > * { transition: none; }
 }
 .tasks { display: grid; gap: 8px; margin-top: 16px; }
 
@@ -181,15 +184,12 @@ body { font-size: 16px; }
    breakpoint having to know how many people there are. */
 .now { margin-top: 8px; }
 .now-date { font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-2); }
-.now-block { margin-top: 40px; }
-.now-head { display: flex; gap: 12px; align-items: baseline; justify-content: space-between; border-bottom: 2px solid var(--text); padding-bottom: 8px; }
-.now-head h3 { font-family: var(--display); font-size: 24px; font-weight: 600; }
-.now-n { font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-2); flex: none; }
-.now-block .phase-note { margin-top: 8px; }
+/* Now blocks ARE phases — same markup, same fold, same storage — so they only
+   need what differs. */
 .now-block .tasks { margin-top: 16px; }
 /* Late work gets the seal. It is the one colour on this board that means stop. */
-.now-block.is-late .now-head { border-bottom-color: var(--seal); }
-.now-block.is-late .now-head h3 { color: var(--seal); }
+.now-block.is-late .phase-head { border-bottom-color: var(--seal); }
+.now-block.is-late .ph-name { color: var(--seal); }
 
 .lanes { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(232px, 1fr)); margin-top: 16px; align-items: start; }
 .lane { background: var(--surface); border: 1px solid var(--border); border-radius: 2px; padding: 12px; }

@@ -43,11 +43,26 @@ const SYNC = {
   pollMs: 5000,
 };
 
+/* THE ROSTER, as settled on 13 Aug 2026. Both boards carry the same one — they
+   describe the same company, and two rosters is how two boards start
+   contradicting each other.
+
+   Nimesh and Raksha are NOT engineers. That was the assumption the whole port
+   was staffed on, and removing it leaves every line of engineering unowned,
+   which is why four roles below are marked TO HIRE rather than quietly
+   distributed among four people who cannot do them. */
 const PEOPLE = [
-  { id: 'hm',     name: 'Hrudayangam', initials: 'HM', role: 'Lead — architecture, review, the design contract', tint: 'ink' },
-  { id: 'kunjal', name: 'Kunjal',      initials: 'K',  role: 'Developer — set at the 22 Aug meeting', tint: 'blue' },
-  { id: 'nimesh', name: 'Nimesh',      initials: 'N',  role: 'Developer — set at the 22 Aug meeting', tint: 'green' },
-  { id: 'raksha', name: 'Raksha',      initials: 'R',  role: 'Developer — set at the 22 Aug meeting', tint: 'gold' },
+  { id: 'hm',     name: 'Hrudayangam', initials: 'HM', role: 'Co-founder — product, engineering, the design contract', tint: 'ink' },
+  { id: 'kunjal', name: 'Kunjal',      initials: 'K',  role: 'Co-founder — operations, store accounts, launch', tint: 'blue' },
+  { id: 'nimesh', name: 'Nimesh',      initials: 'N',  role: 'Independent Director — governance only, non-executive. Cannot hold operational tasks', tint: 'plum' },
+  { id: 'raksha', name: 'Raksha',      initials: 'R',  role: 'Chartered Accountant — external. Tax, GST, statutory filings', tint: 'gold' },
+  { id: 'eng1',   name: 'Engineer — shared layer', initials: 'E1', role: 'TO HIRE — storage adapter, photos, migration. About 70% of the port hours', tint: 'green' },
+  { id: 'eng2',   name: 'Engineer — Android',      initials: 'E2', role: 'TO HIRE — keystore, Play Console, device QA. Windows is fine here', tint: 'green' },
+  { id: 'eng3',   name: 'Engineer — iOS',          initials: 'E3', role: 'TO HIRE — signing, App Store Connect, TestFlight. Needs the Mac', tint: 'blue' },
+  { id: 'ops',    name: 'Store ops & QA',          initials: 'SO', role: 'TO HIRE — listings, screenshots, privacy declarations, support. Non-coding', tint: 'gold' },
+  { id: 'cs',     name: 'Company Secretary',       initials: 'CS', role: 'EXTERNAL — SPICe+, ROC filings, board minutes, ESOP paperwork', tint: 'plum' },
+  { id: 'tm',     name: 'Trademark attorney',      initials: 'TM', role: 'EXTERNAL — clearance search, TM-A, opposition watch', tint: 'ink' },
+  { id: 'review', name: 'Plan review',             initials: 'PR', role: 'Two adversarial reviews, 13 Aug 2026. Its findings are the notes on these tasks', tint: 'plum' },
 ];
 
 const GROUPS = [
@@ -68,10 +83,11 @@ const GROUPS = [
      Group the board by Person to see them as lanes. */
   { id: 'shared',  name: 'The shared layer',     window: 'Weeks 1–3 — blocks both platforms', note: 'One codebase, one UI, one test suite. About 85% of the port lives here and neither store track can move until it does.' },
   { id: 'android', name: 'The Android track',    window: 'Aug – late Oct 2026',                note: 'Ships first, and the reason is not Google: Android builds on Windows and iOS does not. Target 20 Oct – 10 Nov; quote the outer date.' },
-  { id: 'ios',     name: 'The iOS track',        window: 'Aug – early Dec 2026',               note: 'Six weeks behind Android because Apple\'s gates are serial: incorporation, then D-U-N-S, then verification, then agreements. Fallback 20 Jan 2027.' },
+  { id: 'ios',     name: 'The iOS track',        window: 'Aug 2026 – Feb 2027',                note: 'Behind Android because Apple\'s gates are serial: incorporation, then D-U-N-S, then verification, then agreements. Dates corrected 13 Aug against the real chain.' },
+  { id: 'feed',    name: 'The feed experiment',  window: 'Sept 2026 — v2 only, never main',    note: 'Four reviews said do not build a networked feed. The founders chose to test it anyway, on v2, where being wrong is cheap. It ships to no store.' },
 ];
 
-const TAGS = ['blocker', 'architecture', 'data-safety', 'mobile', 'security', 'testing', 'performance', 'accessibility', 'tooling', 'release', 'docs', 'ai-workflow', 'ios', 'android', 'external-gate', 'money', 'one-way-door', 'legal'];
+const TAGS = ['blocker', 'architecture', 'data-safety', 'mobile', 'security', 'testing', 'performance', 'accessibility', 'tooling', 'release', 'docs', 'ai-workflow', 'ios', 'android', 'external-gate', 'money', 'one-way-door', 'legal', 'critical-path', 'product'];
 
 const SEED_TASKS = [
   /* ---- found in review ------------------------------------------------- */
@@ -335,4 +351,416 @@ const SEED_TASKS = [
   { g: 'ground', t: 'Brief the CA on the four unresolved tax questions', a: [], tags: ['legal', 'money', 'external-gate'], status: 'next', est: '1 meeting',
     why: 'Indian GST on store revenue was researched and came back unsettled in four places that a researcher cannot close. Getting these wrong is not a rounding error: reverse charge on the store\'s service fee probably forces GST registration from the first rupee regardless of the twenty-lakh threshold.',
     check: 'Who is the recipient of the supply — the store or the end user — per country, which drives the whole export analysis · whether the store\'s service fee triggers reverse charge and therefore compulsory registration · gross versus net valuation for GST on Indian sales · the current rate on software services after the September 2025 overhaul, because 18% could not be confirmed for August 2026 · also: file the LUT in Form GST RFD-11 annually, and collect the bank FIRC for every store remittance even though nothing asks for it monthly' },
+
+  /* ---- what the roster change created ---------------------------------- */
+  { g: 'ground', t: 'Confirm an Independent Director is lawful here, and what it costs Nimesh', a: ['cs', 'kunjal'], tags: ['blocker', 'legal'], status: 'next', current: true, est: '1 call', due: '2026-08-20',
+    why: 'Naming Nimesh an Independent Director is not a job title, it is a statutory role with consequences that are easy to trip over. A private limited company is not required to have one at all — s.149(4) and the appointment rules bind listed companies and public companies above capital, turnover or borrowing thresholds. More importantly the independence test in s.149(6) bars a pecuniary relationship with the company, Schedule IV and s.197(7) bar stock options, and the appointee must register on the MCA Independent Directors Databank and pass the proficiency test unless exempt. If the intent is that Nimesh helps build the product or holds founder equity, Independent Director is the wrong role and saying it out loud now costs one phone call.',
+    check: 'Ask the CS: does a Pvt Ltd of this size need or benefit from an ID at all · confirm s.149(6) independence against any equity or fees intended for Nimesh · confirm the ESOP bar · IICA databank registration and the online proficiency test · if the real intent is advisor or non-executive director, use that title instead, because it carries none of these bars',
+    n: [{ by: 'review', at: '2026-08-13T18:00:00.000Z', text: 'Flagged when the roster changed, not by the reviews. An Independent Director cannot take ESOPs and cannot have a pecuniary relationship with the company. If Nimesh is meant to hold equity or do work, this title actively prevents it. Confirm with the CS before the 22 Aug meeting distributes anything.' }] },
+  { g: 'ground', t: 'Decide whether Raksha is the statutory auditor or the internal CA', a: ['cs', 'kunjal'], tags: ['blocker', 'legal', 'money'], status: 'next', current: true, est: '1 call', due: '2026-08-20',
+    why: 'These two roles look similar and are mutually exclusive. Under s.141(3) a statutory auditor cannot be an officer or employee of the company, cannot be a partner or employee of one, and cannot hold securities in it. So if Raksha signs the audit she cannot be a director, cannot be on the payroll, and cannot hold shares. If instead she is the internal finance person she can hold equity and be on the team, but then somebody else must be appointed auditor in the ADT-1 filing due within 30 days of incorporation.',
+    check: 'Pick one, in writing, before ADT-1 is filed · if statutory auditor: no shares, no employment, no directorship, and the engagement letter says so · if internal CA: appoint a different firm as auditor and diarise ADT-1 · either way she owns the GST questions on this board, which is advisory work and safe under both readings',
+    n: [{ by: 'review', at: '2026-08-13T18:00:00.000Z', text: 'ADT-1 is due within 30 days of incorporation, so this cannot wait for the September meeting — the filing forces the answer.' }] },
+  { g: 'ground', t: 'Choose a brand-neutral package name before any account exists', a: ['hm', 'kunjal'], tags: ['blocker', 'one-way-door', 'legal', 'android', 'ios'], status: 'next', current: true, est: '30 minutes', due: '2026-08-20',
+    why: 'This is the decision that dissolves the seven-month argument between the two boards. A package name and bundle identifier are permanent and unrenameable — burn one and you lose the listing, the reviews and the install base. A store LISTING name can be changed any day. So the trademark risk only bites the irreversible half if the brand is baked into it. Put the company in the identifier and the product in the listing, and the mobile launch stops waiting on the opposition window closing on 30 Apr 2027.',
+    check: 'Something like in.<company>.wardrobe — no ALMARI in the identifier · same string on both platforms · register it nowhere until the company name is final · listing name stays Almari and can change later · write this decision into docs/32 and into the Workroom, because that board currently gates all launch spend on the trademark and does not need to gate the store on it',
+    n: [{ by: 'review', at: '2026-08-13T18:00:00.000Z', text: 'F2: the launch was passing through two permanent one-way doors six months before the company’s own trademark gate. This is the resolution the founders chose on 13 Aug: ship on a neutral identifier rather than wait for the mark.' }] },
+  { g: 'ground', t: 'File SPICe+ earlier than 12 September, or accept a 2027 launch', a: ['cs', 'kunjal'], tags: ['blocker', 'external-gate', 'critical-path'], status: 'next', current: true, est: 'a decision', due: '2026-08-18',
+    why: 'Every store date on this board is serial behind the Certificate of Incorporation: CoI, then D-U-N-S, then organisation account, then verification, then agreements, then review. The Workroom files SPICe+ on 12 September with a 10 to 20 working day certificate, which lands the CoI between 25 September and 9 October. Nothing downstream can be compressed — Apple states plainly that expediting D-U-N-S does not help. So the single lever on the entire mobile launch date is filing SPICe+ sooner, and every week saved there is a week off both stores.',
+    check: 'Ask the CS what is actually blocking an earlier filing: DSCs, name reservation, registered-office proof, or nothing but scheduling · if the filing can move to late August the whole chain moves with it · if it cannot, re-baseline both boards on a 2027 launch and stop quoting 2026',
+    n: [{ by: 'review', at: '2026-08-13T18:00:00.000Z', text: 'S5 and F1 both landed here. docs/32 assumed a CoI by early September; the company’s own board does not file until 12 September. The dates on this board have been corrected to the real chain — this task is the only way to make them earlier again.' }] },
+  { g: 'ground', t: 'Assign an owner to every task, then re-baseline against real capacity', a: ['hm', 'kunjal'], tags: ['blocker'], status: 'next', current: true, est: 'half a day', due: '2026-08-22',
+    why: 'A schedule review counted 522 person-days of work across both boards against 254 available, with 117 of 172 tasks unowned and every owned task belonging to one person. The roster change makes it starker rather than better: two of the four named people are now non-executive, so the engineering demand does not shrink and the supply does. Four roles on this board are marked TO HIRE precisely so that this is visible rather than absorbed.',
+    check: 'Every blocker-tagged and current-pinned row has a name · the four TO HIRE roles either get filled, get contracted out, or their tasks get cut — those are the only three honest options · re-estimate after the 22 Aug meeting and change the dates to match, rather than keeping dates that assume people who do not exist',
+    n: [{ by: 'review', at: '2026-08-13T18:00:00.000Z', text: 'S1, S2, F3. 24 of 30 blocker rows and 7 of 16 pinned rows had no owner. Group the board by Person to see the shape of it.' }] },
+  { g: 'ground', t: 'Stand up support operations before the first external tester', a: ['ops'], tags: ['blocker', 'release'], status: 'next', est: '3 days', due: '2026-10-30',
+    why: 'Both stores require a support contact before submission, and this product has no telemetry by contract — so a person writing in is the only way the company will ever learn that something is broken. There is currently nothing for support mail, refunds, review responses or a help page anywhere on either board.',
+    check: 'A monitored support address, not a personal inbox · a one-page help site on the company domain · a written refund position for each store · who answers store reviews and how fast · a triage rule for the first bug report that arrives with no stack trace attached',
+    n: [{ by: 'review', at: '2026-08-13T18:00:00.000Z', text: 'F13. Also F23: nothing decides what happens to the existing free web users, who docs/29 says will generate more support mail than the paid app, permanently.' }] },
+  { g: 'qa', t: 'Decide how a crash is ever heard about', a: ['hm', 'ops'], tags: ['blocker', 'testing', 'security'], status: 'next', est: '1 day', due: '2026-10-16',
+    why: 'The contract forbids telemetry, and the plan honours it — which means that when the app crashes on a stranger’s phone in Coimbatore, nobody will ever know. Both stores do surface crash data to the developer without any SDK: Xcode Organizer on Apple, Android vitals on Play. Neither requires collecting anything from the user, so both are compatible with the contract, but somebody has to opt in and then actually look.',
+    check: 'Turn on Play Console vitals and check Xcode Organizer · archive the dSYMs and mapping.txt for every release or the reports are unreadable noise · confirm with the privacy declarations that store-provided crash data does not change the nutrition label answer · a named person who looks weekly',
+    n: [{ by: 'review', at: '2026-08-13T18:00:00.000Z', text: 'F12. The board named the gap and created no task. Also missing: dSYM and mapping.txt archiving, without which the reports are useless.' }] },
+
+  /* ---- the feed experiment, decided 13 Aug 2026 ------------------------- */
+  { g: 'feed', t: 'Decide what the feed is for before building any of it', a: ['hm'], tags: ['blocker', 'product'], status: 'next', current: true, est: 'half a day', due: '2026-08-27',
+    why: 'Four independent reviews recommended against a networked feed, and the focus group that set this product’s contract named accounts and a social graph as dealbreakers. The founders have chosen to test it anyway, on v2, which is the cheapest way to be wrong. That only holds if the experiment has a question and a kill condition written down first — otherwise it becomes the roadmap by drift, and the paid app inherits a server it was designed not to need.',
+    check: 'One sentence on what the feed is for that does not include the word engagement · the number that would make it worth keeping, and the number that kills it · a date to judge it · written into docs before the first commit · this experiment never touches main, and nothing in it is promised to a store',
+    n: [{ by: 'review', at: '2026-08-13T18:00:00.000Z', text: 'Recorded because the decision reversed a documented recommendation. That is allowed — it is the founders’ product — but the reasoning should be written down where the next person can read it.' }] },
+  { g: 'feed', t: 'Supabase auth and profiles on v2', a: ['eng1'], tags: ['mobile', 'security'], status: 'next', est: '3 days', due: '2026-09-04',
+    why: 'The feed needs identity, and v2 already deploys separately at /v2/. Doing auth here rather than in the app keeps the paid product free of accounts, which is what the contract requires and what the store declarations depend on.',
+    check: 'Supabase Auth, email or OAuth, on the v2 branch only · a profiles table with row-level security that is actually restrictive, not the using(true) policies the boards run on · handle, display name, avatar · no import of anything from the local wardrobe without an explicit action by the person',
+    dep: 'Decide what the feed is for' },
+  { g: 'feed', t: 'The outfit post and the feed itself', a: ['eng1'], tags: ['mobile'], status: 'next', est: '1 week', due: '2026-09-18',
+    why: 'An outfit is the unit worth sharing: several garments, worn together, on a day. Posting one is different from posting a photograph, and the layout should follow the garment plates the app already draws rather than becoming a generic photo grid.',
+    check: 'Post = an outfit, its pieces, an optional note · a reverse-chronological feed of people you follow, and nothing algorithmic · Supabase storage for images with signed URLs, not public buckets · the brand contract still applies: no bodies, no gendered anything, no gamification, no counts presented as scores',
+    dep: 'Supabase auth and profiles on v2' },
+  { g: 'feed', t: 'Work out the moderation and privacy duty before anyone else can post', a: ['hm', 'kunjal'], tags: ['blocker', 'legal'], status: 'next', est: '2 days', due: '2026-09-18',
+    why: 'The moment strangers can post to each other, the company becomes an intermediary under the IT Rules and a data fiduciary under the DPDP Act. The 2026 amendment rules carry a three-hour takedown obligation for certain content, and the DPDP obligations arrive in phases through 2027. None of that is a reason not to build it; all of it is a reason not to open it to the public before the answers exist.',
+    check: 'Who receives a takedown notice and how fast they can act · a grievance officer named publicly if the rules require one · what happens to a user’s posts when they delete their account · age gating · keep the experiment invite-only until this is answered, which also keeps it a real experiment',
+    dep: 'Supabase auth and profiles on v2' },
 ];
+
+/* ============================================================================
+   WHAT THE 13 AUG REVIEWS CHANGED.
+
+   Two adversarial reviews — one red team, one schedule-integrity pass — produced
+   49 findings against this plan. Rather than silently rewriting the tasks above,
+   the corrections are applied here: owners, corrected dates, and the finding
+   itself attached as a note on the task it hits. The original plan and its
+   correction can then be read side by side, which is the only way anyone learns
+   anything from having been wrong.
+
+   Read the notes in the drawer. Group the board by Person to see who owns what,
+   and note that four of the owners are roles nobody has been hired into yet.
+   ========================================================================== */
+
+const REVIEW_OWNERS_BY_GROUP = {
+  "found": [
+    "eng1"
+  ],
+  "ground": [
+    "hm"
+  ],
+  "safety": [
+    "eng1"
+  ],
+  "arch": [
+    "eng1"
+  ],
+  "qa": [
+    "eng1"
+  ],
+  "native": [
+    "eng1"
+  ],
+  "sec": [
+    "eng1"
+  ],
+  "perf": [
+    "eng1"
+  ],
+  "release": [
+    "ops"
+  ],
+  "ai": [
+    "hm"
+  ],
+  "shared": [
+    "eng1"
+  ],
+  "android": [
+    "eng2"
+  ],
+  "ios": [
+    "eng3"
+  ],
+  "feed": [
+    "eng1"
+  ]
+};
+const REVIEW_OWNERS = {
+  "Stop fetching Switzer from Fontshare on every launch": [
+    "hm"
+  ],
+  "Run CI on pull requests": [
+    "hm"
+  ],
+  "Make npm run verify actually verify": [
+    "hm"
+  ],
+  "Choose the organisation Play account, not a personal one": [
+    "kunjal"
+  ],
+  "Set the price before releasing to any track at all": [
+    "kunjal"
+  ],
+  "Enrol the account in an Account Group for the 15% tier": [
+    "kunjal",
+    "raksha"
+  ],
+  "Start the BillDesk KYC the day the merchant profile exists": [
+    "kunjal",
+    "raksha"
+  ],
+  "Fill the Data safety form and the IARC questionnaire": [
+    "ops",
+    "kunjal"
+  ],
+  "Order four Android test devices": [
+    "kunjal"
+  ],
+  "Verify the Mac mini price, then order it": [
+    "hm"
+  ],
+  "Enrol as an Individual as a deliberate stopgap": [
+    "hm"
+  ],
+  "Request the D-U-N-S number the day the CoI lands": [
+    "cs",
+    "kunjal"
+  ],
+  "Submit the Apple organisation enrolment the day D-U-N-S lands": [
+    "kunjal"
+  ],
+  "Clear the agreements chain on one checklist day": [
+    "kunjal",
+    "raksha"
+  ],
+  "Get the company website and privacy policy live": [
+    "kunjal",
+    "ops"
+  ],
+  "Brief the CA on the four unresolved tax questions": [
+    "raksha"
+  ],
+  "Decide the anthropic.ts disclosure question": [
+    "hm"
+  ],
+  "Produce the store assets": [
+    "ops"
+  ],
+  "Write the release checklist and the rollback plan": [
+    "ops",
+    "hm"
+  ],
+  "Run the accessibility pass and write the checklist": [
+    "ops",
+    "eng1"
+  ],
+  "Build the minimum-functionality dossier before first submission": [
+    "eng3",
+    "hm"
+  ],
+  "Move the native shell to a private repository": [
+    "hm"
+  ],
+  "Choose the licence and commit LICENSE to the public repo": [
+    "hm"
+  ]
+};
+const REVIEW_DATES = {
+  "Request the D-U-N-S number the day the CoI lands": "2026-10-09",
+  "Submit the Apple organisation enrolment the day D-U-N-S lands": "2026-11-09",
+  "Choose the organisation Play account, not a personal one": "2026-08-19",
+  "Set the price before releasing to any track at all": "2026-11-27",
+  "Fill the Data safety form and the IARC questionnaire": "2026-11-27",
+  "Start the BillDesk KYC the day the merchant profile exists": "2026-11-20",
+  "Clear the agreements chain on one checklist day": "2026-12-07",
+  "Build the minimum-functionality dossier before first submission": "2026-10-30",
+  "Build the Play release pipeline to the internal track": "2026-09-04",
+  "Order four Android test devices": "2026-08-19",
+  "Verify the Mac mini price, then order it": "2026-08-18",
+  "Set minSdk to 26 and confirm targetSdk 36": "2026-08-28",
+  "Get the company website and privacy policy live": "2026-09-11",
+  "Build the storage adapter interface": "2026-09-04",
+  "Write the migration test before the migration": "2026-09-04",
+  "Unify the three intake paths behind one resize": "2026-09-11",
+  "Move photographs out of localStorage onto the filesystem": "2026-09-18",
+  "Get a signed hello-world shell onto a real device on both platforms": "2026-08-28",
+  "Pin the toolchain for the whole launch run": "2026-08-21",
+  "Decide the anthropic.ts disclosure question": "2026-08-20"
+};
+const REVIEW_NOTES = {
+  "Request the D-U-N-S number the day the CoI lands": [
+    {
+      "by": "review",
+      "at": "2026-08-13T18:00:00.000Z",
+      "text": "F1 (blocker): docs/32 assumed a Certificate of Incorporation \"by early September\". The Workroom does not file SPICe+ until 12 September, with a 10-20 working day certificate — so the CoI lands 25 Sep to 9 Oct. Every date downstream of this was wrong by four to five weeks. Corrected."
+    },
+    {
+      "by": "review",
+      "at": "2026-08-13T18:00:00.000Z",
+      "text": "F8 (blocker): the plan budgeted 7 business days for D-U-N-S, which is Apple's figure. Google's own page says up to 30 days, and both researchers said ~30. A 23-day error on the second link of a serial chain. Now dated on 30."
+    }
+  ],
+  "Set the price before releasing to any track at all": [
+    {
+      "by": "review",
+      "at": "2026-08-13T18:00:00.000Z",
+      "text": "F2 (blocker): this and the package name are permanent one-way doors, and the plan passed through them six months before the company's own trademark gate (Workroom: opposition-window check, 30 Apr 2027). Resolved 13 Aug by choosing a brand-neutral package name — see that task. The listing name can change; the identifier cannot."
+    },
+    {
+      "by": "review",
+      "at": "2026-08-13T18:00:00.000Z",
+      "text": "S8 (blocker): an internal-track release was scheduled 26 days BEFORE the price was set, on a board that tags this row one-way-door. Google does not document whether a testing-track release counts as \"offered free\". The pipeline task now uses the throwaway hedge package until the price is set on the real one."
+    }
+  ],
+  "Choose the organisation Play account, not a personal one": [
+    {
+      "by": "review",
+      "at": "2026-08-13T18:00:00.000Z",
+      "text": "F9 (blocker): the three-week schedule lever rests on an exemption the researcher inferred from the scope of Google's page rather than an affirmative statement. Confirm it in the Play Console before the schedule depends on it."
+    },
+    {
+      "by": "review",
+      "at": "2026-08-13T18:00:00.000Z",
+      "text": "S6 (blocker): \"late October\" survived only on the best case of five separate estimates, with BillDesk counted at zero. Dates now use the realistic chain."
+    }
+  ],
+  "Fill the Data safety form and the IARC questionnaire": [
+    {
+      "by": "review",
+      "at": "2026-08-13T18:00:00.000Z",
+      "text": "F5 (blocker): this was dated 20 September, before the Play account it requires could exist — and there was no task for creating that account at all. Re-dated behind the account and the verification."
+    }
+  ],
+  "Clear the agreements chain on one checklist day": [
+    {
+      "by": "review",
+      "at": "2026-08-13T18:00:00.000Z",
+      "text": "F6 / S7 (blocker): dated 9 October and not reachable then by any path. With the corrected chain it cannot start before December, and one source claims tax-form processing can take up to 90 days — which would put the app purchasable in early 2027 regardless of when review passes."
+    }
+  ],
+  "Move the source of truth to native storage": [
+    {
+      "by": "review",
+      "at": "2026-08-13T18:00:00.000Z",
+      "text": "F7 (blocker): the port is on this board twice with contradictory storage instructions. This row still said SQLite in its why while only its check carried the reversal. docs/32 supersedes: JSON on the filesystem behind a StorageAdapter, no SQLite in v1."
+    }
+  ],
+  "Start the BillDesk KYC the day the merchant profile exists": [
+    {
+      "by": "review",
+      "at": "2026-08-13T18:00:00.000Z",
+      "text": "F10 (blocker): an unbounded gate that blocks all revenue, and it had no date, no owner and nothing depending on it. It is India-only, it appears in no generic Play launch guide, and it was in nobody's brief. Now owned and dated as early as it can start."
+    }
+  ],
+  "Build the minimum-functionality dossier before first submission": [
+    {
+      "by": "review",
+      "at": "2026-08-13T18:00:00.000Z",
+      "text": "F11 (blocker): this is three new Swift targets, not two weeks of polish, and a WidgetKit widget needs a shared App Group container — which contradicts the Directory.LibraryNoCloud photo rule the shared track just locked in. Resolve the container question before starting, or the widget cannot read a single photograph."
+    },
+    {
+      "by": "review",
+      "at": "2026-08-13T18:00:00.000Z",
+      "text": "F4 (blocker): the \"8-12 person-weeks\" figure for the port appears nowhere in the research. The toolchain table sums to 9-12 and excludes this dossier, accessibility, biometrics and every rejection cycle."
+    }
+  ],
+  "Build the storage adapter interface": [
+    {
+      "by": "review",
+      "at": "2026-08-13T18:00:00.000Z",
+      "text": "S3 / F15 (blocker): the one task docs/32 says to serialise was unowned, estimated at a week, and due the day before the meeting that assigns roles. Week commencing 17 August asked one onboarded person for about three and a half person-weeks. Re-dated and given an owner — a role that does not exist yet, which is the honest state."
+    }
+  ],
+  "Set minSdk to 26 and confirm targetSdk 36": [
+    {
+      "by": "review",
+      "at": "2026-08-13T18:00:00.000Z",
+      "text": "F16 (serious): booked as a one-hour checkpoint, but API 36 removes the edge-to-edge opt-out entirely. That makes safe-area handling launch-blocking web-layer work, not a manifest line. Re-estimate once somebody has run the app on API 36."
+    }
+  ],
+  "Order four Android test devices": [
+    {
+      "by": "review",
+      "at": "2026-08-13T18:00:00.000Z",
+      "text": "F17 (serious): six due dates landed on Sundays and week one is two working days around a national holiday. Weekend dates across the board have been pulled to the preceding Friday."
+    }
+  ],
+  "Pin the toolchain for the whole launch run": [
+    {
+      "by": "review",
+      "at": "2026-08-13T18:00:00.000Z",
+      "text": "F19 (serious): five concrete landmines reached neither the document nor the board. The worst: changing server.hostname or server.androidScheme after release silently orphans all user data, because the WebView origin changes and the old storage becomes unreachable. It is a worse one-way door than the three the plan lists. Freeze both at first release and never touch them."
+    }
+  ],
+  "Run the accessibility pass and write the checklist": [
+    {
+      "by": "review",
+      "at": "2026-08-13T18:00:00.000Z",
+      "text": "F20 (serious): scheduled after the port, which contradicts docs/29, and Apple's accessibility declaration has no task at all. Accessibility done after the UI is finished is a rewrite, not a pass."
+    }
+  ],
+  "Put signing in fastlane match with an encrypted backend": [
+    {
+      "by": "review",
+      "at": "2026-08-13T18:00:00.000Z",
+      "text": "F21 (serious): this board mandates fastlane match while docs/32 budgets Xcode Cloud, and the research says explicitly do not build both before launch. Pick one as the primary and keep the other documented but unbuilt."
+    }
+  ],
+  "Move the native shell to a private repository": [
+    {
+      "by": "review",
+      "at": "2026-08-13T18:00:00.000Z",
+      "text": "F24 (serious): docs/32 is committed to a public repository and states in plain words that the product's central privacy claim is false. That is the exact failure docs/29 section 3.8 flagged. Either fix the claim first, or move the document with the shell."
+    }
+  ],
+  "Add the biometric lock": [
+    {
+      "by": "review",
+      "at": "2026-08-13T18:00:00.000Z",
+      "text": "F25: three-day estimate, no named package, and no first-party Capacitor plugin exists. Name the dependency before the estimate means anything."
+    }
+  ],
+  "Produce the store assets": [
+    {
+      "by": "review",
+      "at": "2026-08-13T18:00:00.000Z",
+      "text": "F14 (blocker): budgeted at one week against what the research describes as a four-week workstream — screenshots on real devices at every required size, for two stores, in a brand that forbids retouching."
+    }
+  ],
+  "Add error boundaries so one bad render is not a white screen": [
+    {
+      "by": "review",
+      "at": "2026-08-13T18:00:00.000Z",
+      "text": "F12 (blocker): no crash signal, no version discipline and no rollback plan, on two stores that do not allow un-shipping. See the new task on how a crash is ever heard about."
+    }
+  ],
+  "Stand up cloud iOS builds from Windows": [
+    {
+      "by": "review",
+      "at": "2026-08-13T18:00:00.000Z",
+      "text": "S9 (serious): the dep on this row named \"Order the Mac mini\", which is not a task — the title is \"Verify the Mac mini price, then order it\". It was the only blocked row on either board, blocked on nothing. Fixed, and both boards now check dependency integrity."
+    }
+  ],
+  "Choose the licence and commit LICENSE to the public repo": [
+    {
+      "by": "review",
+      "at": "2026-08-13T18:00:00.000Z",
+      "text": "S23 (blocker): the licence and branch protection land weeks after three new people would get write access to a public repository with no contributor terms. Order is wrong: licence first, then access."
+    }
+  ],
+  "Get the company website and privacy policy live": [
+    {
+      "by": "review",
+      "at": "2026-08-13T18:00:00.000Z",
+      "text": "S24 (blocker): still the most under-owned item in the plan, and it gates Apple organisation verification, both stores' privacy-policy URL requirement, and the DSA trader declaration. Now owned."
+    }
+  ],
+  "Decide the anthropic.ts disclosure question": [
+    {
+      "by": "review",
+      "at": "2026-08-13T18:00:00.000Z",
+      "text": "S15 (blocker): the Workroom says \"today the app truthfully declares no data collected\". The code, docs/32 and this board all say that is already false. The same decision was dated 18 Aug on one board and month 8 (Apr 2027) on the other. The Workroom row now points here."
+    }
+  ],
+  "Build the Play release pipeline to the internal track": [
+    {
+      "by": "review",
+      "at": "2026-08-13T18:00:00.000Z",
+      "text": "S8 (blocker): this released to a track 26 days before the price was set. Use the $25 hedge account and a throwaway package for pipeline work; the real package gets a price before its first release of any kind."
+    }
+  ]
+};
+
+for (const task of SEED_TASKS) {
+  if (REVIEW_OWNERS[task.t]) task.a = REVIEW_OWNERS[task.t];
+  else if (!(task.a || []).length && REVIEW_OWNERS_BY_GROUP[task.g]) task.a = REVIEW_OWNERS_BY_GROUP[task.g];
+  if (REVIEW_DATES[task.t]) task.due = REVIEW_DATES[task.t];
+  if (REVIEW_NOTES[task.t]) task.n = [...(task.n || []), ...REVIEW_NOTES[task.t]];
+}
+
+/* Nobody plans to work on a Sunday; a weekend due date is an arithmetic
+   artefact, and 41% of the dates on these two boards were landing on one.
+   Pull each back to the preceding Friday rather than forward, so a date never
+   silently gains days it was not given. */
+for (const task of SEED_TASKS) {
+  if (!task.due) continue;
+  const d = new Date(task.due + 'T00:00:00Z');
+  const day = d.getUTCDay();
+  if (day === 0) d.setUTCDate(d.getUTCDate() - 2);
+  else if (day === 6) d.setUTCDate(d.getUTCDate() - 1);
+  task.due = d.toISOString().slice(0, 10);
+}

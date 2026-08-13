@@ -564,12 +564,31 @@ function renderNow() {
     tasks: all.filter(t => !(t.assignees || []).length && t.status !== 'done'),
   }].filter(l => l.tasks.length);
 
-  const strip = (title, note, list, cls) => (list.length ? `
-    <section class="now-block ${cls || ''}">
-      <header class="now-head"><h3>${esc(title)}</h3><span class="now-n">${list.length}</span></header>
-      ${note ? `<p class="phase-note">${esc(note)}</p>` : ''}
-      <div class="tasks">${list.map(taskRow).join('')}</div>
-    </section>` : '');
+  /* Every block here folds, using the same machinery and the same storage as a
+     phase on the board — so a desk left folded stays folded, and there is only
+     one fold to maintain. Keys are namespaced `now:` so they cannot collide
+     with a phase id. */
+  const section = (id, title, note, count, body, cls) => {
+    const key = `now:${id}`;
+    const shut = COLLAPSED.has(key);
+    return `
+    <section class="phase now-block ${cls || ''} ${shut ? 'shut' : ''}">
+      <header class="phase-head">
+        <div>
+          <button class="phase-toggle" data-phase="${key}" aria-expanded="${!shut}" aria-controls="now-${id}">
+            <span class="chev" aria-hidden="true"></span><span class="ph-name">${esc(title)}</span>
+          </button>
+          ${note ? `<p class="phase-note">${esc(note)}</p>` : ''}
+        </div>
+        <div class="phase-meta"><span class="count">${esc(count)}</span></div>
+      </header>
+      <div class="tasks-wrap"><div class="now-body" id="now-${id}">${body}</div></div>
+    </section>`;
+  };
+
+  const strip = (id, title, note, list, cls) => (list.length
+    ? section(id, title, note, `${list.length}`, `<div class="tasks">${list.map(taskRow).join('')}</div>`, cls)
+    : '');
 
   const laneCard = t => {
     const d = daysUntil(t.due);
@@ -608,18 +627,19 @@ function renderNow() {
 
   if (!all.length) return emptyState();
 
+  /* Parallel first. The question a team actually opens this with is "who is on
+     what", not "what did we agree to care about" — and the lanes answer it in
+     one screen. Everything else is a list you consult, so it sits underneath. */
   return `
   <div class="now">
     <p class="now-date">${esc(today)}</p>
-    ${strip('Late', 'Promised for a date that has passed. Either move the date or move the work — leaving it is the one option that costs something.', late, 'is-late')}
-    ${strip('Pinned as current focus', 'What the team agreed matters most right now.', pinned)}
-    ${strip('Blocked', 'Each of these is waiting on a person or a decision. They do not unblock themselves.', blocked)}
-    ${lanes.length ? `<section class="now-block">
-      <header class="now-head"><h3>Running in parallel</h3><span class="now-n">${lanes.length} lanes</span></header>
-      <p class="phase-note">One column per person, everything not yet done. Read across to see where the team is thin and where it is doubled up.</p>
-      <div class="lanes">${laneHtml}</div>
-    </section>` : ''}
-    ${strip('Landing in the next fortnight', '', soon)}
+    ${lanes.length ? section('lanes', 'Running in parallel',
+      'One column per person, everything not yet done. Read across to see where the team is thin and where it is doubled up.',
+      `${lanes.length} lanes`, `<div class="lanes">${laneHtml}</div>`) : ''}
+    ${strip('pinned', 'Pinned as current focus', 'What the team agreed matters most right now.', pinned)}
+    ${strip('late', 'Late', 'Promised for a date that has passed. Either move the date or move the work — leaving it is the one option that costs something.', late, 'is-late')}
+    ${strip('blocked', 'Blocked', 'Each of these is waiting on a person or a decision. They do not unblock themselves.', blocked)}
+    ${strip('soon', 'Landing in the next fortnight', '', soon)}
   </div>`;
 }
 
@@ -883,8 +903,13 @@ function wire() {
   $('#exportBtn').onclick = exportJSON;
   $('#keysBtn').onclick = openKeys;
   $('#foldBtn').onclick = () => {
-    // Fold everything on screen, unless it already is — then open it back up.
-    const keys = buckets().map(b => `${VIEW.groupBy}:${b.id}`);
+    // Fold everything ON SCREEN, unless it already is — then open it back up.
+    // "On screen" depends on the view: the Now blocks and the board's sections
+    // are different sets, and folding the ones you cannot see is a button that
+    // appears to do nothing.
+    const keys = VIEW.mode === 'now'
+      ? [...document.querySelectorAll('#main [data-phase]')].map(b => b.dataset.phase)
+      : buckets().map(b => `${VIEW.groupBy}:${b.id}`);
     if (keys.length && keys.every(k => COLLAPSED.has(k))) keys.forEach(k => COLLAPSED.delete(k));
     else keys.forEach(k => COLLAPSED.add(k));
     saveCollapsed(); render();

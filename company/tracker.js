@@ -41,10 +41,17 @@ const SYNC = {
 /* ---------------------------------------------------------------- people -- */
 
 const PEOPLE = [
-  { id: 'hm',     name: 'Hrudayangam', initials: 'HM', role: 'Founder — product, code, design', tint: 'ink' },
-  { id: 'kunjal', name: 'Kunjal',      initials: 'K',  role: 'To be set at the 22 Aug meeting', tint: 'blue' },
-  { id: 'nimesh', name: 'Nimesh',      initials: 'N',  role: 'To be set at the 22 Aug meeting', tint: 'green' },
-  { id: 'raksha', name: 'Raksha',      initials: 'R',  role: 'To be set at the 22 Aug meeting', tint: 'gold' },
+  { id: 'hm',     name: 'Hrudayangam', initials: 'HM', role: 'Co-founder — product, engineering, the design contract', tint: 'ink' },
+  { id: 'kunjal', name: 'Kunjal',      initials: 'K',  role: 'Co-founder — operations, store accounts, launch', tint: 'blue' },
+  { id: 'nimesh', name: 'Nimesh',      initials: 'N',  role: 'Independent Director — governance only, non-executive. Cannot hold operational tasks', tint: 'plum' },
+  { id: 'raksha', name: 'Raksha',      initials: 'R',  role: 'Chartered Accountant — external. Tax, GST, statutory filings', tint: 'gold' },
+  { id: 'eng1',   name: 'Engineer — shared layer', initials: 'E1', role: 'TO HIRE — storage adapter, photos, migration. About 70% of the port hours', tint: 'green' },
+  { id: 'eng2',   name: 'Engineer — Android',      initials: 'E2', role: 'TO HIRE — keystore, Play Console, device QA. Windows is fine here', tint: 'green' },
+  { id: 'eng3',   name: 'Engineer — iOS',          initials: 'E3', role: 'TO HIRE — signing, App Store Connect, TestFlight. Needs the Mac', tint: 'blue' },
+  { id: 'ops',    name: 'Store ops & QA',          initials: 'SO', role: 'TO HIRE — listings, screenshots, privacy declarations, support. Non-coding', tint: 'gold' },
+  { id: 'cs',     name: 'Company Secretary',       initials: 'CS', role: 'EXTERNAL — SPICe+, ROC filings, board minutes, ESOP paperwork', tint: 'plum' },
+  { id: 'tm',     name: 'Trademark attorney',      initials: 'TM', role: 'EXTERNAL — clearance search, TM-A, opposition watch', tint: 'ink' },
+  { id: 'review', name: 'Plan review',             initials: 'PR', role: 'Two adversarial reviews, 13 Aug 2026. Its findings are the notes on these tasks', tint: 'plum' },
 ];
 
 /* ---------------------------------------------------------------- phases -- */
@@ -415,3 +422,244 @@ const SEED_TASKS = [
     why: 'With no telemetry, support mail and store reviews are the product analytics, and a developer reply is the only visible evidence that anyone is home. The app also launches with zero ratings on both stores against competitors holding tens of thousands, and the design contract rules out the rating prompt that would fix that; accept the cost on the record rather than by drift.',
     check: 'Thirty minutes weekly: reply to every 1 to 3 star review and every review carrying a question, never templated, never asking anyone to change a rating · Google routes refunds to the developer after 48 hours, so Android refunds are real recurring work, while Apple is merchant of record and the reply is a link · one row per ticket, tagged, read monthly against the roadmap, and every ticket that reveals a confusion becomes a docs page rather than just a reply · a named owner and a launch-week rota agreed in month 9, since the Mid case is about 20 hours a week during the spike' },
 ];
+
+/* ============================================================================
+   WHAT THE 13 AUG REVIEWS CHANGED, AND HOW THE TWO BOARDS WERE RECONCILED.
+
+   A schedule-integrity pass found these two boards planning the same store
+   launch seven months apart, giving opposite instructions on where photographs
+   are written, disagreeing on whether the privacy claim is currently true, and
+   between them leaving 117 of 172 tasks with no owner at all.
+
+   The corrections are applied here rather than by rewriting the tasks above, so
+   the original plan and its correction can be read side by side.
+   ========================================================================== */
+
+/* An Independent Director's work is oversight, not delivery. Giving Nimesh
+   operational tasks would be the fastest way to fail the s.149(6) independence
+   test the company is about to rely on, so these are the only rows he owns —
+   and they are real work, not a courtesy. */
+SEED_TASKS.push(
+  { g: 'team', t: 'Run the first board meeting and get the minutes right', a: ['nimesh', 'cs'], tags: ['legal', 'compliance'], status: 'next', est: 'half a day', due: '2026-10-16',
+    why: 'A company that exists on paper and never meets is a company whose decisions cannot be evidenced later. The first board meeting appoints the auditor, adopts the seal and banking authority, notes the directors\' disclosures under s.184, and takes the ESOP and share-allotment resolutions on the record. Every one of those becomes hard to reconstruct once it is needed in a diligence pack.',
+    check: 'First meeting within 30 days of incorporation · agenda circulated in advance · s.184 disclosures in Form MBP-1 from every director · auditor appointment resolution feeding ADT-1 · minutes signed and entered in the statutory register within 30 days · a standing quarterly cadence agreed',
+    n: [{ by: 'review', at: '2026-08-13T18:00:00.000Z', text: 'Added with the roster change. The independent director role only means something if the board actually meets and the minutes exist.' }] },
+  { g: 'team', t: 'Independent review of the founder equity split and vesting', a: ['nimesh'], tags: ['legal', 'money', 'critical-path'], status: 'next', est: '1 meeting', due: '2026-09-04',
+    why: 'The two co-founders cannot mark their own homework on the one document most likely to end the company. An outside voice on the board reading the shareholders agreement and the vesting schedule before it is signed is exactly what an independent director is for, and it is far cheaper than the alternative.',
+    check: 'Read the SHA and Articles before signature, not after · challenge the cliff, the vesting period, the leaver provisions and the founder-departure mechanics · confirm the call-option holder is NOT the company, which would turn it into a s.68 buyback problem at the worst moment · record the review in the minutes',
+    n: [{ by: 'review', at: '2026-08-13T18:00:00.000Z', text: 'Pairs with the counsel-drafting task. The s.68 point is from the earlier four-lens legal review, and it corrected an error in docs/29\'s own recommendation.' }] },
+  { g: 'ops', t: 'Quarterly compliance calendar, owned by somebody who is not building', a: ['nimesh', 'cs'], tags: ['legal', 'compliance'], status: 'next', est: '2 hours', due: '2026-10-30',
+    why: 'ADT-1, AOC-4, MGT-7, DIR-3 KYC, board meeting minimums, GST returns and the LUT renewal all have dates, and all of them are the kind of thing a founder shipping an app forgets until a penalty arrives. Someone whose job is oversight rather than delivery should hold the calendar.',
+    check: 'One calendar, all statutory dates, with owners and reminders · ADT-1 within 30 days of incorporation · DIR-3 KYC annually for every director including the ID · at least four board meetings a year with no gap over 120 days · reviewed at each board meeting' },
+);
+
+const REVIEW_OWNERS = {
+  "File SPICe+ — Private Limited, authorised capital ₹10 lakh": [
+    "cs",
+    "kunjal"
+  ],
+  "Reserve the name and buy DSCs for both directors": [
+    "cs",
+    "kunjal"
+  ],
+  "Procure the registered office before the SPICe+ filing": [
+    "kunjal"
+  ],
+  "Have counsel draft the SHA and bespoke Articles before SPICe+ is filed": [
+    "cs",
+    "hm"
+  ],
+  "Opposition-window status check — before any launch spend": [
+    "tm",
+    "kunjal"
+  ],
+  "Choose the licence and commit LICENSE to the public repo": [
+    "hm"
+  ],
+  "Storage migration — localStorage to SQLite and Preferences": [
+    "eng1"
+  ],
+  "Cloud build pipeline, signing, versioning discipline": [
+    "eng3"
+  ],
+  "Play closed track QA": [
+    "eng2",
+    "ops"
+  ],
+  "Resolve the BYOK question, then file the privacy declarations": [
+    "hm",
+    "ops"
+  ],
+  "App Review submission — one rejection cycle budgeted": [
+    "ops"
+  ],
+  "Snapshot the pre-migration bytes before any migration writes": [
+    "eng1"
+  ],
+  "Buy the test device fleet and prove storage survives the OEM cleaners": [
+    "eng2"
+  ],
+  "Complete the Paid Applications Agreement, W-8BEN-E and both payout profiles": [
+    "kunjal",
+    "raksha"
+  ],
+  "Brief counsel on the privacy policy, terms and a custom EULA": [
+    "kunjal"
+  ],
+  "Assemble the submission-form pack for both stores": [
+    "ops"
+  ]
+};
+const REVIEW_GROUP_OWNERS = {
+  "company": [
+    "cs",
+    "kunjal"
+  ],
+  "mark": [
+    "tm"
+  ],
+  "ip": [
+    "hm"
+  ],
+  "money": [
+    "raksha"
+  ],
+  "ops": [
+    "kunjal"
+  ],
+  "team": [
+    "hm",
+    "kunjal"
+  ],
+  "legal": [
+    "cs"
+  ],
+  "safety": [
+    "eng1"
+  ],
+  "test": [
+    "ops"
+  ],
+  "launch": [
+    "ops"
+  ],
+  "support": [
+    "ops"
+  ],
+  "market": [
+    "kunjal"
+  ],
+  "p0": [
+    "eng1"
+  ],
+  "p1": [
+    "eng1"
+  ],
+  "p2": [
+    "eng1"
+  ],
+  "p3": [
+    "eng1"
+  ]
+};
+const REVIEW_DATES = {
+  "App Review submission — one rejection cycle budgeted": "2026-12-11",
+  "Complete the Paid Applications Agreement, W-8BEN-E and both payout profiles": "2026-12-07",
+  "Assemble the submission-form pack for both stores": "2026-11-27"
+};
+const REVIEW_NOTES = {
+  "File SPICe+ — Private Limited, authorised capital ₹10 lakh": [
+    {
+      "by": "review",
+      "at": "2026-08-13T18:00:00.000Z",
+      "text": "S5 / F1 (blocker): this date is the head of the critical path for the ENTIRE mobile launch. Every store gate is serial behind the Certificate of Incorporation — D-U-N-S cannot even be requested before it exists, and Apple states expediting does not help. Filing on 12 September puts the CoI at 25 Sep to 9 Oct and both stores into 2027. See the Tech Workbench task on filing earlier: it is the only lever anyone has on the launch date."
+    },
+    {
+      "by": "review",
+      "at": "2026-08-13T18:00:00.000Z",
+      "text": "S18: this row also self-contradicted — est said one week, check said 10 to 20 working days. And it was dated on a Saturday."
+    }
+  ],
+  "Opposition-window status check — before any launch spend": [
+    {
+      "by": "review",
+      "at": "2026-08-13T18:00:00.000Z",
+      "text": "F2 / S4 (blocker): this row gated all launch spend on 30 Apr 2027 while the Tech Workbench shipped to stores in late 2026. The two boards were planning the same launch seven months apart. Resolved 13 Aug: a brand-neutral package identifier carries no trademark risk, and the store LISTING name can be changed any day. This gate now applies to brand spend — paid marketing, printed material, the wordmark — and no longer blocks the store release."
+    }
+  ],
+  "Storage migration — localStorage to SQLite and Preferences": [
+    {
+      "by": "review",
+      "at": "2026-08-13T18:00:00.000Z",
+      "text": "S11 (blocker): reversed by docs/32. NOT SQLite in v1. The plugin is now maintained by someone selling a closed competitor, carries an unanswered \"database corrupted and cleared\" issue, and its iOS location setting silently excludes the database from backup and from device transfer. v1 is JSON on the filesystem behind a StorageAdapter. Five rows on this board still assumed the old architecture."
+    }
+  ],
+  "Buy the test device fleet and prove storage survives the OEM cleaners": [
+    {
+      "by": "review",
+      "at": "2026-08-13T18:00:00.000Z",
+      "text": "S12 (blocker): this row told testers to verify photographs in Directory.Data — which is the exact bug the Tech Workbench forbids. On iOS, Data maps to Documents and is iCloud-backed, so every wardrobe would silently spend the user's iCloud quota. Photos go in Directory.LibraryNoCloud; only metadata goes in Data."
+    }
+  ],
+  "Cloud build pipeline, signing, versioning discipline": [
+    {
+      "by": "review",
+      "at": "2026-08-13T18:00:00.000Z",
+      "text": "S13 (serious): this board said no Mac is owned and budgeted none, while the Tech Workbench buys one on 18 August. Cloud-only was never possible anyway: Apple enrolment in India runs through the Apple Developer app and is device-bound, so a Windows-only team cannot enrol at all. The Mac is a procurement gate, not a preference."
+    }
+  ],
+  "Play closed track QA": [
+    {
+      "by": "review",
+      "at": "2026-08-13T18:00:00.000Z",
+      "text": "S14 (serious): closed-track testers must BUY a paid app; only internal testers get it free. On an organisation Play account the closed track is not required either, so this would charge your own testers for the privilege of testing. Use the internal track — 100 seats, no review, live in minutes."
+    }
+  ],
+  "Resolve the BYOK question, then file the privacy declarations": [
+    {
+      "by": "review",
+      "at": "2026-08-13T18:00:00.000Z",
+      "text": "S15 (blocker): this board said \"today the app truthfully declares no data collected\". The code says otherwise — src/lib/anthropic.ts posts user photographs to api.anthropic.com, which is collection AND sharing under Google's definitions, and the ephemeral exception fails because Anthropic retains inputs for 30 days. The same decision was dated 18 Aug on one board and month 8 on this one. It is now a single dated decision on the Tech Workbench and it blocks the privacy policy, the Data safety form and the nutrition label."
+    }
+  ],
+  "Snapshot the pre-migration bytes before any migration writes": [
+    {
+      "by": "review",
+      "at": "2026-08-13T18:00:00.000Z",
+      "text": "S22 (serious): this exists twice across the boards with different estimates and an eleven-week date gap, and nothing that requires it links to it. The migration task must depend on this one, not merely mention it."
+    }
+  ],
+  "Choose the licence and commit LICENSE to the public repo": [
+    {
+      "by": "review",
+      "at": "2026-08-13T18:00:00.000Z",
+      "text": "S23 (blocker): the licence and branch protection land weeks after new people would get write access to a public repo with no contributor terms. A merged outside pull request puts unassigned third-party copyright into the company's only asset. Licence first, then access."
+    }
+  ],
+  "Have counsel draft the SHA and bespoke Articles before SPICe+ is filed": [
+    {
+      "by": "review",
+      "at": "2026-08-13T18:00:00.000Z",
+      "text": "Roster change, 13 Aug: Nimesh is now an Independent Director and Raksha the CA. Both carry statutory constraints that change what this document can say — an independent director cannot take ESOPs or hold a pecuniary relationship (s.149(6), Schedule IV), and a statutory auditor cannot hold shares, employment or a directorship (s.141(3)). Brief counsel on the roster BEFORE drafting, not after."
+    }
+  ]
+};
+
+for (const task of SEED_TASKS) {
+  if (REVIEW_OWNERS[task.t]) task.a = REVIEW_OWNERS[task.t];
+  else if (!(task.a || []).length && REVIEW_GROUP_OWNERS[task.g]) task.a = REVIEW_GROUP_OWNERS[task.g];
+  if (REVIEW_DATES[task.t]) task.due = REVIEW_DATES[task.t];
+  if (REVIEW_NOTES[task.t]) task.n = [...(task.n || []), ...REVIEW_NOTES[task.t]];
+}
+
+/* 41% of the due dates across the two boards fell on a Saturday or Sunday,
+   including a statutory filing. Pull each back to the preceding Friday — never
+   forward, so a date cannot silently gain days it was not given. */
+for (const task of SEED_TASKS) {
+  if (!task.due) continue;
+  const d = new Date(task.due + 'T00:00:00Z');
+  const day = d.getUTCDay();
+  if (day === 0) d.setUTCDate(d.getUTCDate() - 2);
+  else if (day === 6) d.setUTCDate(d.getUTCDate() - 1);
+  task.due = d.toISOString().slice(0, 10);
+}

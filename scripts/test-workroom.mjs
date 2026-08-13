@@ -64,6 +64,33 @@ const lanes = await page.locator('.lane').count();
 check('now shows a lane per person with open work', lanes >= 2, `${lanes} lanes`);
 check('now dates itself', (await page.locator('.now-date').count()) === 1);
 
+// The lanes are the main screen; the pinned list sits under them.
+const nowOrder = await page.evaluate(() =>
+  [...document.querySelectorAll('#main .ph-name')].map(e => e.textContent));
+check('parallel lanes come first', nowOrder[0] === 'Running in parallel', nowOrder.slice(0, 3).join(' / '));
+check('pinned focus sits below them', nowOrder.indexOf('Pinned as current focus') === 1, nowOrder.join(' / '));
+
+// Every Now block folds, through the same machinery as a phase.
+const nowBlocks = await page.locator('#main .now-block').count();
+check('every now block is foldable', (await page.locator('#main .now-block [data-phase]').count()) === nowBlocks,
+  `${nowBlocks} blocks`);
+await page.locator('#main .now-block').nth(1).locator('.phase-toggle').click();
+await page.waitForTimeout(350);
+check('a now block folds shut',
+  (await page.locator('#main .now-block').nth(1).getAttribute('class')).includes('shut') &&
+  !(await page.locator('#main .now-block').nth(1).locator('.now-body').isVisible()));
+await page.reload({ waitUntil: 'networkidle' });
+await page.waitForTimeout(300);
+check('the now fold survives a reload',
+  (await page.locator('#main .now-block').nth(1).getAttribute('class')).includes('shut'));
+await page.locator('#foldBtn').click();
+await page.waitForTimeout(300);
+check('fold all reaches the now blocks',
+  (await page.locator('#main .now-block.shut').count()) === (await page.locator('#main .now-block').count()));
+await page.locator('#foldBtn').click();
+await page.waitForTimeout(300);
+check('and opens them again', (await page.locator('#main .now-block.shut').count()) === 0);
+
 await page.locator('#modeBoard').click();
 await page.waitForTimeout(150);
 
@@ -167,7 +194,11 @@ check('the rail hides itself when nothing is filtered', !(await page.locator('#a
 await page.locator('#fGroupBy').selectOption('person');
 await page.waitForTimeout(150);
 const byPerson = await page.locator('.phase').count();
-check('grouping by person re-sections the board', byPerson >= 2 && byPerson <= 5, `${byPerson} sections`);
+// At most one section per person plus "Nobody yet"; empty ones are dropped, so
+// the floor is 2. Derived from the roster because the roster changes.
+const roster = await page.evaluate(() => PEOPLE.length);
+check('grouping by person re-sections the board', byPerson >= 2 && byPerson <= roster + 1,
+  `${byPerson} sections, ${roster} on the roster`);
 await page.locator('#fGroupBy').selectOption('status');
 await page.waitForTimeout(150);
 const byStatus = await page.locator('.phase').count();
@@ -190,7 +221,8 @@ await page.waitForTimeout(150);
 check('timeline renders dated rows', (await page.locator('.tl-row').count()) > 5);
 await page.locator('#modePeople').click();
 await page.waitForTimeout(150);
-check('people view renders a card per person', (await page.locator('.person-card').count()) === 4);
+check('people view renders a card per person',
+  (await page.locator('.person-card').count()) === roster, `${roster} on the roster`);
 await page.locator('#modeBoard').click();
 await page.waitForTimeout(150);
 
@@ -352,8 +384,16 @@ await u.locator('#fPerson').selectOption('unassigned');
 await u.waitForTimeout(200);
 const unassignedShown = await u.locator('.task').count();
 const unassignedReal = await u.evaluate(() => SEED_TASKS.filter(t => !(t.a || []).length).length);
-check('the unassigned filter finds unassigned work', unassignedShown > 0 && unassignedShown === unassignedReal,
+// This used to assert that unassigned work EXISTS, which stopped being true the
+// day every task got an owner — a passing plan failing its own test. What
+// matters is that the filter agrees with the data, including when the answer is
+// none, in which case the board must say so rather than look broken.
+check('the unassigned filter agrees with the seed', unassignedShown === unassignedReal,
   `${unassignedShown} shown, ${unassignedReal} in the seed`);
+if (unassignedReal === 0) {
+  check('an empty result explains itself', (await u.locator('.empty-box').count()) === 1);
+  check('and offers the way back out', (await u.locator('#emptyClear').count()) === 1);
+}
 
 // --- the second board ---------------------------------------------------
 const b = await browser.newPage({ viewport: { width: 1280, height: 900 } });
