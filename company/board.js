@@ -38,7 +38,11 @@ function buildSeed() {
     why: s.why || '',
     check: s.check || '',
     dep: s.dep || '',
-    comments: [],
+    /* Seeded notes. A review that lives in a document gets read once; a review
+       that lives on the task gets read by whoever picks the task up, which is
+       the person who can still act on it. `n: [{ by, text }]` in the data file
+       becomes a note in the drawer, indistinguishable from one typed by hand. */
+    comments: (s.n || []).map(c => ({ by: c.by, at: c.at || nowISO(), text: c.text })),
     updatedAt: nowISO(),
     order: i,
   }));

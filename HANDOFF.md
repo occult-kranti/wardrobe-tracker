@@ -9,9 +9,9 @@ is the human-readable version of the same thing.
 
 The app is **built, verified, and complete** on branch
 `claude/wardrobe-tracker-redesign-hg0b34` (15 commits, tip `828d350`). It has
-never been pushed — see *The one blocker* below.
+since been pushed, along with everything after it.
 
-**Toile** is a wardrobe ledger: pattern-cutting paper, iron-gall ink, one
+**Almari** is a wardrobe ledger: pattern-cutting paper, iron-gall ink, one
 sealing-wax carmine, dark by default. Icons are technical fashion flats with no
 bodies. All art is hand-coded SVG; there are no raster assets.
 
@@ -24,31 +24,23 @@ It was designed against documented contracts rather than taste:
 | `docs/07-design-decision-log.md` | Why "Midnight Atelier" was superseded, with measurements |
 | `docs/08-verification.md` | Every suite, what it protects, traps to avoid |
 | `.claude/skills/wardrobe-brand/SKILL.md` | The operational digest — **load this before any UI change** |
+| `docs/32-the-two-ports.md` | The mobile launch: two tracks, two timelines, and why Android ships first |
 
 Green as of handoff: typecheck, brand contract (25 files), 17 migration checks,
 22 demo checks, 35 browser smoke checks, production build.
 
-## The one blocker: pushing
+## The push blocker: resolved
 
-The session that built this had a **read-only** GitHub credential. Confirmed three
-ways, all 403 on `POST /git/refs`: `git push`, `create_branch`, `push_files`.
-`git ls-remote` shows the remote has only `main` and `gh-pages` — the branch does
-not exist there, so the push is a *ref creation*, which is what's denied.
+**This section used to say the credential was read-only and nothing could be
+pushed. That has been false since write access was granted, and it is recorded
+here because a stale blocker is worse than no note at all** — an engineering
+review in August 2026 read it, took it at face value, and concluded that
+"nothing in this plan can ship while that is true".
 
-**Fix:** grant the Claude GitHub App write access to `occult-kranti/wardrobe-tracker`,
-then:
-
-```bash
-git push -u origin claude/wardrobe-tracker-redesign-hg0b34
-```
-
-If you are applying the bundle instead:
+The remote now carries `main`, `v2`, `gh-pages`, and the working branches.
+Pushes and Pages deploys both work. Nothing is bundled and waiting.
 
 ```bash
-git fetch /path/to/toile-redesign.bundle \
-  claude/wardrobe-tracker-redesign-hg0b34:claude/wardrobe-tracker-redesign-hg0b34
-git checkout claude/wardrobe-tracker-redesign-hg0b34
-npm install && npm run verify
 git push -u origin claude/wardrobe-tracker-redesign-hg0b34
 ```
 
