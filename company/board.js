@@ -48,7 +48,7 @@ const SEED_AT = '2026-01-01T00:00:00.000Z';
 
    A revision number is the author saying "this changed". People's work — notes,
    and any row somebody has genuinely edited — is carried across. */
-const SEED_REV = 3;
+const SEED_REV = 4;
 
 function buildSeed() {
   const tasks = SEED_TASKS.map((s, i) => ({

@@ -663,3 +663,86 @@ for (const task of SEED_TASKS) {
   else if (day === 6) d.setUTCDate(d.getUTCDate() - 1);
   task.due = d.toISOString().slice(0, 10);
 }
+
+/* The instruments ledger, docs/30-the-instruments-ledger.md, attached to the
+   tasks it governs. Four counsel were briefed independently; these are the
+   warnings that have a date attached to them. */
+const LEDGER_NOTES = {
+  "Have counsel draft the SHA and bespoke Articles before SPICe+ is filed": [
+    {
+      "by": "review",
+      "at": "2026-08-13T19:30:00.000Z",
+      "text": "docs/30 corrects docs/29 on one point. The compulsory-transfer call option must NOT run to the company — if the company is the buyer the transaction IS a buy-back, and s.68 requires free reserves a pre-revenue company does not have. Since 1 Oct 2024 the whole consideration is also deemed a dividend at slab rates with no deduction for cost. The option runs to Hrudayangam personally, with the continuing shareholders as alternates. Counsel called this the single most common drafting error in Indian founder documents."
+    },
+    {
+      "by": "review",
+      "at": "2026-08-13T19:30:00.000Z",
+      "text": "The filing is the deadline, not a milestone. At the instant the CoI issues, subscriber shares exist under THE ARTICLES ATTACHED TO THE FILING. File on Table F with no SHA and you have created fully-vested shares with no call option and no reserved matters, and every retrofit then needs the consent of the person you would be restricting. Entrenchment under s.5(4) is available at incorporation or afterwards only by agreement of ALL members."
+    },
+    {
+      "by": "review",
+      "at": "2026-08-13T19:30:00.000Z",
+      "text": "Ask counsel for the Articles as a clean numbered article set, not a marked-up Table F — SPICe+ INC-34 is a form your CS keys text into, and the bespoke clauses have to survive that."
+    }
+  ],
+  "Sign the pre-incorporation IP assignments and moonlighting warranties": [
+    {
+      "by": "review",
+      "at": "2026-08-13T19:30:00.000Z",
+      "text": "The roster change on 13 Aug narrows this. Nimesh is an Independent Director and Raksha the CA, so neither writes code and neither needs a developer IP assignment. Kunjal is the only joiner who does. Do not sign the other two into instruments they do not need."
+    },
+    {
+      "by": "review",
+      "at": "2026-08-13T19:30:00.000Z",
+      "text": "Four drafting traps, each of which silently truncates an otherwise good deed. s.19(3): the deed must state rights, duration AND territory. s.19(5): no duration means five years, so a 2026 deed expires in 2031. s.19(6): no territory means India only, which is the wrong half of the map for a dollar-priced app. s.19(4): rights unexercised for a year may lapse."
+    },
+    {
+      "by": "review",
+      "at": "2026-08-13T19:30:00.000Z",
+      "text": "The one line that must NOT be in the deed: any reversion of rights on cessation of service. Vesting belongs on the SHARES, never on the assignment. A conditional assignment makes the company title to its only asset contingent, and diligence reads that as owning nothing."
+    },
+    {
+      "by": "review",
+      "at": "2026-08-13T19:30:00.000Z",
+      "text": "s.17 vests first ownership in the employer only for work under a CONTRACT OF SERVICE. There is no company until the CoI, so anything Kunjal writes between 22 Aug and incorporation is his personally unless this deed exists first. Assign to HM personally now, with a covenant to assign to the company on incorporation and a power of attorney for the confirmatory deed — then diarise the confirmatory deed, because it is the step everyone forgets once the hard part feels done."
+    }
+  ],
+  "File ADT-1 — first auditor, within 30 days": [
+    {
+      "by": "review",
+      "at": "2026-08-13T19:30:00.000Z",
+      "text": "This filing IS the decision on Raksha, whether or not anyone treats it as one. s.141(3) disqualifies from statutory audit any officer or employee of the company, any partner or employee of one, and anyone holding securities in it. So she can sign the audit OR hold shares and a role — not both. Decide before filing, in the engagement letter."
+    }
+  ],
+  "Open the current account and deposit subscription capital": [
+    {
+      "by": "review",
+      "at": "2026-08-13T19:30:00.000Z",
+      "text": "Stamping note from docs/30: an unstamped instrument is inadmissible in evidence under s.35 of the Indian Stamp Act until the deficit plus a penalty of up to ten times the duty is paid. The penalty is cheap. The timing is not — it surfaces during diligence, which is the one week you cannot afford a four-week Collector process. E-stamp everything on 21 Aug, one stamp per instrument, correct parties named."
+    }
+  ],
+  "Meet Kunjal, Nimesh and Raksha — finalise team, distribute work, consult legalities": [
+    {
+      "by": "review",
+      "at": "2026-08-13T19:30:00.000Z",
+      "text": "Order of business from docs/30: the four-way NDA is signed BEFORE the agenda is spoken aloud, not after. Then the founders term sheet, binding on exactly three things — confidentiality, IP assignment from today, and no equity granted until the SHA is executed. Everything else expressly non-binding."
+    },
+    {
+      "by": "review",
+      "at": "2026-08-13T19:30:00.000Z",
+      "text": "Whoever chairs writes the decisions down THE SAME EVENING and circulates them; silence for 48 hours is acceptance. Four people leave a four-hour meeting with four recollections of what was agreed about equity, and that note is what counsel drafts the SHA from. The litigator priced the absence of it at two to five lakh of renegotiation and six to ten weeks of slip — the cheapest of the seven disputes to prevent and the likeliest to happen."
+    }
+  ],
+  "Reserve the name and buy DSCs for both directors": [
+    {
+      "by": "review",
+      "at": "2026-08-13T19:30:00.000Z",
+      "text": "DSCs are a lead-time item that stops everything downstream. Start by 28 Aug. Note the roster is now four people, not two directors — confirm with the CS how many subscribers and directors actually need one before ordering."
+    }
+  ]
+};
+
+for (const task of SEED_TASKS) {
+  const hit = Object.keys(LEDGER_NOTES).find(k => task.t.includes(k) || k.includes(task.t));
+  if (hit) task.n = [...(task.n || []), ...LEDGER_NOTES[hit]];
+}

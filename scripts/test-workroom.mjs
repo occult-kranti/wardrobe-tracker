@@ -49,7 +49,7 @@ const check = (name, ok, detail = '') => {
   else { fail++; console.log('FAIL -', name, detail); }
 };
 
-const SEED_REV_EXPECTED = 3;
+const SEED_REV_EXPECTED = 4;
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
 const errors = [];
