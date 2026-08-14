@@ -42,6 +42,8 @@
     </div>
     <button class="btn small" id="foldBtn">Fold all</button>
     <button class="btn small" id="newTaskBtn" disabled>New task</button>
+    <button class="btn small" id="resetBtn" disabled>Reset to meetings</button>
+    <button class="btn small warn" id="undoBtn" hidden>Undo reset</button>
     <button class="btn small" id="exportBtn">Export</button>
     <button class="btn small" id="keysBtn" title="Keyboard shortcuts" aria-label="Keyboard shortcuts">?</button>
   </div>
@@ -99,7 +101,7 @@ create policy "team edit"  on almari_workroom for update using (true);
   <footer>
     <span class="seal-mark" aria-hidden="true">A</span>
     <p><b>The Workroom</b> · the business board · the plan behind it is in the repository at
-      <code>docs/28-the-company.md</code> · <a href="build.html">the technical plan</a> ·
+      <code>docs/28-the-company.md</code> · <a href="build.html">the technical plan</a> · <a href="ship.html">the runbook</a> ·
       <a href="../">the app</a></p>
     <p style="margin-top:8px">Signing in here is a name badge, not a password: anyone with
       the link can pick any name. Keep the link inside the team.</p>

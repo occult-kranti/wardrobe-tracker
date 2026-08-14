@@ -308,6 +308,67 @@ check('edits persist across reload', (await page.locator('.task.done').count()) 
 check('comment persists across reload', (await page.locator('.cm').count()) >= 1);
 check('sync state says device-only', (await page.locator('#syncState').innerText()).toLowerCase().includes('device'));
 
+// --- reset to meetings, and undo ----------------------------------------
+// The point of this button is that it is safe to press on a board three other
+// people are reading, so the test is not "does it clear" but "does everything
+// come back, with its notes and its owners".
+await page.locator('#modeBoard').click();
+await page.waitForTimeout(200);
+const beforeReset = await page.evaluate(() => ({
+  total: STATE.tasks.length,
+  meetings: STATE.tasks.filter(t => (t.tags || []).includes('meeting')).length,
+  notes: STATE.tasks.reduce((a, t) => a + (t.comments || []).length, 0),
+  owned: STATE.tasks.filter(t => (t.assignees || []).length).length,
+}));
+check('the board has meetings to keep', beforeReset.meetings > 0, `${beforeReset.meetings}`);
+await page.locator('#resetBtn').click();
+check('the reset asks first', await page.locator('#modal').isVisible());
+await page.locator('#sheetNo').click();
+check('and cancelling changes nothing',
+  (await page.evaluate(() => STATE.tasks.filter(t => t.archived).length)) === 0);
+
+await page.locator('#resetBtn').click();
+await page.locator('#sheetYes').click();
+await page.waitForTimeout(400);
+const afterReset = await page.evaluate(() => ({
+  shown: STATE.tasks.filter(t => !t.archived).length,
+  aside: STATE.tasks.filter(t => t.archived).length,
+  total: STATE.tasks.length,
+}));
+check('only the meetings are left', afterReset.shown === beforeReset.meetings,
+  `${afterReset.shown} left, ${beforeReset.meetings} meetings`);
+check('nothing was deleted', afterReset.total === beforeReset.total,
+  `${afterReset.total} of ${beforeReset.total} still present`);
+// A meeting with four assignees appears in four lanes, so counting cards
+// double-counts. What matters is that nothing but a meeting is left standing.
+await page.locator('#modeNow').click();
+await page.waitForTimeout(300);
+const strays = await page.evaluate(() => {
+  const meetings = new Set(STATE.tasks.filter(t => (t.tags || []).includes('meeting')).map(t => t.title));
+  return [...document.querySelectorAll('.lane-t')].map(e => e.textContent).filter(t => !meetings.has(t));
+});
+check('the parallel lanes clear down to meetings', strays.length === 0, strays.slice(0, 3).join(' | '));
+await page.locator('#modeBoard').click();
+await page.waitForTimeout(200);
+check('the undo appears and counts', await page.locator('#undoBtn').isVisible() &&
+  (await page.locator('#undoBtn').innerText()).includes(String(afterReset.aside)));
+
+await page.locator('#undoBtn').click();
+await page.waitForTimeout(400);
+const afterUndo = await page.evaluate(() => ({
+  shown: STATE.tasks.filter(t => !t.archived).length,
+  notes: STATE.tasks.reduce((a, t) => a + (t.comments || []).length, 0),
+  owned: STATE.tasks.filter(t => (t.assignees || []).length).length,
+}));
+check('undo brings everything back', afterUndo.shown === beforeReset.total,
+  `${afterUndo.shown} of ${beforeReset.total}`);
+check('and the notes survived the round trip', afterUndo.notes === beforeReset.notes,
+  `${afterUndo.notes} of ${beforeReset.notes}`);
+check('and so did the owners', afterUndo.owned === beforeReset.owned,
+  `${afterUndo.owned} of ${beforeReset.owned}`);
+check('the undo hides itself once there is nothing to undo',
+  !(await page.locator('#undoBtn').isVisible()));
+
 check('no page errors', errors.length === 0, errors.slice(0, 3).join(' | '));
 
 // --- the merge rule -----------------------------------------------------
@@ -486,6 +547,45 @@ check('workbench: no duplicate titles', bSeed.dupes.length === 0, bSeed.dupes.jo
 check('workbench: every task says why', bSeed.noWhy.length === 0, bSeed.noWhy.join(', '));
 check('workbench: every dependency names a real task', bSeed.orphanDep.length === 0, bSeed.orphanDep.join(' | '));
 check('workbench: every due date is well formed', bSeed.badDate.length === 0, bSeed.badDate.join(', '));
+
+// --- the runbook --------------------------------------------------------
+const shipErrors = [];
+const s = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+s.on('pageerror', e => shipErrors.push(String(e)));
+await s.goto('http://127.0.0.1:4180/company/ship.html', { waitUntil: 'networkidle' });
+check('the runbook renders', (await s.locator('.part').count()) >= 4,
+  `${await s.locator('.part').count()} parts`);
+check('every step is numbered', (await s.locator('.step[data-n]').count()) === (await s.locator('.step').count()),
+  `${await s.locator('.step').count()} steps`);
+check('every step says how you know it worked or what it costs',
+  await s.evaluate(() => [...document.querySelectorAll('.step')]
+    .every(el => el.querySelector('.done, .trap, .gate'))));
+check('the runbook has exactly one h1', (await s.locator('h1').count()) === 1);
+check('it links both boards', (await s.locator('a[href="build.html"]').count()) >= 1 &&
+  (await s.locator('a[href="tracker.html"]').count()) >= 1);
+check('the boards link back to it', await (async () => {
+  const t = await browser.newPage();
+  await t.goto(TRACKER, { waitUntil: 'networkidle' });
+  const a = await t.locator('a[href="ship.html"]').count();
+  await t.goto('http://127.0.0.1:4180/company/build.html', { waitUntil: 'networkidle' });
+  const b = await t.locator('a[href="ship.html"]').count();
+  await t.close();
+  return a >= 1 && b >= 1;
+})());
+// The copy law is roughly one exclamation point for the whole product, and it
+// is spent. A runbook is no more exempt than the app — but the law governs
+// prose, and `!` in a shell snippet is negation, not enthusiasm.
+check('the runbook spends no exclamation points in prose',
+  (await s.evaluate(() => {
+    const clone = document.body.cloneNode(true);
+    clone.querySelectorAll('pre, code, script').forEach(e => e.remove());
+    return clone.innerText;
+  })).indexOf('!') === -1);
+check('the runbook throws nothing', shipErrors.length === 0, shipErrors.slice(0, 2).join(' | '));
+const sm = await browser.newPage({ viewport: { width: 390, height: 844 } });
+await sm.goto('http://127.0.0.1:4180/company/ship.html', { waitUntil: 'networkidle' });
+const shipOverflow = await sm.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+check('the runbook has no horizontal overflow at 390px', shipOverflow <= 1, `${shipOverflow}px`);
 
 await browser.close();
 server.close();

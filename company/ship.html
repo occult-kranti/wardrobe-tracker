@@ -1,0 +1,478 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shipping Almari — the runbook</title>
+<meta name="description" content="The ordered steps to build and launch Almari on Android and iOS: commands, gates, and how you know each step worked.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%23BE1231'/%3E%3Ctext x='16' y='22' text-anchor='middle' font-family='Georgia,serif' font-size='17' fill='%23FFFDF6'%3EA%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="almari.css">
+<style>
+  body { font-size: 16px; }
+  .shell { max-width: 940px; margin: 0 auto; padding: 0 24px 120px; }
+
+  .top { padding: 32px 0 16px; }
+  .top h1 { font-family: var(--display); font-weight: 700; font-size: 32px; letter-spacing: 0.14em; text-transform: uppercase; line-height: 1.1; }
+  .top .sub { font-family: var(--display); font-style: italic; font-size: 17px; color: var(--text-2); margin-top: 8px; max-width: 62ch; }
+  .where { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 24px; padding: 12px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); font-family: var(--mono); font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-2); }
+  .where a { border-bottom: 0; }
+  .where .here { color: var(--text); font-weight: 500; }
+  .where .sep { opacity: 0.5; }
+
+  .intro { margin-top: 32px; font-size: 17px; line-height: 1.7; max-width: 70ch; }
+  .intro p + p { margin-top: 16px; }
+
+  /* --------------------------------------------------------------- parts -- */
+  .part { margin-top: 72px; }
+  .part-head { border-bottom: 2px solid var(--text); padding-bottom: 10px; display: flex; flex-wrap: wrap; gap: 12px; align-items: baseline; justify-content: space-between; }
+  .part-head h2 { font-family: var(--display); font-size: 28px; font-weight: 700; line-height: 1.15; }
+  .part-when { font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-2); }
+  .part-note { margin-top: 12px; color: var(--text-2); font-size: 15px; max-width: 70ch; }
+
+  /* --------------------------------------------------------------- steps -- */
+  .step { margin-top: 32px; padding-left: 56px; position: relative; }
+  .step::before {
+    content: attr(data-n); position: absolute; left: 0; top: 0;
+    width: 40px; height: 40px; display: grid; place-items: center;
+    border: 1px solid var(--text); border-radius: 50%;
+    font-family: var(--mono); font-size: 13px; color: var(--text);
+  }
+  .step h3 { font-family: var(--display); font-size: 20px; font-weight: 600; line-height: 1.3; padding-top: 7px; }
+  .step > p { margin-top: 10px; color: var(--text-2); font-size: 15px; line-height: 1.65; max-width: 70ch; }
+  .step > p strong { color: var(--text); font-weight: 600; }
+
+  pre {
+    margin-top: 12px; background: var(--sunken); border: 1px solid var(--border); border-radius: 2px;
+    padding: 14px 16px; overflow-x: auto; font-family: var(--mono); font-size: 13px; line-height: 1.7;
+  }
+  pre .c { color: var(--text-2); }
+  code { font-family: var(--mono); font-size: 0.92em; background: var(--sunken); padding: 1px 5px; border-radius: 2px; }
+
+  .done {
+    margin-top: 12px; padding: 10px 14px; border-left: 3px solid #2A6B4F;
+    background: var(--surface); font-size: 14px; line-height: 1.6;
+  }
+  .done b { font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: #2A6B4F; display: block; margin-bottom: 4px; }
+
+  .trap {
+    margin-top: 12px; padding: 10px 14px; border-left: 3px solid var(--seal);
+    background: var(--surface); font-size: 14px; line-height: 1.6;
+  }
+  .trap b { font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--seal); display: block; margin-bottom: 4px; }
+
+  .gate {
+    margin-top: 12px; padding: 10px 14px; border-left: 3px solid var(--gold);
+    background: var(--surface); font-size: 14px; line-height: 1.6;
+  }
+  .gate b { font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold); display: block; margin-bottom: 4px; }
+
+  .who { font-family: var(--mono); font-size: 11px; letter-spacing: 0.04em; color: var(--text-2); margin-top: 8px; }
+  .who span { border: 1px solid var(--border); border-radius: 2px; padding: 2px 7px; margin-right: 6px; }
+
+  .table-rail { overflow-x: auto; margin-top: 24px; }
+
+  .legend { display: grid; gap: 10px; margin-top: 24px; }
+  .legend div { font-size: 14px; padding-left: 14px; border-left: 3px solid var(--border); color: var(--text-2); }
+  .legend .g { border-left-color: #2A6B4F; }
+  .legend .r { border-left-color: var(--seal); }
+  .legend .y { border-left-color: var(--gold); }
+
+  footer { margin-top: 96px; padding-top: 24px; border-top: 1px solid var(--text); font-size: 13px; color: var(--text-2); }
+
+  @media (max-width: 700px) {
+    .step { padding-left: 0; }
+    .step::before { position: static; margin-bottom: 8px; }
+    .step h3 { padding-top: 0; }
+  }
+</style>
+</head>
+<body>
+<button class="theme-toggle" id="themeToggle" aria-label="Switch theme">Atelier</button>
+
+<div class="shell">
+  <header class="top">
+    <h1>Shipping Almari</h1>
+    <p class="sub">The ordered steps to build and launch on Android and iOS — the commands, the gates, and how you know each one worked.</p>
+    <nav class="where">
+      <a href="tracker.html">The Workroom</a> <span class="sep">·</span>
+      <a href="build.html">The Tech Workbench</a> <span class="sep">·</span>
+      <span class="here">The runbook</span> <span class="sep">·</span>
+      <a href="../">The app</a>
+    </nav>
+  </header>
+
+  <div class="intro">
+    <p>The Tech Workbench holds <em>what</em> has to be done and who owns it. This holds <em>how</em>, in order, with the commands. If the two ever disagree, the board is the plan and this is the recipe — fix the recipe.</p>
+    <p>Two rules make the rest of it work. <strong>The shared layer blocks everything</strong>, so it is built once, by one person, before either platform track starts. And <strong>iOS and Android are not serialised against each other</strong> — they are both serialised against that shared layer, which is the entire reason this is one codebase and not two.</p>
+    <div class="legend">
+      <div class="g">Green — how you know the step actually worked. If you cannot show this, the step is not done.</div>
+      <div class="r">Carmine — the trap. Each one here has bitten somebody; several are unrecoverable.</div>
+      <div class="y">Gold — a gate you do not control. Start it early; you cannot compress it.</div>
+    </div>
+  </div>
+
+  <!-- ================================================================== -->
+  <section class="part">
+    <header class="part-head">
+      <h2>Part 0 — Before a single line of port code</h2>
+      <span class="part-when">Week 1 · in parallel</span>
+    </header>
+    <p class="part-note">None of this is porting. All of it is the difference between a launch and a scramble, and every item is cheap now and expensive in October.</p>
+
+    <div class="step" data-n="0.1">
+      <h3>Make the repository safe for four people</h3>
+      <p>Today CI runs only on push to <code>main</code>. Three developers are about to open pull requests into a repository where nothing checks them until after they are merged and live.</p>
+<pre><span class="c"># .github/workflows/ci.yml — a second workflow, PRs only</span>
+on: { pull_request: { branches: [main] } }
+jobs:
+  verify:
+    steps:
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run test:migrate &amp;&amp; npm run test:demo &amp;&amp; npm run test:intake
+      - run: npm run build</pre>
+      <p>Then make those checks required in branch protection, and commit a LICENSE before anyone gets write access — a merged outside pull request into an unlicensed repo puts unassigned third-party copyright into the company's only asset.</p>
+      <div class="done"><b>Done when</b> a deliberately broken pull request goes red and cannot be merged.</div>
+      <div class="who"><span>hm</span></div>
+    </div>
+
+    <div class="step" data-n="0.2">
+      <h3>Pin the toolchain and do not move it again until launch</h3>
+      <p>Xcode 26 has been mandatory since April 2026 and Capacitor 8 requires it. Xcode 27 is coming and Capacitor 8.5 already changed iOS behaviour to suit it. A toolchain that moves under a four-person team during a first launch costs days nobody budgeted.</p>
+<pre>node   22.x      <span class="c"># Capacitor 8 requires it; CI is still on 20</span>
+capacitor 8.5.x  <span class="c"># exact, not ^</span>
+xcode  26.x      <span class="c"># committed into the CI config</span>
+gradle / AGP     <span class="c"># whatever cap 8.5 ships with, unchanged</span></pre>
+      <div class="trap"><b>Trap</b> Do not install an Xcode 27 beta on the only Mac before launch. Schedule the UIScene and Capacitor 9 migration as post-launch work with its own test gate.</div>
+      <div class="who"><span>eng1</span></div>
+    </div>
+
+    <div class="step" data-n="0.3">
+      <h3>Choose the package identifier — this one is permanent</h3>
+      <p>The package name and bundle identifier can never be changed. The store <em>listing</em> name can be changed any day. So keep the brand out of the identifier, and the trademark opposition window stops being able to cost you the listing, the reviews and the install base.</p>
+<pre>package / bundle id   in.&lt;company&gt;.wardrobe   <span class="c"># permanent, brand-free</span>
+store listing name    Almari                  <span class="c"># changeable, any time</span></pre>
+      <div class="trap"><b>Trap</b> Free to paid is also permanent on Play. Once an app has been offered free it can never be sold, and the package name is burned. Set a price before the first release to <em>any</em> track, internal included.</div>
+      <div class="who"><span>hm</span><span>kunjal</span></div>
+    </div>
+
+    <div class="step" data-n="0.4">
+      <h3>Start every gate you do not control, today</h3>
+      <p>These run for weeks with no lever on them. Started in week one they are free; started in October they are the launch date.</p>
+      <div class="table-rail">
+      <table>
+        <thead><tr><th>Gate</th><th>Length</th><th>Cannot start before</th></tr></thead>
+        <tbody>
+          <tr><td>SPICe+ → Certificate of Incorporation</td><td class="num">10–20 working days</td><td>now</td></tr>
+          <tr><td>D-U-N-S number <span class="mono">(serves both stores)</span></td><td class="num">up to 30 days</td><td>the CoI exists</td></tr>
+          <tr><td>Apple organisation verification</td><td class="num">1–3 weeks, no SLA</td><td>D-U-N-S</td></tr>
+          <tr><td>Play organisation verification</td><td class="num">days</td><td>D-U-N-S</td></tr>
+          <tr><td>BillDesk KYC <span class="mono">(India only)</span></td><td class="num">unknown</td><td>merchant profile</td></tr>
+          <tr><td>Apple Paid Apps + tax forms</td><td class="num">weeks; one source says 90 days</td><td>org account live</td></tr>
+        </tbody>
+      </table>
+      </div>
+      <div class="gate"><b>Gate</b> Every one of these is serial behind incorporation. Filing SPICe+ earlier is the only lever that exists on the whole launch date — Apple states plainly that expediting D-U-N-S does not help.</div>
+      <div class="who"><span>kunjal</span><span>cs</span></div>
+    </div>
+
+    <div class="step" data-n="0.5">
+      <h3>Buy the Mac, order the phones</h3>
+      <p>iOS cannot be built on Windows, and Apple's enrolment in India runs through the Apple Developer app on an Apple device — so a Windows-only team cannot even enrol. Buying beats renting inside six months, and the machine doubles as the enrolment device.</p>
+      <p>Order four Android test devices the same day. Shipping time is the reason this is a week-one task and not a week-four one; weight the set towards vivo, Oppo and realme mid-range, which is where the market actually is, and include one low-RAM device.</p>
+      <div class="trap"><b>Trap</b> Check the live Mac mini price before ordering. The figure in the plan is trade press from May 2026 and a second source quotes a number ₹39,000 higher for what may be a different configuration.</div>
+      <div class="who"><span>hm</span><span>kunjal</span></div>
+    </div>
+  </section>
+
+  <!-- ================================================================== -->
+  <section class="part">
+    <header class="part-head">
+      <h2>Part 1 — The shared layer</h2>
+      <span class="part-when">Weeks 1–3 · blocks both platforms</span>
+    </header>
+    <p class="part-note">About 85% of the port lives here, and neither platform track can start until it lands. One person. Merged before anything else begins. If you serialise nothing else in this project, serialise this.</p>
+
+    <div class="step" data-n="1.1">
+      <h3>Put an interface in front of every read and write</h3>
+      <p>Storage is touched in 25 places across 9 files. Until that is one interface, the photo pipeline, the migration and both platform integrations are all blocked on each other.</p>
+<pre><span class="c">// src/lib/storage/index.ts</span>
+export interface StorageAdapter {
+  readWardrobe(id: string): Promise&lt;Wardrobe | null&gt;;
+  writeWardrobe(id: string, doc: Wardrobe): Promise&lt;void&gt;;
+  writePhoto(garmentId: string, blob: Blob): Promise&lt;string&gt;;  <span class="c">// returns a RELATIVE path</span>
+  photoUrl(path: string): string;
+  readSetting(k: string): Promise&lt;string | null&gt;;
+  writeSetting(k: string, v: string): Promise&lt;void&gt;;
+}</pre>
+      <p>Two implementations: <code>web.ts</code> over localStorage, <code>native.ts</code> over Capacitor Filesystem and Preferences. Nothing else in <code>src/</code> touches storage directly, ever again.</p>
+      <div class="done"><b>Done when</b> the existing Node harnesses run green against a fake adapter, and grep for <code>localStorage</code> outside <code>storage/</code> returns nothing.</div>
+      <div class="who"><span>eng1</span></div>
+    </div>
+
+    <div class="step" data-n="1.2">
+      <h3>Unify the three intake paths behind one resize</h3>
+      <p>The cut-out path caps images at 512px. <strong>The manual add path does no resizing at all</strong> — a raw phone JPEG goes straight to base64. Quota dies at roughly four garments, today, on the web. Fix it before the migration, or the migration carries the bug across.</p>
+      <div class="done"><b>Done when</b> a test fails if any intake path writes an unresized image, proven with a modern phone camera JPEG.</div>
+      <div class="who"><span>eng1</span></div>
+    </div>
+
+    <div class="step" data-n="1.3">
+      <h3>Move photographs onto the filesystem</h3>
+      <p>Every garment photo is currently a base64 PNG inside one JSON blob, and the whole application state — every photo included — is rewritten on every change. Capacitor documents WebView storage as transient: the OS reclaims it under disk pressure. This is a data-loss problem wearing a performance problem's clothes.</p>
+<pre>photos/&lt;garmentId&gt;/full.jpg    1600px, q0.82   → Directory.LibraryNoCloud
+photos/&lt;garmentId&gt;/thumb.jpg    400px, q0.75   → Directory.LibraryNoCloud
+wardrobes/&lt;id&gt;.json             metadata only  → Directory.Data</pre>
+      <p>Read them through <code>Capacitor.convertFileSrc()</code> so the bytes never cross the JS bridge. Write the JSON as <code>.tmp</code> then rename — a partial write during an app kill is the one way a document store loses everything.</p>
+      <div class="trap"><b>Trap</b> <b style="display:inline;color:inherit">Relative paths only.</b> The iOS container UUID changes across updates and restores, so an absolute path is a bomb that goes off on somebody else's device months later. And photos go in <code>LibraryNoCloud</code>, not <code>Data</code> — on iOS <code>Data</code> maps to Documents and is iCloud-backed, so every wardrobe would silently spend the user's iCloud quota. Never store <code>PHAsset</code> identifiers: they are nil under limited access, and revocable.</div>
+      <div class="who"><span>eng1</span></div>
+    </div>
+
+    <div class="step" data-n="1.4">
+      <h3>Write the migration test before the migration</h3>
+      <p>The product promise is that the data is yours, permanently. A migration that silently drops wears or photographs is worse than any store rejection, and on iOS you cannot hot-fix it. A tester who loses a wardrobe is a permanent reputational event in a four-person company.</p>
+<pre>1. corpus: a real 300-piece wardrobe with photographs
+2. force a full JSON export BEFORE the first migration runs
+3. keep the pre-migration payload until the app has opened twice
+4. round trip: export from device → import into web → diff</pre>
+      <div class="done"><b>Done when</b> the test exists and fails, before the migration code does. This is the gate for alpha round one — if it fails, the alpha does not happen.</div>
+      <div class="who"><span>eng1</span></div>
+    </div>
+
+    <div class="step" data-n="1.5">
+      <h3>Scaffold Capacitor and get a signed shell onto real hardware</h3>
+<pre>npm i @capacitor/core@8 @capacitor/cli@8
+npx cap init "Almari" in.&lt;company&gt;.wardrobe --web-dir=dist
+npm run build &amp;&amp; npx cap add android &amp;&amp; npx cap add ios
+npx cap sync</pre>
+      <div class="done"><b>Done when</b> a signed hello-world build runs on a physical Android phone <em>and</em> a physical iPhone, reproduced from a clean checkout by a second person. Until that exists, nobody can test anything and every estimate downstream is a guess.</div>
+      <div class="who"><span>eng1</span><span>eng2</span><span>eng3</span></div>
+    </div>
+
+    <div class="step" data-n="1.6">
+      <h3>Do not adopt SQLite</h3>
+      <p>The plan of record said SQLite; the review reversed it. Almari has no queries — one JSON document per wardrobe, no joins, no partial loads. Meanwhile <code>@capacitor-community/sqlite</code> is now maintained by someone selling a closed competitor, carries an unanswered <em>"database corrupted and cleared"</em> issue, and its iOS location setting silently excludes the database from backup <em>and</em> device transfer.</p>
+      <p>Revisit when a real wardrobe crosses ~2,000 garments or launch-time parse exceeds 100ms on the P90 device. Measure; do not guess.</p>
+      <div class="done"><b>Done when</b> the decision is written into docs/32 and the board rows that still say SQLite are corrected, so nobody re-adopts it by reading a stale task.</div>
+      <div class="who"><span>eng1</span></div>
+    </div>
+  </section>
+
+  <!-- ================================================================== -->
+  <section class="part">
+    <header class="part-head">
+      <h2>Part 2 — Android</h2>
+      <span class="part-when">Ships first · builds on Windows</span>
+    </header>
+    <p class="part-note">Android goes first, and the reason is not Google — it is that an Android release can be built, signed and uploaded from the machines this team already owns.</p>
+
+    <div class="step" data-n="2.1">
+      <h3>Set the SDK levels, and understand what one of them costs</h3>
+<pre><span class="c">// android/variables.gradle</span>
+minSdkVersion    = 26   <span class="c">// up from Capacitor's 24</span>
+targetSdkVersion = 36   <span class="c">// required for new apps from 31 Aug 2026</span></pre>
+      <p>On Android 7–9 the WebView <em>is</em> Chrome — permanently frozen and unpatched. For an app that is entirely a WebView, 24 → 26 deletes two OS generations of dead engine for about half a percentage point of reach.</p>
+      <div class="trap"><b>Trap</b> API 36 removes the edge-to-edge opt-out entirely. That makes safe-area handling launch-blocking web-layer work, not a manifest line. Budget days, not the hour it looks like.</div>
+      <div class="who"><span>eng2</span></div>
+    </div>
+
+    <div class="step" data-n="2.2">
+      <h3>Generate the upload key and store it in three places</h3>
+<pre>keytool -genkeypair -v -keystore upload.jks -alias upload \
+  -keyalg RSA -keysize 2048 -validity 10000
+
+base64 -w0 upload.jks &gt; upload.jks.b64   <span class="c"># → GitHub secret</span></pre>
+      <p>Password manager, an encrypted offline copy, and CI secrets. Never in the repository. Play App Signing means a lost <em>upload</em> key is recoverable through support — document that path before you need it.</p>
+      <div class="done"><b>Done when</b> a second person, on a different machine, has produced a signed bundle from the stored copy without asking anyone for help.</div>
+      <div class="who"><span>eng2</span></div>
+    </div>
+
+    <div class="step" data-n="2.3">
+      <h3>Ship with zero dangerous permissions</h3>
+      <p>Capacitor's Camera plugin already uses the Android Photo Picker and needs no permission at all unless <code>saveToGallery</code> is set. A permission prompt on an app whose entire pitch is that it does not want your data is a self-inflicted wound.</p>
+<pre><span class="c"># CI assertion on the MERGED manifest, not yours</span>
+! grep -q "READ_MEDIA_IMAGES\|READ_EXTERNAL_STORAGE" \
+    android/app/build/intermediates/merged_manifests/**/AndroidManifest.xml</pre>
+      <div class="done"><b>Done when</b> CI fails the build if any plugin contributes a dangerous permission.</div>
+      <div class="who"><span>eng2</span></div>
+    </div>
+
+    <div class="step" data-n="2.4">
+      <h3>Pipeline to the internal track</h3>
+      <p>Internal testing has no review, goes live in minutes, seats 100, and testers get the paid app free. It is the only track this launch needs. Closed and open testers would have to <em>buy</em> the app, and an organisation account is exempt from the 12-tester closed-test requirement entirely.</p>
+<pre>./gradlew bundleRelease          <span class="c"># .aab, not .apk</span>
+<span class="c"># → upload to the internal track via GitHub Actions</span></pre>
+      <div class="trap"><b>Trap</b> Use the $25 hedge account and a throwaway package for pipeline work. The real package must have a price set before its first release of any kind.</div>
+      <div class="who"><span>eng2</span></div>
+    </div>
+
+    <div class="step" data-n="2.5">
+      <h3>Test on the real matrix, not the emulator</h3>
+      <p>A WebView app breaks on ColorOS, One UI and HyperOS in ways no emulator shows: aggressive background killing, WebView version skew, storage cleaners that delete app files the OS said were safe. Prove a wardrobe survives an OEM cleaner before an external tester finds out for you.</p>
+      <div class="done"><b>Done when</b> 60fps scrolling with 100+ garments on the low-RAM device, and a wardrobe survives a forced cleanup on each OEM skin.</div>
+      <div class="who"><span>eng2</span><span>ops</span></div>
+    </div>
+
+    <div class="step" data-n="2.6">
+      <h3>Declarations, price, then production</h3>
+      <p>In this order, because each one blocks the next.</p>
+<pre>1. Data safety form   ← depends on the anthropic.ts decision
+2. IARC questionnaire
+3. Privacy policy URL  <span class="c">(required even collecting nothing)</span>
+4. Set the price       <span class="c">← BEFORE any track release</span>
+5. Account Group       <span class="c">← or you pay 30%, not 15%</span>
+6. Production, staged at 20% for 48 hours</pre>
+      <div class="trap"><b>Trap</b> Google audits Data safety declarations against observed behaviour. If the app still posts photographs to <code>api.anthropic.com</code>, "no data collected" is a false declaration, and the ephemeral-processing exception does not apply because inputs are retained 30 days.</div>
+      <div class="who"><span>ops</span><span>kunjal</span></div>
+    </div>
+  </section>
+
+  <!-- ================================================================== -->
+  <section class="part">
+    <header class="part-head">
+      <h2>Part 3 — iOS</h2>
+      <span class="part-when">Behind Android, on Apple's clock</span>
+    </header>
+    <p class="part-note">The engineering here is not harder. The waiting is. Enrol as an Individual for $99 in week one so every piece of engineering, signing and TestFlight work can proceed while the organisation paperwork grinds — that $99 is the best-value line in the plan.</p>
+
+    <div class="step" data-n="3.1">
+      <h3>Permission strings that a reviewer will accept</h3>
+      <p>Vague usage strings are a rejection. Say what you do with it, in the user's language.</p>
+<pre><span class="c">&lt;!-- ios/App/App/Info.plist --&gt;</span>
+&lt;key&gt;NSCameraUsageDescription&lt;/key&gt;
+&lt;string&gt;To photograph a garment for your wardrobe. Photos stay on
+this device.&lt;/string&gt;
+&lt;key&gt;NSPhotoLibraryUsageDescription&lt;/key&gt;
+&lt;string&gt;To add a photo you already have to a garment. Photos stay
+on this device.&lt;/string&gt;</pre>
+      <p>Use <code>PHPickerViewController</code> for library access — it needs no permission at all.</p>
+      <div class="trap"><b>Trap</b> A string that says only "this app needs camera access" is a rejection under 5.1.1. Say what the data is used for and where it goes, and make sure the sentence stays true after the anthropic.ts decision.</div>
+      <div class="who"><span>eng3</span></div>
+    </div>
+
+    <div class="step" data-n="3.2">
+      <h3>The privacy manifest, in the same commit as the plugins</h3>
+      <p>A missing or wrong manifest is an upload-time rejection — <code>ITMS-91053</code> — discovered at the worst possible moment. <code>@capacitor/preferences</code> uses <code>NSUserDefaults</code>, which is a required-reason API.</p>
+<pre><span class="c">&lt;!-- ios/App/App/PrivacyInfo.xcprivacy --&gt;</span>
+NSPrivacyTracking            false
+NSPrivacyTrackingDomains     (empty)
+NSPrivacyCollectedDataTypes  (empty)
+NSPrivacyAccessedAPITypes    CA92.1   <span class="c"># UserDefaults</span></pre>
+      <div class="done"><b>Done when</b> a throwaway upload to App Store Connect validates — do this in week seven, months before it matters, purely to surface errors early.</div>
+      <div class="who"><span>eng3</span></div>
+    </div>
+
+    <div class="step" data-n="3.3">
+      <h3>Signing that survives one Mac dying</h3>
+<pre>fastlane match init
+fastlane match appstore          <span class="c"># private, encrypted git backend</span>
+match(type: "appstore", readonly: is_ci)</pre>
+      <p>Store <code>MATCH_PASSWORD</code>, the App Store Connect <code>.p8</code>, the Key ID and the Issuer ID in the team password manager — the <code>.p8</code> cannot be downloaded twice. Add a second person to App Store Connect as Admin.</p>
+      <div class="trap"><b>Trap</b> One Mac, one enrolment device, one person who knows the setup: the bus factor is one across hardware, credentials and knowledge. Two people must have run a release end to end before launch.</div>
+      <div class="who"><span>eng3</span></div>
+    </div>
+
+    <div class="step" data-n="3.4">
+      <h3>Build the rejection defence before the first submission</h3>
+      <p>A WebView wrapper in a populated category from a brand-new account is the exact profile guidelines 4.2 and 4.3(b) target, and 4.3(b) was rewritten in June 2026 into an ongoing removal power. This is the highest-probability failure on the whole iOS track, and it is entirely mitigable with two weeks of native work. It is not polish.</p>
+<pre>· a WidgetKit home-screen widget
+· Share Sheet intake
+· an App Intents / Siri shortcut
+· Files-app export via UIDocumentPicker
+· haptics on the two-tap log</pre>
+      <p>Name every one of them in the Notes for Review, and state plainly that all assets ship in the bundle and the app makes no network requests.</p>
+      <div class="trap"><b>Trap</b> A widget needs a shared App Group container to read photographs. That interacts with the <code>LibraryNoCloud</code> rule from step 1.3 — resolve the container question before starting, or the widget cannot read a single image.</div>
+      <div class="who"><span>eng3</span><span>hm</span></div>
+    </div>
+
+    <div class="step" data-n="3.5">
+      <h3>The agreements chain, on one checklist day</h3>
+      <p><em>Pending Agreement</em> is what blocks a launch after everything else is ready. Do all of it the day the organisation account goes live.</p>
+<pre>□ Paid Applications Agreement
+□ W-8BEN-E          <span class="c"># treaty position pre-drafted by the CA</span>
+□ Banking + company current account
+□ Small Business Program   <span class="c"># 15% — see the trap</span>
+□ DSA trader status        <span class="c"># registered office + company phone</span></pre>
+      <div class="trap"><b>Trap</b> The Small Business Program rate takes effect <em>15 days after the end of the fiscal month of approval</em>. Miss it and the first weeks of sales bill at 30% — double. And verify every agreement reads <b style="display:inline;color:inherit">Active</b>, not Pending, before touching Pricing.</div>
+      <div class="who"><span>kunjal</span><span>raksha</span></div>
+    </div>
+
+    <div class="step" data-n="3.6">
+      <h3>TestFlight, then submit</h3>
+      <p>Run the whole alpha on <em>internal</em> TestFlight: 100 seats, no Beta App Review, 30 devices each. Use one external round as a cheap rehearsal — Beta App Review applies the same guidelines as the real thing.</p>
+      <div class="done"><b>Done when</b> migration integrity has passed on real devices with real wardrobes. That is the only alpha gate that matters.</div>
+      <div class="trap"><b>Trap</b> Builds expire after 90 days. Release manually, never automatically — you want to choose the hour.</div>
+      <div class="who"><span>eng3</span><span>ops</span></div>
+    </div>
+  </section>
+
+  <!-- ================================================================== -->
+  <section class="part">
+    <header class="part-head">
+      <h2>Part 4 — The day you ship, and the week after</h2>
+      <span class="part-when">Both stores</span>
+    </header>
+
+    <div class="step" data-n="4.1">
+      <h3>Know how a crash reaches you</h3>
+      <p>The contract forbids telemetry, and the plan honours it — which means that when the app crashes on a stranger's phone, nobody will ever know. Both stores surface crash data without any SDK: Android vitals, Xcode Organizer. Neither collects anything from the user, so both are compatible with the contract. Somebody has to opt in and then actually look.</p>
+      <div class="trap"><b>Trap</b> Archive the dSYMs and <code>mapping.txt</code> for every single release. Without them the reports are unreadable noise, and you cannot generate them after the fact.</div>
+      <div class="who"><span>hm</span><span>ops</span></div>
+    </div>
+
+    <div class="step" data-n="4.2">
+      <h3>Have somewhere for people to write to</h3>
+      <p>Both stores require a support contact before submission, and with no telemetry a person writing in is the only way you will learn anything is broken. A monitored address — not a personal inbox — a one-page help site, a written refund position for each store, and a named person who answers reviews.</p>
+      <div class="gate"><b>Gate</b> This blocks submission on both stores, and the free web users will write to it too — more of them, permanently, than the paid app produces. Decide what you owe them before the address goes live.</div>
+      <div class="who"><span>ops</span></div>
+    </div>
+
+    <div class="step" data-n="4.3">
+      <h3>Roll out slowly, and keep the way back</h3>
+<pre>Play      staged rollout, 20% for 48 hours, then widen
+Apple     manual release, phased over 7 days
+Both      a pre-staged rollback build, already uploaded</pre>
+      <div class="trap"><b>Trap</b> Neither store lets you un-ship. Play's halt only stops <em>further</em> rollout; everyone who already has the bad build keeps it. The rollback is a new version, so it must be built and ready before you need it.</div>
+      <div class="who"><span>ops</span><span>eng2</span><span>eng3</span></div>
+    </div>
+
+    <div class="step" data-n="4.4">
+      <h3>Never touch these two settings again</h3>
+<pre>server.hostname
+server.androidScheme</pre>
+      <p>Changing either after release changes the WebView origin, which orphans every user's stored data with no error and no recovery. It is a worse one-way door than the three the plan lists, because it does not look like one.</p>
+      <div class="trap"><b>Trap</b> Put a comment in capacitor.config.ts saying exactly this, next to both values. The person who eventually changes one will not have read this page.</div>
+      <div class="who"><span>eng1</span></div>
+    </div>
+  </section>
+
+  <footer>
+    <span class="seal-mark" aria-hidden="true">A</span>
+    <p><b>The runbook</b> · <a href="build.html">The Tech Workbench</a> holds the same work as assignable tasks · <a href="tracker.html">The Workroom</a> holds the company around it · <code>docs/32-the-two-ports.md</code> holds the argument</p>
+    <p style="margin-top:8px">Every date and duration here comes from the research behind <code>docs/32</code>, where each claim is marked verified, secondary or unverified. Where this page and the board disagree, the board is the plan.</p>
+  </footer>
+</div>
+
+<script>
+  // Same three-state theme as the rest of the site.
+  const KEY = 'almari-theme';
+  const btn = document.getElementById('themeToggle');
+  const apply = t => {
+    if (t) document.documentElement.setAttribute('data-theme', t);
+    else document.documentElement.removeAttribute('data-theme');
+    btn.textContent = t === 'dark' ? 'Daylight' : t === 'light' ? 'Atelier' : 'Atelier';
+  };
+  let cur = null;
+  try { cur = localStorage.getItem(KEY); } catch { /* private mode */ }
+  apply(cur);
+  btn.onclick = () => {
+    const prefersDark = matchMedia('(prefers-color-scheme: dark)').matches;
+    cur = cur === 'dark' ? 'light' : cur === 'light' ? 'dark' : (prefersDark ? 'light' : 'dark');
+    try { localStorage.setItem(KEY, cur); } catch { /* private mode */ }
+    apply(cur);
+  };
+</script>
+</body>
+</html>

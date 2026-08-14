@@ -273,9 +273,14 @@ function touch(task) { task.updatedAt = nowISO(); }
 /* RENDER                                                                     */
 /* ========================================================================== */
 
+const archived = () => STATE.tasks.filter(t => t.archived);
+
 function visibleTasks() {
   const q = VIEW.q.trim().toLowerCase();
   return STATE.tasks.filter(t => {
+    // Set aside, not deleted. Nothing on this board is ever destroyed — the
+    // reset is only worth having if it is safe to press.
+    if (t.archived) return false;
     if (VIEW.group !== 'all' && t.group !== VIEW.group) return false;
     // "Unassigned" is a predicate, not a person: testing it as a person id
     // matched nothing and silently emptied the board.
@@ -534,7 +539,7 @@ function renderTimeline() {
 
 function renderPeople() {
   const html = STATE.people.map(p => {
-    const mine = STATE.tasks.filter(t => (t.assignees || []).includes(p.id));
+    const mine = STATE.tasks.filter(t => !t.archived && (t.assignees || []).includes(p.id));
     const open = mine.filter(t => t.status !== 'done');
     const now = mine.filter(t => t.status === 'ongoing' || t.current);
     return `
@@ -566,11 +571,21 @@ function render() {
   // links, which would otherwise animate this correction and read as drift.
   if (window.scrollY !== y) window.scrollTo({ top: y, behavior: 'instant' });
 
-  const total = STATE.tasks.length;
-  const done = STATE.tasks.filter(t => t.status === 'done').length;
-  const ongoing = STATE.tasks.filter(t => t.status === 'ongoing').length;
-  const blocked = STATE.tasks.filter(t => t.status === 'blocked').length;
-  $('#stats').innerHTML = `<b>${done}</b>/${total} done · <b>${ongoing}</b> on now${blocked ? ` · <b>${blocked}</b> blocked` : ''}`;
+  const live = STATE.tasks.filter(t => !t.archived);
+  const done = live.filter(t => t.status === 'done').length;
+  const ongoing = live.filter(t => t.status === 'ongoing').length;
+  const blocked = live.filter(t => t.status === 'blocked').length;
+  const aside = archived().length;
+  $('#stats').innerHTML = `<b>${done}</b>/${live.length} done · <b>${ongoing}</b> on now`
+    + (blocked ? ` · <b>${blocked}</b> blocked` : '')
+    + (aside ? ` · <b>${aside}</b> set aside` : '');
+
+  // The way back is a button, not a memory. It exists only while there is
+  // something to undo, and it says how much.
+  const undo = $('#undoBtn');
+  if (undo) { undo.hidden = !aside; undo.textContent = `Undo reset (${aside})`; }
+  const reset = $('#resetBtn');
+  if (reset) reset.disabled = !ME;
 
   paintBulk();
   paintSyncState();
@@ -864,6 +879,60 @@ function newTask() {
   STATE.tasks.push(t); persist(); OPEN_TASK = t.id; render(); paintDrawer();
 }
 
+/* ------------------------------------------------------------- the reset --
+   Clear the board down to the meetings, so a planning session starts from the
+   dates everyone has agreed to rather than from four hundred rows of plan.
+
+   It sets tasks aside; it never deletes them. That distinction is the whole
+   feature: a destructive button on a board shared with three other people is a
+   button nobody dares press, and an undo that only works in your own tab is not
+   an undo at all — this one travels through the same sync as everything else,
+   so whoever pressed it can put it back for everybody. */
+
+function resetToMeetings() {
+  if (!ME) return;
+  const doomed = STATE.tasks.filter(t => !t.archived && !(t.tags || []).includes('meeting'));
+  const kept = STATE.tasks.filter(t => !t.archived && (t.tags || []).includes('meeting'));
+  if (!doomed.length) return;
+  confirmSheet({
+    title: 'Clear everything except the meetings?',
+    body: `${doomed.length} tasks go quiet and ${kept.length} meeting${kept.length === 1 ? '' : 's'} stay. `
+      + `Nothing is deleted — they keep their notes, owners and dates, and Undo brings all of them back. `
+      + `This is a shared board, so the rest of the team sees it too.`,
+    confirm: `Set aside ${doomed.length}`,
+    onConfirm: () => {
+      for (const t of doomed) { t.archived = true; touch(t); }
+      persist(); render();
+    },
+  });
+}
+
+function undoReset() {
+  const back = archived();
+  if (!back.length) return;
+  for (const t of back) { t.archived = false; touch(t); }
+  persist(); render();
+}
+
+/** One sheet, for anything worth asking about first. */
+function confirmSheet({ title, body, confirm, onConfirm }) {
+  const m = $('#modal');
+  m.hidden = false;
+  m.innerHTML = `
+    <div class="sheet">
+      <h3>${esc(title)}</h3>
+      <p class="phase-note" style="margin-top:12px">${esc(body)}</p>
+      <div class="sheet-actions">
+        <button class="btn small" id="sheetYes">${esc(confirm)}</button>
+        <button class="link" id="sheetNo">Cancel</button>
+      </div>
+    </div>`;
+  const close = () => { m.hidden = true; };
+  $('#sheetYes').onclick = () => { close(); onConfirm(); };
+  $('#sheetNo').onclick = close;
+  $('#sheetYes').focus();
+}
+
 function bulk(fn) {
   for (const id of SELECTED) {
     const t = STATE.tasks.find(x => x.id === id);
@@ -944,6 +1013,8 @@ function wire() {
   $('#newTaskBtn').onclick = newTask;
   $('#exportBtn').onclick = exportJSON;
   $('#keysBtn').onclick = openKeys;
+  $('#resetBtn').onclick = resetToMeetings;
+  $('#undoBtn').onclick = undoReset;
   $('#foldBtn').onclick = () => {
     // Fold everything ON SCREEN, unless it already is — then open it back up.
     // "On screen" depends on the view: the Now blocks and the board's sections

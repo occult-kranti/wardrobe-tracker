@@ -55,6 +55,7 @@ jobs:
           cp company/almari.css company/board.css company/board.js dist/company/
           cp company/tracker.html company/tracker.js dist/company/
           cp company/build.html company/build.js dist/company/
+          cp company/ship.html dist/company/
           # Both boards are dead without the shared engine and unreadable
           # without the shared stylesheet; fail loudly rather than publishing
           # two pages that load and then do nothing, or do it unstyled.
