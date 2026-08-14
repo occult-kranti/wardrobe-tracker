@@ -48,7 +48,7 @@ const SEED_AT = '2026-01-01T00:00:00.000Z';
 
    A revision number is the author saying "this changed". People's work — notes,
    and any row somebody has genuinely edited — is carried across. */
-const SEED_REV = 2;
+const SEED_REV = 3;
 
 function buildSeed() {
   const tasks = SEED_TASKS.map((s, i) => ({
@@ -80,7 +80,7 @@ let ME = null;
 /* `group` filters to one phase; `groupBy` decides what the sections ARE. They
    are different questions and were previously the same one, which is why the
    board could only ever be read phase-first. */
-let VIEW = { group: 'all', person: 'all', tag: 'all', status: 'all', q: '', mode: 'now', groupBy: 'phase', mine: false };
+let VIEW = { group: 'all', person: 'all', tag: 'all', status: 'all', q: '', mode: 'now', groupBy: 'phase', mine: false, scope: 'meetings' };
 let SELECTED = new Set();
 let OPEN_TASK = null;
 let SYNCING = false;
@@ -91,6 +91,7 @@ let LAST_SYNC = null;
 const LOCAL_KEY = `almari-${BOARD_KEY}-state`;
 const ME_KEY = `almari-${BOARD_KEY}-me`;
 const SHUT_KEY = `almari-${BOARD_KEY}-collapsed`;
+const SCOPE_KEY = `almari-${BOARD_KEY}-scope`;
 
 /* A board that gets renamed changes BOARD_KEY, and BOARD_KEY namespaces every
    localStorage key here — so a rename silently orphans the team's edits unless
@@ -273,14 +274,22 @@ function touch(task) { task.updatedAt = nowISO(); }
 /* RENDER                                                                     */
 /* ========================================================================== */
 
-const archived = () => STATE.tasks.filter(t => t.archived);
+const isMeeting = t => (t.tags || []).includes('meeting');
+/** How many rows the resting view is holding back. */
+const setAside = () => STATE.tasks.filter(t => !isMeeting(t)).length;
 
 function visibleTasks() {
   const q = VIEW.q.trim().toLowerCase();
   return STATE.tasks.filter(t => {
-    // Set aside, not deleted. Nothing on this board is ever destroyed — the
-    // reset is only worth having if it is safe to press.
-    if (t.archived) return false;
+    /* The board rests on the meetings. Four hundred rows of plan is the right
+       thing to have and the wrong thing to open on: a week is organised around
+       the dates everybody has agreed to, and the rest is one button away.
+
+       This is a VIEW, not a change to the data — deliberately. An earlier
+       version made it a shared field, which meant one person pressing Reset
+       blanked the board for everybody mid-meeting, and reading the plan
+       required signing in first. Nothing here writes. */
+    if (VIEW.scope === 'meetings' && !isMeeting(t)) return false;
     if (VIEW.group !== 'all' && t.group !== VIEW.group) return false;
     // "Unassigned" is a predicate, not a person: testing it as a person id
     // matched nothing and silently emptied the board.
@@ -571,21 +580,27 @@ function render() {
   // links, which would otherwise animate this correction and read as drift.
   if (window.scrollY !== y) window.scrollTo({ top: y, behavior: 'instant' });
 
-  const live = STATE.tasks.filter(t => !t.archived);
-  const done = live.filter(t => t.status === 'done').length;
-  const ongoing = live.filter(t => t.status === 'ongoing').length;
-  const blocked = live.filter(t => t.status === 'blocked').length;
-  const aside = archived().length;
-  $('#stats').innerHTML = `<b>${done}</b>/${live.length} done · <b>${ongoing}</b> on now`
-    + (blocked ? ` · <b>${blocked}</b> blocked` : '')
-    + (aside ? ` · <b>${aside}</b> set aside` : '');
+  const total = STATE.tasks.length;
+  const done = STATE.tasks.filter(t => t.status === 'done').length;
+  const ongoing = STATE.tasks.filter(t => t.status === 'ongoing').length;
+  const blocked = STATE.tasks.filter(t => t.status === 'blocked').length;
+  // The stats count the whole plan, always, whichever view is on screen —
+  // otherwise the resting view would report a company with five tasks in it.
+  $('#stats').innerHTML = `<b>${done}</b>/${total} done · <b>${ongoing}</b> on now`
+    + (blocked ? ` · <b>${blocked}</b> blocked` : '');
 
-  // The way back is a button, not a memory. It exists only while there is
-  // something to undo, and it says how much.
-  const undo = $('#undoBtn');
-  if (undo) { undo.hidden = !aside; undo.textContent = `Undo reset (${aside})`; }
+  // The way in is a button, not a memory — and it says how much is waiting, so
+  // the resting view never reads as an empty board.
+  const resting = VIEW.scope === 'meetings';
+  const plan = $('#planBtn');
+  if (plan) { plan.hidden = !resting; plan.textContent = `Current plan (${setAside()})`; }
   const reset = $('#resetBtn');
-  if (reset) reset.disabled = !ME;
+  if (reset) reset.hidden = resting;
+  const undo = $('#undoBtn');
+  if (undo) {
+    undo.hidden = !UNDO;
+    if (UNDO) undo.textContent = `Undo — ${UNDO.label}`;
+  }
 
   paintBulk();
   paintSyncState();
@@ -889,55 +904,50 @@ function newTask() {
    an undo at all — this one travels through the same sync as everything else,
    so whoever pressed it can put it back for everybody. */
 
-function resetToMeetings() {
-  if (!ME) return;
-  const doomed = STATE.tasks.filter(t => !t.archived && !(t.tags || []).includes('meeting'));
-  const kept = STATE.tasks.filter(t => !t.archived && (t.tags || []).includes('meeting'));
-  if (!doomed.length) return;
-  confirmSheet({
-    title: 'Clear everything except the meetings?',
-    body: `${doomed.length} tasks go quiet and ${kept.length} meeting${kept.length === 1 ? '' : 's'} stay. `
-      + `Nothing is deleted — they keep their notes, owners and dates, and Undo brings all of them back. `
-      + `This is a shared board, so the rest of the team sees it too.`,
-    confirm: `Set aside ${doomed.length}`,
-    onConfirm: () => {
-      for (const t of doomed) { t.archived = true; touch(t); }
-      persist(); render();
-    },
-  });
+/* One step of undo, held in memory for the tab that did the thing. It is not
+   the durable way back — "Current plan" is, and it works from any device at
+   any time. This is for the half-second after you realise you pressed the
+   wrong button, which is when an undo is actually wanted. */
+let UNDO = null;
+
+function remember(label, tasks) {
+  UNDO = {
+    label,
+    rows: tasks.map(t => ({
+      id: t.id, archived: !!t.archived, status: t.status, current: !!t.current,
+      assignees: [...(t.assignees || [])], due: t.due,
+    })),
+  };
 }
 
-function undoReset() {
-  const back = archived();
-  if (!back.length) return;
-  for (const t of back) { t.archived = false; touch(t); }
+function undoLast() {
+  if (!UNDO) return;
+  for (const r of UNDO.rows) {
+    const t = STATE.tasks.find(x => x.id === r.id);
+    if (!t) continue;
+    t.archived = r.archived; t.status = r.status; t.current = r.current;
+    t.assignees = r.assignees; t.due = r.due;
+    touch(t);
+  }
+  UNDO = null;
   persist(); render();
 }
 
-/** One sheet, for anything worth asking about first. */
-function confirmSheet({ title, body, confirm, onConfirm }) {
-  const m = $('#modal');
-  m.hidden = false;
-  m.innerHTML = `
-    <div class="sheet">
-      <h3>${esc(title)}</h3>
-      <p class="phase-note" style="margin-top:12px">${esc(body)}</p>
-      <div class="sheet-actions">
-        <button class="btn small" id="sheetYes">${esc(confirm)}</button>
-        <button class="link" id="sheetNo">Cancel</button>
-      </div>
-    </div>`;
-  const close = () => { m.hidden = true; };
-  $('#sheetYes').onclick = () => { close(); onConfirm(); };
-  $('#sheetNo').onclick = close;
-  $('#sheetYes').focus();
+/** Which of the two the board is showing. Per device, and in the URL, so a
+    link to the full plan stays a link to the full plan. */
+function setScope(scope) {
+  VIEW.scope = scope;
+  try { localStorage.setItem(SCOPE_KEY, scope); } catch { /* private mode */ }
+  render();
 }
 
-function bulk(fn) {
-  for (const id of SELECTED) {
-    const t = STATE.tasks.find(x => x.id === id);
-    if (t) { fn(t); touch(t); }
-  }
+/* Bulk edits are where an undo earns its place: one click can change forty
+   rows, and the only way back without it is forty more clicks. */
+function bulk(fn, label) {
+  const touched = [...SELECTED].map(id => STATE.tasks.find(x => x.id === id)).filter(Boolean);
+  if (!touched.length) return;
+  remember(label || 'that change', touched);
+  for (const t of touched) { fn(t); touch(t); }
   SELECTED.clear(); persist(); render();
 }
 
@@ -1013,8 +1023,9 @@ function wire() {
   $('#newTaskBtn').onclick = newTask;
   $('#exportBtn').onclick = exportJSON;
   $('#keysBtn').onclick = openKeys;
-  $('#resetBtn').onclick = resetToMeetings;
-  $('#undoBtn').onclick = undoReset;
+  $('#resetBtn').onclick = () => setScope('meetings');
+  $('#planBtn').onclick = () => setScope('all');
+  $('#undoBtn').onclick = undoLast;
   $('#foldBtn').onclick = () => {
     // Fold everything ON SCREEN, unless it already is — then open it back up.
     // "On screen" depends on the view: the Now blocks and the board's sections
@@ -1028,11 +1039,11 @@ function wire() {
     saveCollapsed(); render();
   };
 
-  $('#bulkNext').onclick = () => bulk(t => t.status = 'next');
-  $('#bulkOngoing').onclick = () => bulk(t => t.status = 'ongoing');
-  $('#bulkDone').onclick = () => bulk(t => t.status = 'done');
-  $('#bulkCurrent').onclick = () => bulk(t => t.current = true);
-  $('#bulkMine').onclick = () => { if (ME) bulk(t => { if (!t.assignees.includes(ME)) t.assignees.push(ME); }); };
+  $('#bulkNext').onclick = () => bulk(t => t.status = 'next', 'marking them next');
+  $('#bulkOngoing').onclick = () => bulk(t => t.status = 'ongoing', 'marking them on now');
+  $('#bulkDone').onclick = () => bulk(t => t.status = 'done', 'marking them done');
+  $('#bulkCurrent').onclick = () => bulk(t => t.current = true, 'pinning them');
+  $('#bulkMine').onclick = () => { if (ME) bulk(t => { if (!t.assignees.includes(ME)) t.assignees.push(ME); }, 'taking them'); };
   $('#bulkClear').onclick = () => { SELECTED.clear(); render(); };
 
   document.addEventListener('keydown', e => {
@@ -1092,7 +1103,7 @@ function setMode(m) {
    ("everything of Nimesh's that is blocked"). Keeping VIEW in the URL makes
    the address bar the sharing mechanism, and costs no storage and no server. */
 
-const VIEW_DEFAULTS = { group: 'all', person: 'all', tag: 'all', status: 'all', q: '', mode: 'now', groupBy: 'phase', mine: false };
+const VIEW_DEFAULTS = { group: 'all', person: 'all', tag: 'all', status: 'all', q: '', mode: 'now', groupBy: 'phase', mine: false, scope: 'meetings' };
 
 function viewToUrl() {
   const q = new URLSearchParams();
@@ -1119,6 +1130,8 @@ function urlToView() {
   if (mode && MODES.some(m => m.toLowerCase() === mode)) VIEW.mode = mode;
   const gb = q.get('groupBy');
   if (gb && GROUPINGS[gb]) VIEW.groupBy = gb;
+  const sc = q.get('scope');
+  if (sc === 'all' || sc === 'meetings') VIEW.scope = sc;
   VIEW.mine = q.get('mine') === 'true';
 }
 
@@ -1262,6 +1275,11 @@ async function boot() {
   }
 
   urlToView();
+  try {
+    const saved = localStorage.getItem(SCOPE_KEY);
+    if (saved === 'all' || saved === 'meetings') VIEW.scope = saved;
+  } catch { /* private mode: the default is the resting view */ }
+
   // A link that says "only mine" is meaningless to someone who has not said
   // who they are; honouring it would show them an empty board.
   if (VIEW.mine && !ME) VIEW.mine = false;

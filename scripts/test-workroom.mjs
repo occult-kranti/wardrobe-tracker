@@ -49,6 +49,7 @@ const check = (name, ok, detail = '') => {
   else { fail++; console.log('FAIL -', name, detail); }
 };
 
+const SEED_REV_EXPECTED = 3;
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
 const errors = [];
@@ -56,6 +57,40 @@ page.on('pageerror', e => errors.push(String(e)));
 page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
 
 await page.goto(TRACKER, { waitUntil: 'networkidle' });
+
+// --- the resting view ---------------------------------------------------
+// The board opens on the meetings. Everything else is one button away, and
+// the button says how much is waiting so this never reads as an empty board.
+const rest = await page.evaluate(() => ({
+  scope: VIEW.scope,
+  total: STATE.tasks.length,
+  meetings: STATE.tasks.filter(t => (t.tags || []).includes('meeting')).length,
+}));
+check('the board rests on the meetings', rest.scope === 'meetings');
+check('and shows only those', (await page.locator('.lane-task').count()) > 0 &&
+  (await page.evaluate(() => {
+    const m = new Set(STATE.tasks.filter(t => (t.tags || []).includes('meeting')).map(t => t.title));
+    return [...document.querySelectorAll('.lane-t')].every(e => m.has(e.textContent));
+  })), `${rest.meetings} meetings of ${rest.total}`);
+check('the way in is offered, and counts', await page.locator('#planBtn').isVisible() &&
+  (await page.locator('#planBtn').innerText()).includes(String(rest.total - rest.meetings)));
+check('the reset is not offered while resting', await page.locator('#resetBtn').isHidden());
+// The headline counts the whole company, not the view — otherwise the resting
+// board reports a five-task startup.
+check('the stats still count the whole plan',
+  (await page.locator('#stats').innerText()).includes(String(rest.total)));
+// Reading the plan must not require signing in, and must not write anything.
+check('the plan opens without signing in', await (async () => {
+  await page.locator('#planBtn').click();
+  await page.waitForTimeout(300);
+  return (await page.evaluate(() => VIEW.scope)) === 'all';
+})());
+check('and switching views changed no data',
+  (await page.evaluate(() => STATE.tasks.every(t => t.updatedAt === SEED_AT))));
+check('the choice is written into the URL', page.url().includes('scope=all'));
+await page.reload({ waitUntil: 'networkidle' });
+await page.waitForTimeout(400);
+check('and it survives a reload', (await page.evaluate(() => VIEW.scope)) === 'all');
 
 // --- the now view -------------------------------------------------------
 // The board opens on "what is happening", not "what is the plan".
@@ -308,66 +343,42 @@ check('edits persist across reload', (await page.locator('.task.done').count()) 
 check('comment persists across reload', (await page.locator('.cm').count()) >= 1);
 check('sync state says device-only', (await page.locator('#syncState').innerText()).toLowerCase().includes('device'));
 
-// --- reset to meetings, and undo ----------------------------------------
-// The point of this button is that it is safe to press on a board three other
-// people are reading, so the test is not "does it clear" but "does everything
-// come back, with its notes and its owners".
-await page.locator('#modeBoard').click();
-await page.waitForTimeout(200);
-const beforeReset = await page.evaluate(() => ({
-  total: STATE.tasks.length,
-  meetings: STATE.tasks.filter(t => (t.tags || []).includes('meeting')).length,
-  notes: STATE.tasks.reduce((a, t) => a + (t.comments || []).length, 0),
-  owned: STATE.tasks.filter(t => (t.assignees || []).length).length,
-}));
-check('the board has meetings to keep', beforeReset.meetings > 0, `${beforeReset.meetings}`);
+// --- reset, and a real undo ---------------------------------------------
+// Switching views is free and reversible. The undo is for the thing that is
+// neither: a bulk edit that changed forty rows in one click.
 await page.locator('#resetBtn').click();
-check('the reset asks first', await page.locator('#modal').isVisible());
-await page.locator('#sheetNo').click();
-check('and cancelling changes nothing',
-  (await page.evaluate(() => STATE.tasks.filter(t => t.archived).length)) === 0);
-
-await page.locator('#resetBtn').click();
-await page.locator('#sheetYes').click();
-await page.waitForTimeout(400);
-const afterReset = await page.evaluate(() => ({
-  shown: STATE.tasks.filter(t => !t.archived).length,
-  aside: STATE.tasks.filter(t => t.archived).length,
-  total: STATE.tasks.length,
-}));
-check('only the meetings are left', afterReset.shown === beforeReset.meetings,
-  `${afterReset.shown} left, ${beforeReset.meetings} meetings`);
-check('nothing was deleted', afterReset.total === beforeReset.total,
-  `${afterReset.total} of ${beforeReset.total} still present`);
-// A meeting with four assignees appears in four lanes, so counting cards
-// double-counts. What matters is that nothing but a meeting is left standing.
-await page.locator('#modeNow').click();
 await page.waitForTimeout(300);
-const strays = await page.evaluate(() => {
-  const meetings = new Set(STATE.tasks.filter(t => (t.tags || []).includes('meeting')).map(t => t.title));
-  return [...document.querySelectorAll('.lane-t')].map(e => e.textContent).filter(t => !meetings.has(t));
-});
-check('the parallel lanes clear down to meetings', strays.length === 0, strays.slice(0, 3).join(' | '));
+check('reset returns to the meetings', (await page.evaluate(() => VIEW.scope)) === 'meetings');
+check('and offers the way back in', await page.locator('#planBtn').isVisible());
+await page.locator('#planBtn').click();
+await page.waitForTimeout(300);
+check('current plan shows the whole roadmap',
+  (await page.locator('.task').count()) === (await page.evaluate(() => STATE.tasks.length)));
+
 await page.locator('#modeBoard').click();
 await page.waitForTimeout(200);
-check('the undo appears and counts', await page.locator('#undoBtn').isVisible() &&
-  (await page.locator('#undoBtn').innerText()).includes(String(afterReset.aside)));
-
-await page.locator('#undoBtn').click();
-await page.waitForTimeout(400);
-const afterUndo = await page.evaluate(() => ({
-  shown: STATE.tasks.filter(t => !t.archived).length,
+const beforeBulk = await page.evaluate(() => ({
+  next: STATE.tasks.filter(t => t.status === 'next').length,
   notes: STATE.tasks.reduce((a, t) => a + (t.comments || []).length, 0),
-  owned: STATE.tasks.filter(t => (t.assignees || []).length).length,
 }));
-check('undo brings everything back', afterUndo.shown === beforeReset.total,
-  `${afterUndo.shown} of ${beforeReset.total}`);
-check('and the notes survived the round trip', afterUndo.notes === beforeReset.notes,
-  `${afterUndo.notes} of ${beforeReset.notes}`);
-check('and so did the owners', afterUndo.owned === beforeReset.owned,
-  `${afterUndo.owned} of ${beforeReset.owned}`);
-check('the undo hides itself once there is nothing to undo',
-  !(await page.locator('#undoBtn').isVisible()));
+await page.locator('[data-pick]').nth(0).check();
+await page.locator('[data-pick]').nth(1).check();
+await page.waitForTimeout(150);
+await page.locator('#bulkDone').click();
+await page.waitForTimeout(300);
+check('a bulk edit offers an undo that names itself',
+  await page.locator('#undoBtn').isVisible() &&
+  (await page.locator('#undoBtn').innerText()).toLowerCase().includes('done'));
+await page.locator('#undoBtn').click();
+await page.waitForTimeout(300);
+const afterUndo = await page.evaluate(() => ({
+  next: STATE.tasks.filter(t => t.status === 'next').length,
+  notes: STATE.tasks.reduce((a, t) => a + (t.comments || []).length, 0),
+}));
+check('undo restores the statuses it changed', afterUndo.next === beforeBulk.next,
+  `${afterUndo.next} of ${beforeBulk.next}`);
+check('and touches nothing else', afterUndo.notes === beforeBulk.notes);
+check('and spends itself', await page.locator('#undoBtn').isHidden());
 
 check('no page errors', errors.length === 0, errors.slice(0, 3).join(' | '));
 
@@ -438,7 +449,7 @@ check('and keeps the progress somebody made on it', adopt.keptProgress);
 check('and keeps the notes they wrote', adopt.keptNote);
 check('and keeps the tasks they created', adopt.keptHandMade);
 check('and keeps the people they added', adopt.keptPerson);
-check('and stamps the revision it adopted', adopt.rev === 2, String(adopt.rev));
+check('and stamps the revision it adopted', adopt.rev === SEED_REV_EXPECTED, String(adopt.rev));
 
 // --- mobile -------------------------------------------------------------
 const m = await browser.newPage({ viewport: { width: 390, height: 844 } });
@@ -477,7 +488,8 @@ check('the annual-revenue column is readable at 390px', revenueVisible);
 // --- the unassigned filter (was matching nothing) -----------------------
 const u = await browser.newPage({ viewport: { width: 1280, height: 900 } });
 await u.goto(TRACKER, { waitUntil: 'networkidle' });
-await u.locator('#modeBoard').click();
+await u.locator('#planBtn').click();
+ await u.locator('#modeBoard').click();
 await u.locator('#fPerson').selectOption('unassigned');
 await u.waitForTimeout(200);
 const unassignedShown = await u.locator('.task').count();
@@ -499,7 +511,8 @@ const buildErrors = [];
 b.on('pageerror', e => buildErrors.push(String(e)));
 await b.goto('http://127.0.0.1:4180/company/build.html', { waitUntil: 'networkidle' });
 check('the workbench is named the workbench', (await b.title()).includes('Tech Workbench'));
-await b.locator('#modeBoard').click();
+await b.locator('#planBtn').click();
+ await b.locator('#modeBoard').click();
 await b.waitForTimeout(150);
 check('the workbench renders its tasks', (await b.locator('.task').count()) > 30, `${await b.locator('.task').count()} tasks`);
 check('the workbench renders every phase', (await b.locator('.phase').count()) === (await b.evaluate(() => GROUPS.length)));
