@@ -27,12 +27,12 @@ body { font-size: 16px; }
 
 .bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 16px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
 .modes { display: inline-flex; border: 1px solid var(--border); border-radius: 2px; overflow: hidden; }
-.modes button { min-height: 40px; padding: 0 16px; border: 0; background: transparent; color: var(--text-2); font-family: var(--ui); font-size: 13px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; }
+.modes button { min-height: 40px; padding: 0 13px; border: 0; background: transparent; color: var(--text-2); font-family: var(--ui); font-size: 13px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; }
 .modes button.on { background: var(--text); color: var(--bg); }
 
 /* The search box carries its own keyboard hint, because a board this size is
    searched far more often than it is browsed. */
-.search-wrap { flex: 1; min-width: 200px; position: relative; display: flex; }
+.search-wrap { flex: 1; min-width: 170px; position: relative; display: flex; }
 #search { flex: 1; min-height: 40px; padding: 0 44px 0 12px; border: 1px solid var(--border); border-radius: 2px; background: var(--surface); color: var(--text); font-family: var(--ui); font-size: 14px; }
 .search-key {
   position: absolute; right: 8px; top: 50%; transform: translateY(-50%); pointer-events: none;
@@ -312,6 +312,18 @@ body { font-size: 16px; }
    stop; putting work back is the safe direction. */
 .btn.warn { border-color: var(--gold); color: var(--gold); }
 .btn.warn:hover { background: var(--gold); color: #201D18; }
+
+/* On a resting board this is the only thing worth pressing, and an outline
+   button in a row of five outline buttons is not a call to action. Ink fill is
+   already this design's primary — the same treatment .modes button.on and
+   .seg.on use — so it reads as the action without spending the seal, which
+   means stop, or the gold, which the undo has. */
+.btn.primary { background: var(--text); color: var(--bg); border-color: var(--text); }
+.btn.primary:hover { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+/* A hairline of air on the left so it reads as its own thing rather than the
+   last of the group before it. */
+.btn.primary { margin-left: 8px; }
+@media (max-width: 760px) { .btn.primary { margin-left: 0; } }
 
 /* --------------------------------------------------------------- bulkbar -- */
 #bulkbar {
