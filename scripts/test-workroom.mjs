@@ -524,8 +524,9 @@ check('so it opens on real work', (await b.locator('.lane-task').count()) > 0,
 await b.goto('http://127.0.0.1:4180/company/build.html?scope=meetings', { waitUntil: 'networkidle' });
 await b.waitForTimeout(300);
 check('and a stale link cannot empty it', (await b.evaluate(() => VIEW.scope)) === 'all');
-await b.locator('#planBtn').click();
- await b.locator('#modeBoard').click();
+// No Current plan click here: this board never leaves scope 'all', so the
+// button is correctly hidden and clicking it would hang.
+await b.locator('#modeBoard').click();
 await b.waitForTimeout(150);
 check('the workbench renders its tasks', (await b.locator('.task').count()) > 30, `${await b.locator('.task').count()} tasks`);
 check('the workbench renders every phase', (await b.locator('.phase').count()) === (await b.evaluate(() => GROUPS.length)));
