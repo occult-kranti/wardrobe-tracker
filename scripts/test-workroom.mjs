@@ -511,6 +511,19 @@ const buildErrors = [];
 b.on('pageerror', e => buildErrors.push(String(e)));
 await b.goto('http://127.0.0.1:4180/company/build.html', { waitUntil: 'networkidle' });
 check('the workbench is named the workbench', (await b.title()).includes('Tech Workbench'));
+// The engineering board carries no meetings, so it must not open on a view of
+// them — that is a blank page with no explanation.
+check('a board with no meetings does not rest on them',
+  (await b.evaluate(() => VIEW.scope)) === 'all' &&
+  (await b.evaluate(() => STATE.tasks.some(t => (t.tags || []).includes('meeting')))) === false);
+check('and offers neither button', await b.locator('#planBtn').isHidden() &&
+  await b.locator('#resetBtn').isHidden());
+check('so it opens on real work', (await b.locator('.lane-task').count()) > 0,
+  `${await b.locator('.lane-task').count()} lane cards`);
+// A stale link must not be able to empty it either.
+await b.goto('http://127.0.0.1:4180/company/build.html?scope=meetings', { waitUntil: 'networkidle' });
+await b.waitForTimeout(300);
+check('and a stale link cannot empty it', (await b.evaluate(() => VIEW.scope)) === 'all');
 await b.locator('#planBtn').click();
  await b.locator('#modeBoard').click();
 await b.waitForTimeout(150);

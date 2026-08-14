@@ -277,6 +277,11 @@ function touch(task) { task.updatedAt = nowISO(); }
 const isMeeting = t => (t.tags || []).includes('meeting');
 /** How many rows the resting view is holding back. */
 const setAside = () => STATE.tasks.filter(t => !isMeeting(t)).length;
+/* A board with no meetings on it has nothing to rest on, and resting there
+   would show an empty page with no explanation. The engineering board is
+   exactly that board, so the resting view is offered only where it means
+   something. */
+const hasMeetings = () => STATE.tasks.some(isMeeting);
 
 function visibleTasks() {
   const q = VIEW.q.trim().toLowerCase();
@@ -591,11 +596,12 @@ function render() {
 
   // The way in is a button, not a memory — and it says how much is waiting, so
   // the resting view never reads as an empty board.
+  const offer = hasMeetings();
   const resting = VIEW.scope === 'meetings';
   const plan = $('#planBtn');
-  if (plan) { plan.hidden = !resting; plan.textContent = `Current plan (${setAside()})`; }
+  if (plan) { plan.hidden = !offer || !resting; plan.textContent = `Current plan (${setAside()})`; }
   const reset = $('#resetBtn');
-  if (reset) reset.hidden = resting;
+  if (reset) reset.hidden = !offer || resting;
   const undo = $('#undoBtn');
   if (undo) {
     undo.hidden = !UNDO;
@@ -1279,6 +1285,9 @@ async function boot() {
     const saved = localStorage.getItem(SCOPE_KEY);
     if (saved === 'all' || saved === 'meetings') VIEW.scope = saved;
   } catch { /* private mode: the default is the resting view */ }
+  // A board with no meetings cannot rest on them, whatever storage or the URL
+  // says. This is checked after both, so a stale link cannot empty the page.
+  if (!hasMeetings()) VIEW.scope = 'all';
 
   // A link that says "only mine" is meaningless to someone who has not said
   // who they are; honouring it would show them an empty board.
