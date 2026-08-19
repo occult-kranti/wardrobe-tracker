@@ -361,6 +361,12 @@ export const EVENT_LABELS: Record<EventKind, string> = {
    There is no server. "Signing in" picks which local wardrobe to open, and the
    UI says exactly that — see docs/12-accounts-and-feed.md. */
 
+/**
+ * Where a wardrobe's record is kept. Absent means 'device', so every account
+ * written before sync existed keeps meaning exactly what it meant.
+ */
+export type SyncMode = 'device' | 'cloud';
+
 export interface Account {
   id: string;
   name: string;
@@ -380,6 +386,18 @@ export interface Account {
       whose number trails the code's is rebuilt at boot — without this, fixing
       the seed only fixes it for people who have never opened the app. */
   seedVersion?: number;
+  /**
+   * Chosen when the wardrobe is started. 'cloud' keeps a copy of the record on
+   * the owner's Supabase project so a second device can open it; 'device' is
+   * the default and changes nothing about how the app has always worked.
+   */
+  sync?: SyncMode;
+  /**
+   * The remote row's id, assigned when the wardrobe is first marked for sync.
+   * Local ids are short ("w-a1b2c3d4") and the remote column is a uuid, so the
+   * row gets its own uuid rather than pretending the local one fits.
+   */
+  syncId?: string;
 }
 
 /** What a post carries, captured when it is shared. */
@@ -430,6 +448,13 @@ export interface FeedPost {
   id: string;
   authorId: string;
   date: string;
+  /**
+   * Sub-day ordering, ISO local datetime, stamped when the post is made.
+   * Optional forever: seeded rows keep day-granular dates, and a post without
+   * one simply sorts behind the timed posts of its day. Display stays
+   * day-granular regardless — the feed never shows a clock.
+   */
+  at?: string;
   /** The wearer's own words. Optional — a look can speak for itself. */
   caption?: string;
   scope: ShareScope;
@@ -483,6 +508,9 @@ export interface ChatMessage {
   conversationId: string;
   authorId: string;
   date: string;
+  /** Sub-day ordering, as on FeedPost — without it, two messages written the
+      same day scrambled, because the id tiebreak is a random UUID. */
+  at?: string;
   text: string;
   look?: SharedLook;
   piece?: SharedPiece;
@@ -540,6 +568,18 @@ export interface CommunityState {
   messages: ChatMessage[];
   households: Household[];
   passes: PassOffer[];
+  /**
+   * Take-downs that must survive a reseed. The seed re-appends any known-id
+   * post it finds missing; a tombstoned id is the difference between "not here
+   * yet" and "deliberately taken off", so a removed post never resurrects.
+   * Optional because blobs written before the field existed carry neither key.
+   */
+  removedPostIds?: string[];
+  /**
+   * Private bookmarks — the feed's only engagement mechanic. Kept on this
+   * device, counted nowhere, and never shown as anyone else's signal.
+   */
+  savedPostIds?: string[];
 }
 
 export const EMPTY_COMMUNITY: CommunityState = {
@@ -548,6 +588,8 @@ export const EMPTY_COMMUNITY: CommunityState = {
   messages: [],
   households: [],
   passes: [],
+  removedPostIds: [],
+  savedPostIds: [],
 };
 
 /**

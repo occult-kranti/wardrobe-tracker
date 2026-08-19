@@ -2,14 +2,21 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <!-- interactive-widget=resizes-content: where honoured (Android Chrome),
+         the layout viewport itself shrinks for the software keyboard, so a
+         bottom sheet's dvh ceiling and the keyboard never fight. iOS ignores
+         it; the Modal's visualViewport measure is the answer there. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
     <title>Almari — your wardrobe, on record</title>
     <meta name="description" content="A private ledger for a real wardrobe. Track what you own, what you wear, and what it costs per wear. Offline, on your device, free." />
     <meta name="theme-color" content="#F4EFE2" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#17140F" media="(prefers-color-scheme: dark)" />
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%23BE1231'/%3E%3Cpath d='M4.5 5.5 6.5 3.5h3l2 2v7.5a.5.5 0 0 1-.5.5H5a.5.5 0 0 1-.5-.5Z' fill='none' stroke='%23FFFDF6' stroke-width='1.1' stroke-linejoin='miter'/%3E%3Ccircle cx='8' cy='5.6' r='.9' fill='none' stroke='%23FFFDF6' stroke-width='.9'/%3E%3Ctext x='8' y='12' text-anchor='middle' fill='%23FFFDF6' style='font:700 5.6px Georgia,serif'%3ET%3C/text%3E%3C/svg%3E" />
     <link rel="manifest" href="./manifest.webmanifest" />
-    <link rel="apple-touch-icon" href="./icon.svg" />
+    <!-- iOS never reads SVG touch icons; without a bitmap here, Add to Home
+         Screen was a screenshot of the page. Rasterized from icon.svg by
+         scripts/build-icons.mjs — opaque seal ground, no halo. -->
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
     <link rel="preconnect" href="https://api.fontshare.com" crossorigin>
     <!-- THE TYPE IS SELF-HOSTED, and it took an outage to make it so. The app
          promises to work with no signal and made exactly one exception nobody

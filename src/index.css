@@ -400,6 +400,11 @@
     font-family: var(--font-ui);
     background-color: var(--color-bg);
     color: var(--color-text);
+    /* No chaining past the root: Android Chrome's pull-to-refresh would
+       otherwise reload the whole app out from under a downward flick that
+       began on an already-scrolled-to-top pane. The panes keep their own
+       `overscroll-behavior-y: contain` below. */
+    overscroll-behavior: none;
     /* Opening any modal sets body{overflow:hidden} to stop the page behind it
        scrolling. Without a reserved gutter the page's own scrollbar vanishes at
        that moment and the entire layout jumps 15px sideways on every platform
@@ -570,6 +575,92 @@
     scroll-snap-type: x proximity;
   }
   .tag-rail > * { flex: none; scroll-snap-align: start; }
+
+
+  /* ---------------- the modal sheet ----------------
+
+     Below lg a modal is a bottom sheet: anchored to the bottom edge, full
+     width, plate-ink hairline on top, its title row pinned while the body
+     scrolls. Its ceiling is the dynamic viewport minus whatever the software
+     keyboard covers: Modal measures window.visualViewport and writes the
+     difference into --kb on the overlay, and the overlay's bottom padding
+     lifts the sheet by exactly that much. Where interactive-widget=
+     resizes-content is honoured (Android Chrome) the viewport has already
+     shrunk and --kb measures 0 — the same geometry, stated once. */
+  .modal-overlay {
+    padding: 0 0 var(--kb, 0px);
+    transition: padding-bottom 160ms ease-out;
+  }
+  .modal-sheet {
+    max-height: calc(100dvh - var(--kb, 0px) - var(--safe-t) - 0.75rem);
+  }
+  .modal-sheet-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    /* The sheet's ceiling is fixed, so the body scrolls inside it; chaining
+       is contained so a flick at the end of the form does not move the page
+       the sheet is floating over. The home-indicator clearance lives on the
+       element itself as a max-lg:pb-[] utility — a rule here would lose to
+       the p-5 utility from the later layer. */
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+  }
+  @media (width >= 64rem) {
+    /* At lg the modal is the centered paper sheet it always was: the overlay
+       scrolls, the body does not, and the keyboard never moves the window. */
+    .modal-overlay { padding: 1rem; }
+    .modal-sheet { max-height: none; }
+    .modal-sheet-body { overflow: visible; }
+  }
+
+
+  /* ---------------- the week strip (calendar, phones) ----------------
+
+     Seven full-width day cards stack into a seven-screen scroll on a phone.
+     Below sm the week becomes a snap strip instead — the same rules a rail
+     carries (hidden OS scrollbar, a fade at the edge that has more, snap
+       points), one wide card per day — and from sm up it is the seven-column
+     grid it always was, every property restated so nothing leaks across. */
+  .week-strip {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    /* Same edge bookkeeping as .rail: the 2px focus ring reaches 4px past a
+       card, and the padding is paid back so the strip still aligns with the
+       column it sits in. */
+    padding: 4px;
+    margin-inline: -4px;
+    scroll-padding-inline: 4px;
+    /* Seven days never fit one phone screen, so the fade is constant rather
+       than edge-driven like .rail's. */
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent 100%);
+    mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent 100%);
+  }
+  .week-strip::-webkit-scrollbar { width: 0; height: 0; }
+  .week-strip > * {
+    flex: none;
+    scroll-snap-align: start;
+    /* One day nearly fills the screen, with the next day's edge showing —
+       the honest signal that the week continues sideways. */
+    width: 78%;
+  }
+  @media (min-width: 40rem) {
+    .week-strip {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      overflow: visible;
+      scroll-snap-type: none;
+      padding: 0;
+      margin-inline: 0;
+      -webkit-mask-image: none;
+      mask-image: none;
+    }
+    .week-strip > * { width: auto; }
+  }
 
 
   /* The rooms' ground artwork is the FRIEZE — see GroundFrieze in art.tsx: one
@@ -887,3 +978,9 @@
     animation: fade-in 0.01ms both;
   }
 }
+
+/* ——— sign-in ——— */
+/* The account panel and the "where the record lives" choices are built
+   entirely from existing primitives and Tailwind utilities over the token
+   sheet — no new rules were needed, and this section is the marker saying so
+   rather than a place for some to gather. */

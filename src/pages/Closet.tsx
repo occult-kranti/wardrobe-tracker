@@ -13,7 +13,7 @@ import {
   IconEyelet, IconEyeletFilled, IconCamera,
 } from '../components/icons';
 import {
-  Basting, DressingRoomBand, GarmentPlate, PlateEmptyCloset, PlateEmptyMending, PlateRetired,
+  Basting, GarmentPlate, PlateEmptyCloset, PlateEmptyMending, PlateRetired,
 } from '../components/art';
 import {
   BENCHED_STATUSES, LAUNDRY_LABELS, PRESET_COLORS, RETIRE_REASONS, SEASON_LABELS, SOURCE_LABELS,
@@ -430,11 +430,20 @@ export default function Closet() {
               Today&rsquo;s outfit
             </LinkButton>
             <LinkButton to="/intake" compact>A whole layout</LinkButton>
+            {/* The quiet roads in, secondary like their neighbours — the one
+                primary on this page stays Add a piece. "From photos" is the
+                owner's own gallery; "From a feed" is a screenshot of a feed
+                they already scroll. */}
+            <LinkButton to="/intake?photos=1" compact>From photos</LinkButton>
+            <LinkButton to="/intake?feed=1" compact>From a feed</LinkButton>
           </span>
         )}
       />
 
-      <DressingRoomBand seed={activeId ?? ''} />
+      {/* The dressing-room band used to hang here, above the Room — two
+          pictures of one room, and the upper one pushed everything down. The
+          Room below is the one that stays: it is drawn from the furniture that
+          is actually there, and it is the one you can walk into. */}
 
       {closetEmpty ? (
         <EmptyState
@@ -460,6 +469,18 @@ export default function Closet() {
                 className="type-ledger text-[11px] text-text-2 underline underline-offset-[3px] min-h-11 inline-flex items-center"
               >
                 Or catalogue a whole layout at once
+              </Link>
+              <Link
+                to="/intake?photos=1"
+                className="type-ledger text-[11px] text-text-2 underline underline-offset-[3px] min-h-11 inline-flex items-center"
+              >
+                Or read your photos
+              </Link>
+              <Link
+                to="/intake?feed=1"
+                className="type-ledger text-[11px] text-text-2 underline underline-offset-[3px] min-h-11 inline-flex items-center"
+              >
+                Or read a feed screenshot
               </Link>
             </div>
           }
@@ -534,7 +555,7 @@ export default function Closet() {
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder="Search by name"
-                className="w-full h-11 pl-9 pr-12 bg-surface border border-border rounded-[2px] text-[15px] text-text placeholder:text-text-2 focus:outline-none focus:border-accent transition-colors"
+                className="w-full h-11 pl-9 pr-12 bg-surface border border-border rounded-[2px] text-base lg:text-[15px] text-text placeholder:text-text-2 focus:outline-none focus:border-accent transition-colors"
               />
               {search && (
                 <button
@@ -547,11 +568,15 @@ export default function Closet() {
                 </button>
               )}
             </div>
+            {/* The visible "Filters" label is display:none below sm, which drops
+                it from the accessibility tree too — on a phone the button's
+                name was the bare filter count. */}
             <button
               type="button"
               onClick={() => setShowFilters(v => !v)}
               aria-expanded={showFilters}
               aria-controls="closet-filters"
+              aria-label="Filters"
               className={`h-11 px-4 inline-flex items-center gap-2 rounded-[2px] border type-label transition-colors ${
                 showFilters || activeFiltersCount > 0
                   ? 'border-text text-text bg-sunken'

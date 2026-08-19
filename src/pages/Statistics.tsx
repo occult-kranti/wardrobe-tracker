@@ -1,11 +1,12 @@
-import { useMemo, type CSSProperties } from 'react';
+import { useMemo, useState, type CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
 import { useWardrobe } from '../context/WardrobeContext';
 import { categoryLabel, isPlannedLog, SOURCE_LABELS, type ClothingItem, type ItemSource } from '../types';
 import { daysSince, isFutureDate, todayLocal } from '../lib/dates';
 import { aggregateCostPerWear, costPerWear, formatMoney, formatPerWear } from '../lib/cost';
-import { Card, EmptyState, Masthead, SectionTitle, Stat, TableRail } from '../components/ui';
+import { Button, Card, EmptyState, Masthead, SectionTitle, Stat, TableRail } from '../components/ui';
 import { Basting, GarmentPlate, LeaderLine, PlateEmptyLedger } from '../components/art';
+import AddItemModal from '../components/AddItemModal';
 
 /**
  * LEDGER — the closet's accounts, set like magazine infographics.
@@ -117,6 +118,8 @@ export default function Statistics() {
     items, activeItems, outfits, wearLogs, settings,
     getMostWorn, getUnwornItems,
   } = useWardrobe();
+
+  const [addOpen, setAddOpen] = useState(false);
 
   const retiredCount = items.length - activeItems.length;
 
@@ -373,12 +376,21 @@ export default function Statistics() {
       <>
         <Masthead title="Ledger" />
         <Card>
+          {/* §8.4: an empty screen teaches one thing and offers one way on.
+              This one used to teach and stop — the only empty room in the
+              house with no door out. The way on is the first piece. */}
           <EmptyState
             plate={<PlateEmptyLedger />}
             title="The accounts are still empty."
             body="Every piece added and every wear logged lands here — what the closet holds, what it cost, and what it actually does."
+            action={
+              <Button tone="primary" onClick={() => setAddOpen(true)}>
+                Add the first piece
+              </Button>
+            }
           />
         </Card>
+        <AddItemModal open={addOpen} onClose={() => setAddOpen(false)} />
       </>
     );
   }

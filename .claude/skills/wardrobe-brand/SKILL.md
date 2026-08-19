@@ -15,11 +15,13 @@ When these rules conflict with a request, follow the rules and note the conflict
    accent-fill/accent-on-ink/seal/success/warning/danger/gold/charcoal/chalk`).
    Never introduce a raw hex in a component. Themes are set via `data-theme` on
    `<html>`, and EVERY room must declare EVERY token — an omitted one silently
-   inherits the light room's value, and `check-brand` fails on it. Five rooms:
-   light (pattern room) · salon · gilt (gilding room) · dyehouse (dye house) ·
-   dark (atelier). Adding a room touches: index.css, types.ts (Theme +
-   THEME_LABELS), accounts.ts loadTheme, Settings THEMES + copy, Layout cycle
-   order, check-brand rooms list, test-contrast themes list, and a docs/ entry.
+   inherits the light room's value, and `check-brand` fails on it. Six rooms:
+   dyehouse (dye house, the default — `THEME_ORDER[0]`) · obsidian ·
+   dark (atelier at night) · salon · gilt (gilding room) · light (pattern
+   room), plus `system` resolving to the device. Adding a room touches:
+   index.css, types.ts (Theme + THEME_LABELS), accounts.ts loadTheme,
+   Settings THEMES + copy, Layout cycle order, check-brand rooms list,
+   test-contrast themes list, and a docs/ entry.
 2. **Two reds and a blue.** `--color-seal` is sealing-wax carmine and paints
    exactly four things: the wax seal, the wordmark underline, the favicon, the
    recap card. `--color-accent` is washing blue and carries the whole interface.
@@ -53,8 +55,11 @@ When these rules conflict with a request, follow the rules and note the conflict
    times."), plain in utility/destructive flows, **no exclamation points**, no
    shame copy, no gendered assumptions about categories or bodies.
 11. **Psychology floor:** log-wear ≤2 taps from Today; **zero gamification chrome**
-   (no badges, streaks, confetti, progress-as-achievement) — only cumulative
-   factual totals; Before You Buy = savvy friend, never parent (no guilt scores,
+   (no streaks, confetti, progress-as-achievement) — only cumulative
+   factual totals. *(Amended 2026-08-18 by owner direction: positive-only
+   badges — "honors" — are admitted per `docs/36-badges-rewards.md`: private,
+   off by default, never punishing what did not happen; spec'd, not yet
+   built.)* Before You Buy = savvy friend, never parent (no guilt scores,
    no red warnings, and never any commerce/affiliate surface); no social graph;
    44px touch targets; AA contrast (4.5:1 text) in BOTH themes for any new pair.
 12. **Copy law:** address the clothes, never the user's identity. Retire, never
@@ -70,7 +75,9 @@ When these rules conflict with a request, follow the rules and note the conflict
 - Icons: `src/components/icons.tsx` · Art/plates/logo/seal: `src/components/art.tsx`
 - Primitives: `src/components/ui.tsx` (Button, Chip, Card, Modal, Field, Masthead)
 - Agents: `.claude/agents/design-critic.md` (post-change review),
-  `.claude/agents/brand-artist.md` (new artwork)
+  `.claude/agents/brand-artist.md` (new artwork),
+  `.claude/agents/qa-sentinel.md` (suites + edge cases),
+  `.claude/agents/expo-migrator.md` (native ports)
 
 ## Checklist for any UI PR
 

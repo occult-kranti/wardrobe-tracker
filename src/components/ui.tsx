@@ -370,12 +370,28 @@ export function Field({
   );
 }
 
+// 16px below lg: iOS Safari auto-zooms any focused field set smaller and never
+// zooms back, which breaks the fixed chrome. The 15px hand feel stays on
+// desktop, where no browser pulls that trick.
 export const inputClass =
-  'w-full min-h-11 bg-transparent border-0 border-b border-border rounded-none px-0 py-2 text-[15px] text-text placeholder:text-text-2 focus:outline-none focus:border-b-2 focus:border-accent transition-[border] duration-150';
+  'w-full min-h-11 bg-transparent border-0 border-b border-border rounded-none px-0 py-2 text-base lg:text-[15px] text-text placeholder:text-text-2 focus:outline-none focus:border-b-2 focus:border-accent transition-[border] duration-150';
 
 export const selectClass = `${inputClass} appearance-none cursor-pointer`;
 
-/** Modal: a paper sheet with a plate edge. Focus is trapped; Escape closes. */
+/**
+ * Modal: a paper sheet with a plate edge. Focus is trapped; Escape closes.
+ *
+ * Below lg it presents as a BOTTOM sheet — bottom-anchored, full-width, the
+ * ink hairline on its top edge — with its own internal scroll, so a thumb
+ * never has to reach the middle of the screen for the title or the close
+ * button. At lg and up it is the centered sheet it always was, unchanged.
+ *
+ * The software keyboard: index.html now asks for interactive-widget=
+ * resizes-content, so on Android the viewport itself shrinks and nothing here
+ * is needed. iOS leaves the layout viewport alone, so the sheet's --kb
+ * variable carries how much of the window the keyboard covers (0 everywhere
+ * else) and the overlay's padding lifts the sheet clear of it.
+ */
 export function Modal({
   open,
   onClose,
@@ -389,7 +405,29 @@ export function Modal({
   children: ReactNode;
   wide?: boolean;
 }) {
+  const overlayRef = useRef<HTMLDivElement>(null);
   const sheetRef = useRef<HTMLDivElement>(null);
+
+  // Measure the keyboard's bite out of the layout viewport. resize AND scroll:
+  // iOS fires only scroll when the field is already focused and the keyboard
+  // was already up.
+  useEffect(() => {
+    if (!open) return;
+    const overlay = overlayRef.current;
+    const vv = window.visualViewport;
+    if (!overlay || !vv) return;
+    const measure = () => {
+      const kb = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+      overlay.style.setProperty('--kb', `${Math.round(kb)}px`);
+    };
+    measure();
+    vv.addEventListener('resize', measure);
+    vv.addEventListener('scroll', measure);
+    return () => {
+      vv.removeEventListener('resize', measure);
+      vv.removeEventListener('scroll', measure);
+    };
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -437,8 +475,12 @@ export function Modal({
   if (!open) return null;
 
   return (
+    // Padding lives in .modal-overlay (index.css), not in utilities: below lg it
+    // is `0 0 var(--kb)`, which is what lifts the sheet clear of the keyboard,
+    // and a p-4 utility would silently override it from the later layer.
     <div
-      className="fixed inset-0 z-[100] flex items-start sm:items-center justify-center p-4 overflow-y-auto animate-fade"
+      ref={overlayRef}
+      className="modal-overlay fixed inset-0 z-[100] flex items-end lg:items-center justify-center overflow-y-auto animate-fade"
       style={{ background: 'rgba(32, 29, 24, 0.4)' }}
       onClick={onClose}
     >
@@ -447,10 +489,10 @@ export function Modal({
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className={`bg-surface plate-ink rounded-[2px] w-full my-auto ${wide ? 'max-w-2xl' : 'max-w-[480px]'}`}
+        className={`modal-sheet bg-surface plate-ink rounded-[2px] w-full flex flex-col lg:my-auto max-lg:animate-slip ${wide ? 'lg:max-w-2xl' : 'lg:max-w-[480px]'}`}
         onClick={e => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between gap-4 px-5 pt-5 pb-2 mx-5 -mt-0 rule-double">
+        <div className="shrink-0 flex items-center justify-between gap-4 px-5 pt-5 pb-2 mx-5 -mt-0 rule-double">
           <h2 className="type-masthead text-[22px]">{title}</h2>
           <button
             onClick={onClose}
@@ -460,7 +502,11 @@ export function Modal({
             <IconClose size={18} />
           </button>
         </div>
-        <div className="p-5 pt-6">{children}</div>
+        {/* On a handset the sheet's ceiling is fixed, so the body scrolls
+            inside it (styles in .modal-sheet-body); on desktop the overlay
+            scrolls exactly as before. The deep bottom padding keeps the last
+            field clear of the home indicator. */}
+        <div className="modal-sheet-body p-5 pt-6 max-lg:pb-[calc(1.25rem_+_var(--safe-b))]">{children}</div>
       </div>
     </div>
   );

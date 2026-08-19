@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * The five authored sample wardrobes, checked before anyone opens one.
+ * The six authored sample wardrobes, checked before anyone opens one.
  *
  * These are hand-written data, and hand-written data fails in ways generated
  * data does not: a colour that is not a colour, an outfit naming a garment the
@@ -24,7 +24,7 @@ const check = (label, ok, detail = '') => {
   if (!ok) fail++;
 };
 
-check('five wardrobes', CAST.length === 5, `${CAST.length}`);
+check('six wardrobes', CAST.length === 6, `${CAST.length}`);
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
 const SEASONS = ['spring', 'summer', 'fall', 'winter'];

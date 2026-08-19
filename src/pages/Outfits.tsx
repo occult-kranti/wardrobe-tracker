@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useWardrobe } from '../context/WardrobeContext';
 import { useSession } from '../context/SessionContext';
 import { todayLocal } from '../lib/dates';
+import { nowLocalStamp } from '../components/social';
 import { ShareSheet } from '../components/ShareSheet';
 import { categoryLabel, displayTag, type ClothingItem, type Outfit, type ShareScope } from '../types';
 import {
@@ -270,8 +271,15 @@ export default function Outfits() {
     if (!activeId) return;
     const existing = community.posts.find(p => p.authorId === activeId && p.look?.outfitId === outfit.id);
     if (existing) {
-      // Already out: taking it off destroys nothing, so it needs no confirmation.
-      setCommunity(prev => ({ ...prev, posts: prev.posts.filter(p => p.id !== existing.id) }));
+      // Already out: taking it off destroys nothing, so it needs no
+      // confirmation. The tombstone is what makes "off" survive a reseed —
+      // the seed re-appends any known-id post it finds merely missing.
+      setCommunity(prev => ({
+        ...prev,
+        posts: prev.posts.filter(p => p.id !== existing.id),
+        removedPostIds: [...(prev.removedPostIds ?? []), existing.id],
+        savedPostIds: (prev.savedPostIds ?? []).filter(id => id !== existing.id),
+      }));
       showToast('Taken off the feed. The look stays in your outfits.', 'info');
       return;
     }
@@ -288,6 +296,9 @@ export default function Outfits() {
           id: crypto.randomUUID(),
           authorId: activeId,
           date: todayLocal(),
+          // The sub-day stamp is the same-day tiebreak — without it two looks
+          // shared one afternoon sorted by a random UUID.
+          at: nowLocalStamp(),
           caption: caption || undefined,
           scope,
           look: lookOf(sharing),

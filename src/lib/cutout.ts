@@ -835,3 +835,82 @@ export async function cutOut(src: string, req: CutRequest | number = {}): Promis
     height: oh,
   };
 }
+
+/* ---------- the automatic single-image variant, for batch crops ---------- */
+
+/**
+ * Is there a line to find at all?
+ *
+ * The background pass learns its palette from the frame's border. A
+ * near-uniform frame — a flat fill, a blur, an accidental pocket photograph —
+ * has no palette and no edge: every flood consumes the whole picture and
+ * every score is noise. That is not a failure to report, it is nothing to
+ * attempt. Pure (no DOM), so the guard rails are testable without a browser.
+ *
+ * The measure is the largest per-channel standard deviation over a sampled
+ * grid. JPEG noise on a plain wall runs to a few points per channel; a real
+ * garment photograph is tens. Four sits between them.
+ */
+export function frameIsUniform(data: Uint8ClampedArray | number[], width: number, height: number): boolean {
+  if (width < 2 || height < 2 || data.length < width * height * 4) return true;
+  const stepX = Math.max(1, Math.floor(width / 64));
+  const stepY = Math.max(1, Math.floor(height / 64));
+  let n = 0;
+  let s0 = 0, s1 = 0, s2 = 0, q0 = 0, q1 = 0, q2 = 0;
+  for (let y = 0; y < height; y += stepY) {
+    for (let x = 0; x < width; x += stepX) {
+      const at = (y * width + x) * 4;
+      const r = data[at], g = data[at + 1], b = data[at + 2];
+      s0 += r; s1 += g; s2 += b;
+      q0 += r * r; q1 += g * g; q2 += b * b;
+      n++;
+    }
+  }
+  if (n < 4) return true;
+  const sd = (s: number, q: number) => Math.sqrt(Math.max(0, q / n - (s / n) * (s / n)));
+  return Math.max(sd(s0, q0), sd(s1, q1), sd(s2, q2)) < 4;
+}
+
+/** What a successful lift hands back — a PNG with a real alpha channel. */
+export interface Lifted {
+  url: string;
+  /** Share of the frame the garment occupies, 0–1. */
+  covered: number;
+  /** How much of the cut's outline lies on a real edge in the photograph, 0–1. */
+  fit: number;
+  /** The tolerance the pass chose for itself. */
+  tolerance: number;
+}
+
+/**
+ * Lift a garment crop off its background, automatically, on this device.
+ *
+ * This is the batch path's door into the same pass the cutout bench drives by
+ * hand: edge-anchored background estimation (the border's colour clusters),
+ * an edge-guarded flood, and a cut that knows when it failed. The crop should
+ * be a ROOMY one — a box drawn tight to the garment leaves no border of
+ * background to read.
+ *
+ * The honest fallback is `null`: a degenerate frame (nothing to estimate),
+ * or a cut the pass itself scored as a failure. Either way the caller keeps
+ * the clean crop and says nothing was lifted — a second-best cutout is worse
+ * than none.
+ */
+export async function liftBackground(canvas: HTMLCanvasElement): Promise<Lifted | null> {
+  const w = canvas.width;
+  const h = canvas.height;
+  if (w < 8 || h < 8) return null;
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  if (!ctx) return null;
+  let data: Uint8ClampedArray;
+  try {
+    data = ctx.getImageData(0, 0, w, h).data;
+  } catch {
+    return null;
+  }
+  if (frameIsUniform(data, w, h)) return null;
+  const cut = await cutOut(canvas.toDataURL('image/png'));
+  return cut.good
+    ? { url: cut.url, covered: cut.covered, fit: cut.fit, tolerance: cut.tolerance }
+    : null;
+}

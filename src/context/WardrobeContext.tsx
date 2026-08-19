@@ -1,20 +1,30 @@
-import { createContext, useContext, useCallback, useMemo, type ReactNode } from 'react';
+import { createContext, useContext, useCallback, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { showToast } from '../components/Toast';
 import { defaultSlotLabels, maxSlotsFor } from '../lib/furnitureArt';
 import { todayLocal, isFutureDate, addDays } from '../lib/dates';
 import { migrate } from '../lib/migrate';
 import { wardrobeKey } from '../lib/accounts';
+import { useSession } from './SessionContext';
+import {
+  SYNC_ADOPTED_EVENT,
+  loadPulled,
+  pushNow,
+  queuePush,
+  shouldSync,
+} from '../lib/sync';
 import {
   initialState,
   isActive,
   isBenched,
   isQuietCategory,
+  type Account,
   type AppState,
   type AppSettings,
   type BorrowStatus,
   type CategoryId,
   type CircleMessage,
+  type CircleProfile,
   type ClothingItem,
   type Outfit,
   type WardrobeEvent,
@@ -58,6 +68,16 @@ interface WardrobeContextType extends AppState {
   sendRailMessage: (groupId: string, text: string, request?: CircleMessage['request']) => void;
   setRequestStatus: (messageId: string, status: BorrowStatus) => void;
   returnLoan: (loanId: string) => void;
+  /**
+   * The seam between Conversations and the Rail. A borrow request answered in
+   * a community thread writes its loan into the OPEN wardrobe's own circle —
+   * the community store and the wardrobe store are separate keys, and only the
+   * open wardrobe may be written. Only ever called by the side that accepted
+   * (the owner's wardrobe is the one with the buttons), so direction is 'to'.
+   */
+  recordLoan: (pieceName: string, me: Account, other: Account) => void;
+  /** Closes the open loan for this piece and counterparty, if one is out. */
+  closeLoan: (pieceName: string, withId: string) => void;
   setLendable: (itemId: string, lendable: boolean) => void;
   addCategory: (label: string) => void;
   renameCategory: (id: CategoryId, label: string) => void;
@@ -90,9 +110,38 @@ interface WardrobeContextType extends AppState {
   /** Clean, unbenched, unretired, non-quiet — the only pieces the generator deals. */
   getWearablePool: () => ClothingItem[];
   getOutfitSuggestions: () => Outfit[];
+  /** Pieces sitting in packed-away compartments, by id. The day's draw never
+      deals them, and Today never names them. */
+  packedItemIds: ReadonlySet<string>;
 }
 
 const WardrobeContext = createContext<WardrobeContextType | null>(null);
+
+/**
+ * A loan names its counterparty, so the rail needs a record of them — the
+ * circle is this closet's contact book, and lending to someone is what puts
+ * them in it. Existing entries are kept as they are; `isMe` only ever sets.
+ */
+function upsertProfile(profiles: CircleProfile[], account: Account, isMe = false): CircleProfile[] {
+  const existing = profiles.find(p => p.id === account.id);
+  if (existing) {
+    if (!isMe || existing.isMe) return profiles;
+    return profiles.map(p => (p.id === account.id ? { ...p, isMe: true } : p));
+  }
+  return [
+    ...profiles,
+    {
+      id: account.id,
+      handle: account.handle,
+      name: account.name,
+      monogram: account.monogram,
+      color: account.color,
+      lendable: [],
+      showcase: [],
+      ...(isMe ? { isMe: true } : {}),
+    },
+  ];
+}
 
 export function WardrobeProvider({ accountId, children }: { accountId: string; children: ReactNode }) {
   // One store per wardrobe. App keys this provider by accountId so switching
@@ -113,6 +162,99 @@ export function WardrobeProvider({ accountId, children }: { accountId: string; c
   );
 
   const activeItems = useMemo(() => state.items.filter(isActive), [state.items]);
+
+  /* ---------- cloud sync: this wardrobe only, and only if its owner chose it ----------
+
+     The push is keyed on the committed state and compared by content, so the
+     state just adopted from the account (identical to what the account holds)
+     does not echo straight back up, and a StrictMode double-effect does not
+     send twice. Offline, pushNow queues and the session layer flushes on the
+     next online moment. Samples never reach here — shouldSync refuses them.
+
+     Conflict semantics, stated honestly: last-writer-wins, whole wardrobe at a
+     time. A pull that finds a newer row replaces the local record; a push
+     stamps updated_at = now. No field-level merge is attempted. */
+  const { accounts, authUser } = useSession();
+  const account = accounts.find(a => a.id === accountId) ?? null;
+  const syncOn = account !== null && authUser !== null && shouldSync(account) && !!account.syncId;
+  const lastPushedJson = useRef<string | null>(null);
+  const pushTimer = useRef<number | null>(null);
+  /** The scheduled-but-unsent push, so hiding the page can still keep it. */
+  const pendingPush = useRef<{ account: Account; state: AppState; userId: string } | null>(null);
+
+  useEffect(() => {
+    if (!syncOn || !authUser || !account?.syncId) return;
+    const json = JSON.stringify(state);
+    // The first pass after mount is the state just read from the store, and an
+    // adopted pull is marked before it is committed — neither is news.
+    if (lastPushedJson.current === null) {
+      lastPushedJson.current = json;
+      return;
+    }
+    if (json === lastPushedJson.current) return;
+    lastPushedJson.current = json;
+    if (pushTimer.current !== null) window.clearTimeout(pushTimer.current);
+    pendingPush.current = { account, state, userId: authUser.id };
+    pushTimer.current = window.setTimeout(() => {
+      pushTimer.current = null;
+      const job = pendingPush.current;
+      pendingPush.current = null;
+      if (job) void pushNow(job.account, job.state, job.userId);
+    }, 800);
+    return () => {
+      if (pushTimer.current !== null) window.clearTimeout(pushTimer.current);
+    };
+  }, [state, syncOn, authUser, account]);
+
+  /**
+   * A push still inside its debounce when the page hides, or this provider
+   * unmounts (a wardrobe switch), must not evaporate. On hide it is QUEUED
+   * rather than sent — a fetch started during pagehide can die without either
+   * callback, while the queue's localStorage write survives. On unmount the
+   * page is very much alive, so it is simply sent.
+   */
+  useEffect(() => {
+    const stash = () => {
+      if (pushTimer.current !== null) {
+        window.clearTimeout(pushTimer.current);
+        pushTimer.current = null;
+      }
+      const job = pendingPush.current;
+      pendingPush.current = null;
+      if (job) queuePush(job.account, job.state);
+    };
+    const send = () => {
+      if (pushTimer.current !== null) {
+        window.clearTimeout(pushTimer.current);
+        pushTimer.current = null;
+      }
+      const job = pendingPush.current;
+      pendingPush.current = null;
+      if (job) void pushNow(job.account, job.state, job.userId);
+    };
+    window.addEventListener('pagehide', stash);
+    return () => {
+      window.removeEventListener('pagehide', stash);
+      send();
+    };
+  }, []);
+
+  // A pull that wrote this wardrobe's store announces itself here; the open
+  // provider adopts what was written. (A same-tab localStorage write fires no
+  // `storage` event, so the announcement is a custom event, not that one.)
+  useEffect(() => {
+    const onAdopted = (e: Event) => {
+      if ((e as CustomEvent<{ accountId?: string }>).detail?.accountId !== accountId) return;
+      const pulled = loadPulled(accountId);
+      if (!pulled) return;
+      // Mark BEFORE committing: the adopted state is what the account holds,
+      // so the push effect must not echo it straight back up.
+      lastPushedJson.current = JSON.stringify(pulled);
+      setState(migrate(pulled));
+    };
+    window.addEventListener(SYNC_ADOPTED_EVENT, onAdopted);
+    return () => window.removeEventListener(SYNC_ADOPTED_EVENT, onAdopted);
+  }, [accountId, setState]);
 
   const addItem = useCallback((item: Omit<ClothingItem, 'id' | 'dateAdded' | 'wearCount' | 'laundryStatus'>) => {
     const newItem: ClothingItem = {
@@ -508,6 +650,52 @@ export function WardrobeProvider({ accountId, children }: { accountId: string; c
     }));
   }, [setState]);
 
+  /**
+   * "Lend it" was pressed in Conversations. The request lives in the shared
+   * community store; the loan it opens lives here, in the lending wardrobe's
+   * own ledger, so the Rail's Out and back reflects it. One open loan per
+   * piece and person — a second accept of the same ask opens nothing.
+   */
+  const recordLoan = useCallback((pieceName: string, me: Account, other: Account) => {
+    setState(prev => {
+      const alreadyOut = prev.circle.loans.some(
+        l => !l.returned && l.pieceName === pieceName && l.withId === other.id
+      );
+      if (alreadyOut) return prev;
+      return {
+        ...prev,
+        circle: {
+          ...prev.circle,
+          profiles: upsertProfile(upsertProfile(prev.circle.profiles, me, true), other),
+          loans: [
+            ...prev.circle.loans,
+            {
+              id: crypto.randomUUID(),
+              pieceName,
+              withId: other.id,
+              direction: 'to' as const,
+              since: todayLocal(),
+            },
+          ],
+        },
+      };
+    });
+  }, [setState]);
+
+  const closeLoan = useCallback((pieceName: string, withId: string) => {
+    setState(prev => ({
+      ...prev,
+      circle: {
+        ...prev.circle,
+        loans: prev.circle.loans.map(l =>
+          !l.returned && l.pieceName === pieceName && l.withId === withId
+            ? { ...l, returned: todayLocal() }
+            : l
+        ),
+      },
+    }));
+  }, [setState]);
+
   /** Put a piece of this closet on, or take it off, my open-to-borrow list. */
   /* ---------- furniture ---------- */
 
@@ -775,6 +963,15 @@ export function WardrobeProvider({ accountId, children }: { accountId: string; c
     return packed;
   }, [state.furniture]);
 
+  /** The pieces sitting in those compartments, by id. */
+  const packedItemIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const i of state.items) {
+      if (i.place && packedSlots.has(`${i.place.furnitureId}/${i.place.slotId}`)) ids.add(i.id);
+    }
+    return ids;
+  }, [state.items, packedSlots]);
+
   const getWearablePool = useCallback(() =>
     activeItems.filter(i =>
       i.laundryStatus === 'clean'
@@ -788,14 +985,17 @@ export function WardrobeProvider({ accountId, children }: { accountId: string; c
     const today = todayLocal();
     if (state.wearLogs.some(l => l.date === today)) return [];
     const retiredIds = new Set(state.items.filter(i => i.retired).map(i => i.id));
-    const wearable = state.outfits.filter(o => o.itemIds.every(id => !retiredIds.has(id)));
+    // An outfit is offered whole or not at all: one piece in the trunk under
+    // the bed benches the look until the compartment comes back out.
+    const wearable = state.outfits.filter(o =>
+      o.itemIds.every(id => !retiredIds.has(id) && !packedItemIds.has(id)));
     const favorites = wearable.filter(o => o.favorite);
     const pool = favorites.length > 0 ? favorites : wearable;
     // Most-recently-worn last: variety without randomness that re-shuffles on render.
     return [...pool]
       .sort((a, b) => (a.lastWorn ?? '').localeCompare(b.lastWorn ?? ''))
       .slice(0, 3);
-  }, [state.outfits, state.wearLogs, state.items]);
+  }, [state.outfits, state.wearLogs, state.items, packedItemIds]);
 
   return (
     <WardrobeContext.Provider value={{
@@ -808,13 +1008,13 @@ export function WardrobeProvider({ accountId, children }: { accountId: string; c
       releaseWishlistItem, keepWishlistItem,
       addEvent, updateEvent, removeEvent,
       updateSettings, addCategory, renameCategory, setCategoryQuiet, moveCategory, addOccasion,
-      sendRailMessage, setRequestStatus, returnLoan, setLendable,
+      sendRailMessage, setRequestStatus, returnLoan, recordLoan, closeLoan, setLendable,
       addFurniture, renameFurniture, renameSlot, removeFurniture, filePiece, filePieces,
       packSlot, packPiece,
       replaceState, markExported,
       getItem, getOutfit,
       getMostWorn, getLeastWorn, getUnwornItems, getWearablePool,
-      getOutfitSuggestions,
+      getOutfitSuggestions, packedItemIds,
     }}>
       {children}
     </WardrobeContext.Provider>

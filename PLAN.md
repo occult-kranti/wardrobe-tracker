@@ -67,15 +67,32 @@ Gate: Phase 3 complete, Lighthouse 90+ across the board, and the PWA genuinely
 pleasant to install and use offline. Capacitor is the likely path — it reuses this
 codebase and keeps the local-first promise intact.
 
+## Phase 5 — Alpha mobile sprint (🏃 active)
+
+The mobile-focused alpha push for 15–20 testers: feed correctness and the
+living feed, a mobile-first UX pass, tutorials, three more wardrobes, QA and
+edge cases, and the native/backend plan. Goals, sub-goals, wave plan and
+acceptance live in [`docs/33-alpha-mobile-roadmap.md`](docs/33-alpha-mobile-roadmap.md);
+the app development plan (native tracks, backend, tooling) in
+[`docs/34-app-development-plan.md`](docs/34-app-development-plan.md).
+
 ## Non-negotiables (any future work must hold these)
 
 1. **Local-first, forever.** No accounts, no cloud sync, no telemetry.
+   *(Amended 2026-08-18 by owner direction: an optional account is admitted, and
+   it does one job only — keeping a synced copy of a wardrobe's record on
+   Supabase so a second device can open it. Sync is opt-in per wardrobe and off
+   by default; a wardrobe that never opts in never leaves the device, and
+   everything works with no account at all. Telemetry stays banned.)*
 2. **No commerce.** No shop links, affiliate codes, or retailer suggestions — a
    feature that talks you out of buying cannot profit from buying.
 3. **No shame mechanics.** No guilt screens, red alarm colors on low-wear pieces, or
    wasted-money framing. An app users lie to is worse than no app.
 4. **No gamification chrome.** No badges, streaks, or confetti. Cumulative factual
    totals only.
+   *(Amended 2026-08-18 by owner direction: badges are admitted into the design,
+   positive-only — they mark what happened and never punish what did not.
+   Streaks, confetti, and anything a user can fail at stay banned.)*
 5. **No gendered anything.** The app asks what you own, never who you are.
 6. **No required field that erases someone.** Not brand (erases makers), not photos
    (erases the privacy-conscious), not fixed categories (erases everyone else).
@@ -83,4 +100,4 @@ codebase and keeps the local-first promise intact.
 
 ---
 
-*Plan updated 2026-08-11.*
+*Plan updated 2026-08-18.*

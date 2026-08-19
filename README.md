@@ -5,8 +5,9 @@
 > subcontinent — the ordinary word for the ordinary piece of furniture.
 
 **Your wardrobe, on record.** A private ledger for a real wardrobe — track what you
-own, what you actually wear, and what it costs per wear. No account, no cloud, no
-subscription, no shop links. Everything lives on your device.
+own, what you actually wear, and what it costs per wear. No subscription, no shop
+links, no telemetry. Everything lives on your device; an account is optional, and
+only ever syncs a wardrobe you choose.
 
 **Live:** https://occult-kranti.github.io/wardrobe-tracker/ · **V2 (glass):** https://occult-kranti.github.io/wardrobe-tracker/v2/ · **Mobile design pack:** https://occult-kranti.github.io/wardrobe-tracker/mobile_version_v1/
 
@@ -106,15 +107,29 @@ ever · no commerce anywhere near the anti-impulse features · no shame mechanic
 guilt screens, or red alarm colors on low-wear pieces · no badges, streaks, or
 confetti · no notifications · no accounts, cloud sync, or telemetry · no required
 fields that erase people (required brand erases makers, required photos erase the
-privacy-conscious, fixed categories erase everyone else).
+privacy-conscious, fixed categories erase everyone else). Two vetoes were later
+amended by owner direction — positive-only badges are in the design, and an
+optional account exists for per-wardrobe sync; see PLAN.md and the Privacy
+section below.
 
 ## Privacy
 
-All data is stored locally in your browser. Nothing is sent anywhere — there is no
-server, no analytics, and no account. Export a complete, lossless JSON backup from
-Settings at any time; imports round-trip every field, including ones added by later
-versions. Because the record lives only on this device, the app will quietly remind
-you to keep a backup.
+All data is stored locally in your browser, and that stays the default — no
+analytics, no telemetry, and nothing is sent anywhere you did not send it.
+
+Two exceptions exist, and both are your choice. An account does one job only:
+keeping a synced copy of a wardrobe's record on Supabase so a second device can
+open it. Sync is opt-in per wardrobe and off until you turn it on; a wardrobe
+that never opts in never leaves the device. And when you ask the app to
+catalogue a photograph, that photograph goes to Almari's relay — which holds the
+AI key on the server, so this device never has one — and comes back as words and
+coordinates. A key or endpoint of your own can be set in Settings instead.
+Nothing else leaves the device.
+
+Export a complete, lossless JSON backup from Settings at any time; imports
+round-trip every field, including ones added by later versions. Because the
+record lives on this device first, the app will quietly remind you to keep a
+backup.
 
 ## Development
 

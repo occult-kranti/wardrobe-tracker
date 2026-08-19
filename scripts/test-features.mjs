@@ -208,32 +208,89 @@ check('the weather never asks for your location', !after.asked, '');
   await todays.click();
   await page.waitForTimeout(900);
 
-  const bench = await page.evaluate(() => ({
-    hash: location.hash,
-    worn: /Photograph what you are wearing/i.test(document.body.innerText),
-    // The honest sentence must be on screen BEFORE the button that sends
-    // anything, not in a tooltip and not after the fact.
-    warns: /This one step uses the network/i.test(document.body.innerText),
-    saysWhere: /goes to Anthropic, with your key/i.test(document.body.innerText),
-    saysLocal: /cutting, the background removal and the writing all happen on this/i.test(document.body.innerText),
-    keyField: !!document.querySelector('#intake-key'),
-    stillOffersPrompt: /Copy the prompt/i.test(document.body.innerText),
-  }));
+  const bench = await page.evaluate(() => {
+    const text = document.body.innerText;
+    const warn = [...document.querySelectorAll('p')]
+      .find(p => /This one step uses the network/i.test(p.textContent || ''));
+    const send = [...document.querySelectorAll('button')]
+      .find(b => /Read what I am wearing|Read a photograph/i.test(b.textContent || ''));
+    const feedNote = [...document.querySelectorAll('p')]
+      .find(p => /One journey per screenshot/i.test(p.textContent || ''));
+    const feedBtn = [...document.querySelectorAll('button')]
+      .find(b => /Read a feed screenshot/i.test(b.textContent || ''));
+    return {
+      hash: location.hash,
+      worn: /Photograph what you are wearing/i.test(text),
+      // The honest sentence must be on screen BEFORE the button that sends
+      // anything, in document order — not in a tooltip and not after the fact.
+      warns: !!warn,
+      declaredFirst: !!warn && !!send
+        && !!(warn.compareDocumentPosition(send) & Node.DOCUMENT_POSITION_FOLLOWING),
+      namesRelay: /Almari.s relay/i.test(text),
+      namesModel: /Kimi K3 by Moonshot/i.test(text),
+      serverKey: /holds the key on the server/i.test(text),
+      saysLocal: /cutting, the background removal and the writing all happen on this/i.test(text),
+      stillOffersPrompt: /Copy the prompt/i.test(text),
+      keyField: !!document.querySelector('#intake-key'),
+      pointsToSettings: /your own endpoint can be set in Settings/i.test(text),
+      // The feed import: same bench, same honesty — its own declaration before
+      // its own button, and the solo rule said out loud on the card.
+      feedSection: /From a feed screenshot/i.test(text),
+      feedHonest: /group photos are left alone/i.test(text),
+      feedInput: !!document.querySelector('#intake-feed'),
+      feedDeclaredFirst: !!feedNote && !!feedBtn
+        && !!(feedNote.compareDocumentPosition(feedBtn) & Node.DOCUMENT_POSITION_FOLLOWING),
+    };
+  });
 
   check("today's outfit opens the bench in worn mode", bench.hash.includes('worn=1') && bench.worn, bench.hash);
-  check('the network step is declared before the button that takes it', bench.warns && bench.saysWhere, '');
+  check('the network step is declared before the button that takes it',
+    bench.warns && bench.declaredFirst, '');
+  check('the declaration names the relay and where the key is held',
+    bench.namesRelay && bench.serverKey, '');
+  check('the declaration names the model and its house', bench.namesModel, '');
   check('and it says what stays on the device', bench.saysLocal, '');
-  check('a key can be given right there', bench.keyField, '');
   check('the do-it-yourself prompt is still offered', bench.stillOffersPrompt, '');
+  check('the feed import declares its own journey, and the solo rule, before its button',
+    bench.feedSection && bench.feedHonest && bench.feedInput && bench.feedDeclaredFirst, '');
 
-  // With no key stored, pressing the button must not touch the network.
-  const calls = [];
-  page.on('request', r => { if (/anthropic/i.test(r.url())) calls.push(r.url()); });
-  await page.getByRole('button', { name: /read what I am wearing/i }).first().click();
-  await page.waitForTimeout(900);
-  const refused = await page.evaluate(() => /Add a key below first/i.test(document.body.innerText));
-  check('with no key it asks for one instead of failing at the network', refused, '');
-  check('and nothing was sent', calls.length === 0, calls.join(' '));
+  // The key field left the bench when the relay arrived: the send needs none,
+  // and a key of your own is a Settings override, not a toll at the door.
+  check('no key is asked for on the bench, which points to Settings',
+    !bench.keyField && bench.pointsToSettings, '');
+
+  // With no key anywhere on the device the send still goes — to the relay,
+  // which holds the key server-side. Nothing may go to Anthropic, and no
+  // screen may demand a key.
+  const sent = [];
+  page.on('request', r => sent.push(r.url()));
+  const relayed = page.waitForRequest(
+    r => r.url().includes('/functions/v1/ai-proxy'), { timeout: 20000 }).catch(() => null);
+  await page.setInputFiles('#intake-photo', 'public/intake-samples/kerbside.jpg');
+  await relayed;
+  // Let the journey finish: an answer on the bench, or an honest failure line.
+  await page.waitForFunction(() => {
+    if (document.querySelector('.text-danger')) return true;
+    return ![...document.querySelectorAll('button')]
+      .some(b => /Reading the photograph|Cutting \d+ of/i.test(b.textContent || ''));
+  }, { timeout: 60000 }).catch(() => {});
+  const afterSend = await page.evaluate(() => document.body.innerText);
+  check('with no key the send goes to the relay, which holds the key server-side',
+    sent.some(u => u.includes('/functions/v1/ai-proxy')),
+    sent.find(u => u.includes('/functions/')) ?? 'no relay call seen');
+  check('and nothing goes to Anthropic, and no key is demanded',
+    !sent.some(u => /anthropic\.com/i.test(u)) && !/add a key|enter your key/i.test(afterSend), '');
+
+  // The override the bench points at is real, and lives where it says it does.
+  await page.goto(`${ORIGIN}/#/settings`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(700);
+  const byok = await page.evaluate(() => ({
+    endpoint: !!document.querySelector('#set-endpoint'),
+    key: !!document.querySelector('#set-byok-key'),
+    namesRelay: /relay/i.test(document.body.innerText),
+  }));
+  check('a key of your own can still be given — in Settings',
+    byok.endpoint && byok.key && byok.namesRelay, '');
 }
 
 /* ============ lifting the background on a piece already catalogued ============ */
@@ -511,6 +568,37 @@ check('the weather never asks for your location', !after.asked, '');
   check('what is packed away is not offered for today',
     day.packedNames.length > 0 && day.offered.length === 0,
     `${day.packedNames.length} packed, ${day.offered.length} still offered`);
+
+  // And in the draw itself, not just on the page: a look that reaches into a
+  // packed compartment is not offered, and the pieces are not in the picker.
+  await page.getByRole('button', { name: /log another|what are you wearing|log a wear/i }).first().click();
+  await page.waitForTimeout(700);
+  const draw = await page.evaluate((key) => {
+    const s = JSON.parse(localStorage.getItem(key));
+    const packedSlots = new Set(
+      s.furniture.flatMap(f => f.slots.filter(x => x.packed).map(x => `${f.id}/${x.id}`))
+    );
+    const packedIds = new Set(s.items
+      .filter(i => i.place && packedSlots.has(`${i.place.furnitureId}/${i.place.slotId}`))
+      .map(i => i.id));
+    const blocked = s.outfits.filter(o => o.itemIds.some(id => packedIds.has(id))).map(o => o.name);
+    const sheet = document.querySelector('[role="dialog"]')?.textContent ?? '';
+    return { blocked, offered: blocked.filter(n => n && sheet.includes(n)) };
+  }, await activeKey());
+  check('the draw offers no look that reaches into a packed compartment',
+    draw.blocked.length > 0 && draw.offered.length === 0,
+    `${draw.blocked.length} blocked, ${draw.offered.length} still offered`);
+
+  await page.getByRole('button', { name: /pick pieces instead/i }).first().click();
+  await page.waitForTimeout(700);
+  const picker = await page.evaluate((names) => {
+    const sheet = document.querySelector('[role="dialog"]')?.textContent ?? '';
+    return names.filter(n => n && sheet.includes(n));
+  }, day.packedNames);
+  check('and the picker skips what is packed away', picker.length === 0,
+    picker.join(', ') || 'none listed');
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(400);
 }
 
 /* ============ the chair, and the room's own switch ============ */

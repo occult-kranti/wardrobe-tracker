@@ -1,0 +1,47 @@
+{
+  "expo": {
+    "name": "Almari",
+    "slug": "almari",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "almari",
+    "userInterfaceStyle": "automatic",
+    "icon": "./assets/icon.png",
+    "_comment:icon": "PLACEHOLDER PNG. The brand source of truth is public/icon.svg at the repo root — rasterize it (see scripts/build-icons.mjs for the web pipeline) before any alpha build.",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#12100C"
+    },
+    "_comment:splash": "PLACEHOLDER art. Splash should carry the brand mark from public/icon.svg on the dye-house ground; replace before alpha.",
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#12100C",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "enabled": true,
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0,
+      "url": "https://u.expo.dev/1b9ec18c-58dc-4052-a50d-219cb2376e64"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "1b9ec18c-58dc-4052-a50d-219cb2376e64"
+      }
+    }
+  }
+}

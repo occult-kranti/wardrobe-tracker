@@ -16,7 +16,7 @@ import { todayLocal, addDays } from './dates';
 
 const D = (n: number) => addDays(todayLocal(), n);
 
-function lookOf(persona: PersonaSeed, outfitId: string): SharedLook | undefined {
+export function lookOf(persona: PersonaSeed, outfitId: string): SharedLook | undefined {
   const outfit = persona.outfits.find(o => o.id === outfitId);
   if (!outfit) return undefined;
   return {
@@ -98,6 +98,10 @@ const DIRECT_THREADS: Array<{ pair: [string, string]; lines: Array<{ by: string;
 export function seedCommunity(prev: CommunityState, personas: PersonaSeed[]): CommunityState {
   const byId = new Map(personas.map(p => [p.id, p]));
   const known = new Set(prev.posts.map(p => p.id));
+  // A take-down is a statement, not an absence: without this check the seed
+  // would re-append any known-id post it found missing, and a look someone
+  // deliberately removed would resurrect on the next boot.
+  const tombstoned = new Set(prev.removedPostIds ?? []);
 
   const posts: FeedPost[] = [];
   for (const [personaId, entries] of Object.entries(SHARED)) {
@@ -105,7 +109,7 @@ export function seedCommunity(prev: CommunityState, personas: PersonaSeed[]): Co
     if (!persona) continue;
     for (const entry of entries) {
       const id = `post-${personaId}-${entry.outfit}`;
-      if (known.has(id)) continue;
+      if (known.has(id) || tombstoned.has(id)) continue;
       const look = lookOf(persona, entry.outfit);
       if (!look) continue;
       posts.push({
@@ -224,10 +228,101 @@ export function seedCommunity(prev: CommunityState, personas: PersonaSeed[]): Co
   }
 
   return {
+    // Spread first: the take-down tombstones and the private save marks ride
+    // the same blob, and a reseed must not drop what it does not write.
+    ...prev,
     posts: [...prev.posts, ...posts].sort((a, b) => b.date.localeCompare(a.date)),
     conversations,
     messages: [...prev.messages, ...messages].sort((a, b) => a.date.localeCompare(b.date)),
     households,
     passes,
   };
+}
+
+
+/* ---------- merging two copies of the store ----------
+   Two tabs share one localStorage key, and the storage event used to REPLACE
+   this tab's state with the other tab's blob — so two tabs that each wrote
+   something quietly erased each other's posts and messages.
+
+   The merge is a union by id, per entity: a row only one side has survives;
+   a row both sides have is won by the newer activity stamp (`at`, then
+   `date`), and a true tie goes to the incoming copy, which is the more recent
+   write to storage. Tombstones and save marks union, and a tombstone beats
+   the post it names — a take-down in either tab is a take-down.
+
+   Deliberately a client store, not a CRDT: conversations, households and
+   passes carry no clock, so a same-id conflict there goes to the latest
+   write, and an entity REMOVED on one side can resurface from a stale tab
+   (only posts have tombstones). Both are accepted costs of keeping this
+   readable; the high-frequency rows — posts and messages — merge exactly. */
+
+type Clocked = { id: string; at?: string; date?: string };
+
+function pickEntity<T extends Clocked>(local: T, incoming: T): T {
+  const a = local.at ?? local.date ?? '';
+  const b = incoming.at ?? incoming.date ?? '';
+  if (b !== a) return b > a ? incoming : local;
+  // Identical rows keep the local reference, so a no-op merge returns the
+  // same object — the storage listener depends on that to not ping-pong.
+  return JSON.stringify(local) === JSON.stringify(incoming) ? local : incoming;
+}
+
+/** Union by id: local order kept, incoming-only rows appended in their order. */
+function mergeById<T extends Clocked>(local: T[], incoming: T[]): T[] {
+  if (incoming.length === 0) return local;
+  const index = new Map(local.map((x, i) => [x.id, i]));
+  const list = [...local];
+  let changed = false;
+  for (const inc of incoming) {
+    const i = index.get(inc.id);
+    if (i === undefined) {
+      list.push(inc);
+      changed = true;
+    } else {
+      const chosen = pickEntity(list[i], inc);
+      if (chosen !== list[i]) {
+        list[i] = chosen;
+        changed = true;
+      }
+    }
+  }
+  return changed ? list : local;
+}
+
+/**
+ * A stored blob written before tombstones and save marks existed carries
+ * neither key, and `loadCommunity` (accounts.ts) rebuilds only the five
+ * original lists — so every read is funnelled through here to default the
+ * two newer ones. Without it a take-down would resurrect on the next reload.
+ */
+export function normalizeCommunity(state: CommunityState): CommunityState {
+  return {
+    ...state,
+    removedPostIds: Array.isArray(state.removedPostIds) ? state.removedPostIds : [],
+    savedPostIds: Array.isArray(state.savedPostIds) ? state.savedPostIds : [],
+  };
+}
+
+export function mergeCommunity(local: CommunityState, incoming: CommunityState): CommunityState {
+  const removedPostIds = [...new Set([...(local.removedPostIds ?? []), ...(incoming.removedPostIds ?? [])])];
+  const savedPostIds = [...new Set([...(local.savedPostIds ?? []), ...(incoming.savedPostIds ?? [])])];
+  const gone = new Set(removedPostIds);
+  const mergedPosts = mergeById(local.posts, incoming.posts);
+  const posts = mergedPosts.filter(p => !gone.has(p.id));
+  const messages = mergeById(local.messages, incoming.messages);
+  const conversations = mergeById(local.conversations, incoming.conversations);
+  const households = mergeById(local.households, incoming.households);
+  const passes = mergeById(local.passes, incoming.passes);
+  const unchanged =
+    mergedPosts === local.posts &&
+    posts.length === mergedPosts.length &&
+    messages === local.messages &&
+    conversations === local.conversations &&
+    households === local.households &&
+    passes === local.passes &&
+    removedPostIds.length === (local.removedPostIds ?? []).length &&
+    savedPostIds.length === (local.savedPostIds ?? []).length;
+  if (unchanged) return local;
+  return { posts, conversations, messages, households, passes, removedPostIds, savedPostIds };
 }

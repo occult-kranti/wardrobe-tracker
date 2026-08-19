@@ -86,7 +86,10 @@ export function Rail() {
   const out = circle.loans.filter(l => !l.returned);
   const back = circle.loans.filter(l => l.returned);
 
-  if (circle.profiles.length === 0) {
+  // Loans can arrive without a seeded rail — accepting a borrow request in
+  // Conversations writes the ledger and its two profiles into this closet's
+  // circle. A wardrobe with loans but no thread is lent-from, not empty.
+  if (circle.profiles.length === 0 && circle.loans.length === 0) {
     return (
       <>
         <Masthead title="The Shared Rail" />
@@ -98,8 +101,8 @@ export function Rail() {
             action={
               // This used to say "Load the sample" and point at Settings, where
               // that button REPLACES the open wardrobe. Only the legacy demo
-              // ever writes `circle`, so EVERY wardrobe — all three samples and
-              // any real one — landed on a dead page whose single offer was
+              // ever writes `circle`, so EVERY wardrobe — the samples and any
+              // real one — landed on a dead page whose single offer was
               // quietly destructive. Borrowing actually happens in Conversations.
               <LinkButton to="/chats" tone="primary">Go to conversations</LinkButton>
             }
@@ -119,7 +122,7 @@ export function Rail() {
     <div className="space-y-6">
       <Masthead
         title="The Shared Rail"
-        meta={`${circle.profiles.length} closets`}
+        meta={circle.profiles.length > 0 ? `${circle.profiles.length} closets` : undefined}
       />
 
       <p className="type-ledger text-[11px] text-text-2 -mt-2">

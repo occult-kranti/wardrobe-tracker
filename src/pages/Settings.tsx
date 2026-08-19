@@ -1,4 +1,5 @@
 import { useRef, useState, type ButtonHTMLAttributes, type ReactNode } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { soundOn, setSound, chime } from '../lib/sound';
 import { useWardrobe } from '../context/WardrobeContext';
 import { useSession } from '../context/SessionContext';
@@ -7,6 +8,7 @@ import { daysSince, formatLocalDate, todayLocal } from '../lib/dates';
 import { THEME_ORDER } from '../lib/accounts';
 import { migrate } from '../lib/migrate';
 import { buildDemoState, DEMO_SUMMARY } from '../lib/demoData';
+import { requestTour } from '../lib/tutorial';
 import {
   Button,
   Card,
@@ -28,7 +30,16 @@ import {
 } from '../components/icons';
 import { showToast } from '../components/Toast';
 import { useInstall } from '../lib/install';
-import { hasKey, keyLooksWrong, loadKey, saveKey } from '../lib/anthropic';
+import { syncModeOf } from '../lib/sync';
+import { AccountPanel } from './Door';
+import {
+  loadKey,
+  loadOverride,
+  overrideLooksWrong,
+  saveKey,
+  saveOverride,
+  type AiOverride,
+} from '../lib/anthropic';
 
 /**
  * SETTINGS — stewardship, not preferences.
@@ -46,7 +57,8 @@ import { hasKey, keyLooksWrong, loadKey, saveKey } from '../lib/anthropic';
  *     card that can be dismissed — never a notification, never blocking.
  *
  * Destructive flows are plain, inline, and state exactly what is lost. No native
- * confirm() dialogs, no accounts, no telemetry, no commerce.
+ * confirm() dialogs, no telemetry, no commerce. The account row is here too —
+ * optional, and only ever about keeping a synced wardrobe on a second device.
  */
 
 /* ---------- local helpers (not in the shared primitives) ---------- */
@@ -175,62 +187,110 @@ function InstallRow() {
 }
 
 /**
- * The key, and the one honest sentence about what it is for.
+ * Where a photograph goes, and the one honest sentence about it.
  *
- * This is the only place in the app where a network call is possible at all,
- * so the row says so at full weight rather than in a hint. Nothing is sent
- * because a key exists — only when a photograph is handed over on purpose.
+ * Cataloguing a photograph is the only network call the wardrobe makes on
+ * your behalf, and it happens only when you press the button. By default the
+ * photograph goes to Almari's own relay, which holds the service key — you
+ * never need one. A power user can point at any OpenAI-compatible endpoint
+ * with their own key instead, and a key saved before the relay existed is
+ * still honoured until it is removed.
  */
-function KeyRow() {
-  const [key, setKey] = useState(() => loadKey());
-  const [held, setHeld] = useState(() => hasKey());
+function ProviderRows() {
+  const [held, setHeld] = useState<AiOverride | null>(() => loadOverride());
+  const [draft, setDraft] = useState<AiOverride>({ endpoint: '', key: '', model: '' });
+  const [legacy, setLegacy] = useState(() => loadKey().length > 0);
+  const problem = overrideLooksWrong(draft);
 
   return (
     <div className="space-y-3">
       <Row
-        title="Your Anthropic key"
+        title="Where the photograph goes"
         body={
           held
-            ? 'Held on this device, and used only when you hand over a photograph on the intake bench. It is never sent anywhere but Anthropic, and only with a photograph you chose.'
-            : 'Optional. With a key, Almari can read a photograph for you on the bench. Without one, copy the prompt into the model you already use — the bench works either way.'
+            ? `To your own endpoint — ${held.endpoint} — with your own key. The relay is not involved.`
+            : 'To Almari\u2019s relay, which holds the service key, and from there to the model — only when you ask it to catalogue a photograph. It comes back as words and coordinates; the cutting and the writing happen on this device.'
         }
         control={
           held ? (
             <Button
-              onClick={() => { saveKey(''); setKey(''); setHeld(false); showToast('Key removed from this device.', 'info'); }}
+              onClick={() => { saveOverride(null); setHeld(null); showToast('Back to the relay.', 'info'); }}
             >
-              Remove it
+              Use the relay
             </Button>
           ) : null
         }
       />
       {held ? null : (
-        <div className="max-w-[420px]">
-          <Field label="Key" htmlFor="set-key" hint="Stored in this browser only. Keys begin with sk-ant-.">
+        <div className="max-w-[420px] space-y-4">
+          <p className="text-[13px] text-text-2 leading-snug">
+            Prefer your own service? Any OpenAI-compatible endpoint works — yours is used instead
+            of the relay, with the key kept on this device.
+          </p>
+          <Field label="Endpoint" htmlFor="set-endpoint" hint="The full chat-completions address.">
             <input
-              id="set-key"
-              type="password"
+              id="set-endpoint"
               className={inputClass}
-              value={key}
-              onChange={e => setKey(e.target.value)}
-              placeholder="sk-ant-…"
+              value={draft.endpoint}
+              onChange={e => setDraft(d => ({ ...d, endpoint: e.target.value }))}
+              placeholder="https://…/v1/chat/completions"
               autoComplete="off"
               spellCheck={false}
             />
           </Field>
-          <div className="flex flex-wrap items-center gap-3 mt-3">
+          <Field label="Key" htmlFor="set-byok-key" hint="Sent to your endpoint only. Stored in this browser.">
+            <input
+              id="set-byok-key"
+              type="password"
+              className={inputClass}
+              value={draft.key}
+              onChange={e => setDraft(d => ({ ...d, key: e.target.value }))}
+              autoComplete="off"
+              spellCheck={false}
+            />
+          </Field>
+          <Field label="Model" htmlFor="set-model">
+            <input
+              id="set-model"
+              className={inputClass}
+              value={draft.model}
+              onChange={e => setDraft(d => ({ ...d, model: e.target.value }))}
+              placeholder="k3"
+              autoComplete="off"
+              spellCheck={false}
+            />
+          </Field>
+          <div className="flex flex-wrap items-center gap-3">
             <Button
-              disabled={!key.trim() || keyLooksWrong(key)}
-              onClick={() => { saveKey(key); setHeld(true); showToast('Key kept on this device.', 'success'); }}
+              disabled={problem !== null}
+              onClick={() => {
+                saveOverride(draft);
+                setHeld(loadOverride());
+                setDraft({ endpoint: '', key: '', model: '' });
+                showToast('Your endpoint is set. Photographs go there now.', 'success');
+              }}
             >
-              Keep the key
+              Use my own endpoint
             </Button>
-            {keyLooksWrong(key) ? (
-              <span className="type-ledger text-[10px] text-danger">Keys begin with sk-ant-</span>
+            {problem && (draft.endpoint || draft.model) ? (
+              <span className="type-ledger text-[10px] text-danger">{problem}</span>
             ) : null}
           </div>
         </div>
       )}
+      {legacy ? (
+        <Row
+          title="An older Anthropic key"
+          body="Saved on this device before the relay existed. It is still used when no endpoint of your own is set — remove it and the relay takes over."
+          control={
+            <Button
+              onClick={() => { saveKey(''); setLegacy(false); showToast('Key removed from this device.', 'info'); }}
+            >
+              Remove it
+            </Button>
+          }
+        />
+      ) : null}
     </div>
   );
 }
@@ -290,8 +350,10 @@ export default function Settings() {
   const [newCategory, setNewCategory] = useState('');
   const [newOccasion, setNewOccasion] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
+  const navigate = useNavigate();
 
-  const { theme, setTheme } = useSession();
+  const { theme, setTheme, active, authUser, signOutAccount } = useSession();
+  const synced = active ? syncModeOf(active) === 'cloud' : false;
   const records = items.length + outfits.length + wearLogs.length + wishlist.length;
 
   /* ---------- export: the whole state, generically ---------- */
@@ -306,7 +368,7 @@ export default function Settings() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `toile-backup-${todayLocal()}.json`;
+    a.download = `almari-backup-${todayLocal()}.json`;
     a.click();
     URL.revokeObjectURL(url);
     markExported();
@@ -411,9 +473,9 @@ export default function Settings() {
                 This closet lives in one browser, on one device.
               </p>
               <p className="text-[14px] text-text-2 leading-relaxed mt-2">
-                Almari keeps {records} records in this browser's local storage. There is no
-                account and no copy on a server — clearing site data, switching browsers, or
-                losing the device takes the history with it. An export is the only copy there is.
+                {synced
+                  ? `Almari keeps ${records} records in this browser's local storage, and this wardrobe's copy is synced to your account. Sync is whole-wardrobe, last write wins — an export is still the only copy you can file away yourself.`
+                  : `Almari keeps ${records} records in this browser's local storage. Without a synced copy there is no backup anywhere else — clearing site data, switching browsers, or losing the device takes the history with it. An export is the only copy there is.`}
               </p>
               <p className="type-ledger text-[11px] text-text-2 tabular mt-3">
                 {settings.lastExportAt
@@ -434,6 +496,20 @@ export default function Settings() {
           </div>
         </Card>
       ) : null}
+
+      {/* ---------- the account: optional, and only ever about sync ---------- */}
+      <Card>
+        <SectionTitle aside="optional">Account</SectionTitle>
+        {authUser ? (
+          <Row
+            title={`Signed in as ${authUser.email}`}
+            body="The account does one thing: keeps a copy of each synced wardrobe's record, so another device can open it. Signing out ends that and deletes nothing — everything on this device stays exactly as it is."
+            control={<Button onClick={() => { void signOutAccount(); showToast('Signed out. Everything here stays.', 'info'); }}>Sign out</Button>}
+          />
+        ) : (
+          <AccountPanel />
+        )}
+      </Card>
 
       {/* ---------- taxonomy: categories ---------- */}
       <Card>
@@ -623,7 +699,7 @@ export default function Settings() {
           control={<LinkButton to="/intake?worn=1">Open the bench</LinkButton>}
         />
         <Basting className="my-4" />
-        <KeyRow />
+        <ProviderRows />
       </Card>
 
       {/* ---------- on this device ---------- */}
@@ -756,11 +832,14 @@ export default function Settings() {
         <Basting className="my-4" />
 
         <p className="text-[14px] text-text-2 leading-relaxed">
-          Everything you enter stays in this browser's local storage. There are no accounts, no
-          sync, no analytics, and nothing is sent anywhere — the app makes no network requests
-          about your closet at all. There are no shop links, affiliate codes or sponsored
-          pieces, and there never will be. Because the data lives only here, keeping a copy is
-          on you.
+          Everything you enter stays in this browser's local storage, and the app makes no network
+          requests about your closet unless you ask for one. Two asks exist: a wardrobe you mark
+          as synced keeps a copy on your account so another device can open it, and a photograph
+          goes to the AI provider only when you ask it to be catalogued. Both run on the owner's
+          Supabase free tier and model key, so they cost you nothing; if that ever changes, the
+          app will say so before it asks for anything. There are no analytics,
+          no shop links, affiliate codes or sponsored pieces, and there never will be. Because the
+          data lives here first, keeping a copy is on you.
         </p>
 
         <button
@@ -770,6 +849,21 @@ export default function Settings() {
         >
           Export a backup
         </button>
+
+        <Basting className="my-4" />
+
+        {/* The tour's only way back. It never reappears on its own — the flag
+            is written 'done' the first time the sheet closes — so asking for
+            it again is a deliberate act, and it lands where it first ran. */}
+        <Row
+          title="Replay the tour"
+          body="The four cards from a wardrobe's first day — a piece, a wear, Before You Buy, and where the record lives. Shown once, then kept here."
+          control={
+            <Button onClick={() => { requestTour(); navigate('/'); }}>
+              Replay
+            </Button>
+          }
+        />
 
         <p className="type-ledger text-[10px] text-text-2 tabular mt-2">
           Schema version {SCHEMA_VERSION}

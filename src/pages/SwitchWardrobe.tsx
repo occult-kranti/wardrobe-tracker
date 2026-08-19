@@ -4,7 +4,9 @@ import { useSession } from '../context/SessionContext';
 import { Button, Card, Field, LinkButton, Masthead, SectionTitle, inputClass } from '../components/ui';
 import { Basting } from '../components/art';
 import { IconPlus } from '../components/icons';
-import { WardrobeList, StartWardrobeForm, START_LEDE } from './Door';
+import { PERSONAS } from '../lib/personaWardrobe';
+import { syncModeOf } from '../lib/sync';
+import { AccountPanel, Choice, WardrobeList, StartWardrobeForm, START_LEDE } from './Door';
 
 /**
  * Switching wardrobes. Nothing is written and nothing is lost — every mutation
@@ -46,7 +48,7 @@ export default function SwitchWardrobe() {
               someone who started their own wardrobe first would otherwise have
               no way to see a populated screen ever again. */}
           {accounts.some(a => a.isSample) ? null : (
-            <Button onClick={installSamples}>Add the three sample wardrobes</Button>
+            <Button onClick={installSamples}>Add the {PERSONAS.length} sample wardrobes</Button>
           )}
           <Button onClick={signOut}>Close this wardrobe</Button>
         </div>
@@ -80,9 +82,12 @@ export function StartWardrobe() {
  * there is a wardrobe to attach them to and no cost to skipping them.
  */
 function WardrobeDetails() {
-  const { active, updateAccount, removeAccount } = useSession();
+  const { active, updateAccount, removeAccount, authUser } = useSession();
   const [confirming, setConfirming] = useState(false);
+  const [wantSync, setWantSync] = useState(false);
   if (!active) return null;
+
+  const mode = syncModeOf(active);
 
   return (
     <Card>
@@ -122,6 +127,48 @@ function WardrobeDetails() {
             placeholder="Mends before replacing"
           />
         </Field>
+
+        {/* Where the record lives. Samples never get the choice — a worked
+            example belongs to the device that installed it. */}
+        {active.isSample ? null : (
+          <div>
+            <p className="type-ledger text-[11px] text-text-2">Where the record lives</p>
+            <div className="flex flex-wrap gap-2 mt-2">
+              <Choice
+                active={mode === 'device'}
+                onPress={() => { setWantSync(false); updateAccount(active.id, { sync: 'device' }); }}
+              >
+                On this device
+              </Choice>
+              <Choice
+                active={mode === 'cloud'}
+                onPress={() => {
+                  // Signed out, the choice cannot hold — offer the sign-in
+                  // instead of silently starting a wardrobe that cannot sync.
+                  if (!authUser) { setWantSync(true); return; }
+                  setWantSync(false);
+                  updateAccount(active.id, {
+                    sync: 'cloud',
+                    syncId: active.syncId ?? crypto.randomUUID(),
+                  });
+                }}
+              >
+                Synced to my account
+              </Choice>
+            </div>
+            <p className="text-[13px] text-text-2 leading-snug mt-2">
+              {mode === 'device'
+                ? 'Kept in this browser only. If a copy was ever synced, it is left on the account as it was, and is no longer updated.'
+                : 'A copy is kept on your account, updated as you work, so another device can open it.'}
+            </p>
+            {wantSync && !authUser ? (
+              <div className="rounded-[2px] border border-border bg-sunken p-4 mt-3">
+                <p className="type-ledger text-[11px] text-text-2 mb-3">Syncing needs the account it syncs to</p>
+                <AccountPanel idPrefix="wd-acct" />
+              </div>
+            ) : null}
+          </div>
+        )}
       </div>
 
       <Basting className="my-5" />
@@ -132,8 +179,9 @@ function WardrobeDetails() {
           <Button tone="destructive" onClick={() => removeAccount(active.id)}>Retire it</Button>
           <Button onClick={() => setConfirming(false)}>Keep it</Button>
           <p className="type-ledger text-[11px] text-text-2 basis-full">
-            This erases {active.name}&rsquo;s records from this browser. Export a backup first if
-            there is any doubt — there is no copy anywhere else.
+            {mode === 'cloud'
+              ? `This erases ${active.name}’s records from this browser and removes the copy on your account. Export a backup first if there is any doubt.`
+              : `This erases ${active.name}’s records from this browser. Export a backup first if there is any doubt — there is no copy anywhere else.`}
           </p>
         </div>
       ) : (

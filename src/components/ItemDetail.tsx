@@ -213,7 +213,10 @@ export default function ItemDetail({ itemId, onClose, onAmend }: Props) {
                 <span className="type-ledger text-[11px] text-text-2 w-[92px] shrink-0 pt-3">Where it lives</span>
                 <select
                   aria-label={`Where ${item.name} lives`}
-                  className={selectClass}
+                  // min-w-0 or the longest slot label is the row's floor and the
+                  // sheet overflows sideways on a phone; flex-1 takes what the
+                  // 92px label leaves.
+                  className={`${selectClass} min-w-0 flex-1`}
                   value={item.place ? `${item.place.furnitureId}::${item.place.slotId}` : ''}
                   onChange={e => {
                     const v = e.target.value;

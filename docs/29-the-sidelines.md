@@ -571,12 +571,12 @@ at month 9.**
   regretting it at month 9 means a fresh listing with zero ASO history.
   Choose it *after* the month-1 clearance verdict, and let nobody register a
   placeholder "just to test".
-- **The toile residue.** The export filename is `toile-backup-<date>.json`
-  and the tutorial flags are `toile-toured` and `toile-first-log`. **Rename
-  the export filename only** — old files still import, because the importer
-  never checks the name — and **leave the internal storage keys alone
-  forever**, with a comment saying why. Renaming a storage key is a
-  migration, and a casual key rename is precisely the §1.2 scenario.
+- **The toile residue.** The export filename was `toile-backup-<date>.json`;
+  it is now `almari-backup-<date>.json` (renamed 2026-08-18 — old files still
+  import, because the importer never checks the name). The tutorial flags
+  `toile-toured` and `toile-first-log` and every other internal storage key
+  stay as they are **forever**, with a comment saying why. Renaming a storage
+  key is a migration, and a casual key rename is precisely the §1.2 scenario.
 - **The reproducibility claim.** The positioning is *verifiable* — no
   telemetry, nothing leaves your device — sold as a paid binary built from a
   public repo. Someone will ask how they know the binary matches the source.

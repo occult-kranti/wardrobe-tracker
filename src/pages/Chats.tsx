@@ -5,7 +5,7 @@ import { useWardrobe } from '../context/WardrobeContext';
 import { Button, Card, EmptyState, Field, LinkButton, Masthead, Modal, SectionTitle, inputClass, selectClass } from '../components/ui';
 import { Basting, PlateEmptyWishlist } from '../components/art';
 import { IconChevronLeft, IconPlus } from '../components/icons';
-import { AccountMark, LookCard, PieceCard, shortDate, oldestFirst } from '../components/social';
+import { AccountMark, LookCard, PieceCard, shortDate, oldestFirst, nowLocalStamp } from '../components/social';
 import { todayLocal } from '../lib/dates';
 import type { BorrowStatus, ChatMessage, SharedLook, SharedPiece } from '../types';
 
@@ -86,7 +86,10 @@ export default function Chats() {
           .sort(oldestFirst);
         return { conversation: c, last: messages[messages.length - 1], count: messages.length };
       })
-      .sort((a, b) => (b.last?.date ?? '').localeCompare(a.last?.date ?? ''));
+      // Sub-day stamp first: two threads active on the same day used to fall
+      // through to whichever message id sorted first, and the list reshuffled.
+      .sort((a, b) =>
+        (b.last?.at ?? b.last?.date ?? '').localeCompare(a.last?.at ?? a.last?.date ?? ''));
   }, [community, activeId]);
 
   // The new-conversation modal has to be reachable from the empty screen too —
@@ -202,7 +205,7 @@ export default function Chats() {
 export function ChatThread() {
   const { id } = useParams<{ id: string }>();
   const { accounts, community, setCommunity, activeId } = useSession();
-  const { outfits, activeItems, getItem } = useWardrobe();
+  const { outfits, activeItems, getItem, recordLoan, closeLoan } = useWardrobe();
   const [draft, setDraft] = useState('');
   const [attaching, setAttaching] = useState<null | 'look' | 'piece'>(null);
   const [attached, setAttached] = useState<{ look?: SharedLook; piece?: SharedPiece }>({});
@@ -260,6 +263,7 @@ export function ChatThread() {
       conversationId: conversation.id,
       authorId: activeId,
       date: todayLocal(),
+      at: nowLocalStamp(),
       text: draft.trim(),
       look: attached.look,
       piece: attached.piece,
@@ -286,6 +290,7 @@ export function ChatThread() {
           conversationId: conversation.id,
           authorId: activeId,
           date: todayLocal(),
+          at: nowLocalStamp(),
           text: askNote.trim() || `Asking after the ${askPiece.trim()}${owner ? `, ${owner.name}` : ''}.`,
           request: { pieceName: askPiece.trim(), status: 'asked' as const, ownerId: askOwner },
         },
@@ -303,6 +308,17 @@ export function ChatThread() {
         m.id === messageId && m.request ? { ...m, request: { ...m.request, status } } : m
       ),
     }));
+    /* The rail keeps the ledger. An accepted request opens a loan in the open
+       wardrobe's own circle; "home again" closes it. Only the owner ever sees
+       these buttons, so the lending side is always the wardrobe doing the
+       writing — the borrower's own rail learns of it the day their app writes
+       their half, which no code path may do from here. */
+    const message = community.messages.find(m => m.id === messageId);
+    const other = message ? byId.get(message.authorId) : undefined;
+    const me = accounts.find(a => a.id === activeId);
+    if (!message?.request || !me || !other) return;
+    if (status === 'lent') recordLoan(message.request.pieceName, me, other);
+    if (status === 'returned') closeLoan(message.request.pieceName, other.id);
   };
 
   return (

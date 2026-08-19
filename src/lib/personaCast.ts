@@ -2,12 +2,12 @@ import type { PersonaSeed, PersonaItemSeed, PersonaOutfitSeed, PersonaCalendarDa
 import type { ItemSource, WishStatus } from '../types';
 
 /**
- * FIVE MORE SAMPLE WARDROBES, authored here rather than generated.
+ * SIX MORE SAMPLE WARDROBES, authored here rather than generated.
  *
  * The first three personas live in personaData.ts, which is emitted by
  * scripts/build-persona-data.mjs from a source pack of CSVs and Markdown. That
  * pack is not in this repository and running the generator without it would
- * delete the three wardrobes it built. So these five are a second file, joined
+ * delete the three wardrobes it built. So these six are a second file, joined
  * to the first at the point of use, and the generated file is left alone.
  *
  * ── ON NAMES, WHICH IS NOT A DESIGN QUESTION ─────────────────────────────────
@@ -142,7 +142,7 @@ export function expand(brief: CastBrief): PersonaSeed {
 export const CAST_BRIEFS: CastBrief[] = [];
 
 /* ============================================================================
-   THE FIVE.
+   THE FIVE FROM THE COSTUME BRIEFS, AND THE ONE FROM THE PHOTOGRAPH ROLL.
 
    Each is briefed the way a costume department is briefed: the idea, the arc,
    and the garments. No character name, no actor, no film title, no screen-grab.
@@ -493,6 +493,96 @@ CAST_BRIEFS.push({
   ],
 });
 
+/* THE SIXTH IS THE EXCEPTION TO EVERYTHING ABOVE. It is the real closet of the
+   person building the app, shipped at his own ask, from his own photographs —
+   a real name here is not a publicity question, it is the owner signing his
+   work. The garments are still plain garments, and the pool photographs still
+   stand in until the feed-import crops land. */
+CAST_BRIEFS.push({
+  id: 'cofounder',
+  name: 'Hruday',
+  handle: '@hruday_mehta',
+  age: '27',
+  city: 'New Delhi, when not on the road',
+  job: 'Artist, and the person building this app',
+  palette: { name: 'Ink, ivory, and one loud day', colours: ['ink black', 'ivory', 'cream', 'navy', 'maroon', 'mustard', 'lavender', 'signal red'] },
+  philosophy: [
+    'The idea: the person building this app. An artist with one foot in the wedding season and one in the studio, who dresses for a chalkboard with the same ceremony as a sangeet.',
+    'The bio reads: if not now, when; wannabe philosopher; those who forget history are condemned to relive it. The wardrobe is those three sentences hung on a rail — the bandhgalas keep the history, the hoodies do the thinking, and nothing waits for a better occasion.',
+    'Ladakh, Lake Placid, the long American roads, Rajasthan in wedding season. The clothes that survive a night bus stay; the rest were never really kept to begin with.',
+  ],
+  rules: [
+    'If not now, when. The good jacket does not wait for a grander occasion.',
+    'Dress for the wedding as seriously as for the chalkboard.',
+    'One loud piece per outfit. The rest of the rail keeps quiet.',
+  ],
+  neverWears: ['a logo you can read from across the road', 'anything that cannot survive a night bus'],
+  fragrance: 'old paper, ittar from somebody else\'s wedding, and bus-window dust.',
+  icons: ['the tailor\'s chalk line', 'the hills above Leh', 'a paperback with a broken spine'],
+  lead: { image: 'wardrobe/garment/in-bandhgala-suit.webp', caption: 'The brocade bandhgala, pressed for the season' },
+  pieces: [
+    ['Brocade bandhgala jacket', 'layers', 'black and ivory', '#2B2B2E', 'silk brocade, floral weave', 'bandhgala collar, cut close', ['fall', 'winter'], ['wedding', 'festive'], 24000, 'high'],
+    ['Structured black bandhgala', 'layers', 'black', '#101012', 'wool-blend suiting, self buttons', 'short, structured shoulder', ['fall', 'winter'], ['wedding', 'festive'], 14500, 'high'],
+    ['Black button-down shirt', 'tops', 'black', '#161618', 'cotton poplin', 'tailored, worn tucked', ['spring', 'summer', 'fall', 'winter'], ['wedding', 'festive', 'formal'], 2200, 'mid'],
+    ['Black embellished sherwani', 'layers', 'black', '#141416', 'silk-blend, thread and bead work', 'long, bandhgala collar', ['fall', 'winter'], ['wedding'], 38000, 'high'],
+    ['Cream linen t-shirt', 'tops', 'cream', '#EDE6D6', 'linen jersey', 'relaxed', ['spring', 'summer'], ['casual', 'travel'], 1400, 'mid'],
+    ['Cartoon-print tee, light blue', 'tops', 'light blue', '#A8C8E0', 'cotton jersey', 'boxy', ['spring', 'summer', 'fall'], ['casual', 'everyday'], 1100, 'low'],
+    ['Plain white tee', 'tops', 'white', '#F5F5F2', 'cotton jersey', 'straight', ['spring', 'summer', 'fall', 'winter'], ['everyday', 'casual'], 900, 'low'],
+    ['Mustard-yellow hoodie', 'layers', 'mustard', '#E3B31C', 'loopback cotton', 'oversized', ['fall', 'winter', 'spring'], ['casual', 'everyday'], 2600, 'mid'],
+    ['Grey hoodie', 'layers', 'grey', '#9A9A98', 'fleece-back cotton', 'relaxed', ['fall', 'winter', 'spring'], ['everyday'], 2400, 'mid'],
+    ['Maroon-brown hoodie', 'layers', 'maroon brown', '#5E2F26', 'brushed fleece', 'relaxed', ['fall', 'winter'], ['everyday'], 2800, 'mid'],
+    ['Black-and-white check flannel shirt', 'layers', 'black and white', '#232326', 'brushed cotton flannel', 'boxy', ['fall', 'winter'], ['casual', 'everyday'], 1900, 'low'],
+    ['Buffalo-check flannel overshirt', 'layers', 'red and black', '#8E2A2A', 'heavy brushed flannel', 'worn open', ['fall', 'winter'], ['casual', 'travel'], 2400, 'mid'],
+    ['Colour-block sweatshirt', 'layers', 'red, white and navy', '#A83232', 'loopback cotton, colour-blocked', 'relaxed', ['fall', 'winter', 'spring'], ['casual', 'party'], 2200, 'low'],
+    ['Lavender graphic sweatshirt', 'layers', 'lavender', '#C9B8E8', 'cotton fleece, line-drawing print', 'relaxed', ['fall', 'winter', 'spring'], ['casual', 'everyday'], 2100, 'low'],
+    ['Navy blazer', 'layers', 'navy', '#232838', 'wool hopsack', 'soft shoulder, unlined', ['spring', 'summer', 'fall', 'winter'], ['formal', 'work'], 12000, 'high'],
+    ['Striped button-down shirt', 'tops', 'blue and white', '#DCE6EE', 'oxford cotton, striped', 'tailored', ['spring', 'summer', 'fall', 'winter'], ['work', 'formal'], 2400, 'mid'],
+    ['Dark quilted puffer jacket', 'outerwear', 'dark spruce', '#232A26', 'quilted nylon, down fill', 'hip length', ['winter'], ['travel', 'everyday'], 8000, 'mid'],
+    ['Cream wide-leg trousers', 'bottoms', 'cream', '#E8E2D2', 'wool-blend twill', 'wide leg, high rise', ['spring', 'summer', 'fall', 'winter'], ['wedding', 'formal', 'everyday'], 3600, 'mid'],
+    ['Black jeans', 'bottoms', 'black', '#1A1A1C', '12oz denim', 'slim straight', ['spring', 'summer', 'fall', 'winter'], ['everyday', 'casual'], 3200, 'mid'],
+    ['Red sneakers', 'shoes', 'red', '#B23A2E', 'canvas and rubber', 'low', ['spring', 'summer', 'fall', 'winter'], ['casual', 'everyday'], 5400, 'mid'],
+    ['Brown ear-flap cap', 'accessories', 'brown', '#7A5230', 'knit and corduroy, ear flaps', 'ties under the chin', ['winter'], ['travel', 'casual'], 1100, 'low'],
+    ['Navy baseball cap', 'accessories', 'navy', '#1C2440', 'cotton twill', 'six-panel', ['spring', 'summer', 'fall'], ['casual', 'travel'], 900, 'low'],
+    ['Beige canvas tote', 'accessories', 'beige', '#D9CDB4', 'canvas', 'over the shoulder', ['spring', 'summer', 'fall', 'winter'], ['everyday', 'work', 'travel'], 700, 'low'],
+    ['Round glasses', 'accessories', 'black', '#2A2A2A', 'acetate', 'round', ['spring', 'summer', 'fall', 'winter'], ['everyday', 'work', 'wedding'], 4800, 'high'],
+  ],
+  outfits: [
+    { name: 'Wedding, the Brocade', occasion: 'wedding', season: 'winter', time: 'evening', weather: 'cold and clear',
+      pieces: ['Brocade bandhgala jacket', 'Black button-down shirt', 'Cream wide-leg trousers', 'Round glasses'],
+      note: 'The invitation said festive. The brocade was pressed before it was finished reading.' },
+    { name: 'Sangeet in Black', occasion: 'wedding', season: 'winter', time: 'night', weather: 'cold',
+      pieces: ['Black embellished sherwani', 'Black button-down shirt', 'Black jeans', 'Round glasses'],
+      dna: 'All black, so the embroidery does the talking.' },
+    { name: 'The Hill Evening', occasion: 'travel', season: 'winter', time: 'evening', weather: 'near freezing',
+      pieces: ['Cream linen t-shirt', 'Dark quilted puffer jacket', 'Black jeans', 'Brown ear-flap cap'],
+      note: 'Chai at the one shop still open. The cap was a joke that outlived the joke.' },
+    { name: 'Studio Day', occasion: 'everyday', season: 'spring', time: 'morning', weather: 'mild',
+      pieces: ['Plain white tee', 'Grey hoodie', 'Black jeans', 'Red sneakers'] },
+    { name: 'The Lecture Hall', occasion: 'work', season: 'fall', time: 'morning', weather: 'grey',
+      pieces: ['Cartoon-print tee, light blue', 'Black jeans', 'Beige canvas tote', 'Round glasses'],
+      note: 'The tee gets a laugh in the third row. The tote carries the books.' },
+    { name: 'The Winter Walk', occasion: 'everyday', season: 'winter', time: 'afternoon', weather: 'bright and cold',
+      pieces: ['Buffalo-check flannel overshirt', 'Plain white tee', 'Black jeans', 'Red sneakers', 'Brown ear-flap cap'] },
+    { name: 'The Reading', occasion: 'formal', season: 'fall', time: 'evening', weather: 'cool',
+      pieces: ['Navy blazer', 'Striped button-down shirt', 'Cream wide-leg trousers', 'Round glasses'],
+      dna: 'Dressed for questions from the floor.' },
+    { name: 'Sunset', occasion: 'everyday', season: 'summer', time: 'evening', weather: 'warm',
+      pieces: ['Lavender graphic sweatshirt', 'Black jeans', 'Red sneakers'] },
+    { name: 'Fair Night', occasion: 'casual', season: 'fall', time: 'night', weather: 'cool',
+      pieces: ['Colour-block sweatshirt', 'Black jeans', 'Navy baseball cap', 'Red sneakers'],
+      note: 'Rides first, then the food stalls. The cap keeps the dust off.' },
+  ],
+  week: [
+    { label: 'Monday', outfits: ['Studio Day'], weather: 'mild', schedule: 'The build, all day' },
+    { label: 'Tuesday', outfits: ['The Lecture Hall'], weather: 'grey', schedule: 'Two sections, back to back' },
+    { label: 'Wednesday', outfits: ['Sunset'], weather: 'warm', schedule: 'Errands, then the roof' },
+    { label: 'Thursday', outfits: ['The Reading'], weather: 'cool', schedule: 'A reading, then questions' },
+    { label: 'Friday', outfits: ['Fair Night'], weather: 'cool', schedule: 'The fair, with cousins' },
+    { label: 'Saturday', outfits: ['Wedding, the Brocade'], weather: 'cold and clear', schedule: 'A wedding in the family' },
+    { label: 'Sunday', outfits: ['The Hill Evening'], weather: 'near freezing', schedule: 'Chai at the one shop open' },
+  ],
+});
+
 export const CAST: PersonaSeed[] = CAST_BRIEFS.map(expand);
 
 /* ============================================================================
@@ -504,7 +594,7 @@ export const CAST: PersonaSeed[] = CAST_BRIEFS.map(expand);
    here, keyed by persona, and applied by buildPersonaState AFTER the derived
    state so nothing below contradicts the history.
 
-   Between the five of them the arcs light every feature the numbers alone
+   Between the six of them the arcs light every feature the numbers alone
    leave dark: sources and provenance, favorites, retire-with-history, and all
    four endings of the wishlist's cooling-off (waiting, the expired ask, kept,
    let go into "stayed yours", bought).
@@ -680,6 +770,28 @@ export const CAST_ARCS: Record<string, PersonaArc> = {
         price: 9800, priority: 'medium', addedDaysAgo: 3, status: 'waiting',
         endsInDays: 4, asked: false,
         notes: 'For days off, if those start happening.' },
+    ],
+  },
+
+  /* The owner's own closet. The tailor does not appear in the source enum, so
+     the bandhgalas stay "new" — commissioned, first owner — and the tailor
+     lives in the prose. The cap was a gift; the puffer and the cartoon tee are
+     road finds. One hoodie has already left, and one achkan is cooling off. */
+  cofounder: {
+    sources: [
+      [/ear-flap/i, 'gifted'],
+      [/puffer/i, 'secondhand'],
+      [/Cartoon-print/i, 'secondhand'],
+    ],
+    favorites: [/bandhgala/i, /^Round glasses$/],
+    retired: [
+      [/Maroon-brown hoodie/, { daysAgo: 38, reason: 'Worn thin at the elbows' }],
+    ],
+    wishlist: [
+      { name: 'Ivory achkan, next wedding season', category: 'layers', color: '#EFE7D3',
+        price: 32000, priority: 'high', addedDaysAgo: 16, status: 'waiting',
+        endsInDays: 5, asked: false,
+        notes: 'The tailor has the cloth already. The wait is doing its work.' },
     ],
   },
 };

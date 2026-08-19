@@ -1,0 +1,25 @@
+{
+  "cli": {
+    "_comment": "Pin the minimum eas-cli version the team builds with; bump deliberately.",
+    "version": ">= 16.0.0",
+    "appVersionSource": "local"
+  },
+  "build": {
+    "development": {
+      "developmentClient": false,
+      "distribution": "internal",
+      "channel": "development"
+    },
+    "preview": {
+      "distribution": "internal",
+      "channel": "preview",
+      "android": {
+        "buildType": "apk"
+      }
+    },
+    "production": {}
+  },
+  "submit": {
+    "production": {}
+  }
+}

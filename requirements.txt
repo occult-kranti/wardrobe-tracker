@@ -1,0 +1,5 @@
+# Python tooling for the garment-photo pipeline (scripts/build-garment-photos.mjs).
+# The app itself needs nothing from Python — this is build-time only.
+# Setup:  python -m venv .venv && .venv/Scripts/pip install -r requirements.txt   (Windows)
+#         python -m venv .venv && .venv/bin/pip install -r requirements.txt       (macOS/Linux)
+Pillow>=10

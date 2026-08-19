@@ -1,0 +1,11 @@
+# Almari's Supabase project config — the one thing it must say.
+#
+# The app calls the ai-proxy function WITHOUT any Authorization header (the
+# key lives in the function, not in the app), so the function must not demand
+# a JWT at the door. This block is what says so, and it survives redeploys.
+# The one-off equivalent is `supabase functions deploy ai-proxy --no-verify-jwt`.
+
+project_id = "wvupsqfevlrmhqfjreyx"
+
+[functions.ai-proxy]
+verify_jwt = false

@@ -330,6 +330,16 @@ export const IconPin = (p: IconProps) => (
   </Icon>
 );
 
+export const IconBookmark = (p: IconProps) => (
+  <Icon {...p}>
+    {/* a keeper's ribbon folded over the top edge of the plate, tail cut to a
+        swallow's notch — the private set-aside mark. Deliberately not the pin:
+        the pin is a favorite, this is a place kept. */}
+    <path d="M7.5 3.5h9v17L12 16.5 7.5 20.5z" />
+    <Notch x={17.5} y={5} />
+  </Icon>
+);
+
 export const IconPatch = (p: IconProps) => (
   <Icon {...p}>
     {/* mending patch with visible stitches */}

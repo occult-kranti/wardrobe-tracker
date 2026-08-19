@@ -18,12 +18,12 @@ import { PERSONAS as GENERATED, BRAND_SHOTS, type PersonaSeed } from './personaD
 import { CAST, CAST_ARCS } from './personaCast';
 
 /**
- * The three generated wardrobes, and the five authored ones.
+ * The three generated wardrobes, and the six authored ones.
  *
  * Joined here rather than merged into personaData.ts, which is emitted by
  * scripts/build-persona-data.mjs from a source pack that is not in this
  * repository — merging into it would mean the next person to run the generator
- * silently deletes five wardrobes.
+ * silently deletes six wardrobes.
  */
 const PERSONAS: PersonaSeed[] = [...GENERATED, ...CAST];
 import { furnish } from './furnishing';
@@ -67,7 +67,7 @@ const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Frida
  * Bumped whenever the generated wardrobes change shape — photographs, bench
  * states, costs. Samples recording an older number are rebuilt at boot.
  */
-export const PERSONA_SEED_VERSION = 7;
+export const PERSONA_SEED_VERSION = 8;
 
 /** How far back the generated rotation runs, in days. */
 const HISTORY_DAYS = 250;
@@ -193,7 +193,7 @@ const PHOTO_RULES: Array<[RegExp, string[]]> = [
   [/waistcoat|bandi/i, ['waistcoat-embroidered', 'waistcoat']],
   [/gilet|quilted|liner|field jacket|waxed|rain shell|\bshell\b/i, ['gilet-quilted']],
   [/trench|overcoat|wool coat|longline/i, ['overcoat-wool', 'trench-coat', 'suit-jacket']],
-  [/hoodie|sweatshirt|quarter-zip/i, ['hoodie-oversized']],
+  [/hoodie|sweatshirt|quarter-zip/i, ['hoodie-oversized', 'hoodie']],
   [/denim jacket|trucker/i, ['trucker-jacket']],
   [/cable|cricket|merino|crew(neck)?|v-neck|thermal|henley/i, ['sweater', 'hoodie-oversized']],
   [/cape/i, ['pashmina-shawl']],
@@ -422,6 +422,20 @@ const EVENT_PLANS: Record<string, EventPlan[]> = {
     { name: 'Lakmé Fashion Week', kind: 'work', place: 'Mumbai', startsIn: -33, days: 2, notes: 'Backstage both days. Flats, and pockets for pins.', dayLabels: [
       { label: 'Backstage, day one', match: /fitting|studio|street/i },
       { label: 'Front row', match: /editorial|pitch|suiting|agency/i },
+    ] },
+  ],
+  cofounder: [
+    { name: 'Open-mic night', kind: 'other', place: 'A basement with a PA', startsIn: -8, days: 1, notes: 'He plays second. The grey hoodie has heard every song twice.', dayLabels: [
+      { label: 'The set', match: /studio|everyday/i },
+    ] },
+    { name: 'A wedding in the family', kind: 'celebration', place: 'Jaipur', startsIn: 23, days: 2, notes: 'The brocade travels flat, in tissue. The sherwani takes the sangeet.', dayLabels: [
+      { label: 'The sangeet', match: /sangeet/i },
+      { label: 'The wedding', match: /wedding|brocade|bandhgala/i },
+    ] },
+    { name: 'The hills, again', kind: 'trip', place: 'Ladakh', startsIn: 41, days: 3, notes: 'One bag. The puffer earns its keep above four thousand metres.', dayLabels: [
+      { label: 'The road up', match: /travel|hill/i },
+      { label: 'The winter walk', match: /walk|winter|buffalo/i },
+      { label: 'The road home', match: /everyday|casual/i },
     ] },
   ],
 };

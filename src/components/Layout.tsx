@@ -95,6 +95,18 @@ export default function Layout() {
     setMoreOpen(false);
   }, [location.pathname]);
 
+  // Escape closes the sheet from anywhere; the route change above closes it
+  // on navigation; the scrim below closes it on a tap outside. Three ways
+  // out, the same as every other overlay in the house.
+  useEffect(() => {
+    if (!moreOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMoreOpen(false);
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [moreOpen]);
+
   // The rooms, in the house's order — the dye house first, then the obsidian.
   const cycleTheme = () => setTheme(nextTheme(theme));
 
@@ -252,24 +264,35 @@ export default function Layout() {
       </nav>
 
       {moreOpen && (
-        <div className="lg:hidden fixed above-rail inset-x-0 z-50 bg-surface border-t border-border animate-slip max-h-[60dvh] pane">
-          {secondaryNav.map(item => {
-            const Icon = item.icon;
-            const active = owns(item.path, location.pathname);
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`flex items-center gap-3 h-12 px-5 type-label text-[13px] border-b border-border last:border-0 ${
-                  active ? 'text-text bg-sunken' : 'text-text-2'
-                }`}
-              >
-                <Icon size={18} />
-                {item.label}
-              </Link>
-            );
-          })}
-        </div>
+        <>
+          {/* Tap-outside scrim. z-40: the rail itself (z-50) stays above it,
+              so the toggle that opened the sheet still answers while it is
+              up. The ink wash matches the modal overlay exactly. */}
+          <div
+            aria-hidden="true"
+            className="lg:hidden fixed inset-0 z-40 animate-fade"
+            style={{ background: 'rgba(32, 29, 24, 0.4)' }}
+            onClick={() => setMoreOpen(false)}
+          />
+          <div className="lg:hidden fixed above-rail inset-x-0 z-50 bg-surface border-t border-border animate-slip max-h-[60dvh] pane">
+            {secondaryNav.map(item => {
+              const Icon = item.icon;
+              const active = owns(item.path, location.pathname);
+              return (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={`flex items-center gap-3 h-12 px-5 type-label text-[13px] border-b border-border last:border-0 ${
+                    active ? 'text-text bg-sunken' : 'text-text-2'
+                  }`}
+                >
+                  <Icon size={18} />
+                  {item.label}
+                </Link>
+              );
+            })}
+          </div>
+        </>
       )}
 
       <AddItemModal open={addOpen} onClose={() => setAddOpen(false)} />

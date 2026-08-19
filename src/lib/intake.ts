@@ -51,6 +51,13 @@ export interface IntakeDraft {
    * cutout will work. 'plain' lifts, 'busy' does not, 'none' is already cut.
    */
   background?: 'plain' | 'busy' | 'none';
+  /**
+   * Where this record was read from, when it was not a hand-run file — e.g.
+   * 'a feed import'. Carried into the piece's notes at commit time. Never the
+   * piece's `source`: how a garment was acquired is the owner's to tell, and
+   * no photograph can know it.
+   */
+  provenance?: string;
 }
 
 export interface IntakeSkip {
@@ -331,7 +338,7 @@ export function draftToItem(
     season: draft.season,
     occasion: draft.occasion,
     imageUrl: '',
-    notes: notes || undefined,
+    notes: [notes, draft.provenance ? `From ${draft.provenance}.` : ''].filter(Boolean).join(' ').trim() || undefined,
   };
 }
 

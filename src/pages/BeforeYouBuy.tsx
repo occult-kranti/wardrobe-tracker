@@ -7,6 +7,7 @@ import { Button, Card, Chip, EmptyState, Masthead, SectionTitle, inputClass } fr
 import { Basting, GarmentPlate, PlateEmptyCloset } from '../components/art';
 import { IconCheck } from '../components/icons';
 import { showToast } from '../components/Toast';
+import AddItemModal from '../components/AddItemModal';
 
 /**
  * BEFORE YOU BUY — the anti-impulse surface.
@@ -75,6 +76,7 @@ export default function BeforeYouBuy() {
   const [brand, setBrand] = useState('');
   const [occasions, setOccasions] = useState<string[]>([]);
   const [category, setCategory] = useState('');
+  const [addOpen, setAddOpen] = useState(false);
 
   const touched =
     color !== '' || name.trim() !== '' || brand.trim() !== '' || occasions.length > 0 || category !== '';
@@ -160,12 +162,20 @@ export default function BeforeYouBuy() {
       <>
         <Masthead title="Before you buy" />
         <Card>
+          {/* One teaching, one way on (§8.4): the page answers only what the
+              closet holds, so the single path is putting the first piece in. */}
           <EmptyState
             plate={<PlateEmptyCloset />}
             title="Nothing on the rail to compare against."
             body="This page holds a piece you're looking at up against the ones you already own. Once the closet has a few pieces in it, it starts answering."
+            action={
+              <Button tone="primary" onClick={() => setAddOpen(true)}>
+                Add the first piece
+              </Button>
+            }
           />
         </Card>
+        <AddItemModal open={addOpen} onClose={() => setAddOpen(false)} />
       </>
     );
   }

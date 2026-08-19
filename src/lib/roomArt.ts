@@ -29,28 +29,30 @@ import type { Furniture } from '../types';
  * bays, so there is no empty bay to count — which was the other objection, and
  * the fair one: a container drawn with visible unfilled capacity is a
  * completion meter whatever it is a picture of.
+ *
+ * Two measurements kept that promise from being true, and both are fixed here
+ * by sizing the room to the furniture's INK rather than to the plate:
+ *
+ *   1. THE FRAME SPRAWLED. `W = plateW` drew the walls at the plate's edges
+ *      whatever was standing between them — one almirah in a metre of empty
+ *      room. The walls now stand one skirting off the furniture run, which is
+ *      what the paragraph above always said they did (docs/26 §6).
+ *   2. THE HEIGHT GREW WITH THE WARDROBE. Piece width was solved from the
+ *      plate and the height followed it, so every added place made the room
+ *      taller and pushed the clothes further down the page. It runs the other
+ *      way now: the strip's height is bounded and decided first, the pieces
+ *      are sized to the strip, and what does not fit goes through the door.
  */
 
 /* ---------- the room's own lines, and only its own ---------- */
 const A = 'fill="none" stroke="var(--color-text-2)" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter"';
 const E = 'fill="none" stroke="var(--color-text-2)" stroke-width="2" stroke-dasharray="4 3" stroke-linecap="butt" stroke-linejoin="miter"';
-/**
- * The room's one ornament, in the frieze's own metal.
- *
- * Not a control, not data, not interactive, and drawn in --color-gold, which
- * the contract reserves for exactly this: decorative only, never text, never a
- * labelled fill. It exists so the room reads as somewhere lived in rather than
- * as a diagram — a single shoe stepped out of and left where it fell, which is
- * what a real dressing-room floor has on it.
- */
-const M = 'fill="none" stroke="var(--color-gold)" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter"';
 
 /**
  * Each piece is drawn into furnitureArt's 460×560 box, and every form in it
  * stands between y=96 and the floor at y≈500. Cropping to that band is what
  * lets a room be a room-shaped strip rather than a tall square with air on top.
  */
-const BOX_W = 460;
 const CROP_BOT = 512;
 /**
  * Where the crop starts, and it is not a constant.
@@ -71,37 +73,45 @@ function cropTopFor(pieces: Furniture[]): number {
 }
 
 /**
- * How wide n pieces are drawn, given the plate they must fit in.
- *
- * SOLVED, not tabulated. The first version held a table of widths by count —
- * 300 for one, 250 for two, and so on — which meant the width did not know how
- * wide the plate was: on a 320px phone two pieces "wanted" 250 each, could not
- * fit, and the solver dropped to ONE object every time. A phone with five
- * places saw one wardrobe and a door. Divide the room by the objects instead,
- * and the arithmetic is right at every width.
+ * THE INK WINDOW. Every form draws its ink between x=64 and x=396 of the
+ * 460-unit box — the almirah's folded doors, the pegs' batten, the rail's
+ * posts — and the rest of the box is the air around the object. The first
+ * version of this room placed the BOXES side by side, so a 10-unit gap between
+ * boxes was sixty pixels of nothing between the drawings, and the furniture
+ * read as specks floating in a field. The room now places the INK side by
+ * side: each piece is shifted left by the window's edge, a slot is exactly one
+ * drawing wide, and the gap between two pieces is the gap, nothing more. The
+ * two carved crests overhang the window by a few units; they lean into the
+ * empty gap and nobody is hit.
  */
-function pieceWidth(count: number, plate: number): number {
-  const room = plate - SIDE * 2 - GAP * Math.max(0, count - 1);
-  return Math.min(MAX_PIECE, Math.floor(room / Math.max(1, count)));
-}
+const INK_X0 = 64;
+const INK_W = 332; // 396 - 64
 
-/** Room-side margin: the wall the furniture is not standing against. */
-const SIDE = 14;
+/** The gap between two drawings, ink to ink. */
 const GAP = 10;
-/**
- * Below this a drawing stops being a picture of an object. The strokes are
- * unit-scaled, so at 118px the 2.5-unit carcass renders at 0.64px — already
- * thin; under it the whole object greys into texture and the forms stop being
- * distinguishable from one another, which is the only job the mark has.
- */
-const MIN_PIECE = 118;
-/** Past this one object stops being furniture and becomes a poster. */
-const MAX_PIECE = 260;
+/** Wall to ink: the skirting of clear floor a room keeps around its furniture. */
+const FRAME_PAD = 18;
 /** Headroom over the tallest piece, and the floor band under everything. */
 const HEAD = 26;
-/** The deepest thing drawn below the floor line is the heel at +20. Thirty left
-    ten dead units under every room. */
+/** The deepest thing drawn below the floor line is the chair's tipped floor
+    rule at +13. Twenty-four covers it with breathing room. */
 const FLOOR_BAND = 24;
+/**
+ * THE STRIP'S HEIGHT IS DECIDED FIRST, and the furniture is sized to it — never
+ * the other way round. A room whose height grew with the count or width of the
+ * wardrobe is a chart, and it pushed the clothes — the hero of this page —
+ * further down with every place added. Bounded both ways: tall enough to read
+ * on a phone, never taller on a desktop than a strip has any reason to be.
+ */
+const PH_MIN = 132;
+const PH_MAX = 168;
+/**
+ * Below this a drawing stops being a picture of an object: the strokes are
+ * unit-scaled, and under 88px of ink the 2.5-unit carcass is under 0.7px and
+ * the forms grey into one texture. This is the old 118px box minimum said in
+ * ink, and the arithmetic is the same.
+ */
+const MIN_INK = 88;
 
 export interface RoomBay {
   id: string;
@@ -169,28 +179,39 @@ export function drawRoom(
    */
   const withChair = wornCount > 0;
 
-  // How many fit standing side by side, at the width that many would be drawn
-  // at. Solved rather than assumed: the width depends on the count and the
-  // count depends on the width.
-  // The chair takes a place in the run, so it is counted when the widths are
-  // solved — otherwise it would be drawn over the last wardrobe.
-  const slots = standing.length + (withChair ? 1 : 0);
-  let show = slots;
-  while (show > 1 && pieceWidth(show, plateW) < MIN_PIECE) show--;
+  // The ceiling is asked of everything standing, shown or not — a carved crest
+  // going through the door must not change the height of the room it left.
+  const cropTop = cropTopFor(standing);
+  const cropU = CROP_BOT - cropTop;
+
+  // THE STRIP. The height comes from the plate's width, bounded both ways, and
+  // the pieces are sized to the height — so the room is the same height for a
+  // wardrobe of one piece and a wardrobe of nine, and adding a place never
+  // pushes the clothes further down the page.
+  const ph = Math.max(PH_MIN, Math.min(PH_MAX, Math.round(plateW * 0.42)));
+  // One slot is one drawing's INK wide; the air in the box is shifted away at
+  // placement, not paid for here.
+  let pw = Math.round((ph * INK_W) / cropU);
+
+  // What the run may span: the plate, less the skirting and the corner returns
+  // on both walls.
+  const room = plateW - 2 * (FRAME_PAD + 14);
   // AT LEAST ONE PIECE OF FURNITURE, always. The chair is an action and it
-  // takes a slot, and on a narrow plate that meant it could take the ONLY slot
-  // — a dressing room drawn as a chair with no wardrobe in it.
-  let showPieces = show - (withChair ? 1 : 0);
-  if (withChair && showPieces < 1 && standing.length > 0) {
-    show = 2;
-    showPieces = 1;
-  }
-  showPieces = Math.max(0, Math.min(showPieces, standing.length));
-  const pw = pieceWidth(show, plateW);
+  // takes a slot, and on a narrow plate that could take the ONLY slot — a
+  // dressing room drawn as a chair with no wardrobe in it. The pieces give way
+  // first: narrower ink before a piece leaves the room.
+  if (withChair) pw = Math.min(pw, Math.floor((room - GAP) / 2));
+  pw = Math.max(MIN_INK, pw);
+
+  // How many fit standing side by side in the run. The chair takes a place in
+  // it, so it is counted when the fit is solved — otherwise it would be drawn
+  // over the last wardrobe.
+  const fit = Math.max(1, Math.floor((room + GAP) / (pw + GAP)));
+  let showPieces = Math.min(standing.length, fit - (withChair ? 1 : 0));
+  if (withChair && showPieces < 1 && standing.length > 0) showPieces = 1;
+  showPieces = Math.max(0, showPieces);
   const beyond = standing.length - showPieces;
 
-  const cropTop = cropTopFor(standing.slice(0, showPieces));
-  const ph = Math.round((pw * (CROP_BOT - cropTop)) / BOX_W);
   const drawn = showPieces + (withChair ? 1 : 0);
   const innerW = drawn * pw + (drawn - 1) * GAP;
   const W = plateW;
@@ -199,18 +220,23 @@ export function drawRoom(
   // Centred, so a small wardrobe reads as a composition rather than as a room
   // with a gap on one side.
   const x0 = Math.round((W - innerW) / 2);
+  // THE FRAME IS AS WIDE AS ITS FURNITURE NEEDS — one skirting off the run —
+  // and no wider. The walls used to be drawn at the plate's own edges, which
+  // is how one almirah came to stand in a metre of empty room.
+  const wallL = x0 - FRAME_PAD;
+  const wallR = x0 + innerW + FRAME_PAD;
 
   const out: string[] = [];
   const bays: RoomBay[] = [];
 
   // THE ROOM. Four lines and two short returns — the whole architecture, kept
   // deliberately thin because everything else on this plate is the user's.
-  out.push(`<path d="M${SIDE} ${floorY}h${W - SIDE * 2}" ${A}/>`);
-  out.push(`<path d="M${SIDE} ${floorY + 8}h${W - SIDE * 2}" ${A}/>`);
-  out.push(`<path d="M${SIDE} 10h${W - SIDE * 2}" ${A}/>`);
-  out.push(`<path d="M${SIDE} 10v${floorY - 10}M${W - SIDE} 10v${floorY - 10}" ${A}/>`);
-  out.push(`<path d="M${SIDE} 10L2 2M${W - SIDE} 10L${W - 2} 2" ${A}/>`);
-  out.push(`<path d="M${SIDE} ${floorY}L2 ${floorY + 14}M${W - SIDE} ${floorY}L${W - 2} ${floorY + 14}" ${A}/>`);
+  out.push(`<path d="M${wallL} ${floorY}h${wallR - wallL}" ${A}/>`);
+  out.push(`<path d="M${wallL} ${floorY + 8}h${wallR - wallL}" ${A}/>`);
+  out.push(`<path d="M${wallL} 10h${wallR - wallL}" ${A}/>`);
+  out.push(`<path d="M${wallL} 10v${floorY - 10}M${wallR} 10v${floorY - 10}" ${A}/>`);
+  out.push(`<path d="M${wallL} 10L${wallL - 12} 2M${wallR} 10L${wallR + 12} 2" ${A}/>`);
+  out.push(`<path d="M${wallL} ${floorY}L${wallL - 12} ${floorY + 14}M${wallR} ${floorY}L${wallR + 12} ${floorY + 14}" ${A}/>`);
 
   standing.slice(0, showPieces).forEach((piece, i) => {
     const total = piece.slots.reduce((a, s) => a + (counts[s.id] ?? 0), 0);
@@ -224,10 +250,10 @@ export function drawRoom(
       0.709,
       { labels: false },
     );
-    const k = pw / BOX_W;
+    const k = pw / INK_W;
     const left = x0 + i * (pw + GAP);
     out.push(
-      `<g transform="translate(${left} ${Math.round(floorY - CROP_BOT * k)}) scale(${k.toFixed(4)})" ` +
+      `<g transform="translate(${(left - INK_X0 * k).toFixed(2)} ${Math.round(floorY - CROP_BOT * k)}) scale(${k.toFixed(4)})" ` +
       `class="text-text">${drawing.svg}</g>`
     );
 
@@ -243,18 +269,6 @@ export function drawRoom(
     });
   });
 
-  // ONE HEEL, stepped out of and left on the floor. Near the left return,
-  // clear of the furniture's run, and omitted when the room is too narrow to
-  // hold it without crowding — an ornament that has to fight for space is not
-  // an ornament, it is clutter.
-  if (x0 - SIDE >= 46 && FLOOR_BAND >= 26) {
-    const hx = SIDE + 12;
-    const hy = floorY + 20;
-    out.push(`<path d="M${hx} ${hy}h26q6 0 8-5l3-9" ${M}/>`);
-    out.push(`<path d="M${hx + 37} ${hy - 14}q-9 3-15 9" ${M}/>`);
-    out.push(`<path d="M${hx + 24} ${hy}v7h5v-7" ${M}/>`);
-  }
-
   // The chair, at the end of the run — where it is in the room, and where it
   // does not sit between two wardrobes.
   let chair: RoomChair | null = null;
@@ -268,11 +282,12 @@ export function drawRoom(
     // about the point where its own feet meet the floor, so it still stands on
     // the same floor as everything else while plainly not being part of the
     // run.
-    const k = (pw * 0.7) / BOX_W;
+    const k = (pw * 0.7) / INK_W;
     const slotLeft = x0 + showPieces * (pw + GAP);
-    const left = Math.round(slotLeft + (pw - pw * 0.7) / 2);
+    // The chair's own ink runs 72..388 of its box; centred in the slot by it.
+    const left = slotLeft + (pw - 316 * k) / 2 - 72 * k;
     out.push(
-      `<g transform="translate(${left} ${Math.round(floorY - CROP_BOT * k)}) scale(${k.toFixed(4)}) rotate(-9 230 500)" ` +
+      `<g transform="translate(${left.toFixed(2)} ${Math.round(floorY - CROP_BOT * k)}) scale(${k.toFixed(4)}) rotate(-9 230 500)" ` +
       `class="text-text">${drawChair(wornCount).svg}</g>`
     );
     chair = {
@@ -290,7 +305,7 @@ export function drawRoom(
   // an empty wall is an invitation to go and get more furniture, which is the
   // one thing this screen must never be.
   if (beyond > 0) {
-    const dx = W - SIDE - 4;
+    const dx = wallR - 4;
     out.push(`<path d="M${dx} ${floorY}v-${Math.round(ph * 0.86)}h-26" ${E}/>`);
   }
 

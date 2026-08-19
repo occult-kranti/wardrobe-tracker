@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useWardrobe } from '../context/WardrobeContext';
+import { useSession } from '../context/SessionContext';
 import { categoryLabel, isQuietCategory, type ClothingItem, type Outfit, type WearLog } from '../types';
 import { todayLocal, isFutureDate, daysSince, addDays } from '../lib/dates';
 import { isPlannedLog } from '../types';
@@ -10,6 +11,8 @@ import { IconArrowRight, IconCheck, IconEyeletFilled } from '../components/icons
 import { Basting, GarmentPlate, PlateEmptyCloset, WaxSeal } from '../components/art';
 import { showToast } from '../components/Toast';
 import AddItemModal from '../components/AddItemModal';
+import Tutorial from '../components/Tutorial';
+import { tourState } from '../lib/tutorial';
 import { OUTDOORS, loadOutdoors, saveOutdoors, suitsOutdoors, type Outdoors } from '../lib/outdoors';
 
 /**
@@ -80,13 +83,34 @@ export default function Dashboard() {
   const {
     items, activeItems, outfits, wearLogs, settings,
     getOutfitSuggestions, getWearablePool, logWear, removeWearLog, confirmPlan,
+    packedItemIds,
   } = useWardrobe();
+  const { active } = useSession();
 
   const [sheetOpen, setSheetOpen] = useState(false);
   const [mode, setMode] = useState<'choices' | 'pieces'>('choices');
   const [picked, setPicked] = useState<string[]>([]);
   const [showAll, setShowAll] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
+
+  /**
+   * The short tour shows itself exactly once: on a wardrobe started today that
+   * is still empty. An opened existing wardrobe is somebody's record, not a
+   * first day; a sample arrives full and is a demonstration, not a start. The
+   * one way back in is Settings asking for it by name ('again'). Read once, on
+   * mount — the flag writes 'done' the moment the sheet closes, however it
+   * closes.
+   */
+  const [tourOpen, setTourOpen] = useState(() => {
+    const state = tourState();
+    if (state === 'again') return true;
+    if (state === 'done') return false;
+    return Boolean(
+      active && !active.isSample &&
+      active.createdAt === todayLocal() &&
+      activeItems.length === 0
+    );
+  });
 
   const today = todayLocal();
   // What it is like out, asked rather than tracked. See lib/outdoors.ts.
@@ -145,13 +169,13 @@ export default function Dashboard() {
     // so "log another" still has something to offer. Favourites first, then
     // least-recently-worn — the same order, by hand.
     const rest = outfits
-      .filter(o => !taken.has(o.id) && o.itemIds.length > 0 && o.itemIds.every(id => !retiredIds.has(id)))
+      .filter(o => !taken.has(o.id) && o.itemIds.length > 0 && o.itemIds.every(id => !retiredIds.has(id) && !packedItemIds.has(id)))
       .sort((a, b) => {
         if (a.favorite !== b.favorite) return a.favorite ? -1 : 1;
         return (a.lastWorn ?? '').localeCompare(b.lastWorn ?? '');
       });
     return [...suggestions, ...rest].slice(0, 6);
-  }, [suggestions, outfits, retiredIds]);
+  }, [suggestions, outfits, retiredIds, packedItemIds]);
 
   const pool = useMemo(() => getWearablePool(), [getWearablePool]);
   // Widening the picker still respects quiet categories — quiet is a stated
@@ -248,9 +272,12 @@ export default function Dashboard() {
     [wearLogs]
   );
 
+  // What is packed away is not named on Today. The record itself stands — the
+  // log, the counts, the outfit's name — but the day speaks only of what is in
+  // rotation; a piece in the trunk under the bed is not (types.ts, `packed`).
   const namesFor = useCallback(
-    (log: WearLog) => log.itemIds.map(id => byId.get(id)?.name).filter((n): n is string => Boolean(n)),
-    [byId]
+    (log: WearLog) => log.itemIds.filter(id => !packedItemIds.has(id)).map(id => byId.get(id)?.name).filter((n): n is string => Boolean(n)),
+    [byId, packedItemIds]
   );
 
   const describeLog = useCallback(
@@ -346,6 +373,10 @@ export default function Dashboard() {
           />
         </Card>
         <AddItemModal open={addOpen} onClose={() => setAddOpen(false)} />
+        {/* The tour sits over this exact state — a new wardrobe's first Today
+            is an empty rail with the sheet above it, which is also the whole
+            of beat one. */}
+        <Tutorial open={tourOpen} onClose={() => setTourOpen(false)} />
       </>
     );
   }
@@ -731,6 +762,10 @@ export default function Dashboard() {
           </div>
         )}
       </Modal>
+
+      {/* Reached only on a replay ('again') once the closet has pieces — the
+          first run always lands on the empty branch above. */}
+      <Tutorial open={tourOpen} onClose={() => setTourOpen(false)} />
     </div>
   );
 }

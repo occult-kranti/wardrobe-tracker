@@ -2,18 +2,24 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useWardrobe } from '../context/WardrobeContext';
 import { showToast } from '../components/Toast';
-import { Button, Chip, LinkButton, Masthead, EmptyState, Field, inputClass } from '../components/ui';
+import { Button, Chip, LinkButton, Masthead, EmptyState } from '../components/ui';
 import { Basting, GarmentPlate, PlateEmptyCloset } from '../components/art';
-import { IconCheck, IconClose, IconImport, IconCopy, IconCamera, IconChevronLeft } from '../components/icons';
-import { categoryLabel, SEASON_LABELS, type CategoryId } from '../types';
+import { IconCheck, IconClose, IconImport, IconCopy, IconCamera, IconChevronLeft, IconFeed } from '../components/icons';
+import { categoryLabel, displayTag, PRESET_COLORS, SEASON_LABELS, type CategoryId } from '../types';
 import {
   readIntake, draftToItem, findDuplicates,
-  type IntakeDraft, type IntakeRead,
+  type IntakeDraft, type IntakeRead, type IntakeSkip,
 } from '../lib/intake';
 import { INTAKE_PROMPT, OUTFIT_PROMPT } from '../lib/intakePrompt';
 import { INTAKE_SAMPLES, type IntakeSample } from '../lib/intakeSamples';
-import { hasKey, keyLooksWrong, loadKey, prepareImage, readPhotograph, saveKey } from '../lib/anthropic';
+import { prepareImage, readPhotograph, type Prepared } from '../lib/anthropic';
 import { harvest, type Harvested } from '../lib/harvest';
+import {
+  buildGridPrompt, parseGridResponse, soloDetections, toDrafts,
+  buildPhotoPrompt, galleryDrafts, photoCropPixels,
+  tileCropPixels, garmentCropPixels,
+  type Detection,
+} from '../lib/feedIntake';
 
 /**
  * CATALOGUE FROM PHOTOS — the review bench.
@@ -35,6 +41,50 @@ function confidenceWord(c: number): string {
   if (c >= 0.55) return 'unsure';
   return 'a guess';
 }
+
+/**
+ * Cut a pixel box out of an image and hand back a JPEG no bigger than
+ * maxEdge on a side. Feed imports store one of these per piece: a screenshot
+ * is too big to keep, the crop of one garment is not.
+ */
+function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const el = new Image();
+    el.onload = () => resolve(el);
+    el.onerror = () => reject(new Error('That photograph would not open.'));
+    el.src = src;
+  });
+}
+
+async function cropPixels(
+  src: string,
+  px: { x: number; y: number; w: number; h: number },
+  maxEdge = 520,
+): Promise<string> {
+  const img = await loadImage(src);
+  const scale = Math.min(1, maxEdge / Math.max(px.w, px.h));
+  const w = Math.max(1, Math.round(px.w * scale));
+  const h = Math.max(1, Math.round(px.h * scale));
+  const canvas = document.createElement('canvas');
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('This browser will not open a drawing surface.');
+  ctx.drawImage(img, px.x, px.y, px.w, px.h, 0, 0, w, h);
+  return canvas.toDataURL('image/jpeg', 0.88);
+}
+
+/** What a feed import is doing right now, said plainly rather than as a spinner. */
+type FeedWork =
+  | { at: 'idle' }
+  | { at: 'reading'; done: number; total: number }
+  | { at: 'cutting'; done: number; total: number };
+
+/** A feed screenshot is a page of posts; nine at a time is plenty of grid. */
+const FEED_LIMIT = 9;
+
+/** Gallery photographs are one read each; nine at a time is plenty of film. */
+const GALLERY_LIMIT = 9;
 
 /** What the reader is doing right now, said plainly rather than as a spinner. */
 type Working =
@@ -59,7 +109,6 @@ export default function Intake() {
   const [tried, setTried] = useState<IntakeSample | null>(null);
 
   /* ---------- reading a photograph here, rather than sending you elsewhere ---------- */
-  const [key, setKey] = useState(() => loadKey());
   const [working, setWorking] = useState<Working>({ at: 'idle' });
   const [failure, setFailure] = useState<string | null>(null);
   /** The photograph that was read, kept so the bench can show what it came from. */
@@ -67,6 +116,30 @@ export default function Intake() {
   /** One picture per piece, cut from that photograph on this device. */
   const [pictures, setPictures] = useState<Map<string, Harvested>>(new Map());
   const [saveLook, setSaveLook] = useState(true);
+
+  /* ---------- a feed screenshot: a whole grid at once ---------- */
+  const [feed, setFeed] = useState<FeedWork>({ at: 'idle' });
+  const [feedFailure, setFeedFailure] = useState<string | null>(null);
+  /** True when the bench is reviewing a feed import — the banner speaks of screenshots. */
+  const [feedMode, setFeedMode] = useState(false);
+  const feedRef = useRef<HTMLInputElement>(null);
+  const feedCardRef = useRef<HTMLDivElement>(null);
+
+  /* ---------- your own gallery: many photographs, one read each ---------- */
+  const [gal, setGal] = useState<FeedWork>({ at: 'idle' });
+  const [galFailure, setGalFailure] = useState<string | null>(null);
+  /** True when the bench is reviewing a gallery import — the banner speaks of photographs. */
+  const [galleryMode, setGalleryMode] = useState(false);
+  const galleryRef = useRef<HTMLInputElement>(null);
+  const galleryCardRef = useRef<HTMLDivElement>(null);
+
+  // The closet's "From a feed" and "From photos" links land here, on their cards.
+  useEffect(() => {
+    if (params.get('feed') === '1') feedCardRef.current?.scrollIntoView({ block: 'start' });
+    if (params.get('photos') === '1') galleryCardRef.current?.scrollIntoView({ block: 'start' });
+    // Once, on arrival.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // The closet's "Today's outfit" opens the camera straight away — the button
   // was the decision; making someone press a second one is just friction.
@@ -85,6 +158,8 @@ export default function Intake() {
     const r = readIntake(raw);
     setResult(r);
     setEdited({});
+    setFeedMode(false);
+    setGalleryMode(false);
     if (r.error) {
       setTicked(new Set());
       return;
@@ -105,18 +180,14 @@ export default function Intake() {
   /**
    * Read a photograph, end to end.
    *
-   * One journey out: the photograph goes to Anthropic with the person's own
-   * key and comes back as coordinates and words. Everything after that —
-   * cropping each piece, lifting it off its background, writing it into the
-   * closet — happens here, on this device.
+   * One journey out: the photograph goes to the AI provider — the relay, or
+   * the endpoint set in Settings — and comes back as coordinates and words.
+   * Everything after that — cropping each piece, lifting it off its
+   * background, writing it into the closet — happens here, on this device.
    */
   const onPhoto = async (file: File | undefined) => {
     if (!file) return;
     setFailure(null);
-    if (!hasKey()) {
-      setFailure('Add a key below first, or copy the prompt and use the model you already have.');
-      return;
-    }
     if (!file.type.startsWith('image/')) {
       setFailure('That file is not a photograph. A JPG or PNG works.');
       return;
@@ -157,6 +228,8 @@ export default function Intake() {
 
       setResult(read);
       setEdited({});
+      setFeedMode(false);
+      setGalleryMode(false);
       const dupes = findDuplicates(read.drafts, activeItems);
       setTicked(new Set(read.drafts.filter(d => d.confidence >= 0.55 && !dupes.has(d.ref)).map(d => d.ref)));
       setTried(null);
@@ -164,6 +237,270 @@ export default function Intake() {
     } catch (e) {
       setWorking({ at: 'idle' });
       setFailure(e instanceof Error ? e.message : 'That did not work. Nothing was changed.');
+    }
+  };
+
+  /**
+   * Read one or more feed screenshots, end to end.
+   *
+   * One journey out PER SCREENSHOT, declared on the card before the button.
+   * What comes back is the grid read as tiles; the solo rule is enforced
+   * twice (the prompt asks, the parser guarantees), and every piece is cut
+   * out here, on this device. Everything lands on this same bench as a
+   * draft — nothing is written until the owner says so.
+   */
+  const onFeed = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setFailure(null);
+    setFeedFailure(
+      files.length > FEED_LIMIT ? `Nine at a time — the first ${FEED_LIMIT} were taken.` : null
+    );
+
+    const images = [...files].slice(0, FEED_LIMIT).filter(f => f.type.startsWith('image/'));
+    if (!images.length) {
+      setFeedFailure('None of those files is a photograph. A JPG or PNG works.');
+      return;
+    }
+
+    const skipped: IntakeSkip[] = [];
+    const droppedRows: Array<{ index: number; reason: string }> = [];
+    const photos: Array<{ n: number; note?: string }> = [];
+    const detections: Detection[] = [];
+    // Indexed by screenshot number, so a screenshot that fails to read can
+    // never shift which image a later tile is cut from.
+    const shots: Array<Prepared | null> = [];
+    const unreadable: string[] = [];
+
+    try {
+      setFeed({ at: 'reading', done: 0, total: images.length });
+      for (let i = 0; i < images.length; i++) {
+        const n = i + 1;
+        photos.push({ n, note: images[i].name });
+        shots.push(null);
+        try {
+          const dataUrl = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = e => resolve((e.target?.result as string) ?? '');
+            reader.onerror = () => reject(new Error('That screenshot would not open.'));
+            reader.readAsDataURL(images[i]);
+          });
+          const image = await prepareImage(dataUrl);
+          shots[i] = image;
+          const { text: answer } = await readPhotograph(image, buildGridPrompt());
+          setText(answer);
+
+          const read = parseGridResponse(answer);
+          if (read.error) {
+            skipped.push({ reason: 'That screenshot would not read', note: read.error, photo: n });
+          } else {
+            for (const tile of read.tiles) {
+              // Listed, never processed: the solo rule, said out loud per tile.
+              if (tile.kind === 'group') skipped.push({ reason: 'Left alone — a group photo.', photo: n });
+              else if (tile.kind === 'scenery') skipped.push({ reason: 'Left alone — no clothes are the subject.', photo: n });
+              else if (tile.kind === 'text') skipped.push({ reason: 'Left alone — a text post.', photo: n });
+              else if (tile.kind === 'other') skipped.push({ reason: 'Left alone — not a solo post.', photo: n });
+            }
+            droppedRows.push(...read.dropped.map((row, ri) => ({ index: ri, reason: `${row.ref}: ${row.reason}` })));
+            detections.push(...soloDetections(read, n));
+          }
+        } catch (e) {
+          unreadable.push(e instanceof Error ? e.message : 'That did not work.');
+          skipped.push({ reason: 'That screenshot would not read', photo: n });
+        }
+        setFeed({ at: 'reading', done: n, total: images.length });
+      }
+
+      // Every screenshot failing the journey is a failure, not an empty bench.
+      if (!detections.length && unreadable.length === images.length) {
+        setFeed({ at: 'idle' });
+        setFeedFailure(unreadable[0]);
+        return;
+      }
+
+      const mapped = toDrafts(detections);
+      droppedRows.push(...mapped.dropped.map((row, ri) => ({ index: 1000 + ri, reason: `${row.ref}: ${row.reason}` })));
+      for (const dupe of mapped.dupes) {
+        skipped.push({
+          reason: 'Already in this import — not added twice.',
+          note: `${dupe.name}, seen again in screenshot ${dupe.screenshot}`,
+        });
+      }
+
+      // The crops: the garment's own box when the model was sure of it, the
+      // whole tile otherwise. Cut from the image that was actually sent, so
+      // the boxes and the pixels are the same picture.
+      setFeed({ at: 'cutting', done: 0, total: detections.length });
+      const cut = new Map<string, Harvested>();
+      for (let i = 0; i < detections.length; i++) {
+        const d = detections[i];
+        const shot = shots[d.screenshot - 1];
+        if (shot) {
+          try {
+            const g = d.garment;
+            const sure = Boolean(g.box) && g.confidence >= 0.5;
+            const px = sure
+              ? garmentCropPixels(g.box!, d.tileBox, shot.width, shot.height)
+              : tileCropPixels(d.tileBox, shot.width, shot.height);
+            let picture = px.w >= 8 && px.h >= 8 ? await cropPixels(shot.dataUrl, px) : '';
+            if (!picture) {
+              const tile = tileCropPixels(d.tileBox, shot.width, shot.height);
+              if (tile.w >= 8 && tile.h >= 8) picture = await cropPixels(shot.dataUrl, tile);
+            }
+            if (picture) {
+              cut.set(d.ref, {
+                ref: d.ref,
+                crop: picture,
+                picture,
+                note: d.tileFallback
+                  ? 'the tile was placed by grid math — the model could not box it'
+                  : undefined,
+              });
+            }
+          } catch {
+            // No picture for this row. The piece still arrives; the closet draws it.
+          }
+        }
+        setFeed({ at: 'cutting', done: i + 1, total: detections.length });
+      }
+
+      const read: IntakeRead = { drafts: mapped.drafts, skipped, dropped: droppedRows, photos };
+      setResult(read);
+      setSource(shots.find(Boolean)?.dataUrl ?? null);
+      setPictures(cut);
+      setEdited({});
+      setTried(null);
+      setFeedMode(true);
+      setGalleryMode(false);
+      const dupes = findDuplicates(read.drafts, activeItems);
+      setTicked(new Set(read.drafts.filter(d => d.confidence >= 0.55 && !dupes.has(d.ref)).map(d => d.ref)));
+      setFeed({ at: 'idle' });
+    } catch (e) {
+      setFeed({ at: 'idle' });
+      setFeedFailure(e instanceof Error ? e.message : 'That did not work. Nothing was changed.');
+    }
+  };
+
+  /**
+   * Read one or more photographs from the gallery, end to end.
+   *
+   * One journey out PER PHOTOGRAPH, declared on the card before the button.
+   * Each photograph gets the single-photo prompt — clothes laid out, hanging,
+   * or one outfit as worn; two or more people get an empty answer, by rule.
+   * Every piece is cut out and lifted off its background here, on this
+   * device, and lands on this same bench as a draft with its provenance —
+   * nothing is written until the owner says so.
+   */
+  const onGallery = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setFailure(null);
+    setGalFailure(
+      files.length > GALLERY_LIMIT ? `Nine at a time — the first ${GALLERY_LIMIT} were taken.` : null
+    );
+
+    const images = [...files].slice(0, GALLERY_LIMIT).filter(f => f.type.startsWith('image/'));
+    if (!images.length) {
+      setGalFailure('None of those files is a photograph. A JPG or PNG works.');
+      return;
+    }
+
+    const reads: Array<{ n: number; read: IntakeRead }> = [];
+    // Indexed by photo number, so a photograph that fails to read can never
+    // shift which image a later piece is cut from.
+    const shots: Array<Prepared | null> = [];
+    const skips: IntakeSkip[] = [];
+    const unreadable: string[] = [];
+
+    try {
+      setGal({ at: 'reading', done: 0, total: images.length });
+      for (let i = 0; i < images.length; i++) {
+        const n = i + 1;
+        shots.push(null);
+        try {
+          const dataUrl = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = e => resolve((e.target?.result as string) ?? '');
+            reader.onerror = () => reject(new Error('That photograph would not open.'));
+            reader.readAsDataURL(images[i]);
+          });
+          const image = await prepareImage(dataUrl);
+          shots[i] = image;
+          const { text: answer } = await readPhotograph(image, buildPhotoPrompt());
+          setText(answer);
+
+          const read = readIntake(answer);
+          if (read.error) {
+            skips.push({ reason: 'That photograph would not read', note: read.error, photo: n });
+          } else {
+            reads.push({ n, read });
+          }
+        } catch (e) {
+          unreadable.push(e instanceof Error ? e.message : 'That did not work.');
+          skips.push({ reason: 'That photograph would not read', photo: n });
+        }
+        setGal({ at: 'reading', done: n, total: images.length });
+      }
+
+      // Every photograph failing the journey is a failure, not an empty bench.
+      if (!reads.length) {
+        setGal({ at: 'idle' });
+        setGalFailure(unreadable[0] ?? 'Nothing wearable in those photographs.');
+        return;
+      }
+
+      const mapped = galleryDrafts(reads);
+      const skipped: IntakeSkip[] = [
+        ...skips,
+        ...mapped.skipped,
+        ...mapped.dupes.map(dupe => ({
+          reason: 'Already in this import — not added twice.',
+          note: `${dupe.name}, seen again in photo ${dupe.photo}`,
+        })),
+      ];
+
+      // The crops: cut from the photograph that named the piece, along the
+      // model's own box. No background lift here — measured on real gallery
+      // photographs (pieces lying on other pieces), the automatic lift ate
+      // sleeves and kept neighbours, and its own scoring could not tell. The
+      // clean crop is the honest picture; the manual bench in the piece
+      // editor still lifts, with a person drawing the box and judging.
+      setGal({ at: 'cutting', done: 0, total: mapped.drafts.length });
+      const cut = new Map<string, Harvested>();
+      for (let i = 0; i < mapped.drafts.length; i++) {
+        const d = mapped.drafts[i];
+        const shot = shots[(d.photo ?? 1) - 1];
+        if (shot && d.box) {
+          try {
+            const px = photoCropPixels(d.box, shot.width, shot.height);
+            const picture = px.w >= 8 && px.h >= 8 ? await cropPixels(shot.dataUrl, px) : '';
+            if (picture) {
+              cut.set(d.ref, { ref: d.ref, crop: picture, picture });
+            }
+          } catch {
+            // No picture for this row. The piece still arrives; the closet draws it.
+          }
+        }
+        setGal({ at: 'cutting', done: i + 1, total: mapped.drafts.length });
+      }
+
+      const read: IntakeRead = {
+        drafts: mapped.drafts,
+        skipped,
+        dropped: mapped.dropped,
+        photos: images.map((f, i) => ({ n: i + 1, note: f.name })),
+      };
+      setResult(read);
+      setSource(shots.find(Boolean)?.dataUrl ?? null);
+      setPictures(cut);
+      setEdited({});
+      setTried(null);
+      setFeedMode(false);
+      setGalleryMode(true);
+      const dupes = findDuplicates(read.drafts, activeItems);
+      setTicked(new Set(read.drafts.filter(d => d.confidence >= 0.55 && !dupes.has(d.ref)).map(d => d.ref)));
+      setGal({ at: 'idle' });
+    } catch (e) {
+      setGal({ at: 'idle' });
+      setGalFailure(e instanceof Error ? e.message : 'That did not work. Nothing was changed.');
     }
   };
 
@@ -268,48 +605,20 @@ export default function Intake() {
             <div className="rounded-[2px] border border-accent/60 bg-sunken p-4">
               <p className="type-ledger text-[11px] text-accent">This one step uses the network</p>
               <p className="text-[13px] text-text-2 mt-2 leading-relaxed">
-                The photograph goes to Anthropic, with your key, on your account, and comes back as
-                words and coordinates. Nothing passes through us — there is no server here to pass
-                through. The cutting, the background removal and the writing all happen on this
-                device, and the photograph makes exactly one journey.
+                The photograph goes to Kimi K3 by Moonshot AI, through Almari&rsquo;s relay, which
+                holds the key on the server so this device never has one — or to your own
+                endpoint, if you have set one in Settings. It comes back as words and
+                coordinates. The cutting, the background removal and the writing all happen
+                on this device, and the photograph makes exactly one journey.
               </p>
-
-              {hasKey() ? (
-                <p className="type-ledger text-[10px] text-text-2 mt-3">
-                  Key held on this device · change it in Settings
-                </p>
-              ) : (
-                <div className="mt-3">
-                  <Field label="Your Anthropic key" htmlFor="intake-key" hint="Stored on this device only, never sent anywhere but Anthropic.">
-                    <input
-                      id="intake-key"
-                      type="password"
-                      className={inputClass}
-                      value={key}
-                      onChange={e => setKey(e.target.value)}
-                      placeholder="sk-ant-…"
-                      autoComplete="off"
-                      spellCheck={false}
-                    />
-                  </Field>
-                  <div className="flex flex-wrap items-center gap-3 mt-3">
-                    <Button
-                      compact
-                      disabled={!key.trim() || keyLooksWrong(key)}
-                      onClick={() => { saveKey(key); showToast('Key kept on this device.', 'success'); }}
-                    >
-                      Keep the key
-                    </Button>
-                    {keyLooksWrong(key) ? (
-                      <span className="type-ledger text-[10px] text-danger">Keys begin with sk-ant-</span>
-                    ) : null}
-                  </div>
-                </div>
-              )}
+              <p className="type-ledger text-[10px] text-text-2 mt-3">
+                No key on this device · your own endpoint can be set in Settings
+              </p>
             </div>
 
             <input
               ref={photoRef}
+              id="intake-photo"
               type="file"
               accept="image/*"
               className="sr-only"
@@ -327,17 +636,8 @@ export default function Intake() {
               <Button
                 tone="primary"
                 icon={<IconCamera size={16} />}
-                disabled={working.at !== 'idle'}
-                onClick={() => {
-                  // Asked BEFORE the file dialog. Opening a picker, letting
-                  // someone find a photograph, and only then saying "no key"
-                  // wastes the one action they came here to take.
-                  if (!hasKey()) {
-                    setFailure('Add a key below first, or copy the prompt and use the model you already have.');
-                    return;
-                  }
-                  photoRef.current?.click();
-                }}
+                disabled={working.at !== 'idle' || feed.at !== 'idle' || gal.at !== 'idle'}
+                onClick={() => photoRef.current?.click()}
               >
                 {working.at === 'sending'
                   ? 'Reading the photograph…'
@@ -376,6 +676,107 @@ export default function Intake() {
             </div>
           </div>
 
+          {/* ---- from a feed screenshot ----
+               A whole grid at once: the tiles are located, the solo ones read,
+               the group ones left alone. Same bench, same last word. */}
+          <div className="bg-surface plate p-5 rounded-[2px]" ref={feedCardRef}>
+            <p className="type-ledger text-[11px] text-text-2">From a feed screenshot</p>
+            <p className="text-[14px] text-text-2 mt-2 leading-relaxed">
+              A screenshot of an Instagram grid holds a row of posts at once. Each tile is read
+              on its own: a solo shot comes apart into its pieces; a group photo is left alone.
+              Every piece arrives here as a draft, cut out on this device.
+            </p>
+            <div className="rounded-[2px] border border-accent/60 bg-sunken p-4 mt-4">
+              <p className="type-ledger text-[11px] text-accent">One journey per screenshot</p>
+              <p className="text-[13px] text-text-2 mt-2 leading-relaxed">
+                The screenshots go to Kimi K3 by Moonshot AI, through Almari&rsquo;s relay — the
+                key is held on the server, never on this device — only when you press the button.
+                Group photos are left alone, and nothing is written until you say so.
+              </p>
+            </div>
+            <input
+              ref={feedRef}
+              id="intake-feed"
+              type="file"
+              accept="image/*"
+              multiple
+              className="sr-only"
+              onChange={e => { void onFeed(e.target.files); if (e.target) e.target.value = ''; }}
+            />
+            <div className="flex flex-wrap items-center gap-3 mt-4">
+              <Button
+                icon={<IconFeed size={16} />}
+                disabled={feed.at !== 'idle' || working.at !== 'idle' || gal.at !== 'idle'}
+                onClick={() => feedRef.current?.click()}
+              >
+                {feed.at === 'reading'
+                  ? `Reading screenshot ${feed.done + 1} of ${feed.total}…`
+                  : feed.at === 'cutting'
+                    ? `Cutting ${feed.done} of ${feed.total}…`
+                    : 'Read a feed screenshot'}
+              </Button>
+              <span className="type-ledger text-[10px] text-text-2">
+                {feed.at === 'idle'
+                  ? `up to ${FEED_LIMIT} at a time`
+                  : 'One journey out each, then everything else is local'}
+              </span>
+            </div>
+            {feedFailure ? (
+              <p className="text-[13px] text-danger mt-3 leading-snug">{feedFailure}</p>
+            ) : null}
+          </div>
+
+          {/* ---- from your photos ----
+               The owner's own gallery: many photographs at once, one read
+               each. Same bench, same last word. */}
+          <div className="bg-surface plate p-5 rounded-[2px]" ref={galleryCardRef}>
+            <p className="type-ledger text-[11px] text-text-2">From your photos</p>
+            <p className="text-[14px] text-text-2 mt-2 leading-relaxed">
+              Choose a handful of photographs — flat lays, hanger shots, one outfit as worn.
+              Each is read on its own; every piece found is cut out of its photograph on this
+              device, and arrives here as a draft to check. A photograph of two or more people
+              gets an empty answer, by rule.
+            </p>
+            <div className="rounded-[2px] border border-accent/60 bg-sunken p-4 mt-4">
+              <p className="type-ledger text-[11px] text-accent">One journey per photograph</p>
+              <p className="text-[13px] text-text-2 mt-2 leading-relaxed">
+                The photographs go to Kimi K3 by Moonshot AI, through Almari&rsquo;s relay — the
+                key is held on the server, never on this device — only when you press the
+                button. Nothing is written until you say so.
+              </p>
+            </div>
+            <input
+              ref={galleryRef}
+              id="intake-gallery"
+              type="file"
+              accept="image/*"
+              multiple
+              className="sr-only"
+              onChange={e => { void onGallery(e.target.files); if (e.target) e.target.value = ''; }}
+            />
+            <div className="flex flex-wrap items-center gap-3 mt-4">
+              <Button
+                icon={<IconCamera size={16} />}
+                disabled={gal.at !== 'idle' || working.at !== 'idle' || feed.at !== 'idle'}
+                onClick={() => galleryRef.current?.click()}
+              >
+                {gal.at === 'reading'
+                  ? `Reading photo ${gal.done + 1} of ${gal.total}…`
+                  : gal.at === 'cutting'
+                    ? `Cutting ${gal.done} of ${gal.total}…`
+                    : 'Read your photos'}
+              </Button>
+              <span className="type-ledger text-[10px] text-text-2">
+                {gal.at === 'idle'
+                  ? `up to ${GALLERY_LIMIT} at a time`
+                  : 'One journey out each, then everything else is local'}
+              </span>
+            </div>
+            {galFailure ? (
+              <p className="text-[13px] text-danger mt-3 leading-snug">{galFailure}</p>
+            ) : null}
+          </div>
+
           <div className="bg-surface plate p-5 rounded-[2px]">
             <label htmlFor="intake-paste" className="type-ledger text-[11px] text-text-2">
               The file
@@ -387,7 +788,7 @@ export default function Intake() {
               rows={8}
               spellCheck={false}
               placeholder={'{\n  "toileIntake": 1,\n  "pieces": [ … ]\n}'}
-              className="w-full mt-2 bg-sunken border border-border rounded-[2px] p-3 text-[12px] text-text resize-none font-mono normal-case tracking-normal"
+              className="w-full mt-2 bg-sunken border border-border rounded-[2px] p-3 text-base lg:text-[12px] text-text resize-none font-mono normal-case tracking-normal"
             />
             {result?.error ? (
               <p className="text-[13px] text-danger mt-3">{result.error}</p>
@@ -461,9 +862,9 @@ export default function Intake() {
           ) : null}
           <EmptyState
             plate={<PlateEmptyCloset />}
-            title="Nothing wearable in that photograph."
+            title={feedMode ? 'Nothing wearable in those screenshots.' : galleryMode ? 'Nothing wearable in those photographs.' : 'Nothing wearable in that photograph.'}
             body="The model was asked to say so rather than guess. What it looked at, and why it left each thing alone, is below."
-            action={<Button onClick={() => { setResult(null); setText(''); setTried(null); }}>Try another</Button>}
+            action={<Button onClick={() => { setResult(null); setText(''); setTried(null); setFeedMode(false); setFeedFailure(null); setGalleryMode(false); setGalFailure(null); }}>Try another</Button>}
           />
           {result.skipped.length ? (
             <div className="bg-surface plate p-4 rounded-[2px]">
@@ -472,6 +873,7 @@ export default function Intake() {
               <ul className="space-y-1.5">
                 {result.skipped.map((s, i) => (
                   <li key={i} className="text-[13px] text-text-2 leading-snug">
+                    {s.photo !== undefined ? <span>{feedMode ? 'screenshot' : 'photo'} {s.photo} — </span> : null}
                     {s.reason}{s.note ? <span> — {s.note}</span> : null}
                   </li>
                 ))}
@@ -502,11 +904,11 @@ export default function Intake() {
               </span>
               <div className="min-w-0 flex-1">
                 <p className="text-[15px] text-text">
-                  {result.outfit ? result.outfit.name : 'This photograph'}
+                  {result.outfit ? result.outfit.name : feedMode ? 'These screenshots' : galleryMode ? 'These photographs' : 'This photograph'}
                 </p>
                 <p className="text-[13px] text-text-2 mt-1 leading-snug">
                   {drafts.length} {drafts.length === 1 ? 'piece' : 'pieces'} found and cut out on this
-                  device. The photograph itself stays here.
+                  device. {feedMode ? 'The screenshots themselves stay here.' : galleryMode ? 'The photographs themselves stay here.' : 'The photograph itself stays here.'}
                 </p>
                 {result.outfit && drafts.length > 1 ? (
                   <label className="flex items-center gap-2.5 mt-3 min-h-11 cursor-pointer">
@@ -588,9 +990,30 @@ export default function Intake() {
                           style={{ background: d.color }}
                           title={d.color}
                         />
+                        {/* The colour is the field a model misreads most, so it
+                            is correctable right here, in the house palette. */}
+                        <select
+                          aria-label={`Colour for ${d.name}`}
+                          value={PRESET_COLORS.includes(d.color) ? d.color : ''}
+                          onChange={e => {
+                            if (!e.target.value) return;
+                            setEdited(p => ({ ...p, [d.ref]: { ...p[d.ref], color: e.target.value } }));
+                          }}
+                          className="h-11 px-1 bg-sunken border border-border rounded-[2px] type-ledger text-base lg:text-[11px] text-text"
+                        >
+                          {!PRESET_COLORS.includes(d.color) ? <option value="">{d.color}</option> : null}
+                          {PRESET_COLORS.map(hex => (
+                            <option key={hex} value={hex}>{hex}</option>
+                          ))}
+                        </select>
                         {d.season.length && d.season.length < 4 ? (
                           <span className="type-ledger text-[10px] text-text-2">
                             {d.season.map(s => SEASON_LABELS[s]).join(' · ')}
+                          </span>
+                        ) : null}
+                        {d.occasion.length ? (
+                          <span className="type-ledger text-[10px] text-text-2">
+                            {d.occasion.map(displayTag).join(' · ')}
                           </span>
                         ) : null}
                       </div>
@@ -615,7 +1038,7 @@ export default function Intake() {
                           aria-label={`Name for ${d.name}`}
                           value={d.name}
                           onChange={e => setEdited(p => ({ ...p, [d.ref]: { ...p[d.ref], name: e.target.value } }))}
-                          className="flex-1 min-w-[140px] h-11 px-2 bg-sunken border border-border rounded-[2px] text-[14px] text-text"
+                          className="flex-1 min-w-[140px] h-11 px-2 bg-sunken border border-border rounded-[2px] text-base lg:text-[14px] text-text"
                         />
                         <select
                           aria-label={`Category for ${d.name}`}
@@ -623,7 +1046,9 @@ export default function Intake() {
                           onChange={e =>
                             setEdited(p => ({ ...p, [d.ref]: { ...p[d.ref], category: e.target.value as CategoryId } }))
                           }
-                          className="h-11 px-2 bg-sunken border border-border rounded-[2px] type-ledger text-[11px] text-text"
+                          // 16px below lg here too — iOS zooms a focused select
+                          // exactly like a text field, and never zooms back.
+                          className="h-11 px-2 bg-sunken border border-border rounded-[2px] type-ledger text-base lg:text-[11px] text-text"
                         >
                           {settings.categories.map(c => (
                             <option key={c.id} value={c.id}>{c.label}</option>
@@ -644,6 +1069,7 @@ export default function Intake() {
               <ul className="space-y-1.5">
                 {result.skipped.map((s, i) => (
                   <li key={i} className="text-[13px] text-text-2 leading-snug">
+                    {s.photo !== undefined ? <span>{feedMode ? 'screenshot' : 'photo'} {s.photo} — </span> : null}
                     {s.reason}
                     {s.note ? <span className="text-text-2"> — {s.note}</span> : null}
                   </li>
@@ -662,7 +1088,7 @@ export default function Intake() {
             <Button tone="hero" disabled={chosenCount === 0} onClick={commit}>
               {chosenCount === 1 ? 'Add 1 piece to the closet' : `Add ${chosenCount} pieces to the closet`}
             </Button>
-            <Button onClick={() => { setResult(null); setText(''); setTried(null); }}>Start over</Button>
+            <Button onClick={() => { setResult(null); setText(''); setTried(null); setFeedMode(false); setFeedFailure(null); setGalleryMode(false); setGalFailure(null); }}>Start over</Button>
           </div>
         </div>
       )}

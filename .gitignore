@@ -23,9 +23,16 @@ dist-ssr
 *.sln
 *.sw?
 
+secrets.md
 # Screenshot output (regenerate with npm run shots)
 shots/
 
+#test images
+test-images/
+test_images/
+
+# Supabase CLI local state
+supabase/.temp/
 # Source packs (large, and the generated output is committed)
 *.zip
 scripts/fill-states.json

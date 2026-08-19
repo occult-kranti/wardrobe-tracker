@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { DEFAULT_CATEGORIES, type Account, type SharedLook, type SharedPiece } from '../types';
+import { formatLocalDate } from '../lib/dates';
 import { GarmentPlate, TagPortrait } from './art';
 
 /**
@@ -84,6 +85,23 @@ export function LookCard({ look, compact }: { look: SharedLook; compact?: boolea
   );
 }
 
+/**
+ * The 4:5 tile the feed and the profile grid share — the photograph of the
+ * look, or the drawn flat when there is none. Flat mat behind it either way;
+ * nothing decorative goes behind a photo.
+ */
+export function LookThumb({ look, alt }: { look: SharedLook; alt?: string }) {
+  return (
+    <span className="block w-full bg-mat overflow-hidden" style={{ aspectRatio: '4 / 5' }}>
+      {look.imageUrl ? (
+        <img src={look.imageUrl} alt={alt ?? look.name} className="w-full h-full object-cover" loading="lazy" />
+      ) : (
+        <GarmentPlate categoryId="dresses" />
+      )}
+    </span>
+  );
+}
+
 export function PieceCard({ piece }: { piece: SharedPiece }) {
   return (
     <div className="border border-border rounded-[2px] flex gap-3 items-center overflow-hidden">
@@ -127,18 +145,40 @@ export function shortDate(date: string | undefined): string {
 }
 
 /**
+ * 'YYYY-MM-DDTHH:MM:SS', local — the sub-day stamp a post's or message's `at`
+ * carries. Local like every date in the app: toISOString is UTC, which reads
+ * as tomorrow for half the evening west of Greenwich and scrambles same-day
+ * order for everyone else.
+ */
+export function nowLocalStamp(): string {
+  const d = new Date();
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${formatLocalDate(d)}T${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+}
+
+/**
  * Comparators that tolerate a record with no date.
  *
  * An undated row used to be enough to throw inside the sort and blank the page
  * it was on. Undated sorts last, and the id breaks every tie so the order is
  * stable between renders.
+ *
+ * `at` (sub-day time, stamped when a row is written) leads `date`: two posts
+ * or messages from the same day used to fall through to the id tiebreak, which
+ * for user content is a random UUID — same-day order reshuffled by chance.
+ * Rows written before `at` existed carry only a date and sort behind the timed
+ * rows of their day, which is the honest reading of "sometime that day".
  */
-export function newestFirst<T extends { date?: string; id: string }>(a: T, b: T): number {
+export function newestFirst<T extends { date?: string; at?: string; id: string }>(a: T, b: T): number {
+  const t = (b.at ?? '').localeCompare(a.at ?? '');
+  if (t !== 0) return t;
   const d = (b.date ?? '').localeCompare(a.date ?? '');
   return d !== 0 ? d : a.id.localeCompare(b.id);
 }
 
-export function oldestFirst<T extends { date?: string; id: string }>(a: T, b: T): number {
+export function oldestFirst<T extends { date?: string; at?: string; id: string }>(a: T, b: T): number {
+  const t = (a.at ?? '').localeCompare(b.at ?? '');
+  if (t !== 0) return t;
   const d = (a.date ?? '').localeCompare(b.date ?? '');
   return d !== 0 ? d : a.id.localeCompare(b.id);
 }

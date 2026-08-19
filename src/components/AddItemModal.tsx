@@ -12,7 +12,7 @@ import {
   type Season,
 } from '../types';
 import { Button, Chip, Field, Modal, inputClass, selectClass } from './ui';
-import { hasKey, keyLooksWrong, loadKey, prepareImage, readPhotograph, saveKey } from '../lib/anthropic';
+import { prepareImage, readPhotograph } from '../lib/anthropic';
 import { readIntake } from '../lib/intake';
 import { INTAKE_PROMPT } from '../lib/intakePrompt';
 import { Basting, GarmentPlate } from './art';
@@ -77,8 +77,6 @@ export default function AddItemModal({ open, onClose, editItem }: Props) {
   const [reading, setReading] = useState(false);
   const [readFailed, setReadFailed] = useState<string | null>(null);
   const [readNote, setReadNote] = useState<string | null>(null);
-  const [key, setKey] = useState(() => loadKey());
-  const [keyOpen, setKeyOpen] = useState(false);
 
   /**
    * Let the photograph fill the form.
@@ -92,7 +90,6 @@ export default function AddItemModal({ open, onClose, editItem }: Props) {
     setReadFailed(null);
     setReadNote(null);
     if (!imageUrl) return;
-    if (!hasKey()) { setKeyOpen(true); return; }
     try {
       setReading(true);
       const image = await prepareImage(imageUrl);
@@ -323,9 +320,10 @@ export default function AddItemModal({ open, onClose, editItem }: Props) {
                 </div>
               </div>
             )}
-            {/* Let the photograph do the typing. One journey out, with your own
-                key; what comes back lands in the fields as a draft you can
-                still change. Nothing is saved by this. */}
+            {/* Let the photograph do the typing. One journey out, through the
+                relay or the endpoint set in Settings; what comes back lands in
+                the fields as a draft you can still change. Nothing is saved by
+                this. */}
             {imageUrl ? (
               <div className="mt-3 pt-3 border-t border-border">
                 <div className="flex flex-wrap items-center gap-2">
@@ -350,45 +348,12 @@ export default function AddItemModal({ open, onClose, editItem }: Props) {
                   >
                     {cutting ? 'Close the bench' : 'Try lifting the background'}
                   </Button>
-                  {hasKey() ? (
-                    <span className="type-ledger text-[10px] text-text-2">
-                      Goes to Anthropic with your key · everything else stays here
-                    </span>
-                  ) : (
-                    <Button type="button" compact tone="tertiary" onClick={() => setKeyOpen(o => !o)}>
-                      {keyOpen ? 'Not now' : 'Add a Claude key'}
-                    </Button>
-                  )}
+                  <span className="type-ledger text-[10px] text-text-2">
+                    Kimi K3 by Moonshot AI, through Almari&rsquo;s relay — the key is held on the
+                    server, never on this device · everything else stays here · your own
+                    endpoint can be set in Settings
+                  </span>
                 </div>
-
-                {keyOpen && !hasKey() ? (
-                  <div className="mt-3">
-                    <Field label="Your Anthropic key" htmlFor="add-key" hint="Stored on this device only. It is used when you press the button above, and at no other time.">
-                      <input
-                        id="add-key"
-                        type="password"
-                        className={inputClass}
-                        value={key}
-                        onChange={e => setKey(e.target.value)}
-                        placeholder="sk-ant-…"
-                        autoComplete="off"
-                        spellCheck={false}
-                      />
-                    </Field>
-                    <Button
-                      type="button"
-                      compact
-                      className="mt-3"
-                      disabled={!key.trim() || keyLooksWrong(key)}
-                      onClick={() => { saveKey(key); setKeyOpen(false); }}
-                    >
-                      Keep the key
-                    </Button>
-                    {keyLooksWrong(key) ? (
-                      <span className="type-ledger text-[10px] text-danger ml-3">Keys begin with sk-ant-</span>
-                    ) : null}
-                  </div>
-                ) : null}
 
                 {readNote ? <p className="text-[13px] text-text-2 mt-2 leading-snug">{readNote}</p> : null}
                 {readFailed ? <p className="text-[13px] text-danger mt-2 leading-snug">{readFailed}</p> : null}

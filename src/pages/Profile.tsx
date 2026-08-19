@@ -4,7 +4,7 @@ import { useSession } from '../context/SessionContext';
 import { useWardrobe } from '../context/WardrobeContext';
 import { Button, Card, Chip, EmptyState, Field, LinkButton, Masthead, Modal, SectionTitle, Stat, inputClass } from '../components/ui';
 import { Basting, PlateEmptyCloset } from '../components/art';
-import { AccountMark, LookCard, shortDate } from '../components/social';
+import { AccountMark, LookThumb, newestFirst, shortDate } from '../components/social';
 import { HOUSEHOLD_KIND_LABELS, postVisibleTo, type HouseholdKind } from '../types';
 import { createHousehold, joinHousehold, leaveHousehold } from '../lib/household';
 import { showToast } from '../components/Toast';
@@ -42,7 +42,7 @@ export default function Profile() {
   const shared = useMemo(
     () => community.posts
       .filter(p => p.authorId === targetId && postVisibleTo(p, activeId, community.conversations, community.households))
-      .sort((a, b) => b.date.localeCompare(a.date)),
+      .sort(newestFirst),
     [community.posts, community.conversations, community.households, targetId, activeId]
   );
 
@@ -102,6 +102,41 @@ export default function Profile() {
             ) : null}
           </div>
         </div>
+      </Card>
+
+      {/* The looks grid leads the page: what this wardrobe has chosen to show,
+          newest first, before any words about how they dress. Image-first
+          tiles only — the feed carries the captions. */}
+      <Card>
+        <SectionTitle aside={shared.length > 0 ? `${shared.length} shown` : undefined}>
+          {isMe ? 'What you are showing' : 'On show'}
+        </SectionTitle>
+        {shared.length === 0 ? (
+          <p className="text-[14px] text-text-2 leading-snug">
+            {isMe
+              ? 'None of your looks are on show. Sharing happens one look at a time, from the outfit itself.'
+              : 'This wardrobe has not put anything on show.'}
+          </p>
+        ) : (
+          <ul className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {shared.filter(post => post.look).map(post => (
+              <li key={post.id} className="border border-border rounded-[2px] overflow-hidden">
+                <LookThumb look={post.look!} />
+                <p className="type-ledger text-[11px] text-text-2 tabular px-2 py-1.5 truncate">
+                  {post.look!.name} · {shortDate(post.date)}
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
+        {isMe ? (
+          <>
+            <Basting className="my-4" />
+            <Link to="/outfits" className="type-label text-[13px] text-accent underline underline-offset-[3px] min-h-11 inline-flex items-center">
+              Choose what you share
+            </Link>
+          </>
+        ) : null}
       </Card>
 
       {isMe ? (
@@ -291,36 +326,6 @@ export default function Profile() {
           ) : null}
         </Card>
       ) : null}
-
-      <Card>
-        <SectionTitle aside={`${shared.length} shown`}>
-          {isMe ? 'What you are showing' : 'On show'}
-        </SectionTitle>
-        {shared.length === 0 ? (
-          <p className="text-[14px] text-text-2 leading-snug">
-            {isMe
-              ? 'None of your looks are on show. Sharing happens one look at a time, from the outfit itself.'
-              : 'This wardrobe has not put anything on show.'}
-          </p>
-        ) : (
-          <ul className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            {shared.map(post => (
-              <li key={post.id}>
-                {post.look ? <LookCard look={post.look} /> : null}
-                <p className="type-ledger text-[11px] text-text-2 tabular mt-1.5">{shortDate(post.date)}</p>
-              </li>
-            ))}
-          </ul>
-        )}
-        {isMe ? (
-          <>
-            <Basting className="my-4" />
-            <Link to="/outfits" className="type-label text-[13px] text-accent underline underline-offset-[3px] min-h-11 inline-flex items-center">
-              Choose what you share
-            </Link>
-          </>
-        ) : null}
-      </Card>
     </div>
   );
 }

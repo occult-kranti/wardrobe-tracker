@@ -207,6 +207,10 @@ function DrawPiece({ open, onClose }: { open: boolean; onClose: () => void }) {
             inside divides, then moves the controls above — nothing is saved until you
             draw it.
           </p>
+          <p className="text-[13px] text-text-2 mt-2 leading-snug">
+            The photograph goes to Kimi K3 by Moonshot AI, through Almari&rsquo;s relay — the
+            key is held on the server, never on this device.
+          </p>
           <input
             ref={photoRef}
             type="file"
@@ -243,7 +247,7 @@ function DrawPiece({ open, onClose }: { open: boolean; onClose: () => void }) {
 
           {askKey ? (
             <div className="mt-3 space-y-2">
-              <Field label="Your Anthropic key" htmlFor="fp-key">
+              <Field label="An older Anthropic key" htmlFor="fp-key">
                 <input
                   id="fp-key"
                   className={inputClass}
@@ -254,8 +258,9 @@ function DrawPiece({ open, onClose }: { open: boolean; onClose: () => void }) {
                 />
               </Field>
               <p className="text-[13px] text-text-2 leading-snug">
-                It stays on this device and is sent to Anthropic only, with the one
-                photograph. About a third of a cent a read.
+                From before the relay existed. It stays on this device and is sent to
+                Anthropic only, with the one photograph — about a third of a cent a read.
+                The default needs no key: the relay holds it on the server.
               </p>
               <Button
                 compact

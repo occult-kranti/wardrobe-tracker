@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useWardrobe } from '../context/WardrobeContext';
 import { addDays, formatLocalDate, isFutureDate, todayLocal } from '../lib/dates';
@@ -113,6 +113,21 @@ export default function Calendar() {
   );
   const weekEnd = days[6];
   const isThisWeek = weekStart === startOfWeek(today);
+
+  /** The week container: a snap strip on phones, the seven-column grid from sm up. */
+  const weekRef = useRef<HTMLDivElement>(null);
+
+  // On the phone strip, open the week at today (or its first unwritten day),
+  // not at Sunday — the day you came to look at is never the first one.
+  // scrollIntoView scrolls every ancestor, so block:'nearest' keeps the page
+  // itself where it was while the strip pans.
+  useEffect(() => {
+    const el = weekRef.current;
+    if (!el) return;
+    if (window.matchMedia('(min-width: 40rem)').matches) return;
+    const idx = Math.max(0, days.findIndex(d => d >= today));
+    (el.children[idx] as HTMLElement | undefined)?.scrollIntoView({ block: 'nearest', inline: 'start' });
+  }, [days, today]);
 
   const byId = useMemo(() => new Map(items.map(i => [i.id, i])), [items]);
 
@@ -236,8 +251,11 @@ export default function Calendar() {
         </IconButton>
       </div>
 
-      {/* the week */}
-      <div className="grid grid-cols-1 sm:grid-cols-7 gap-2">
+      {/* the week — a snap strip on phones (styles in .week-strip, index.css),
+          the seven-column grid from sm up. Focusable as a region for the same
+          reason TableRail is: the days hold buttons, and a scroller you can
+          only pan with a finger is one a keyboard cannot read. */}
+      <div ref={weekRef} role="region" aria-label="The week" tabIndex={0} className="week-strip">
         {days.map((date, index) => {
           const logs = logsByDate.get(date) ?? [];
           const isToday = date === today;
@@ -382,7 +400,11 @@ export default function Calendar() {
                       key={outfit.id}
                       type="button"
                       onClick={() => schedule(openDay, outfit)}
-                      className="shrink-0 w-[132px] text-left p-2 bg-sunken rounded-[2px] registered hover:bg-sunken/70 transition-colors duration-150"
+                      // Fluid below sm: a fixed 132px card left a phone showing
+                      // 2.6 of them with the third guillotined mid-word; 42vw
+                      // shows two and a clear edge of the third at any width.
+                      // From sm up the rail keeps its original 132px measure.
+                      className="shrink-0 w-[42vw] min-w-[132px] sm:w-[132px] text-left p-2 bg-sunken rounded-[2px] registered hover:bg-sunken/70 transition-colors duration-150"
                     >
                       <span className="flex gap-1">
                         {members.slice(0, 3).map(item => (
