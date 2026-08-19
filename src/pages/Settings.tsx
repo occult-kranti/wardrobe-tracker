@@ -255,7 +255,7 @@ function ProviderRows() {
               className={inputClass}
               value={draft.model}
               onChange={e => setDraft(d => ({ ...d, model: e.target.value }))}
-              placeholder="k3"
+              placeholder="claude-sonnet-4-5"
               autoComplete="off"
               spellCheck={false}
             />
@@ -868,6 +868,16 @@ export default function Settings() {
         <p className="type-ledger text-[10px] text-text-2 tabular mt-2">
           Schema version {SCHEMA_VERSION}
         </p>
+      </Card>
+
+      {/* ---------- the alpha's control room ---------- */}
+      <Card>
+        <SectionTitle aside="alpha only">Project lead portal</SectionTitle>
+        <Row
+          title="Project lead portal"
+          body="A control room for the person running the alpha: what is stored on this device, whose wardrobes are here, and the means to clear them. It touches this device and nothing else."
+          control={<LinkButton to="/admin">Open the portal</LinkButton>}
+        />
       </Card>
     </div>
   );

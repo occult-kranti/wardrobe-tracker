@@ -11,27 +11,28 @@ import { nameFor, safeNext } from '../lib/routes';
 import type { Account, SyncMode } from '../types';
 
 /**
- * THE DOOR — what "signing in" honestly is here.
+ * THE DOOR — what "signing in" honestly is here, asked in two steps.
  *
- * Two different acts share this screen, and the copy keeps them apart:
+ *   STEP 1 · THE ACCOUNT, asked first. It is optional and does one thing:
+ *      keeps a copy of a synced wardrobe's record so another device can open
+ *      it. The app works fully without one, so the skip is a button of its
+ *      own rather than a footnote — the one thing this screen must never
+ *      imply is that the clothes are going somewhere they were not asked to
+ *      go.
+ *   STEP 2 · THE WARDROBE, reached after sign-in, sign-up, or the skip:
+ *      which of the wardrobes stored in this browser to open, or the form to
+ *      start one. Opening a wardrobe authenticates no one; it never did.
  *
- *   1. OPENING A WARDROBE asks which of the wardrobes stored in this browser
- *      to open. It authenticates no one; it never did.
- *   2. THE ACCOUNT, below, is optional and does one thing: keeps a copy of a
- *      synced wardrobe's record so another device can open it. The app works
- *      fully without it, and the panel says so in as many words, because the
- *      one thing this screen must never imply is that clothes are going
- *      somewhere they were not asked to go.
+ * The step is local component state — /open and /open/new stay the only two
+ * addresses, so the address bar and the screen never disagree, and the back
+ * button leaves the door in one press instead of once per disagreement (the
+ * old sin: the door rendered in place of the router, and a deep link while
+ * nothing was open left the address bar saying /feed over a door).
  *
- * Three states, decided by what is on the device rather than by a mode flag:
+ * Step 2 is decided by what is on the device rather than by a mode flag:
  *   nothing here   → the screen IS the start form, plus the sample offer
  *   one or more    → "Open a wardrobe", with the list
  *   /open/new      → the form, with a way back to the list
- *
- * The old version rendered in place of the router, which is why a deep link
- * while nothing was open left the address bar saying /feed over a door: the
- * URL and the screen disagreed, and the back button had to be pressed once per
- * disagreement. The router now sits above the gate and this is a real route.
  */
 
 export const START_LEDE =
@@ -43,7 +44,7 @@ export const SAMPLES_NOTE =
   `Samples are ${PERSONAS.length} worked closets — a full year of wear, saved looks, and a shared rail between them. Useful for seeing the populated screens before cataloguing your own.`;
 
 /** What the door is holding for you, if you arrived by a deep link. */
-function NextNote({ next }: { next: string | null }) {
+export function NextNote({ next }: { next: string | null }) {
   if (!next) return null;
   const name = nameFor(next.split('?')[0]);
   return (
@@ -342,13 +343,16 @@ export function StartWardrobeForm({ onDone }: { onDone?: () => void }) {
 }
 
 export default function Door({ starting = false }: { starting?: boolean }) {
-  const { accounts, signIn, installSamples } = useSession();
+  const { accounts, signIn, installSamples, authUser, authReady } = useSession();
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const next = safeNext(params.get('next'));
   const suffix = next ? `?next=${encodeURIComponent(next)}` : '';
   const empty = accounts.length === 0;
   const showForm = starting || empty;
+  // Step 1 is the account; step 2 is the wardrobe. Local state, never a URL —
+  // the door holds exactly two addresses and the back button owes it nothing.
+  const [pastAccount, setPastAccount] = useState(false);
 
   // replace, so the door does not stay behind you in history.
   const land = () => navigate(next ?? '/', { replace: true });
@@ -368,7 +372,42 @@ export default function Door({ starting = false }: { starting?: boolean }) {
           </div>
         </header>
 
-        {showForm ? (
+        {!pastAccount ? (
+          <Card>
+            <h1 className="type-masthead text-[24px] pb-2 rule-double">
+              {authReady && authUser ? 'The account' : 'An account, if you want one'}
+            </h1>
+            <NextNote next={next} />
+            {!authReady ? (
+              // The panel renders nothing until the stored session has been
+              // checked once; a card with nothing in it reads as broken, so
+              // one calm line holds the space.
+              <p className="text-[14px] text-text-2 mt-4">One moment — checking the account.</p>
+            ) : (
+              <>
+                <div className="mt-4">
+                  <AccountPanel />
+                </div>
+                <Basting className="my-5" />
+                {authUser ? (
+                  <Button tone="primary" onClick={() => setPastAccount(true)}>Continue</Button>
+                ) : (
+                  <>
+                    {/* The skip is a first-class button beside sign-in, not a
+                        footnote: the app works fully without an account, and
+                        the copy says so rather than merely allowing it. */}
+                    <Button tone="primary" onClick={() => setPastAccount(true)}>
+                      Continue without an account
+                    </Button>
+                    <p className="type-ledger text-[11px] text-text-2 mt-4">
+                      Everything stays on this device, and the app works fully without one.
+                    </p>
+                  </>
+                )}
+              </>
+            )}
+          </Card>
+        ) : showForm ? (
           <Card>
             <h1 className="type-masthead text-[24px] pb-2 rule-double">Start a wardrobe</h1>
             <p className="text-[14px] text-text-2 mt-4 leading-relaxed">{START_LEDE}</p>
@@ -389,6 +428,12 @@ export default function Door({ starting = false }: { starting?: boolean }) {
                 </Link>
               </>
             )}
+
+            {/* The step above stays reachable — a flow you cannot walk back
+                up is a gate by another name. */}
+            <div className="mt-4">
+              <Button tone="tertiary" onClick={() => setPastAccount(false)}>Back to the account</Button>
+            </div>
           </Card>
         ) : (
           <Card>
@@ -415,16 +460,11 @@ export default function Door({ starting = false }: { starting?: boolean }) {
             {accounts.some(a => a.isSample) ? null : (
               <p className="type-ledger text-[11px] text-text-2 mt-4">{SAMPLES_NOTE}</p>
             )}
+            <div className="mt-4">
+              <Button tone="tertiary" onClick={() => setPastAccount(false)}>Back to the account</Button>
+            </div>
           </Card>
         )}
-
-        {/* The optional account, offered once and calmly. Never a gate. */}
-        <Card className="mt-5">
-          <h2 className="type-editorial text-[20px]">An account, if you want one</h2>
-          <div className="mt-4">
-            <AccountPanel />
-          </div>
-        </Card>
       </div>
     </div>
   );

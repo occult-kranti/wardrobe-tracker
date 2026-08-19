@@ -29,6 +29,7 @@ export const ROUTES: { path: string; name: string }[] = [
   { path: '/rail/:id', name: "a neighbour's rail" },
   { path: '/intake', name: 'photo intake' },
   { path: '/settings', name: 'settings' },
+  { path: '/admin', name: 'the project lead portal' },
   { path: '/open', name: 'wardrobes' },
   { path: '/open/new', name: 'a new wardrobe' },
 ];

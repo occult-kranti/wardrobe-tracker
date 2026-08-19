@@ -67,6 +67,13 @@ async function open(size) {
 async function installSamples(page) {
   await page.goto(`${ORIGIN}/`, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(500);
+  // The door leads with the account now: one honest skip takes you past it to
+  // the wardrobes. Signed-in runs see "Continue" in the same place.
+  const skip = page.getByRole('button', { name: /continue without an account|^continue$/i }).first();
+  if (await skip.count()) {
+    await skip.click();
+    await page.waitForTimeout(500);
+  }
   const install = page.getByRole('button', { name: /sample wardrobes/i });
   if (await install.count()) {
     await install.click();

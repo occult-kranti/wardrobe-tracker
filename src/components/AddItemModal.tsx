@@ -349,7 +349,7 @@ export default function AddItemModal({ open, onClose, editItem }: Props) {
                     {cutting ? 'Close the bench' : 'Try lifting the background'}
                   </Button>
                   <span className="type-ledger text-[10px] text-text-2">
-                    Kimi K3 by Moonshot AI, through Almari&rsquo;s relay — the key is held on the
+                    Claude Sonnet by Anthropic, through Almari&rsquo;s relay — the key is held on the
                     server, never on this device · everything else stays here · your own
                     endpoint can be set in Settings
                   </span>

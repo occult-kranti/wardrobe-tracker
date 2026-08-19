@@ -7,10 +7,11 @@
  *
  *   node scripts/test-feed-intake.mjs
  *
- * Live mode needs the owner's key in the environment and never written down:
+ * Live mode asks the house relay, which holds the key server-side — nothing
+ * to set in the environment:
  *
- *   KIMI_KEY=... node scripts/test-feed-intake.mjs --live
- *   KIMI_KEY=... node scripts/test-feed-intake.mjs --live <screenshot.png>
+ *   node scripts/test-feed-intake.mjs --live
+ *   node scripts/test-feed-intake.mjs --live <screenshot.png>
  *
  * With no image given, live mode builds a synthetic 2x2 "feed screenshot"
  * from the wardrobe photo pool with Python + Pillow: three single-garment
@@ -294,12 +295,13 @@ const liveArg = process.argv[process.argv.indexOf('--live') + 1];
 const ownShot = LIVE && liveArg && !liveArg.startsWith('-') ? liveArg : null;
 
 if (!LIVE) {
-  console.log('\n(live mode skipped — run with --live and KIMI_KEY set)');
-} else if (!process.env.KIMI_KEY) {
-  console.log('\n(live mode skipped — KIMI_KEY is not set)');
+  console.log('\n(live mode skipped — run with --live; the relay holds the key)');
 } else {
-  console.log('\n--- live mode: one real read against the Kimi API ---');
-  const KEY = process.env.KIMI_KEY;
+  console.log('\n--- live mode: one real read through the relay (Claude Sonnet 4.5) ---');
+  // No key here and none needed: the relay (supabase/functions/ai-proxy) holds
+  // the provider keys server-side and routes a `claude*` model to Anthropic.
+  const RELAY = 'https://wvupsqfevlrmhqfjreyx.supabase.co/functions/v1/ai-proxy';
+  const MODEL = 'claude-sonnet-4-5';
 
   // 1. The screenshot: the owner's own, or a synthetic 2x2 grid built from
   //    the wardrobe photo pool. Three solo tiles; the bottom-right tile is a
@@ -358,23 +360,21 @@ print(out)
   const imgH = isPng ? buf.readUInt32BE(20) : 0;
   check('live: the screenshot is a PNG with readable dimensions', isPng && imgW > 0 && imgH > 0, `${imgW}x${imgH}`);
 
-  // 2. The real call — the OpenAI-compatible chat-completions shape, the
-  //    owner's Kimi key from the environment, the app's own grid prompt.
-  //    k3 is a reasoning model: the answer is choices[0].message.content and
-  //    the reasoning (in reasoning_content) spends from the same budget.
-  const res = await fetch('https://api.kimi.com/coding/v1/chat/completions', {
+  // 2. The real call — the Anthropic Messages shape to the house relay, which
+  //    holds the key server-side and routes a `claude*` model to Anthropic.
+  //    The answer is the text blocks of `content`; nothing else is read.
+  const res = await fetch(RELAY, {
     method: 'POST',
     headers: {
       'content-type': 'application/json',
-      authorization: `Bearer ${KEY}`,
     },
     body: JSON.stringify({
-      model: 'k3',
+      model: MODEL,
       max_tokens: 8000,
       messages: [{
         role: 'user',
         content: [
-          { type: 'image_url', image_url: { url: `data:image/png;base64,${buf.toString('base64')}` } },
+          { type: 'image', source: { type: 'base64', media_type: 'image/png', data: buf.toString('base64') } },
           { type: 'text', text: buildGridPrompt() },
         ],
       }],
@@ -382,9 +382,7 @@ print(out)
   });
   const body = await res.json().catch(() => null);
   check('live: the API answered 200', res.status === 200, `status ${res.status}`);
-  const answer = typeof body?.choices?.[0]?.message?.content === 'string'
-    ? body.choices[0].message.content
-    : '';
+  const answer = ((body?.content ?? []).filter(b => b?.type === 'text').map(b => b.text).join('\n')).trim();
   check('live: the model returned text', answer.length > 20, `${answer.length} chars`);
 
   // 3. The app's own parser reads the answer.
@@ -452,7 +450,9 @@ for e in json.load(open(manifest)):
       const bytes = statSync(join(cropsDir, file)).size;
       const head = readFileSync(join(cropsDir, file)).subarray(0, 2);
       const jpeg = head[0] === 0xFF && head[1] === 0xD8;
-      if (!expect || expect.w !== w || expect.h !== h || !jpeg || bytes < 1500) allGood = false;
+      // A watch crops to a sliver — small is fine, empty is not. The floor is
+      // the same one the gallery suite uses, for the same reason.
+      if (!expect || expect.w !== w || expect.h !== h || !jpeg || bytes < 400) allGood = false;
       console.log(`    ${file}: ${dims}, ${bytes} bytes, ${jpeg ? 'jpeg' : 'NOT JPEG'}`);
     }
     check('live: every crop is a non-empty JPEG of the expected size', allGood,

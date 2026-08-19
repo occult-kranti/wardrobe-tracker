@@ -197,7 +197,7 @@
       </div>
       <div class="row">
         <div class="row-top"><span class="id">2</span><span class="name">AI photo intake, via a proxy</span><span class="wk">Week 3–4</span><span class="chipst flight">In flight</span></div>
-        <p>Photograph the closet; a vision model drafts the catalogue; nothing is written until you say so. Kimi K3 (Moonshot AI) sits behind a Supabase edge function that holds the key server-side — the app never sees it. New this wave: <strong>feed import</strong> — drop a screenshot of an Instagram grid and the solo posts are read into cropped garment drafts, while group photos are left alone.</p>
+        <p>Photograph the closet; a vision model drafts the catalogue; nothing is written until you say so. Claude Sonnet (Anthropic) sits behind a Supabase edge function that holds the key server-side — the app never sees it. The relay routes by model name, so Kimi K3 remains one constant away as the fallback. Live-verified on the owner's own camera roll: 16 pieces read from 5 photographs, every crop a real JPEG. Also shipped: <strong>feed import</strong> — drop a screenshot of an Instagram grid and the solo posts are read into cropped garment drafts, while group photos are left alone.</p>
       </div>
       <div class="row">
         <div class="row-top"><span class="id">3</span><span class="name">Badges &amp; rewards</span><span class="chipst">In design</span></div>
@@ -234,8 +234,8 @@
             <td><span class="needs">Yes</span><div class="why2">Run the SQL, deploy the intake function, turn email confirmation off.</div></td>
           </tr>
           <tr>
-            <td><strong>Kimi K3 by Moonshot AI</strong></td>
-            <td>Kimi K3 (<code>k3</code>) is the vision model behind photo intake, gallery import and feed import, reached via the relay. The key is held server-side in the edge function; it is never in the app or the repo.</td>
+            <td><strong>Anthropic (Claude Sonnet)</strong></td>
+            <td>Claude Sonnet (<code>claude-sonnet-4-5</code>) is the vision model behind photo intake, gallery import and feed import, reached via the relay. The key is held server-side in the edge function; it is never in the app or the repo. Kimi K3 stays wired as the fallback — the relay routes by model name.</td>
             <td><span class="no-need">No</span></td>
           </tr>
           <tr>

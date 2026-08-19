@@ -18,12 +18,12 @@ import { PERSONAS as GENERATED, BRAND_SHOTS, type PersonaSeed } from './personaD
 import { CAST, CAST_ARCS } from './personaCast';
 
 /**
- * The three generated wardrobes, and the six authored ones.
+ * The three generated wardrobes, and the one authored one.
  *
  * Joined here rather than merged into personaData.ts, which is emitted by
  * scripts/build-persona-data.mjs from a source pack that is not in this
  * repository — merging into it would mean the next person to run the generator
- * silently deletes six wardrobes.
+ * silently deletes the authored wardrobe.
  */
 const PERSONAS: PersonaSeed[] = [...GENERATED, ...CAST];
 import { furnish } from './furnishing';
@@ -67,7 +67,7 @@ const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Frida
  * Bumped whenever the generated wardrobes change shape — photographs, bench
  * states, costs. Samples recording an older number are rebuilt at boot.
  */
-export const PERSONA_SEED_VERSION = 8;
+export const PERSONA_SEED_VERSION = 10;
 
 /** How far back the generated rotation runs, in days. */
 const HISTORY_DAYS = 250;
@@ -99,8 +99,8 @@ function occasionsFor(persona: PersonaSeed): string[] {
  * Matched on what the piece actually is, most specific pattern first — "silk
  * camisole" must not be caught by the generic shirt rule. Each rule offers
  * SEVERAL photographs and its pieces take them in turn, so a closet with three
- * camisoles does not show the same picture three times; with 40 photographs
- * across 174 pieces some repetition is unavoidable, but the rotation spaces
+ * camisoles does not show the same picture three times; with a shared pool
+ * across every closet some repetition is unavoidable, but the rotation spaces
  * repeats as far apart as a pool allows instead of seating them side by side.
  *
  * Some pieces have no honest photograph in the pack at all — earrings, heels,
@@ -115,7 +115,7 @@ function occasionsFor(persona: PersonaSeed): string[] {
  */
 const PHOTO_RULES: Array<[RegExp, string[]]> = [
   // ---- Indian garments first: the most specific names in these closets
-  // The period pack, for the briefed wardrobes. Most specific first.
+  // The period pack. Most specific first.
   [/justaucorps|frock coat/i, ['coat-justaucorps']],
   [/banyan/i, ['banyan-robe']],
   [/tricorne/i, ['tricorne-hat']],
@@ -231,6 +231,39 @@ const PHOTO_RULES: Array<[RegExp, string[]]> = [
 ];
 
 /**
+ * The cofounder's closet answers to a higher rule than the pool: every tile
+ * is a real crop of the real garment, cut from the owner's own camera roll by
+ * intake (scripts/build-cofounder-closet.mjs, crops in public/wardrobe/
+ * cofounder/). Keyed by item id — H-01… from the persona name 'Hruday' — so a
+ * rename never quietly re-points a tile, and every piece in his closet is
+ * here; no pool photograph stands in for him.
+ */
+export const PHOTO_OVERRIDES: Record<string, string> = {
+  'H-01': 'wardrobe/cofounder/black-embroidered-jacket.jpg',
+  'H-02': 'wardrobe/cofounder/black-embellished-kurta.jpg',
+  'H-03': 'wardrobe/cofounder/black-kurta.jpg',
+  'H-04': 'wardrobe/cofounder/white-kurta.jpg',
+  'H-05': 'wardrobe/cofounder/yellow-kurta.jpg',
+  'H-06': 'wardrobe/cofounder/grey-blazer.jpg',
+  'H-07': 'wardrobe/cofounder/striped-dress-shirt.jpg',
+  'H-08': 'wardrobe/cofounder/white-t-shirt.jpg',
+  'H-09': 'wardrobe/cofounder/color-block-striped-tee.jpg',
+  'H-10': 'wardrobe/cofounder/black-graphic-tee.jpg',
+  'H-11': 'wardrobe/cofounder/pink-graphic-sweatshirt.jpg',
+  'H-12': 'wardrobe/cofounder/grey-long-sleeve-henley.jpg',
+  'H-13': 'wardrobe/cofounder/navy-striped-hoodie.jpg',
+  'H-14': 'wardrobe/cofounder/red-plaid-shirt.jpg',
+  'H-15': 'wardrobe/cofounder/grey-and-white-buffalo-check-shirt.jpg',
+  'H-16': 'wardrobe/cofounder/black-and-white-check-shirt.jpg',
+  'H-17': 'wardrobe/cofounder/light-blue-chambray-shirt.jpg',
+  'H-18': 'wardrobe/cofounder/sky-blue-denim-shirt.jpg',
+  'H-19': 'wardrobe/cofounder/blue-jeans.jpg',
+  'H-20': 'wardrobe/cofounder/blue-jeans-2.jpg',
+  'H-21': 'wardrobe/cofounder/brown-hooded-jacket.jpg',
+  'H-22': 'wardrobe/cofounder/brown-character-hat.jpg',
+};
+
+/**
  * One rotation cursor per rule, reset before each persona builds. A hash pick
  * once seated the same photograph in adjacent grid cells — three matching
  * blouses in a row, one anarkali four times — because thin pools collide
@@ -306,74 +339,6 @@ interface EventPlan {
 }
 
 const EVENT_PLANS: Record<string, EventPlan[]> = {
-  fergus: [
-    { name: 'Presentation at St James\'s', kind: 'celebration', place: 'London', startsIn: 16, days: 3, notes: 'The court suit travels flat, in paper. The sword goes separately.', dayLabels: [
-      { label: 'Fittings and the tailor', match: /captain|travel|coat/i },
-      { label: 'Presentation', match: /court|formal|presented/i },
-      { label: 'Supper afterwards', match: /party|supper|evening/i },
-    ] },
-    { name: 'The sale at the house', kind: 'trip', place: 'Wiltshire', startsIn: -22, days: 2, notes: 'What is left after the bailiffs. He keeps one plain coat.', dayLabels: [
-      { label: 'The inventory', match: /captain|travel|coat/i },
-      { label: 'The sale', match: /court|formal|presented/i },
-    ] },
-    { name: 'The road to Bath', kind: 'trip', place: 'Bath', startsIn: 40, days: 2, notes: 'Cards at the Assembly. Nothing worn twice at the same table.', dayLabels: [
-      { label: 'The road', match: /captain|travel|coat/i },
-      { label: 'The Assembly', match: /party|court|formal/i },
-    ] },
-  ],
-  amparo: [
-    { name: 'Corpus Christi', kind: 'festival', place: 'Mexico City', startsIn: -18, days: 1, notes: 'The one day the good blouse comes out. It did not go well.', dayLabels: [
-      { label: 'The procession', match: /cinema|formal|blouse/i },
-    ] },
-    { name: 'The coast, October', kind: 'trip', place: 'Veracruz', startsIn: 21, days: 2, notes: 'The rebozo comes out of the trunk. It goes back in on the way home.', dayLabels: [
-      { label: 'The bus down', match: /roof|work|smock/i },
-      { label: 'The beach', match: /beach|travel|rebozo/i },
-    ] },
-    { name: 'Her sister\'s wedding', kind: 'celebration', place: 'Oaxaca', startsIn: 48, days: 1, notes: 'She is saving for a blouse she has not bought yet.', dayLabels: [
-      { label: 'The wedding', match: /cinema|formal|blouse/i },
-    ] },
-  ],
-  boksoon: [
-    { name: 'The crossing', kind: 'trip', place: 'Busan to Shimonoseki', startsIn: -30, days: 3, notes: 'What fits in one bojagi. The good jeogori goes at the bottom.', dayLabels: [
-      { label: 'Leaving the island', match: /kitchen|boarding|work/i },
-      { label: 'The ferry', match: /crossing|travel|osaka/i },
-      { label: 'Arriving in Ikaino', match: /market|work/i },
-    ] },
-    { name: 'Chuseok', kind: 'festival', place: 'Ikaino', startsIn: 24, days: 2, notes: 'She cooks for thirty people and wears the apron over everything.', dayLabels: [
-      { label: 'The cooking', match: /kitchen|boarding|work/i },
-      { label: 'The table', match: /crossing|formal/i },
-    ] },
-    { name: 'The market fair', kind: 'work', place: 'Ikaino', startsIn: 52, days: 1, notes: 'Two stalls\' worth of stock and one pair of boots.', dayLabels: [
-      { label: 'The fair', match: /market|work/i },
-    ] },
-  ],
-  ngozi: [
-    { name: 'The declaration', kind: 'trip', place: 'Enugu', startsIn: -14, days: 2, notes: 'Packing the house. Everything that does not fit is given away whole.', dayLabels: [
-      { label: 'The announcement', match: /faculty|party|nsukka/i },
-      { label: 'Packing the house', match: /road|travel|east/i },
-    ] },
-    { name: 'A wedding in the town', kind: 'celebration', place: 'Umuahia', startsIn: 27, days: 1, notes: 'The last strand of coral, and a skirt that used to be a wrapper.', dayLabels: [
-      { label: 'The wedding', match: /faculty|party/i },
-    ] },
-    { name: 'The move west', kind: 'trip', place: 'Umuahia', startsIn: 44, days: 2, notes: 'Twelve pieces and a tin trunk.', dayLabels: [
-      { label: 'The road', match: /road|travel|east/i },
-      { label: 'Arriving', match: /rations|everyday/i },
-    ] },
-  ],
-  nico: [
-    { name: 'Friends and family', kind: 'work', place: 'Chicago', startsIn: -9, days: 3, notes: 'Three days on the pass. Nine shirts is exactly enough and no more.', dayLabels: [
-      { label: 'Build-out', match: /service|shop|work/i },
-      { label: 'Friends and family', match: /service|shop/i },
-      { label: 'Opening night', match: /review|formal/i },
-    ] },
-    { name: 'The review', kind: 'celebration', place: 'Chicago', startsIn: 18, days: 1, notes: 'The coat he sat on the wishlist through two winters.', dayLabels: [
-      { label: 'Dinner', match: /review|formal/i },
-    ] },
-    { name: 'Stage week', kind: 'work', place: 'Copenhagen', startsIn: 46, days: 2, notes: 'The whites come down off the top shelf.', dayLabels: [
-      { label: 'First service', match: /stage|copenhagen|whites/i },
-      { label: 'Last service', match: /stage|copenhagen|whites/i },
-    ] },
-  ],
   aarav: [
     { name: 'Goa, off-season', kind: 'trip', place: 'Goa', startsIn: 12, days: 4, notes: 'Carry-on only. One pair of shoes that can get wet.', dayLabels: [
       { label: 'Flight down', match: /travel|airport|red-eye/i },
@@ -425,16 +390,16 @@ const EVENT_PLANS: Record<string, EventPlan[]> = {
     ] },
   ],
   cofounder: [
-    { name: 'Open-mic night', kind: 'other', place: 'A basement with a PA', startsIn: -8, days: 1, notes: 'He plays second. The grey hoodie has heard every song twice.', dayLabels: [
+    { name: 'Open-mic night', kind: 'other', place: 'A basement with a PA', startsIn: -8, days: 1, notes: 'He plays second. The striped hoodie has heard every song twice.', dayLabels: [
       { label: 'The set', match: /studio|everyday/i },
     ] },
-    { name: 'A wedding in the family', kind: 'celebration', place: 'Jaipur', startsIn: 23, days: 2, notes: 'The brocade travels flat, in tissue. The sherwani takes the sangeet.', dayLabels: [
+    { name: 'A wedding in the family', kind: 'celebration', place: 'Jaipur', startsIn: 23, days: 2, notes: 'The embroidered jacket travels flat, in tissue. The embellished kurta takes the sangeet.', dayLabels: [
       { label: 'The sangeet', match: /sangeet/i },
-      { label: 'The wedding', match: /wedding|brocade|bandhgala/i },
+      { label: 'The wedding', match: /wedding|embroidered/i },
     ] },
-    { name: 'The hills, again', kind: 'trip', place: 'Ladakh', startsIn: 41, days: 3, notes: 'One bag. The puffer earns its keep above four thousand metres.', dayLabels: [
+    { name: 'The hills, again', kind: 'trip', place: 'Ladakh', startsIn: 41, days: 3, notes: 'One bag. The hooded jacket earns its keep above four thousand metres.', dayLabels: [
       { label: 'The road up', match: /travel|hill/i },
-      { label: 'The winter walk', match: /walk|winter|buffalo/i },
+      { label: 'The winter walk', match: /walk|winter/i },
       { label: 'The road home', match: /everyday|casual/i },
     ] },
   ],
@@ -621,7 +586,7 @@ export function buildPersonaState(persona: PersonaSeed): AppState {
     material: seed.fabric && seed.fabric !== '-' ? seed.fabric : undefined,
     season: seed.season as Season[],
     occasion: seed.occasion,
-    imageUrl: photoFor(seed.name),
+    imageUrl: PHOTO_OVERRIDES[seed.id] ?? photoFor(seed.name),
     dateAdded: addDays(firstLog, -Math.floor(rand(seed.id, 'added') * 400) - 10),
     lastWorn: lastWorn.get(seed.id),
     wearCount: wears.get(seed.id) ?? 0,
@@ -687,9 +652,8 @@ export function buildPersonaState(persona: PersonaSeed): AppState {
   }
 
   /* ---------- the wishlist, from the same arc ----------
-     Authored in day-offsets so every state stays live: one wait still
-     running, one expired ask, a kept, a let-go in the stayed-yours ledger,
-     and the coat that waited two winters and was bought. */
+     Authored in day-offsets rather than dates, so the cooling-off is still
+     mid-wait on whatever day the sample is installed. */
   const wishlist: WishlistItem[] = (arc?.wishlist ?? []).map((w, i) => ({
     id: `${persona.id}-wish-${i + 1}`,
     name: w.name,

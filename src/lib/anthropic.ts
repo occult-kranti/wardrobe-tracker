@@ -10,11 +10,12 @@
  * THE PROVIDERS, in the order they are asked:
  *
  *   1. A relay of our own — a Supabase edge function on the owner's project
- *      (supabase/functions/ai-proxy) that holds the Kimi key server-side and
- *      passes the photograph to Kimi K3, by Moonshot AI. The app POSTs an
- *      ordinary OpenAI-compatible chat-completions request and sends no key,
- *      because it does not have one; the relay adds the key. This is the
- *      default: cataloguing a photograph works out of the box.
+ *      (supabase/functions/ai-proxy) that holds the provider keys server-side
+ *      and routes by the model's name: a `claude*` model goes to Anthropic,
+ *      anything else to Kimi by Moonshot AI. The app POSTs the provider's own
+ *      request shape and sends no key, because it does not have one; the
+ *      relay adds the key. The default is Claude Sonnet 4.5 — cataloguing a
+ *      photograph works out of the box.
  *   2. Your own endpoint, set in Settings. Two shapes are spoken:
  *      an endpoint whose URL points at Anthropic (or any `/v1/messages`
  *      address) gets an Anthropic Messages request with `x-api-key`;
@@ -34,8 +35,18 @@
 /* ---------- the relay (default) ---------- */
 
 const RELAY_ENDPOINT = 'https://wvupsqfevlrmhqfjreyx.supabase.co/functions/v1/ai-proxy';
-/** Kimi K3 by Moonshot AI — the model the relay asks, and the name the copy gives. */
-const RELAY_MODEL = 'k3';
+/**
+ * Claude Sonnet 4.5 by Anthropic — the model the relay asks by default, and
+ * the name the copy gives. The relay routes by the model's name: a `claude*`
+ * model is forwarded to Anthropic, anything else to Kimi by Moonshot AI. The
+ * default moved from Kimi K3 after a timed shootout on a real wardrobe
+ * photograph: 3.9s against 14.2s for the same picture and prompt.
+ */
+const RELAY_MODEL = 'claude-sonnet-4-5';
+/** Who the relay is talking to, for honest error copy. Derived, not written down twice. */
+const RELAY_PROVIDER = RELAY_MODEL.startsWith('claude') ? 'Claude (by Anthropic)' : 'Kimi (by Moonshot AI)';
+/** The relay speaks the provider's own shape — Anthropic Messages for a claude* model. */
+const RELAY_SPEAKS_ANTHROPIC = RELAY_MODEL.startsWith('claude');
 
 /* ---------- your own endpoint (BYOK override) ---------- */
 
@@ -154,9 +165,10 @@ export function keyLooksWrong(key: string): boolean {
 const SEND_EDGE = 1400;
 
 /**
- * The model reasons before it answers, and the reasoning spends from the same
- * budget as the answer. Under ~4096 tokens the thinking can eat the whole
- * allowance and the answer arrives empty.
+ * Generous on purpose: a reasoning model (the Kimi path) spends thinking from
+ * the same budget as the answer, and a full-closet detection list is long.
+ * Under ~4096 tokens a reasoning model's thinking can eat the whole allowance
+ * and the answer arrives empty.
  */
 const MAX_TOKENS = 8000;
 
@@ -208,10 +220,10 @@ export function prepareImage(src: string): Promise<Prepared> {
 /* ---------- what went wrong, said the way a person can act on ---------- */
 
 function explainProvider(status: number, body: string, own: boolean): string {
-  // The default relay talks to Kimi, by Moonshot AI; a user's own endpoint is
-  // theirs to name. The copy says so, because an honest error names who is
-  // actually having the trouble.
-  const provider = own ? 'The AI provider' : 'Kimi (by Moonshot AI)';
+  // The default relay talks to whoever RELAY_MODEL names; a user's own
+  // endpoint is theirs to name. The copy says so, because an honest error
+  // names who is actually having the trouble.
+  const provider = own ? 'The AI provider' : RELAY_PROVIDER;
   if (status === 401 || status === 403) {
     return own
       ? 'That key was refused. Check it in Settings.'
@@ -295,13 +307,29 @@ async function postAnthropic(
 }
 
 /**
- * The default path: an OpenAI-compatible chat-completions POST to the relay,
- * with no key at all — the relay holds the Kimi key server-side and adds it
- * there. Kimi K3 is a reasoning model: its reasoning spends from the same
- * token budget and arrives in a separate field, which is ignored — the
- * answer is `choices[0].message.content` and nothing else.
+ * The default path: a POST to the relay with no key at all — the relay holds
+ * the provider key server-side and adds it there, routing by the model's
+ * name. A `claude*` model gets the Anthropic Messages shape; anything else
+ * the OpenAI-compatible chat-completions shape. Kimi K3 is a reasoning model:
+ * its reasoning spends from the same token budget and arrives in a separate
+ * field, which is ignored — the answer is the content and nothing else.
  */
 async function readViaRelay(image: Prepared, prompt: string): Promise<{ text: string; model: string }> {
+  if (RELAY_SPEAKS_ANTHROPIC) {
+    let res: Response;
+    try {
+      res = await postAnthropic(RELAY_ENDPOINT, '', RELAY_MODEL, image, prompt, false);
+    } catch {
+      throw new Error('Could not reach the AI provider. Check the connection — everything else in Almari works offline.');
+    }
+    if (!res.ok) {
+      const body = await res.text().catch(() => '');
+      throw new Error(explainProvider(res.status, body, false));
+    }
+    const text = anthropicText(await res.json() as { content?: AnthropicTextBlock[] });
+    if (!text) throw new Error('The model returned nothing readable. Try the photograph again.');
+    return { text, model: RELAY_MODEL };
+  }
   return readViaOpenAI(RELAY_ENDPOINT, '', RELAY_MODEL, image, prompt);
 }
 

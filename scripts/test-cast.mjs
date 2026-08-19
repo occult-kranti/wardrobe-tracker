@@ -1,11 +1,14 @@
 #!/usr/bin/env node
 /**
- * The six authored sample wardrobes, checked before anyone opens one.
+ * The one authored sample wardrobe, checked before anyone opens it.
  *
- * These are hand-written data, and hand-written data fails in ways generated
+ * It is hand-written data, and hand-written data fails in ways generated
  * data does not: a colour that is not a colour, an outfit naming a garment the
  * closet does not contain, two pieces sharing an id. Every one of those is
  * invisible until somebody is looking at the wardrobe it broke.
+ *
+ * The roster is asserted too: three generated wardrobes in personaData.ts,
+ * this one authored beside them, and nothing else.
  */
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { build } from 'esbuild';
@@ -18,13 +21,28 @@ await build({
 });
 const { CAST, CAST_BRIEFS } = await import(pathToFileURL(out).href);
 
+const dataOut = join(mkdtempSync(join(tmpdir(), 'cast-')), 'data.mjs');
+await build({
+  entryPoints: [fileURLToPath(new URL('../src/lib/personaData.ts', import.meta.url))],
+  bundle: true, format: 'esm', outfile: dataOut, logLevel: 'error',
+});
+const { PERSONAS: GENERATED } = await import(pathToFileURL(dataOut).href);
+
 let fail = 0;
 const check = (label, ok, detail = '') => {
   console.log(ok ? 'PASS' : 'FAIL', '-', label, detail ? `(${detail})` : '');
   if (!ok) fail++;
 };
 
-check('six wardrobes', CAST.length === 6, `${CAST.length}`);
+check('one authored wardrobe', CAST.length === 1, `${CAST.length}`);
+check('the authored wardrobe is the cofounder', CAST[0]?.id === 'cofounder', CAST[0]?.id ?? 'none');
+check('three generated wardrobes', GENERATED.length === 3, GENERATED.map(p => p.id).join(', '));
+check(
+  'the roster is the three generated plus the one authored',
+  JSON.stringify([...GENERATED.map(p => p.id), ...CAST.map(p => p.id)].sort())
+    === JSON.stringify(['aarav', 'cofounder', 'meher', 'vikram']),
+  [...GENERATED.map(p => p.id), ...CAST.map(p => p.id)].join(', '),
+);
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
 const SEASONS = ['spring', 'summer', 'fall', 'winter'];

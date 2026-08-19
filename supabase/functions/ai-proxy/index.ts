@@ -5,11 +5,11 @@
 // preflight is refused, and the key must never ship in client code. This
 // function is the one hop in between. It is a PASS-THROUGH:
 //
-//   - the app POSTs an OpenAI-compatible chat-completions request body, with
-//     no key
+//   - the app POSTs a chat request body, with no key
 //   - this function attaches the key (a secret, set with `supabase secrets
-//     set KIMI_KEY=...`) and forwards the body untouched to Kimi, by
-//     Moonshot AI
+//     set`) and forwards the body untouched to the provider the model names:
+//       model starts with "claude" → Anthropic Messages API (ANTHROPIC_KEY)
+//       anything else              → Kimi, by Moonshot AI (KIMI_KEY)
 //   - the answer streams back untouched
 //
 // It logs nothing and stores nothing. A photograph passes through it and is
@@ -19,7 +19,9 @@
 // Deno runtime, per Supabase edge function convention.
 // ============================================================================
 
-const UPSTREAM = 'https://api.kimi.com/coding/v1/chat/completions';
+const KIMI_UPSTREAM = 'https://api.kimi.com/coding/v1/chat/completions';
+const ANTHROPIC_UPSTREAM = 'https://api.anthropic.com/v1/messages';
+const ANTHROPIC_VERSION = '2023-06-01';
 
 // The app's own origin is not known ahead (dev server, installed PWA), and
 // the function carries no secret access of its own — the KIMI_KEY never
@@ -46,13 +48,6 @@ Deno.serve(async (req: Request) => {
     return json(405, { error: 'POST only' });
   }
 
-  const key = Deno.env.get('KIMI_KEY');
-  if (!key) {
-    // The app's copy for this status tells the user the house has not set a
-    // key yet — keep the phrase "not configured" in this body so it matches.
-    return json(503, { error: 'relay not configured: KIMI_KEY is not set' });
-  }
-
   let body: string;
   try {
     body = await req.text();
@@ -60,14 +55,35 @@ Deno.serve(async (req: Request) => {
     return json(400, { error: 'the request body could not be read' });
   }
 
+  // The model names the provider. A body that will not parse goes to Kimi as
+  // it always did — the provider's own error answer is clearer than a guess.
+  let claude = false;
+  try {
+    const model = (JSON.parse(body) as { model?: unknown }).model;
+    claude = typeof model === 'string' && model.startsWith('claude');
+  } catch { /* not JSON — the Kimi passthrough below reports it fine */ }
+
+  const key = Deno.env.get(claude ? 'ANTHROPIC_KEY' : 'KIMI_KEY');
+  if (!key) {
+    // The app's copy for this status tells the user the house has not set a
+    // key yet — keep the phrase "not configured" in this body so it matches.
+    return json(503, { error: `relay not configured: ${claude ? 'ANTHROPIC_KEY' : 'KIMI_KEY'} is not set` });
+  }
+
   let upstream: Response;
   try {
-    upstream = await fetch(UPSTREAM, {
+    upstream = await fetch(claude ? ANTHROPIC_UPSTREAM : KIMI_UPSTREAM, {
       method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        authorization: `Bearer ${key}`,
-      },
+      headers: claude
+        ? {
+            'content-type': 'application/json',
+            'x-api-key': key,
+            'anthropic-version': ANTHROPIC_VERSION,
+          }
+        : {
+            'content-type': 'application/json',
+            authorization: `Bearer ${key}`,
+          },
       body,
     });
   } catch {

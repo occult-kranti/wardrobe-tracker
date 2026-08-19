@@ -57,6 +57,14 @@ check('the door is already in the house theme, not the light room',
 /* ============ starting a wardrobe with nothing typed ============ */
 await page.goto(`${ORIGIN}/#/open/new`, { waitUntil: 'domcontentloaded' });
 await page.waitForTimeout(600);
+// The door leads with the account now; the honest skip brings the wardrobes.
+{
+  const skip = page.getByRole('button', { name: /continue without an account|^continue$/i }).first();
+  if (await skip.count()) {
+    await skip.click();
+    await page.waitForTimeout(500);
+  }
+}
 const start = page.getByRole('button', { name: /start it/i }).first();
 check('the primary is never disabled on the door', await start.isEnabled(), '');
 await start.click();
@@ -88,6 +96,13 @@ check('a blank name still opens a wardrobe', landed.hash === '#/' || landed.hash
 // has no picker to narrow, which is a different screen and a different test.
 await page.goto(`${ORIGIN}/#/open`, { waitUntil: 'domcontentloaded' });
 await page.waitForTimeout(600);
+{
+  const skip = page.getByRole('button', { name: /continue without an account|^continue$/i }).first();
+  if (await skip.count()) {
+    await skip.click();
+    await page.waitForTimeout(500);
+  }
+}
 const samples = page.getByRole('button', { name: /sample wardrobes/i }).first();
 if (await samples.count()) {
   await samples.click();
@@ -227,7 +242,7 @@ check('the weather never asks for your location', !after.asked, '');
       declaredFirst: !!warn && !!send
         && !!(warn.compareDocumentPosition(send) & Node.DOCUMENT_POSITION_FOLLOWING),
       namesRelay: /Almari.s relay/i.test(text),
-      namesModel: /Kimi K3 by Moonshot/i.test(text),
+      namesModel: /Claude Sonnet by Anthropic/i.test(text),
       serverKey: /holds the key on the server/i.test(text),
       saysLocal: /cutting, the background removal and the writing all happen on this/i.test(text),
       stillOffersPrompt: /Copy the prompt/i.test(text),
@@ -778,6 +793,97 @@ check('the weather never asks for your location', !after.asked, '');
   check('obsidian takes the double mounting', room.outline === '1px', room.outline);
   check('obsidian carries the corner ornament', room.ornament, '');
   check('the pointer light is softened', Number(room.sheen) <= 0.12, room.sheen);
+}
+
+/* ============ the project lead portal ============ */
+{
+  // The portal administers the device: a courtesy gate, then guarded controls.
+  // Every destructive step must pass a naming sheet; the nuclear one must be
+  // typed out. These checks run while a worked closet (meher) is open.
+  await page.goto(`${ORIGIN}/#/admin`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(700);
+
+  check('the portal opens on its gate, not the controls',
+    await page.locator('#admin-pass').count() === 1, '');
+
+  await page.locator('#admin-pass').fill('not-the-code');
+  await page.getByRole('button', { name: /open the portal/i }).click();
+  await page.waitForTimeout(400);
+  check('a wrong passcode stays outside',
+    /not the passcode/i.test(await page.evaluate(() => document.body.innerText)), '');
+
+  await page.locator('#admin-pass').fill('almari-lead');
+  await page.getByRole('button', { name: /open the portal/i }).click();
+  await page.waitForTimeout(800);
+  const opened = await page.evaluate(() => ({
+    meher: /meher/i.test(document.body.innerText),
+    checks: /run the checks/i.test(document.body.innerText),
+  }));
+  check('the right passcode opens the ledger of wardrobes', opened.meher && opened.checks, '');
+
+  // The smoke panel first, against the real wardrobes alone — a stunt account
+  // injected later must not be what the checks are measured on.
+  await page.getByRole('button', { name: /run the checks/i }).click();
+  await page.waitForTimeout(5000);
+  const smoke = await page.evaluate(() => ({
+    aside: /of \d+ passing/i.test(document.body.innerText),
+    fails: [...document.querySelectorAll('main *')]
+      .filter(el => el.children.length === 0 && /^\s*Fail\s*$/.test(el.textContent || '')).length,
+  }));
+  check('the portal checks run and every one passes', smoke.aside && smoke.fails === 0,
+    `${smoke.fails} failing`);
+
+  // A stunt wardrobe, deleted through the guarded path — the e2e proof that
+  // selection + sheet + confirm removes a profile and every key it owned.
+  await page.evaluate(() => {
+    const accounts = JSON.parse(localStorage.getItem('toile-accounts') ?? '[]');
+    accounts.push({
+      id: 'portal-stunt', name: 'Portal Stunt', handle: '@stunt', monogram: 'PS',
+      color: '#777777', createdAt: new Date().toISOString(),
+    });
+    localStorage.setItem('toile-accounts', JSON.stringify(accounts));
+    localStorage.setItem('wardrobe-tracker:portal-stunt',
+      JSON.stringify({ items: [], outfits: [], wishlist: [], wearLogs: [], events: [] }));
+  });
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(900); // the gate remembers this tab
+
+  check('a stunt wardrobe joins the ledger',
+    await page.getByLabel(/mark portal stunt/i).count() === 1, '');
+  await page.getByLabel(/mark portal stunt/i).click();
+  await page.getByRole('button', { name: /delete selected/i }).click();
+  await page.waitForTimeout(400);
+  const sheet = page.locator('.modal-overlay');
+  check('deleting profiles passes a naming sheet first',
+    /portal stunt/i.test(await sheet.innerText()), '');
+  await sheet.getByRole('button', { name: /delete/i }).click();
+  await page.waitForTimeout(600);
+  // The row's checkbox is the scoped proof — a body-text match would find the
+  // action log's own line about the deletion, which is meant to be there.
+  const rowGone = await page.getByLabel(/mark portal stunt/i).count() === 0;
+  const afterDelete = await page.evaluate(() => ({
+    store: localStorage.getItem('wardrobe-tracker:portal-stunt'),
+    registry: localStorage.getItem('toile-accounts') ?? '',
+  }));
+  check('and the confirm removes the profile, its store and its registry line',
+    rowGone && afterDelete.store === null && !afterDelete.registry.includes('portal-stunt'), '');
+
+  // The nuclear option stays shut until the phrase is typed — and even then
+  // can be walked back, which this run does: the fixtures must survive it.
+  await page.getByRole('button', { name: /delete all profiles/i }).click();
+  await page.waitForTimeout(400);
+  const nuke = page.locator('.modal-overlay');
+  const confirm = nuke.getByRole('button', { name: /delete everything/i });
+  const shutAtFirst = await confirm.isDisabled();
+  await page.locator('#admin-confirm-phrase').fill('DELETE EVERYTHIN');
+  const shutOnTypo = await confirm.isDisabled();
+  await page.locator('#admin-confirm-phrase').fill('DELETE EVERYTHING');
+  const armed = await confirm.isEnabled();
+  check('the nuclear sheet wants the exact phrase', shutAtFirst && shutOnTypo && armed, '');
+  await nuke.getByRole('button', { name: /keep everything/i }).click();
+  await page.waitForTimeout(400);
+  check('and cancelling leaves every wardrobe standing',
+    /meher/i.test(await page.evaluate(() => document.body.innerText)), '');
 }
 
 /* ============ installable, and offline ============ */

@@ -208,7 +208,7 @@ function DrawPiece({ open, onClose }: { open: boolean; onClose: () => void }) {
             draw it.
           </p>
           <p className="text-[13px] text-text-2 mt-2 leading-snug">
-            The photograph goes to Kimi K3 by Moonshot AI, through Almari&rsquo;s relay — the
+            The photograph goes to Claude Sonnet by Anthropic, through Almari&rsquo;s relay — the
             key is held on the server, never on this device.
           </p>
           <input

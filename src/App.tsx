@@ -17,6 +17,7 @@ import Chats, { ChatThread } from './pages/Chats';
 import Profile from './pages/Profile';
 import SwitchWardrobe, { StartWardrobe } from './pages/SwitchWardrobe';
 import Settings from './pages/Settings';
+import Admin from './pages/Admin';
 import Intake from './pages/Intake';
 import Furniture, { FurniturePiece } from './pages/Furniture';
 import { LinkButton, Masthead } from './components/ui';
@@ -43,6 +44,7 @@ const ELEMENTS: Record<string, React.ReactElement> = {
   '/rail/:id': <RailProfile />,
   '/intake': <Intake />,
   '/settings': <Settings />,
+  '/admin': <Admin />,
   '/open': <SwitchWardrobe />,
   '/open/new': <StartWardrobe />,
 };

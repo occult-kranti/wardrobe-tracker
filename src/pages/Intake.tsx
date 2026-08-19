@@ -605,7 +605,7 @@ export default function Intake() {
             <div className="rounded-[2px] border border-accent/60 bg-sunken p-4">
               <p className="type-ledger text-[11px] text-accent">This one step uses the network</p>
               <p className="text-[13px] text-text-2 mt-2 leading-relaxed">
-                The photograph goes to Kimi K3 by Moonshot AI, through Almari&rsquo;s relay, which
+                The photograph goes to Claude Sonnet by Anthropic, through Almari&rsquo;s relay, which
                 holds the key on the server so this device never has one — or to your own
                 endpoint, if you have set one in Settings. It comes back as words and
                 coordinates. The cutting, the background removal and the writing all happen
@@ -689,7 +689,7 @@ export default function Intake() {
             <div className="rounded-[2px] border border-accent/60 bg-sunken p-4 mt-4">
               <p className="type-ledger text-[11px] text-accent">One journey per screenshot</p>
               <p className="text-[13px] text-text-2 mt-2 leading-relaxed">
-                The screenshots go to Kimi K3 by Moonshot AI, through Almari&rsquo;s relay — the
+                The screenshots go to Claude Sonnet by Anthropic, through Almari&rsquo;s relay — the
                 key is held on the server, never on this device — only when you press the button.
                 Group photos are left alone, and nothing is written until you say so.
               </p>
@@ -740,7 +740,7 @@ export default function Intake() {
             <div className="rounded-[2px] border border-accent/60 bg-sunken p-4 mt-4">
               <p className="type-ledger text-[11px] text-accent">One journey per photograph</p>
               <p className="text-[13px] text-text-2 mt-2 leading-relaxed">
-                The photographs go to Kimi K3 by Moonshot AI, through Almari&rsquo;s relay — the
+                The photographs go to Claude Sonnet by Anthropic, through Almari&rsquo;s relay — the
                 key is held on the server, never on this device — only when you press the
                 button. Nothing is written until you say so.
               </p>

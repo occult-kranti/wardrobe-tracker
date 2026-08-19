@@ -139,19 +139,16 @@ const wears = active.reduce((a,i)=>a+i.wearCount,0);
 console.log(`\nWardrobe: ${active.length} active pieces, $${cost} invested, ${wears} wears recorded, avg $${(cost/wears).toFixed(2)}/wear`);
 console.log(fail===0?'ALL DEMO CHECKS PASSED':`${fail} FAILED`);
 
-/* ---------- the three persona wardrobes ----------
+/* ---------- the four persona wardrobes ----------
    They ship as seeds rather than as state, so they get their own pass: the same
    log-consistency invariant, no gendered address anywhere in what reaches a
    screen, and no measurement taxonomy in the data at all. */
 const pw = join(mkdtempSync(join(tmpdir(),'pw-')),'p.mjs');
 await build({ entryPoints:[fileURLToPath(new URL('../src/lib/personaWardrobe.ts', import.meta.url))], bundle:true, format:'esm', outfile:pw, logLevel:'error' });
-const { PERSONAS, buildPersonaState } = await import(pathToFileURL(pw).href);
+const { PERSONAS, buildPersonaState, PHOTO_OVERRIDES } = await import(pathToFileURL(pw).href);
 
 let pfail = 0;
 console.log('');
-/** The wardrobes whose garments predate the photograph pool. */
-const PERIOD = new Set(['fergus', 'amparo', 'boksoon', 'ngozi']);
-
 for (const persona of PERSONAS) {
   const st = buildPersonaState(persona);
   const past = st.wearLogs.filter(l => l.date <= today);
@@ -183,7 +180,7 @@ for (const persona of PERSONAS) {
     // SCOPED TO THE WARDROBES THAT SHIP A PHOTO PACK.
     //
     // Three personas have their own folder of photographs under public/wardrobe
-    // and their outfits carry a lead image from it. The five authored ones draw
+    // and their outfits carry a lead image from it. The authored one draws
     // on the shared, openly-licensed garment pool, which has no lookbook shots
     // — and inventing one would mean showing somebody a photograph of an outfit
     // that was never assembled. No image is the honest answer there.
@@ -205,16 +202,27 @@ for (const persona of PERSONAS) {
     // it. (A stray escape once turned /\btie\b/ into a regex containing a
     // literal backspace, which could never match anything — that class of bug
     // still lands well below the floor.)
-    // The bar is 75% for a contemporary closet and a third for a period one.
-    // The pool is contemporary Western basics plus an Indian ethnic set; a
-    // justaucorps, a jeogori and a george wrapper are simply not in it, and the
+    // The bar is 75% of the closet.
+    // The pool is contemporary Western basics plus an Indian ethnic set, and the
     // generator's own rule is that an empty pool is a verdict rather than an
     // omission — the drawn flat beats a photograph of the wrong garment. What
     // must always hold is the line below it: whatever path IS set resolves.
     [`${persona.id}: photographs are the strong majority`,
-      st.items.filter(i => i.imageUrl).length >= st.items.length * (PERIOD.has(persona.id) ? 0.3 : 0.75),
+      st.items.filter(i => i.imageUrl).length >= st.items.length * 0.75,
       `${st.items.filter(i => i.imageUrl).length}/${st.items.length}`],
     [`${persona.id}: photographs resolve to files`, st.items.every(i => !i.imageUrl || /^wardrobe\//.test(i.imageUrl)), ''],
+    // The cofounder's closet is the exception to the pool floor: every tile
+    // is a real crop of the real garment, cut from the owner's own camera
+    // roll by intake (scripts/build-cofounder-closet.mjs). Asserted as a
+    // total, not a floor — no pool photograph stands in for him.
+    ...(persona.id === 'cofounder' ? [
+      [`${persona.id}: every piece has a real crop override`,
+        st.items.every(i => Boolean(PHOTO_OVERRIDES[i.id])),
+        `${st.items.filter(i => PHOTO_OVERRIDES[i.id]).length}/${st.items.length}`],
+      [`${persona.id}: every tile is the real crop, never the pool`,
+        st.items.every(i => i.imageUrl === PHOTO_OVERRIDES[i.id] && /^wardrobe\/cofounder\//.test(PHOTO_OVERRIDES[i.id] ?? '')),
+        `${st.items.filter(i => i.imageUrl === PHOTO_OVERRIDES[i.id]).length}/${st.items.length}`],
+    ] : []),
     [`${persona.id}: every piece has a category`, st.items.every(i => st.settings.categories.some(c => c.id === i.category)), st.settings.categories.length],
     // The bench states are lived-in: a closet where every piece reads "Ready"
     // and every other chip reads 0 is a showroom. Each state has at least one
@@ -245,7 +253,13 @@ for (const persona of PERSONAS) {
     // the feature is invisible until somebody draws one and a first-time
     // visitor would never learn it exists. Every rule the panel would hold us
     // to is asserted here rather than trusted.
-    [`${persona.id}: the room is furnished`, st.furniture.length >= 3, `${st.furniture.length} places`],
+    [`${persona.id}: the room is furnished`,
+      // Three places asks a sixty-piece closet a fair question. The cofounder's
+      // twenty-two hold no shoes and no jewellery, and furnishing him a rack or
+      // a tray would be drawing a place for things he does not own — the exact
+      // failure furnishing.ts is written to avoid. His floor is two, honestly
+      // filled; the generated closets keep three.
+      st.furniture.length >= (persona.id === 'cofounder' ? 2 : 3), `${st.furniture.length} places`],
     [`${persona.id}: no place stands empty`,
       st.furniture.every(f => st.items.some(i => i.place?.furnitureId === f.id)),
       st.furniture.filter(f => !st.items.some(i => i.place?.furnitureId === f.id)).map(f => f.name).join(', ')],

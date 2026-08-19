@@ -9,9 +9,10 @@
  *
  *   node scripts/test-gallery-intake.mjs
  *
- * Live mode needs the owner's key in the environment and never written down:
+ * Live mode asks the house relay, which holds the key server-side — nothing
+ * to set in the environment:
  *
- *   KIMI_KEY=... node scripts/test-gallery-intake.mjs --live
+ *   node scripts/test-gallery-intake.mjs --live
  *
  * Live mode reads each photograph with the app's own prompt, crops along the
  * returned boxes with Pillow, then runs the on-device background lift (the
@@ -209,12 +210,13 @@ const photo = (n, pieces, skipped = []) => JSON.stringify({ toileIntake: 1, phot
 const LIVE = process.argv.includes('--live');
 
 if (!LIVE) {
-  console.log('\n(live mode skipped — run with --live and KIMI_KEY set)');
-} else if (!process.env.KIMI_KEY) {
-  console.log('\n(live mode skipped — KIMI_KEY is not set)');
+  console.log('\n(live mode skipped — run with --live; the relay holds the key)');
 } else {
-  console.log('\n--- live mode: the real test_images against the Kimi API ---');
-  const KEY = process.env.KIMI_KEY;
+  console.log('\n--- live mode: the real test_images through the relay (Claude Sonnet 4.5) ---');
+  // No key here and none needed: the relay (supabase/functions/ai-proxy) holds
+  // the provider keys server-side and routes a `claude*` model to Anthropic.
+  const RELAY = 'https://wvupsqfevlrmhqfjreyx.supabase.co/functions/v1/ai-proxy';
+  const MODEL = 'claude-sonnet-4-5';
   const SRC = fileURLToPath(new URL('../test_images', import.meta.url));
   const NAMES = ['todaysoutfit1.png', 'todaysoutfit2.png', 'test.png', 'test2.png', 'bed.png'];
   const files = NAMES.map(n => join(SRC, n)).filter(f => existsSync(f));
@@ -266,24 +268,23 @@ print(str(img.width) + 'x' + str(img.height))
     const imgW = buf.length && isJpeg ? readJpegDims(buf).w : 0;
     const imgH = buf.length && isJpeg ? readJpegDims(buf).h : 0;
 
-    const res = await fetch('https://api.kimi.com/coding/v1/chat/completions', {
+    const res = await fetch(RELAY, {
       method: 'POST',
-      headers: { 'content-type': 'application/json', authorization: `Bearer ${KEY}` },
+      headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
-        model: 'k3',
+        model: MODEL,
         max_tokens: 8000,
         messages: [{
           role: 'user',
           content: [
-            { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${buf.toString('base64')}` } },
+            { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: buf.toString('base64') } },
             { type: 'text', text: buildPhotoPrompt() },
           ],
         }],
       }),
     });
     const body = await res.json().catch(() => null);
-    const answer = typeof body?.choices?.[0]?.message?.content === 'string'
-      ? body.choices[0].message.content : '';
+    const answer = ((body?.content ?? []).filter(b => b?.type === 'text').map(b => b.text).join('\n')).trim();
     check(`live: ${name} answered 200 with text`, res.status === 200 && answer.length > 10,
       `status ${res.status}, ${answer.length} chars`);
 
