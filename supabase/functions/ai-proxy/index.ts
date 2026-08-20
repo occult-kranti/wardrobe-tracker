@@ -9,6 +9,7 @@
 //   - this function attaches the key (a secret, set with `supabase secrets
 //     set`) and forwards the body untouched to the provider the model names:
 //       model starts with "claude" → Anthropic Messages API (ANTHROPIC_KEY)
+//       model starts with "gemini" → Google's OpenAI-compatible endpoint (GEMINI_KEY)
 //       anything else              → Kimi, by Moonshot AI (KIMI_KEY)
 //   - the answer streams back untouched
 //
@@ -22,6 +23,9 @@
 const KIMI_UPSTREAM = 'https://api.kimi.com/coding/v1/chat/completions';
 const ANTHROPIC_UPSTREAM = 'https://api.anthropic.com/v1/messages';
 const ANTHROPIC_VERSION = '2023-06-01';
+// Google publishes an OpenAI-compatible door — the same body shape the Kimi
+// path already speaks, so a gemini request needs no translation here either.
+const GEMINI_UPSTREAM = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
 
 // The app's own origin is not known ahead (dev server, installed PWA), and
 // the function carries no secret access of its own — the KIMI_KEY never
@@ -57,24 +61,36 @@ Deno.serve(async (req: Request) => {
 
   // The model names the provider. A body that will not parse goes to Kimi as
   // it always did — the provider's own error answer is clearer than a guess.
-  let claude = false;
+  let provider: 'anthropic' | 'google' | 'kimi' = 'kimi';
   try {
     const model = (JSON.parse(body) as { model?: unknown }).model;
-    claude = typeof model === 'string' && model.startsWith('claude');
+    if (typeof model === 'string') {
+      if (model.startsWith('claude')) provider = 'anthropic';
+      else if (model.startsWith('gemini')) provider = 'google';
+    }
   } catch { /* not JSON — the Kimi passthrough below reports it fine */ }
 
-  const key = Deno.env.get(claude ? 'ANTHROPIC_KEY' : 'KIMI_KEY');
+  const keyName =
+    provider === 'anthropic' ? 'ANTHROPIC_KEY'
+    : provider === 'google' ? 'GEMINI_KEY'
+    : 'KIMI_KEY';
+  const key = Deno.env.get(keyName);
   if (!key) {
     // The app's copy for this status tells the user the house has not set a
     // key yet — keep the phrase "not configured" in this body so it matches.
-    return json(503, { error: `relay not configured: ${claude ? 'ANTHROPIC_KEY' : 'KIMI_KEY'} is not set` });
+    return json(503, { error: `relay not configured: ${keyName} is not set` });
   }
+
+  const upstreamUrl =
+    provider === 'anthropic' ? ANTHROPIC_UPSTREAM
+    : provider === 'google' ? GEMINI_UPSTREAM
+    : KIMI_UPSTREAM;
 
   let upstream: Response;
   try {
-    upstream = await fetch(claude ? ANTHROPIC_UPSTREAM : KIMI_UPSTREAM, {
+    upstream = await fetch(upstreamUrl, {
       method: 'POST',
-      headers: claude
+      headers: provider === 'anthropic'
         ? {
             'content-type': 'application/json',
             'x-api-key': key,

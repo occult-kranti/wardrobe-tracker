@@ -80,6 +80,24 @@ jobs:
           cp -r dist/. ../dist/v2/
         env:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+      # The showcase carries the full social build — the Instagram-style feed,
+      # Explore's Showing mosaic, the stories rail — hidden on main for the
+      # alpha (owner decision 2026-08-20: the alpha is a closet, not a
+      # network). Same subpath trick as v2: base './' sits anywhere.
+      - uses: actions/checkout@v4
+        with:
+          ref: feed-showcase
+          path: showcase
+      - name: Build the showcase into dist/showcase
+        run: |
+          set -eu
+          cd showcase
+          npm ci
+          npm run build
+          mkdir -p ../dist/showcase
+          cp -r dist/. ../dist/showcase/
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
       - name: Push dist to gh-pages
         run: |
           set -eu

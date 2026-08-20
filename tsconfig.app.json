@@ -20,7 +20,15 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "erasableSyntaxOnly": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+
+    /* The shared package, resolved the same way vite and esbuild resolve it
+       (packages/shared/aliases.mjs is the table; check-alias-parity.mjs is
+       the proof). Kept in include so the editor applies this project's rules
+       to the shared sources instead of an inferred one. */
+    "paths": {
+      "@almari/shared/*": ["./packages/shared/*"]
+    }
   },
-  "include": ["src"]
+  "include": ["src", "packages/shared"]
 }

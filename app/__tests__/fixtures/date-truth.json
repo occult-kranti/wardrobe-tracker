@@ -1,0 +1,2491 @@
+{
+  "$schema": "almari-date-truth/1",
+  "generatedBy": "scripts/test-dates.mjs",
+  "provedIdenticalIn": [
+    "UTC",
+    "Pacific/Kiritimati",
+    "Pacific/Niue",
+    "America/Santiago",
+    "Australia/Lord_Howe"
+  ],
+  "doc": "Every case here is timezone-invariant: the same call must return the same value in\nevery zone on earth. Proved in Node under the zones listed in provedIdenticalIn;\nWave 3 replays this file through jest-expo so Hermes has to agree too.\n\nA case is one of three shapes, told apart by fn and args:\n  args is an array  -> call module[fn](...args), compare === expect.\n  args is null      -> build new Date(localWallClock.year, localWallClock.month - 1,\n                       localWallClock.day, .hour, .minute, .second)  (month is\n                       1-BASED in this file and 0-based in the constructor), then\n                       call module[fn](thatDate) and compare === expect.\n  fn starts with @  -> not an export. \"@dayDiffLikeDaysSince\" is daysSince's own\n                       arithmetic with an injectable now:\n                       Math.round((new Date(args[1] + \"T00:00:00\").getTime()\n                                 - new Date(args[0] + \"T00:00:00\").getTime()) / 86400000)\n\nmodule is \"dates\" (src/lib/dates.ts) or \"cost\" (src/lib/cost.ts).\nexpect is compared with === and is always a string or a number. No tolerance.\nRegenerate with: node scripts/test-dates.mjs. A diff in this file is a behaviour\nchange and needs a sentence in the commit, not a quiet regeneration.",
+  "cases": [
+    {
+      "id": "addDays/2026-04-04/0",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-04-04",
+        0
+      ],
+      "expect": "2026-04-04"
+    },
+    {
+      "id": "addDays/2026-04-05/0",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-04-05",
+        0
+      ],
+      "expect": "2026-04-05"
+    },
+    {
+      "id": "addDays/2026-04-06/0",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-04-06",
+        0
+      ],
+      "expect": "2026-04-06"
+    },
+    {
+      "id": "addDays/2026-09-05/0",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-09-05",
+        0
+      ],
+      "expect": "2026-09-05"
+    },
+    {
+      "id": "addDays/2026-09-06/0",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-09-06",
+        0
+      ],
+      "expect": "2026-09-06"
+    },
+    {
+      "id": "addDays/2026-09-07/0",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-09-07",
+        0
+      ],
+      "expect": "2026-09-07"
+    },
+    {
+      "id": "addDays/2026-10-03/0",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-10-03",
+        0
+      ],
+      "expect": "2026-10-03"
+    },
+    {
+      "id": "addDays/2026-10-04/0",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-10-04",
+        0
+      ],
+      "expect": "2026-10-04"
+    },
+    {
+      "id": "addDays/2026-10-05/0",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-10-05",
+        0
+      ],
+      "expect": "2026-10-05"
+    },
+    {
+      "id": "addDays/2026-03-08/0",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-03-08",
+        0
+      ],
+      "expect": "2026-03-08"
+    },
+    {
+      "id": "addDays/2026-11-01/0",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-11-01",
+        0
+      ],
+      "expect": "2026-11-01"
+    },
+    {
+      "id": "addDays/2026-03-29/0",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-03-29",
+        0
+      ],
+      "expect": "2026-03-29"
+    },
+    {
+      "id": "addDays/2026-10-25/0",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-10-25",
+        0
+      ],
+      "expect": "2026-10-25"
+    },
+    {
+      "id": "addDays/2026-01-01/0",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-01-01",
+        0
+      ],
+      "expect": "2026-01-01"
+    },
+    {
+      "id": "addDays/2026-12-31/0",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-12-31",
+        0
+      ],
+      "expect": "2026-12-31"
+    },
+    {
+      "id": "addDays/2026-02-28/0",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-02-28",
+        0
+      ],
+      "expect": "2026-02-28"
+    },
+    {
+      "id": "addDays/2024-02-29/0",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2024-02-29",
+        0
+      ],
+      "expect": "2024-02-29"
+    },
+    {
+      "id": "addDays/2026-04-04/1",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-04-04",
+        1
+      ],
+      "expect": "2026-04-05"
+    },
+    {
+      "id": "addDays/2026-04-04/-1",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-04-04",
+        -1
+      ],
+      "expect": "2026-04-03"
+    },
+    {
+      "id": "addDays/2026-04-04/7",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-04-04",
+        7
+      ],
+      "expect": "2026-04-11"
+    },
+    {
+      "id": "addDays/2026-04-04/-7",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-04-04",
+        -7
+      ],
+      "expect": "2026-03-28"
+    },
+    {
+      "id": "addDays/2026-04-04/30",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-04-04",
+        30
+      ],
+      "expect": "2026-05-04"
+    },
+    {
+      "id": "addDays/2026-04-04/-30",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-04-04",
+        -30
+      ],
+      "expect": "2026-03-05"
+    },
+    {
+      "id": "addDays/2026-04-04/365",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-04-04",
+        365
+      ],
+      "expect": "2027-04-04"
+    },
+    {
+      "id": "addDays/2026-04-04/-365",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-04-04",
+        -365
+      ],
+      "expect": "2025-04-04"
+    },
+    {
+      "id": "addDays/2026-04-05/1",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-04-05",
+        1
+      ],
+      "expect": "2026-04-06"
+    },
+    {
+      "id": "addDays/2026-04-05/-1",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-04-05",
+        -1
+      ],
+      "expect": "2026-04-04"
+    },
+    {
+      "id": "addDays/2026-04-05/7",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-04-05",
+        7
+      ],
+      "expect": "2026-04-12"
+    },
+    {
+      "id": "addDays/2026-04-05/-7",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-04-05",
+        -7
+      ],
+      "expect": "2026-03-29"
+    },
+    {
+      "id": "addDays/2026-04-05/30",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-04-05",
+        30
+      ],
+      "expect": "2026-05-05"
+    },
+    {
+      "id": "addDays/2026-04-05/-30",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-04-05",
+        -30
+      ],
+      "expect": "2026-03-06"
+    },
+    {
+      "id": "addDays/2026-04-05/365",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-04-05",
+        365
+      ],
+      "expect": "2027-04-05"
+    },
+    {
+      "id": "addDays/2026-04-05/-365",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-04-05",
+        -365
+      ],
+      "expect": "2025-04-05"
+    },
+    {
+      "id": "addDays/2026-04-06/1",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-04-06",
+        1
+      ],
+      "expect": "2026-04-07"
+    },
+    {
+      "id": "addDays/2026-04-06/-1",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-04-06",
+        -1
+      ],
+      "expect": "2026-04-05"
+    },
+    {
+      "id": "addDays/2026-04-06/7",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-04-06",
+        7
+      ],
+      "expect": "2026-04-13"
+    },
+    {
+      "id": "addDays/2026-04-06/-7",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-04-06",
+        -7
+      ],
+      "expect": "2026-03-30"
+    },
+    {
+      "id": "addDays/2026-04-06/30",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-04-06",
+        30
+      ],
+      "expect": "2026-05-06"
+    },
+    {
+      "id": "addDays/2026-04-06/-30",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-04-06",
+        -30
+      ],
+      "expect": "2026-03-07"
+    },
+    {
+      "id": "addDays/2026-04-06/365",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-04-06",
+        365
+      ],
+      "expect": "2027-04-06"
+    },
+    {
+      "id": "addDays/2026-04-06/-365",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-04-06",
+        -365
+      ],
+      "expect": "2025-04-06"
+    },
+    {
+      "id": "addDays/2026-09-05/1",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-09-05",
+        1
+      ],
+      "expect": "2026-09-06"
+    },
+    {
+      "id": "addDays/2026-09-05/-1",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-09-05",
+        -1
+      ],
+      "expect": "2026-09-04"
+    },
+    {
+      "id": "addDays/2026-09-05/7",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-09-05",
+        7
+      ],
+      "expect": "2026-09-12"
+    },
+    {
+      "id": "addDays/2026-09-05/-7",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-09-05",
+        -7
+      ],
+      "expect": "2026-08-29"
+    },
+    {
+      "id": "addDays/2026-09-05/30",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-09-05",
+        30
+      ],
+      "expect": "2026-10-05"
+    },
+    {
+      "id": "addDays/2026-09-05/-30",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-09-05",
+        -30
+      ],
+      "expect": "2026-08-06"
+    },
+    {
+      "id": "addDays/2026-09-05/365",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-09-05",
+        365
+      ],
+      "expect": "2027-09-05"
+    },
+    {
+      "id": "addDays/2026-09-05/-365",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-09-05",
+        -365
+      ],
+      "expect": "2025-09-05"
+    },
+    {
+      "id": "addDays/2026-09-06/1",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-09-06",
+        1
+      ],
+      "expect": "2026-09-07"
+    },
+    {
+      "id": "addDays/2026-09-06/-1",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-09-06",
+        -1
+      ],
+      "expect": "2026-09-05"
+    },
+    {
+      "id": "addDays/2026-09-06/7",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-09-06",
+        7
+      ],
+      "expect": "2026-09-13"
+    },
+    {
+      "id": "addDays/2026-09-06/-7",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-09-06",
+        -7
+      ],
+      "expect": "2026-08-30"
+    },
+    {
+      "id": "addDays/2026-09-06/30",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-09-06",
+        30
+      ],
+      "expect": "2026-10-06"
+    },
+    {
+      "id": "addDays/2026-09-06/-30",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-09-06",
+        -30
+      ],
+      "expect": "2026-08-07"
+    },
+    {
+      "id": "addDays/2026-09-06/365",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-09-06",
+        365
+      ],
+      "expect": "2027-09-06"
+    },
+    {
+      "id": "addDays/2026-09-06/-365",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-09-06",
+        -365
+      ],
+      "expect": "2025-09-06"
+    },
+    {
+      "id": "addDays/2026-09-07/1",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-09-07",
+        1
+      ],
+      "expect": "2026-09-08"
+    },
+    {
+      "id": "addDays/2026-09-07/-1",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-09-07",
+        -1
+      ],
+      "expect": "2026-09-06"
+    },
+    {
+      "id": "addDays/2026-09-07/7",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-09-07",
+        7
+      ],
+      "expect": "2026-09-14"
+    },
+    {
+      "id": "addDays/2026-09-07/-7",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-09-07",
+        -7
+      ],
+      "expect": "2026-08-31"
+    },
+    {
+      "id": "addDays/2026-09-07/30",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-09-07",
+        30
+      ],
+      "expect": "2026-10-07"
+    },
+    {
+      "id": "addDays/2026-09-07/-30",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-09-07",
+        -30
+      ],
+      "expect": "2026-08-08"
+    },
+    {
+      "id": "addDays/2026-09-07/365",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-09-07",
+        365
+      ],
+      "expect": "2027-09-07"
+    },
+    {
+      "id": "addDays/2026-09-07/-365",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-09-07",
+        -365
+      ],
+      "expect": "2025-09-07"
+    },
+    {
+      "id": "addDays/2026-10-03/1",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-10-03",
+        1
+      ],
+      "expect": "2026-10-04"
+    },
+    {
+      "id": "addDays/2026-10-03/-1",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-10-03",
+        -1
+      ],
+      "expect": "2026-10-02"
+    },
+    {
+      "id": "addDays/2026-10-03/7",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-10-03",
+        7
+      ],
+      "expect": "2026-10-10"
+    },
+    {
+      "id": "addDays/2026-10-03/-7",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-10-03",
+        -7
+      ],
+      "expect": "2026-09-26"
+    },
+    {
+      "id": "addDays/2026-10-03/30",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-10-03",
+        30
+      ],
+      "expect": "2026-11-02"
+    },
+    {
+      "id": "addDays/2026-10-03/-30",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-10-03",
+        -30
+      ],
+      "expect": "2026-09-03"
+    },
+    {
+      "id": "addDays/2026-10-03/365",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-10-03",
+        365
+      ],
+      "expect": "2027-10-03"
+    },
+    {
+      "id": "addDays/2026-10-03/-365",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-10-03",
+        -365
+      ],
+      "expect": "2025-10-03"
+    },
+    {
+      "id": "addDays/2026-10-04/1",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-10-04",
+        1
+      ],
+      "expect": "2026-10-05"
+    },
+    {
+      "id": "addDays/2026-10-04/-1",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-10-04",
+        -1
+      ],
+      "expect": "2026-10-03"
+    },
+    {
+      "id": "addDays/2026-10-04/7",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-10-04",
+        7
+      ],
+      "expect": "2026-10-11"
+    },
+    {
+      "id": "addDays/2026-10-04/-7",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-10-04",
+        -7
+      ],
+      "expect": "2026-09-27"
+    },
+    {
+      "id": "addDays/2026-10-04/30",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-10-04",
+        30
+      ],
+      "expect": "2026-11-03"
+    },
+    {
+      "id": "addDays/2026-10-04/-30",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-10-04",
+        -30
+      ],
+      "expect": "2026-09-04"
+    },
+    {
+      "id": "addDays/2026-10-04/365",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-10-04",
+        365
+      ],
+      "expect": "2027-10-04"
+    },
+    {
+      "id": "addDays/2026-10-04/-365",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-10-04",
+        -365
+      ],
+      "expect": "2025-10-04"
+    },
+    {
+      "id": "addDays/2026-10-05/1",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-10-05",
+        1
+      ],
+      "expect": "2026-10-06"
+    },
+    {
+      "id": "addDays/2026-10-05/-1",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-10-05",
+        -1
+      ],
+      "expect": "2026-10-04"
+    },
+    {
+      "id": "addDays/2026-10-05/7",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-10-05",
+        7
+      ],
+      "expect": "2026-10-12"
+    },
+    {
+      "id": "addDays/2026-10-05/-7",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-10-05",
+        -7
+      ],
+      "expect": "2026-09-28"
+    },
+    {
+      "id": "addDays/2026-10-05/30",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-10-05",
+        30
+      ],
+      "expect": "2026-11-04"
+    },
+    {
+      "id": "addDays/2026-10-05/-30",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-10-05",
+        -30
+      ],
+      "expect": "2026-09-05"
+    },
+    {
+      "id": "addDays/2026-10-05/365",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-10-05",
+        365
+      ],
+      "expect": "2027-10-05"
+    },
+    {
+      "id": "addDays/2026-10-05/-365",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-10-05",
+        -365
+      ],
+      "expect": "2025-10-05"
+    },
+    {
+      "id": "addDays/2026-03-08/1",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-03-08",
+        1
+      ],
+      "expect": "2026-03-09"
+    },
+    {
+      "id": "addDays/2026-03-08/-1",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-03-08",
+        -1
+      ],
+      "expect": "2026-03-07"
+    },
+    {
+      "id": "addDays/2026-03-08/7",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-03-08",
+        7
+      ],
+      "expect": "2026-03-15"
+    },
+    {
+      "id": "addDays/2026-03-08/-7",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-03-08",
+        -7
+      ],
+      "expect": "2026-03-01"
+    },
+    {
+      "id": "addDays/2026-03-08/30",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-03-08",
+        30
+      ],
+      "expect": "2026-04-07"
+    },
+    {
+      "id": "addDays/2026-03-08/-30",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-03-08",
+        -30
+      ],
+      "expect": "2026-02-06"
+    },
+    {
+      "id": "addDays/2026-03-08/365",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-03-08",
+        365
+      ],
+      "expect": "2027-03-08"
+    },
+    {
+      "id": "addDays/2026-03-08/-365",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-03-08",
+        -365
+      ],
+      "expect": "2025-03-08"
+    },
+    {
+      "id": "addDays/2026-11-01/1",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-11-01",
+        1
+      ],
+      "expect": "2026-11-02"
+    },
+    {
+      "id": "addDays/2026-11-01/-1",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-11-01",
+        -1
+      ],
+      "expect": "2026-10-31"
+    },
+    {
+      "id": "addDays/2026-11-01/7",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-11-01",
+        7
+      ],
+      "expect": "2026-11-08"
+    },
+    {
+      "id": "addDays/2026-11-01/-7",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-11-01",
+        -7
+      ],
+      "expect": "2026-10-25"
+    },
+    {
+      "id": "addDays/2026-11-01/30",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-11-01",
+        30
+      ],
+      "expect": "2026-12-01"
+    },
+    {
+      "id": "addDays/2026-11-01/-30",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-11-01",
+        -30
+      ],
+      "expect": "2026-10-02"
+    },
+    {
+      "id": "addDays/2026-11-01/365",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-11-01",
+        365
+      ],
+      "expect": "2027-11-01"
+    },
+    {
+      "id": "addDays/2026-11-01/-365",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-11-01",
+        -365
+      ],
+      "expect": "2025-11-01"
+    },
+    {
+      "id": "addDays/2026-03-29/1",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-03-29",
+        1
+      ],
+      "expect": "2026-03-30"
+    },
+    {
+      "id": "addDays/2026-03-29/-1",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-03-29",
+        -1
+      ],
+      "expect": "2026-03-28"
+    },
+    {
+      "id": "addDays/2026-03-29/7",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-03-29",
+        7
+      ],
+      "expect": "2026-04-05"
+    },
+    {
+      "id": "addDays/2026-03-29/-7",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-03-29",
+        -7
+      ],
+      "expect": "2026-03-22"
+    },
+    {
+      "id": "addDays/2026-03-29/30",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-03-29",
+        30
+      ],
+      "expect": "2026-04-28"
+    },
+    {
+      "id": "addDays/2026-03-29/-30",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-03-29",
+        -30
+      ],
+      "expect": "2026-02-27"
+    },
+    {
+      "id": "addDays/2026-03-29/365",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-03-29",
+        365
+      ],
+      "expect": "2027-03-29"
+    },
+    {
+      "id": "addDays/2026-03-29/-365",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-03-29",
+        -365
+      ],
+      "expect": "2025-03-29"
+    },
+    {
+      "id": "addDays/2026-10-25/1",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-10-25",
+        1
+      ],
+      "expect": "2026-10-26"
+    },
+    {
+      "id": "addDays/2026-10-25/-1",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-10-25",
+        -1
+      ],
+      "expect": "2026-10-24"
+    },
+    {
+      "id": "addDays/2026-10-25/7",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-10-25",
+        7
+      ],
+      "expect": "2026-11-01"
+    },
+    {
+      "id": "addDays/2026-10-25/-7",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-10-25",
+        -7
+      ],
+      "expect": "2026-10-18"
+    },
+    {
+      "id": "addDays/2026-10-25/30",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-10-25",
+        30
+      ],
+      "expect": "2026-11-24"
+    },
+    {
+      "id": "addDays/2026-10-25/-30",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-10-25",
+        -30
+      ],
+      "expect": "2026-09-25"
+    },
+    {
+      "id": "addDays/2026-10-25/365",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-10-25",
+        365
+      ],
+      "expect": "2027-10-25"
+    },
+    {
+      "id": "addDays/2026-10-25/-365",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-10-25",
+        -365
+      ],
+      "expect": "2025-10-25"
+    },
+    {
+      "id": "addDays/2026-01-01/1",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-01-01",
+        1
+      ],
+      "expect": "2026-01-02"
+    },
+    {
+      "id": "addDays/2026-01-01/-1",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-01-01",
+        -1
+      ],
+      "expect": "2025-12-31"
+    },
+    {
+      "id": "addDays/2026-01-01/7",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-01-01",
+        7
+      ],
+      "expect": "2026-01-08"
+    },
+    {
+      "id": "addDays/2026-01-01/-7",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-01-01",
+        -7
+      ],
+      "expect": "2025-12-25"
+    },
+    {
+      "id": "addDays/2026-01-01/30",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-01-01",
+        30
+      ],
+      "expect": "2026-01-31"
+    },
+    {
+      "id": "addDays/2026-01-01/-30",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-01-01",
+        -30
+      ],
+      "expect": "2025-12-02"
+    },
+    {
+      "id": "addDays/2026-01-01/365",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-01-01",
+        365
+      ],
+      "expect": "2027-01-01"
+    },
+    {
+      "id": "addDays/2026-01-01/-365",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-01-01",
+        -365
+      ],
+      "expect": "2025-01-01"
+    },
+    {
+      "id": "addDays/2026-12-31/1",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-12-31",
+        1
+      ],
+      "expect": "2027-01-01"
+    },
+    {
+      "id": "addDays/2026-12-31/-1",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-12-31",
+        -1
+      ],
+      "expect": "2026-12-30"
+    },
+    {
+      "id": "addDays/2026-12-31/7",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-12-31",
+        7
+      ],
+      "expect": "2027-01-07"
+    },
+    {
+      "id": "addDays/2026-12-31/-7",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-12-31",
+        -7
+      ],
+      "expect": "2026-12-24"
+    },
+    {
+      "id": "addDays/2026-12-31/30",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-12-31",
+        30
+      ],
+      "expect": "2027-01-30"
+    },
+    {
+      "id": "addDays/2026-12-31/-30",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-12-31",
+        -30
+      ],
+      "expect": "2026-12-01"
+    },
+    {
+      "id": "addDays/2026-12-31/365",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-12-31",
+        365
+      ],
+      "expect": "2027-12-31"
+    },
+    {
+      "id": "addDays/2026-12-31/-365",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-12-31",
+        -365
+      ],
+      "expect": "2025-12-31"
+    },
+    {
+      "id": "addDays/2026-02-28/1",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-02-28",
+        1
+      ],
+      "expect": "2026-03-01"
+    },
+    {
+      "id": "addDays/2026-02-28/-1",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-02-28",
+        -1
+      ],
+      "expect": "2026-02-27"
+    },
+    {
+      "id": "addDays/2026-02-28/7",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-02-28",
+        7
+      ],
+      "expect": "2026-03-07"
+    },
+    {
+      "id": "addDays/2026-02-28/-7",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-02-28",
+        -7
+      ],
+      "expect": "2026-02-21"
+    },
+    {
+      "id": "addDays/2026-02-28/30",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-02-28",
+        30
+      ],
+      "expect": "2026-03-30"
+    },
+    {
+      "id": "addDays/2026-02-28/-30",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-02-28",
+        -30
+      ],
+      "expect": "2026-01-29"
+    },
+    {
+      "id": "addDays/2026-02-28/365",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-02-28",
+        365
+      ],
+      "expect": "2027-02-28"
+    },
+    {
+      "id": "addDays/2026-02-28/-365",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2026-02-28",
+        -365
+      ],
+      "expect": "2025-02-28"
+    },
+    {
+      "id": "addDays/2024-02-29/1",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2024-02-29",
+        1
+      ],
+      "expect": "2024-03-01"
+    },
+    {
+      "id": "addDays/2024-02-29/-1",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2024-02-29",
+        -1
+      ],
+      "expect": "2024-02-28"
+    },
+    {
+      "id": "addDays/2024-02-29/7",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2024-02-29",
+        7
+      ],
+      "expect": "2024-03-07"
+    },
+    {
+      "id": "addDays/2024-02-29/-7",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2024-02-29",
+        -7
+      ],
+      "expect": "2024-02-22"
+    },
+    {
+      "id": "addDays/2024-02-29/30",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2024-02-29",
+        30
+      ],
+      "expect": "2024-03-30"
+    },
+    {
+      "id": "addDays/2024-02-29/-30",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2024-02-29",
+        -30
+      ],
+      "expect": "2024-01-30"
+    },
+    {
+      "id": "addDays/2024-02-29/365",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2024-02-29",
+        365
+      ],
+      "expect": "2025-02-28"
+    },
+    {
+      "id": "addDays/2024-02-29/-365",
+      "module": "dates",
+      "fn": "addDays",
+      "args": [
+        "2024-02-29",
+        -365
+      ],
+      "expect": "2023-03-01"
+    },
+    {
+      "id": "dayDiff/2026-04-03/2026-04-04",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2026-04-03",
+        "2026-04-04"
+      ],
+      "expect": 1
+    },
+    {
+      "id": "dayDiff/2026-03-28/2026-04-04",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2026-03-28",
+        "2026-04-04"
+      ],
+      "expect": 7
+    },
+    {
+      "id": "dayDiff/2026-03-05/2026-04-04",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2026-03-05",
+        "2026-04-04"
+      ],
+      "expect": 30
+    },
+    {
+      "id": "dayDiff/2025-04-04/2026-04-04",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2025-04-04",
+        "2026-04-04"
+      ],
+      "expect": 365
+    },
+    {
+      "id": "dayDiff/2026-04-04/2026-04-05",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2026-04-04",
+        "2026-04-05"
+      ],
+      "expect": 1
+    },
+    {
+      "id": "dayDiff/2026-03-29/2026-04-05",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2026-03-29",
+        "2026-04-05"
+      ],
+      "expect": 7
+    },
+    {
+      "id": "dayDiff/2026-03-06/2026-04-05",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2026-03-06",
+        "2026-04-05"
+      ],
+      "expect": 30
+    },
+    {
+      "id": "dayDiff/2025-04-05/2026-04-05",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2025-04-05",
+        "2026-04-05"
+      ],
+      "expect": 365
+    },
+    {
+      "id": "dayDiff/2026-04-05/2026-04-06",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2026-04-05",
+        "2026-04-06"
+      ],
+      "expect": 1
+    },
+    {
+      "id": "dayDiff/2026-03-30/2026-04-06",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2026-03-30",
+        "2026-04-06"
+      ],
+      "expect": 7
+    },
+    {
+      "id": "dayDiff/2026-03-07/2026-04-06",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2026-03-07",
+        "2026-04-06"
+      ],
+      "expect": 30
+    },
+    {
+      "id": "dayDiff/2025-04-06/2026-04-06",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2025-04-06",
+        "2026-04-06"
+      ],
+      "expect": 365
+    },
+    {
+      "id": "dayDiff/2026-09-04/2026-09-05",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2026-09-04",
+        "2026-09-05"
+      ],
+      "expect": 1
+    },
+    {
+      "id": "dayDiff/2026-08-29/2026-09-05",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2026-08-29",
+        "2026-09-05"
+      ],
+      "expect": 7
+    },
+    {
+      "id": "dayDiff/2026-08-06/2026-09-05",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2026-08-06",
+        "2026-09-05"
+      ],
+      "expect": 30
+    },
+    {
+      "id": "dayDiff/2025-09-05/2026-09-05",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2025-09-05",
+        "2026-09-05"
+      ],
+      "expect": 365
+    },
+    {
+      "id": "dayDiff/2026-09-05/2026-09-06",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2026-09-05",
+        "2026-09-06"
+      ],
+      "expect": 1
+    },
+    {
+      "id": "dayDiff/2026-08-30/2026-09-06",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2026-08-30",
+        "2026-09-06"
+      ],
+      "expect": 7
+    },
+    {
+      "id": "dayDiff/2026-08-07/2026-09-06",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2026-08-07",
+        "2026-09-06"
+      ],
+      "expect": 30
+    },
+    {
+      "id": "dayDiff/2025-09-06/2026-09-06",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2025-09-06",
+        "2026-09-06"
+      ],
+      "expect": 365
+    },
+    {
+      "id": "dayDiff/2026-09-06/2026-09-07",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2026-09-06",
+        "2026-09-07"
+      ],
+      "expect": 1
+    },
+    {
+      "id": "dayDiff/2026-08-31/2026-09-07",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2026-08-31",
+        "2026-09-07"
+      ],
+      "expect": 7
+    },
+    {
+      "id": "dayDiff/2026-08-08/2026-09-07",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2026-08-08",
+        "2026-09-07"
+      ],
+      "expect": 30
+    },
+    {
+      "id": "dayDiff/2025-09-07/2026-09-07",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2025-09-07",
+        "2026-09-07"
+      ],
+      "expect": 365
+    },
+    {
+      "id": "dayDiff/2026-10-02/2026-10-03",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2026-10-02",
+        "2026-10-03"
+      ],
+      "expect": 1
+    },
+    {
+      "id": "dayDiff/2026-09-26/2026-10-03",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2026-09-26",
+        "2026-10-03"
+      ],
+      "expect": 7
+    },
+    {
+      "id": "dayDiff/2026-09-03/2026-10-03",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2026-09-03",
+        "2026-10-03"
+      ],
+      "expect": 30
+    },
+    {
+      "id": "dayDiff/2025-10-03/2026-10-03",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2025-10-03",
+        "2026-10-03"
+      ],
+      "expect": 365
+    },
+    {
+      "id": "dayDiff/2026-10-03/2026-10-04",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2026-10-03",
+        "2026-10-04"
+      ],
+      "expect": 1
+    },
+    {
+      "id": "dayDiff/2026-09-27/2026-10-04",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2026-09-27",
+        "2026-10-04"
+      ],
+      "expect": 7
+    },
+    {
+      "id": "dayDiff/2026-09-04/2026-10-04",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2026-09-04",
+        "2026-10-04"
+      ],
+      "expect": 30
+    },
+    {
+      "id": "dayDiff/2025-10-04/2026-10-04",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2025-10-04",
+        "2026-10-04"
+      ],
+      "expect": 365
+    },
+    {
+      "id": "dayDiff/2026-10-04/2026-10-05",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2026-10-04",
+        "2026-10-05"
+      ],
+      "expect": 1
+    },
+    {
+      "id": "dayDiff/2026-09-28/2026-10-05",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2026-09-28",
+        "2026-10-05"
+      ],
+      "expect": 7
+    },
+    {
+      "id": "dayDiff/2026-09-05/2026-10-05",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2026-09-05",
+        "2026-10-05"
+      ],
+      "expect": 30
+    },
+    {
+      "id": "dayDiff/2025-10-05/2026-10-05",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2025-10-05",
+        "2026-10-05"
+      ],
+      "expect": 365
+    },
+    {
+      "id": "dayDiff/2026-03-07/2026-03-08",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2026-03-07",
+        "2026-03-08"
+      ],
+      "expect": 1
+    },
+    {
+      "id": "dayDiff/2026-03-01/2026-03-08",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2026-03-01",
+        "2026-03-08"
+      ],
+      "expect": 7
+    },
+    {
+      "id": "dayDiff/2026-02-06/2026-03-08",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2026-02-06",
+        "2026-03-08"
+      ],
+      "expect": 30
+    },
+    {
+      "id": "dayDiff/2025-03-08/2026-03-08",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2025-03-08",
+        "2026-03-08"
+      ],
+      "expect": 365
+    },
+    {
+      "id": "dayDiff/2026-10-31/2026-11-01",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2026-10-31",
+        "2026-11-01"
+      ],
+      "expect": 1
+    },
+    {
+      "id": "dayDiff/2026-10-25/2026-11-01",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2026-10-25",
+        "2026-11-01"
+      ],
+      "expect": 7
+    },
+    {
+      "id": "dayDiff/2026-10-02/2026-11-01",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2026-10-02",
+        "2026-11-01"
+      ],
+      "expect": 30
+    },
+    {
+      "id": "dayDiff/2025-11-01/2026-11-01",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2025-11-01",
+        "2026-11-01"
+      ],
+      "expect": 365
+    },
+    {
+      "id": "dayDiff/2026-03-28/2026-03-29",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2026-03-28",
+        "2026-03-29"
+      ],
+      "expect": 1
+    },
+    {
+      "id": "dayDiff/2026-03-22/2026-03-29",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2026-03-22",
+        "2026-03-29"
+      ],
+      "expect": 7
+    },
+    {
+      "id": "dayDiff/2026-02-27/2026-03-29",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2026-02-27",
+        "2026-03-29"
+      ],
+      "expect": 30
+    },
+    {
+      "id": "dayDiff/2025-03-29/2026-03-29",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2025-03-29",
+        "2026-03-29"
+      ],
+      "expect": 365
+    },
+    {
+      "id": "dayDiff/2026-10-24/2026-10-25",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2026-10-24",
+        "2026-10-25"
+      ],
+      "expect": 1
+    },
+    {
+      "id": "dayDiff/2026-10-18/2026-10-25",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2026-10-18",
+        "2026-10-25"
+      ],
+      "expect": 7
+    },
+    {
+      "id": "dayDiff/2026-09-25/2026-10-25",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2026-09-25",
+        "2026-10-25"
+      ],
+      "expect": 30
+    },
+    {
+      "id": "dayDiff/2025-10-25/2026-10-25",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2025-10-25",
+        "2026-10-25"
+      ],
+      "expect": 365
+    },
+    {
+      "id": "dayDiff/2025-12-31/2026-01-01",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2025-12-31",
+        "2026-01-01"
+      ],
+      "expect": 1
+    },
+    {
+      "id": "dayDiff/2025-12-25/2026-01-01",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2025-12-25",
+        "2026-01-01"
+      ],
+      "expect": 7
+    },
+    {
+      "id": "dayDiff/2025-12-02/2026-01-01",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2025-12-02",
+        "2026-01-01"
+      ],
+      "expect": 30
+    },
+    {
+      "id": "dayDiff/2025-01-01/2026-01-01",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2025-01-01",
+        "2026-01-01"
+      ],
+      "expect": 365
+    },
+    {
+      "id": "dayDiff/2026-12-30/2026-12-31",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2026-12-30",
+        "2026-12-31"
+      ],
+      "expect": 1
+    },
+    {
+      "id": "dayDiff/2026-12-24/2026-12-31",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2026-12-24",
+        "2026-12-31"
+      ],
+      "expect": 7
+    },
+    {
+      "id": "dayDiff/2026-12-01/2026-12-31",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2026-12-01",
+        "2026-12-31"
+      ],
+      "expect": 30
+    },
+    {
+      "id": "dayDiff/2025-12-31/2026-12-31",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2025-12-31",
+        "2026-12-31"
+      ],
+      "expect": 365
+    },
+    {
+      "id": "dayDiff/2026-02-27/2026-02-28",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2026-02-27",
+        "2026-02-28"
+      ],
+      "expect": 1
+    },
+    {
+      "id": "dayDiff/2026-02-21/2026-02-28",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2026-02-21",
+        "2026-02-28"
+      ],
+      "expect": 7
+    },
+    {
+      "id": "dayDiff/2026-01-29/2026-02-28",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2026-01-29",
+        "2026-02-28"
+      ],
+      "expect": 30
+    },
+    {
+      "id": "dayDiff/2025-02-28/2026-02-28",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2025-02-28",
+        "2026-02-28"
+      ],
+      "expect": 365
+    },
+    {
+      "id": "dayDiff/2024-02-28/2024-02-29",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2024-02-28",
+        "2024-02-29"
+      ],
+      "expect": 1
+    },
+    {
+      "id": "dayDiff/2024-02-22/2024-02-29",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2024-02-22",
+        "2024-02-29"
+      ],
+      "expect": 7
+    },
+    {
+      "id": "dayDiff/2024-01-30/2024-02-29",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2024-01-30",
+        "2024-02-29"
+      ],
+      "expect": 30
+    },
+    {
+      "id": "dayDiff/2023-03-01/2024-02-29",
+      "module": "dates",
+      "fn": "@dayDiffLikeDaysSince",
+      "args": [
+        "2023-03-01",
+        "2024-02-29"
+      ],
+      "expect": 365
+    },
+    {
+      "id": "formatLocalDate/2026-10-3T23:59:59",
+      "module": "dates",
+      "fn": "formatLocalDate",
+      "args": null,
+      "localWallClock": {
+        "year": 2026,
+        "month": 10,
+        "day": 3,
+        "hour": 23,
+        "minute": 59,
+        "second": 59
+      },
+      "expect": "2026-10-03"
+    },
+    {
+      "id": "formatLocalDate/2026-10-4T0:0:1",
+      "module": "dates",
+      "fn": "formatLocalDate",
+      "args": null,
+      "localWallClock": {
+        "year": 2026,
+        "month": 10,
+        "day": 4,
+        "hour": 0,
+        "minute": 0,
+        "second": 1
+      },
+      "expect": "2026-10-04"
+    },
+    {
+      "id": "formatLocalDate/2026-9-5T23:59:59",
+      "module": "dates",
+      "fn": "formatLocalDate",
+      "args": null,
+      "localWallClock": {
+        "year": 2026,
+        "month": 9,
+        "day": 5,
+        "hour": 23,
+        "minute": 59,
+        "second": 59
+      },
+      "expect": "2026-09-05"
+    },
+    {
+      "id": "formatLocalDate/2026-9-6T0:0:1",
+      "module": "dates",
+      "fn": "formatLocalDate",
+      "args": null,
+      "localWallClock": {
+        "year": 2026,
+        "month": 9,
+        "day": 6,
+        "hour": 0,
+        "minute": 0,
+        "second": 1
+      },
+      "expect": "2026-09-06"
+    },
+    {
+      "id": "formatLocalDate/2026-12-31T23:59:59",
+      "module": "dates",
+      "fn": "formatLocalDate",
+      "args": null,
+      "localWallClock": {
+        "year": 2026,
+        "month": 12,
+        "day": 31,
+        "hour": 23,
+        "minute": 59,
+        "second": 59
+      },
+      "expect": "2026-12-31"
+    },
+    {
+      "id": "formatLocalDate/2027-1-1T0:0:1",
+      "module": "dates",
+      "fn": "formatLocalDate",
+      "args": null,
+      "localWallClock": {
+        "year": 2027,
+        "month": 1,
+        "day": 1,
+        "hour": 0,
+        "minute": 0,
+        "second": 1
+      },
+      "expect": "2027-01-01"
+    },
+    {
+      "id": "formatLocalDate/2026-8-19T12:0:0",
+      "module": "dates",
+      "fn": "formatLocalDate",
+      "args": null,
+      "localWallClock": {
+        "year": 2026,
+        "month": 8,
+        "day": 19,
+        "hour": 12,
+        "minute": 0,
+        "second": 0
+      },
+      "expect": "2026-08-19"
+    },
+    {
+      "id": "cost/formatMoney/[0]",
+      "module": "cost",
+      "fn": "formatMoney",
+      "args": [
+        0
+      ],
+      "expect": "₹0"
+    },
+    {
+      "id": "cost/formatMoney/[45]",
+      "module": "cost",
+      "fn": "formatMoney",
+      "args": [
+        45
+      ],
+      "expect": "₹45"
+    },
+    {
+      "id": "cost/formatMoney/[1340]",
+      "module": "cost",
+      "fn": "formatMoney",
+      "args": [
+        1340
+      ],
+      "expect": "₹1,340"
+    },
+    {
+      "id": "cost/formatMoney/[1234567]",
+      "module": "cost",
+      "fn": "formatMoney",
+      "args": [
+        1234567
+      ],
+      "expect": "₹12,34,567"
+    },
+    {
+      "id": "cost/formatMoney/[45.5]",
+      "module": "cost",
+      "fn": "formatMoney",
+      "args": [
+        45.5
+      ],
+      "expect": "₹46"
+    },
+    {
+      "id": "cost/formatMoney/[45.4]",
+      "module": "cost",
+      "fn": "formatMoney",
+      "args": [
+        45.4
+      ],
+      "expect": "₹45"
+    },
+    {
+      "id": "cost/formatMoney/[999999.5]",
+      "module": "cost",
+      "fn": "formatMoney",
+      "args": [
+        999999.5
+      ],
+      "expect": "₹10,00,000"
+    },
+    {
+      "id": "cost/formatPrice/[0]",
+      "module": "cost",
+      "fn": "formatPrice",
+      "args": [
+        0
+      ],
+      "expect": "₹0"
+    },
+    {
+      "id": "cost/formatPrice/[45]",
+      "module": "cost",
+      "fn": "formatPrice",
+      "args": [
+        45
+      ],
+      "expect": "₹45"
+    },
+    {
+      "id": "cost/formatPrice/[45.5]",
+      "module": "cost",
+      "fn": "formatPrice",
+      "args": [
+        45.5
+      ],
+      "expect": "₹45.50"
+    },
+    {
+      "id": "cost/formatPrice/[3.125]",
+      "module": "cost",
+      "fn": "formatPrice",
+      "args": [
+        3.125
+      ],
+      "expect": "₹3.13"
+    },
+    {
+      "id": "cost/formatPrice/[1340.5]",
+      "module": "cost",
+      "fn": "formatPrice",
+      "args": [
+        1340.5
+      ],
+      "expect": "₹1,340.50"
+    },
+    {
+      "id": "cost/formatPrice/[1234567.891]",
+      "module": "cost",
+      "fn": "formatPrice",
+      "args": [
+        1234567.891
+      ],
+      "expect": "₹12,34,567.89"
+    },
+    {
+      "id": "cost/formatPerWear/[null]",
+      "module": "cost",
+      "fn": "formatPerWear",
+      "args": [
+        null
+      ],
+      "expect": "—"
+    },
+    {
+      "id": "cost/formatPerWear/[0]",
+      "module": "cost",
+      "fn": "formatPerWear",
+      "args": [
+        0
+      ],
+      "expect": "₹0.00"
+    },
+    {
+      "id": "cost/formatPerWear/[3.121]",
+      "module": "cost",
+      "fn": "formatPerWear",
+      "args": [
+        3.121
+      ],
+      "expect": "₹3.12"
+    },
+    {
+      "id": "cost/formatPerWear/[1234.5]",
+      "module": "cost",
+      "fn": "formatPerWear",
+      "args": [
+        1234.5
+      ],
+      "expect": "₹1,234.50"
+    },
+    {
+      "id": "cost/formatPerWear/[0.005]",
+      "module": "cost",
+      "fn": "formatPerWear",
+      "args": [
+        0.005
+      ],
+      "expect": "₹0.01"
+    }
+  ]
+}

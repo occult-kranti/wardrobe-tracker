@@ -1,5 +1,5 @@
 import { cutOut } from './cutout';
-import type { IntakeDraft } from './intake';
+import type { IntakeDraft } from '@almari/shared/intake';
 
 /**
  * FROM ONE PHOTOGRAPH TO A ROW OF PIECES — all of it on the device.

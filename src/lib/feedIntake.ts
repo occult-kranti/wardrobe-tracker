@@ -18,7 +18,7 @@
  * pixels; the tests supply strings.
  */
 
-import { readIntake, type IntakeDraft, type IntakeRead, type IntakeSkip } from './intake';
+import { readIntake, type IntakeDraft, type IntakeRead, type IntakeSkip } from '@almari/shared/intake';
 
 /** A normalized rectangle: fractions 0–1, origin top-left. */
 export interface GridBox {

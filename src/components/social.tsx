@@ -1,7 +1,12 @@
-import { Link } from 'react-router-dom';
-import { DEFAULT_CATEGORIES, type Account, type SharedLook, type SharedPiece } from '../types';
-import { formatLocalDate } from '../lib/dates';
-import { GarmentPlate, TagPortrait } from './art';
+import { Link, useNavigate } from 'react-router-dom';
+import {
+  DEFAULT_CATEGORIES, SCOPE_LABELS, postVisibleTo,
+  type Account, type CommunityState, type FeedPost, type SharedLook, type SharedPiece,
+} from '@almari/shared/types';
+import { formatLocalDate } from '@almari/shared/dates';
+import { Basting, GarmentPlate, TagPortrait } from './art';
+import { Button, Card, Chip, IconButton } from './ui';
+import { IconBookmark, IconPlus } from './icons';
 
 /**
  * The pieces every social surface shares, so a look shown in the feed, in a
@@ -136,12 +141,16 @@ export function sharedCategoryLabel(id: string): string {
   return DEFAULT_CATEGORIES.find(c => c.id === id)?.label ?? id;
 }
 
-/** 'YYYY-MM-DD' → 'Aug 9'. Local, never parsed as UTC. */
+/**
+ * 'YYYY-MM-DD' → '9 Aug'. Local, never parsed as UTC — and en-IN, the house
+ * locale (owner decision 2026-08-19): day before month, the way the date is
+ * said here. One function, so the feed, chats, events and profiles agree.
+ */
 export function shortDate(date: string | undefined): string {
   if (!date) return '';
   const d = new Date(`${date}T00:00:00`);
   if (Number.isNaN(d.getTime())) return date;
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
 }
 
 /**
@@ -181,4 +190,277 @@ export function oldestFirst<T extends { date?: string; at?: string; id: string }
   if (t !== 0) return t;
   const d = (a.date ?? '').localeCompare(b.date ?? '');
   return d !== 0 ? d : a.id.localeCompare(b.id);
+}
+
+/** A post and its author, resolved together. What every social page renders. */
+export interface FeedEntry {
+  post: FeedPost;
+  author: Account;
+}
+
+/**
+ * Post AND author, resolved together, once — shared by the feed, Explore and
+ * the story rail so the three surfaces cannot drift apart on what is visible.
+ * Explore is a rearrangement of the feed, never a wider aperture: consent
+ * stays structural because this is the only door.
+ *
+ * Three faults lived in the gap between the list a masthead counted and the
+ * list a map rendered (an authorless post, a scopeless post that threw, a
+ * post carrying nothing at all); this one list is the fix for all three.
+ */
+export function resolveFeedEntries(
+  accounts: Account[],
+  community: CommunityState,
+  activeId: string | null
+): FeedEntry[] {
+  const byId = new Map(accounts.map(a => [a.id, a]));
+  return community.posts
+    .filter(p => {
+      if (!p || !p.scope) return false;
+      if (!p.look && !p.piece && !p.caption) return false;
+      if (!byId.has(p.authorId)) return false;
+      try {
+        return postVisibleTo(p, activeId, community.conversations, community.households);
+      } catch {
+        return false;
+      }
+    })
+    .map(post => ({ post, author: byId.get(post.authorId)! }))
+    .sort((a, b) => newestFirst(a.post, b.post));
+}
+
+/* ============================== the story rail ==============================
+   "On show in the last day." Membership is COMPUTED at render from the same
+   resolved entries the feed shows — nothing is written, nothing is recorded,
+   nothing expires from storage. After 24 hours only the rail forgets; the
+   feed remembers. No seen-state exists anywhere: an accent ring that decays
+   when you have watched is an unread badge, and those are banned. */
+
+export const RAIL_WINDOW_MS = 24 * 60 * 60 * 1000;
+
+/** When a post happened, ms — `at` if stamped, else that day's local midnight. */
+export function postTime(post: { at?: string; date?: string }): number {
+  return Date.parse(post.at ?? `${post.date ?? ''}T00:00:00`);
+}
+
+/**
+ * Does this post join the rail? Pure, so the boundary is unit-testable:
+ * under 24 hours old, by local time — a day-granular post is that day's
+ * story until its midnight has been 24 hours gone.
+ */
+export function qualifiesForRail(post: { at?: string; date?: string }, now: number): boolean {
+  const t = postTime(post);
+  return Number.isFinite(t) && now - t < RAIL_WINDOW_MS;
+}
+
+export interface StoryDeck {
+  author: Account;
+  /** Oldest → newest: the honest telling of a day. */
+  posts: FeedPost[];
+}
+
+/**
+ * The rail's decks: one per author with a qualifying post. "Yours" first,
+ * then authors by their newest qualifying post, newest first — reverse-chron,
+ * the whole algorithm. Within a deck the viewer plays oldest → newest.
+ */
+export function railDecks(entries: FeedEntry[], activeId: string | null, now: number): StoryDeck[] {
+  const byAuthor = new Map<string, StoryDeck>();
+  for (const { post, author } of entries) {
+    if (!qualifiesForRail(post, now)) continue;
+    const deck = byAuthor.get(author.id) ?? { author, posts: [] };
+    deck.posts.push(post);
+    byAuthor.set(author.id, deck);
+  }
+  const decks = [...byAuthor.values()];
+  for (const deck of decks) deck.posts.sort(oldestFirst);
+  decks.sort((a, b) => {
+    if (a.author.id === activeId) return -1;
+    if (b.author.id === activeId) return 1;
+    return newestFirst(a.posts[a.posts.length - 1], b.posts[b.posts.length - 1]);
+  });
+  return decks;
+}
+
+/**
+ * One slot on the rail. The opening is an EYELET — the brand's one sanctioned
+ * circle, scaled up — and it holds a monogram, never a cropped photograph:
+ * the photograph waits inside the viewer, in its 4:5 frame. Every eyelet
+ * wears the same hairline; the rail's whole grammar is presence.
+ */
+export function StorySlot({
+  to,
+  name,
+  monogram,
+  ariaLabel,
+  plus,
+  onClick,
+}: {
+  to?: string;
+  name: string;
+  monogram?: string;
+  ariaLabel: string;
+  /** The waiting slot: a dashed eyelet holding a plus — a punched hole waiting for its thread. */
+  plus?: boolean;
+  onClick?: () => void;
+}) {
+  const eyelet = (
+    <span
+      className={`w-14 h-14 rounded-full bg-sunken border ${
+        plus ? 'border-dashed' : ''
+      } border-border outline outline-1 outline-border outline-offset-2 flex items-center justify-center text-text`}
+    >
+      {plus ? <IconPlus size={18} /> : <span className="type-ledger text-[15px]">{monogram}</span>}
+    </span>
+  );
+  const label = (
+    <span className="type-ledger text-[11px] text-text-2 w-16 truncate text-center">{name}</span>
+  );
+  const cls = 'w-16 flex flex-col items-center gap-1.5 py-1';
+  if (to) {
+    return (
+      <Link to={to} aria-label={ariaLabel} className={cls}>
+        {eyelet}
+        {label}
+      </Link>
+    );
+  }
+  return (
+    <button type="button" onClick={onClick} aria-label={ariaLabel} className={cls}>
+      {eyelet}
+      {label}
+    </button>
+  );
+}
+
+/* ================================ the card ================================
+   The feed's card, extracted so the feed and Explore's detail render the one
+   object. NO metrics anywhere: no counts, no "seen by", no reader-visible
+   marks. The one engagement mechanic is the private set-aside bookmark,
+   counted nowhere. */
+
+export function PostCard({
+  post,
+  author,
+  isMine,
+  saved,
+  onToggleSave,
+  onTakeOff,
+}: {
+  post: FeedPost;
+  author: Account;
+  isMine: boolean;
+  saved: boolean;
+  onToggleSave: () => void;
+  onTakeOff: () => void;
+}) {
+  const navigate = useNavigate();
+  const look = post.look;
+  const pieces = look?.pieces ?? [];
+
+  /* The four verbs, placed where they can be true. On a post you did not
+     write: Attach (show it into a conversation — moves nothing) and, on piece
+     posts, Ask after it (a request, status `asked`). Share is the card's own
+     existence. Lend stays in the conversation where the ask lives — only the
+     owner lends, and a lend pressed on a feed card has no borrower to hand
+     to. No verb ever grows a count. */
+  const attach = () => {
+    navigate('/chats', {
+      state: { attach: post.piece ? { piece: post.piece } : { look } },
+    });
+  };
+  const askAfter = () => {
+    if (!post.piece) return;
+    navigate('/chats', {
+      state: { ask: { pieceName: post.piece.name, ownerId: post.authorId } },
+    });
+  };
+
+  return (
+    <Card padded={false}>
+      {/* The look, first, at 4:5 in its own hairline plate — the flat is a
+          first-class stand-in for a look never photographed. */}
+      {look ? (
+        <div className="p-2.5 pb-0">
+          <div className="border border-border rounded-[2px] overflow-hidden">
+            <LookThumb look={look} />
+          </div>
+        </div>
+      ) : null}
+
+      <div className="p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <AccountLine account={author} meta={shortDate(post.date)} />
+            {/* A sample wardrobe says so on every post, in the same display
+                chip the scope label wears — the fiction stays warm but
+                legible (docs/35, owner decision 3). */}
+            {author.isSample ? (
+              <span className="shrink-0">
+                <Chip as="span">sample wardrobe</Chip>
+              </span>
+            ) : null}
+          </div>
+          <IconButton
+            label={saved ? `Put "${look?.name ?? 'this'}" back` : `Set "${look?.name ?? 'this'}" aside`}
+            aria-pressed={saved}
+            active={saved}
+            onClick={onToggleSave}
+            className="-mt-1.5 -mr-2 shrink-0"
+          >
+            <IconBookmark size={18} />
+          </IconButton>
+        </div>
+
+        {post.caption ? (
+          <p className="type-editorial text-[19px] sm:text-[20px] leading-snug text-balance mt-3">
+            {post.caption}
+          </p>
+        ) : null}
+
+        {post.piece ? (
+          <div className="mt-3">
+            <PieceCard piece={post.piece} />
+          </div>
+        ) : null}
+
+        {look ? (
+          <p className="type-ledger text-[11px] text-text-2 mt-3 leading-relaxed">
+            {look.name}
+            {look.occasion ? ` · ${look.occasion}` : ''}
+            {pieces.length > 0 ? (
+              <span className="block mt-1">{pieces.join(' · ')}</span>
+            ) : null}
+          </p>
+        ) : null}
+
+        {/* The scope chip and the take-down belong to the author alone —
+            a reader is told nothing about a shelf they were handed. */}
+        {isMine ? (
+          <div className="mt-3 flex items-center justify-between gap-3">
+            {post.scope.kind !== 'everyone' ? (
+              <Chip as="span">{SCOPE_LABELS[post.scope.kind].toLowerCase()}</Chip>
+            ) : (
+              <span />
+            )}
+            <Button compact onClick={onTakeOff}>Take it off the feed</Button>
+          </div>
+        ) : look || post.piece ? (
+          <>
+            <Basting className="my-3" />
+            <div className="mt-3 flex items-center gap-3">
+              {post.piece ? (
+                <>
+                  <Button compact onClick={askAfter}>Ask after it</Button>
+                  <Button tone="tertiary" onClick={attach}>Attach</Button>
+                </>
+              ) : (
+                <Button compact onClick={attach}>Attach</Button>
+              )}
+            </div>
+          </>
+        ) : null}
+      </div>
+    </Card>
+  );
 }

@@ -10,15 +10,16 @@ import {
   isBenched,
   type ClothingItem,
   type LaundryStatus,
-} from '../types';
-import { daysSince } from '../lib/dates';
-import { costPerWear, formatMoney, formatPerWear } from '../lib/cost';
-import { findSimilarItems, wearContext } from '../lib/similarity';
+} from '@almari/shared/types';
+import { daysSince } from '@almari/shared/dates';
+import { costPerWear, formatMoney, formatPerWear } from '@almari/shared/cost';
+import { findSimilarItems, wearContext } from '@almari/shared/similarity';
 import { Button, Chip, IconButton, Modal, SectionTitle, Stat, inputClass, selectClass } from './ui';
 import { Basting, GarmentPlate } from './art';
 import { IconPin } from './icons';
 import { showToast } from './Toast';
 import { CutoutBench } from './Cutout';
+import ConfirmDialog from './ConfirmDialog';
 
 /**
  * ONE PIECE — its record.
@@ -137,7 +138,11 @@ export default function ItemDetail({ itemId, onClose, onAmend }: Props) {
   };
 
   return (
-    <Modal open onClose={onClose} title={item.name} wide>
+    <>
+    {/* While the delete gate stands, Escape reaches BOTH modals' document
+        listeners; guarding this Modal's onClose makes that keypress close the
+        gate alone, not the whole record underneath it. */}
+    <Modal open onClose={confirmDelete ? () => setConfirmDelete(false) : onClose} title={item.name} wide>
       <div className="space-y-6">
         {/* ---------- the piece itself ---------- */}
         <div className="grid sm:grid-cols-[minmax(0,190px)_1fr] gap-5">
@@ -245,8 +250,8 @@ export default function ItemDetail({ itemId, onClose, onAmend }: Props) {
 
             {benched ? (
               <p className="text-[13px] text-text-2 leading-snug">
-                Benched — out of rotation until it comes back from the bench. The generator
-                leaves it alone in the meantime.
+                Out of rotation while it waits on a repair. Outfit suggestions leave it
+                alone until it comes back.
               </p>
             ) : null}
           </div>
@@ -519,37 +524,14 @@ export default function ItemDetail({ itemId, onClose, onAmend }: Props) {
                   </Button>
                 </div>
 
-                {/* Hard delete, demoted to what it actually is. */}
+                {/* Hard delete, demoted to what it actually is — and gated.
+                    The warning sheet (a sibling of this Modal, below) names
+                    the piece and its wears; the handler inside it is exactly
+                    the one that always ran. */}
                 <div className="pt-1">
-                  {confirmDelete ? (
-                    <div className="flex flex-wrap items-center gap-3">
-                      <span className="text-[13px] text-text-2">
-                        Deleting drops the piece and its {item.wearCount}{' '}
-                        {item.wearCount === 1 ? 'wear' : 'wears'} for good.
-                      </span>
-                      <Button
-                        compact
-                        tone="destructive"
-                        onClick={() => {
-                          const putBack = deleteItem(item.id);
-                          showToast(`Deleted. "${item.name}" and its record.`, 'info', {
-                            label: 'Undo',
-                            run: putBack,
-                          });
-                          onClose();
-                        }}
-                      >
-                        Delete anyway
-                      </Button>
-                      <Button compact tone="tertiary" onClick={() => setConfirmDelete(false)}>
-                        Never mind
-                      </Button>
-                    </div>
-                  ) : (
-                    <Button tone="tertiary" onClick={() => setConfirmDelete(true)}>
-                      Added by mistake? Delete instead
-                    </Button>
-                  )}
+                  <Button tone="tertiary" onClick={() => setConfirmDelete(true)}>
+                    Added by mistake? Delete instead
+                  </Button>
                 </div>
               </div>
             )}
@@ -557,5 +539,30 @@ export default function ItemDetail({ itemId, onClose, onAmend }: Props) {
         ) : null}
       </div>
     </Modal>
+
+    {/* The gate, a SIBLING of the record's sheet rather than a child of it,
+        so the two focus traps never share a tab order — Tab cycles inside
+        the warning until it is answered. */}
+    <ConfirmDialog
+      open={confirmDelete}
+      title="Delete this piece"
+      danger
+      body={`This removes “${item.name}” and its record of ${item.wearCount} ${
+        item.wearCount === 1 ? 'wear' : 'wears'
+      }. Undo is offered for a moment after; once the notice fades, the record is gone for good.`}
+      confirmLabel="Delete anyway"
+      cancelLabel="Never mind"
+      onConfirm={() => {
+        setConfirmDelete(false);
+        const putBack = deleteItem(item.id);
+        showToast(`Deleted. "${item.name}" and its record.`, 'info', {
+          label: 'Undo',
+          run: putBack,
+        });
+        onClose();
+      }}
+      onClose={() => setConfirmDelete(false)}
+    />
+    </>
   );
 }

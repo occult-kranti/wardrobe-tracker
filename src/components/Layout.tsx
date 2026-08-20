@@ -4,12 +4,13 @@ import { nextTheme } from '../lib/accounts';
 import {
   IconToday, IconCloset, IconOutfits, IconCalendar, IconLedger,
   IconWishlist, IconCompare, IconRail, IconSettings, IconPlus, IconTheme, IconMenu, IconClose,
-  IconEvents, IconFeed, IconChats, IconProfile,
+  IconEvents, IconFeed, IconChats, IconProfile, IconSearch,
 } from './icons';
 import { GroundFrieze, HangingRail, GutterFigure, ScatterField, Wordmark, TagMark } from './art';
 import { useWardrobe } from '../context/WardrobeContext';
 import { useSession } from '../context/SessionContext';
 import AddItemModal from './AddItemModal';
+import { PageGuide } from './Tutorial';
 import { ToastContainer } from './Toast';
 import { Button, IconButton } from './ui';
 
@@ -33,6 +34,9 @@ const navItems: NavItem[] = [
   { path: '/compare', label: 'Before you buy', shortLabel: 'Compare', icon: IconCompare },
   { path: '/events', label: 'Events', icon: IconEvents },
   { path: '/feed', label: 'Feed', icon: IconFeed },
+  // Explore lives here (the More sheet) and behind the Feed's masthead action —
+  // never in the five mobile slots, which stay five.
+  { path: '/explore', label: 'Explore', icon: IconSearch },
   { path: '/chats', label: 'Conversations', shortLabel: 'Chats', icon: IconChats },
   { path: '/profile', label: 'Profile', icon: IconProfile },
   { path: '/rail', label: 'Shared rail', shortLabel: 'Rail', icon: IconRail },
@@ -76,6 +80,8 @@ const mobilePrimary = ['/', '/closet', '/outfits', '/feed'];
  */
 const HELD_BY: Record<string, string[]> = {
   '/closet': ['/furniture', '/intake'],
+  // A story deck is the feed being read one teller at a time.
+  '/feed': ['/story'],
 };
 
 function owns(path: string, here: string): boolean {
@@ -214,6 +220,14 @@ export default function Layout() {
         {/* Keyed by path: each page arrives like a plate set on the table. */}
         <div key={location.pathname} className="v2-route max-w-5xl mx-auto px-4 sm:px-6 lg:px-10 py-6 lg:py-10">
           <Outlet />
+          {/* The page's own guide, at the foot of every screen that has one.
+              Here rather than in the pages themselves for two reasons: no page
+              file has to know it exists, and the control lands in the same
+              place on all of them, which is the only thing that makes a quiet
+              affordance findable. Inside the keyed div on purpose — walking to
+              another screen remounts it, so an open sheet closes with the page
+              it belonged to and the next screen's mark is read fresh. */}
+          <PageGuide path={location.pathname} />
         </div>
       </main>
 

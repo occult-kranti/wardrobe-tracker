@@ -13,24 +13,29 @@ import {
   wardrobeKey,
 } from './accounts';
 import { lastSyncedAt, syncModeOf, type QueuedPush } from './sync';
-import { migrate } from './migrate';
+import { migrate } from '@almari/shared/migrate';
 import { PERSONAS } from './personaWardrobe';
 import {
   categoryLabel,
   type Account,
   type AppState,
   type SyncMode,
-} from '../types';
+} from '@almari/shared/types';
 
 /**
- * THE PROJECT LEAD'S LEDGER — storage surgery for the alpha.
+ * THE PROJECT LEAD'S LEDGER — storage surgery and alpha monitoring.
  *
- * Everything here reads and writes this browser's localStorage directly, and
- * nothing else. The session layer's own removal path (SessionContext
+ * The surgery half reads and writes this browser's localStorage directly,
+ * and nothing else. The session layer's own removal path (SessionContext
  * .removeAccount) also asks the account to delete its remote copy, which is
  * the right behaviour for a person retiring a wardrobe and the wrong one for
- * a project lead tidying a test device — so this module does its own work and
- * never imports a function that can reach the network.
+ * a project lead tidying a test device — so the surgery functions do their
+ * own work and never call anything that can reach a wardrobe's remote copy.
+ *
+ * The monitoring half — the services board and the alpha board, at the end
+ * of this file — does reach the network, deliberately and read-only: it
+ * probes the AI relay and asks the stats service what the alpha holds.
+ * Neither call carries anything from any closet.
  *
  * After surgery the rest of the app is told through the same `storage` events
  * it already listens to for other tabs. A same-tab write fires no such event
@@ -634,6 +639,218 @@ export function cleanOrphans(orphans: OrphanRef[]): number {
     saveWardrobe(accountId, state);
   }
   return cleared;
+}
+
+/* ---------- the services board: relay probes ---------- */
+
+/**
+ * The relay's address. The source of truth is the RELAY_ENDPOINT constant in
+ * src/lib/anthropic.ts, which keeps it module-private on purpose; it is
+ * re-declared here so the portal can knock on the same door the intake walks
+ * through. If one moves, move both.
+ */
+export const RELAY_ENDPOINT = 'https://wvupsqfevlrmhqfjreyx.supabase.co/functions/v1/ai-proxy';
+
+/** The whole probe: one sentence out, one line back. Nothing else is sent. */
+const PROBE_PROMPT = 'Reply with exactly: relay test ok';
+
+export interface RelayService {
+  id: string;
+  label: string;
+  model: string;
+  /** Which response shape comes back — the request body is the same either way. */
+  shape: 'anthropic' | 'openai';
+  maxTokens: number;
+}
+
+/**
+ * The four models the relay can route to. Kimi K3 is a reasoning model that
+ * spends its thinking from the same token budget as the answer, so its probe
+ * carries the 8000-token ceiling the intake uses — 512 would be eaten whole
+ * by the thinking and the answer would arrive empty.
+ */
+export const RELAY_SERVICES: RelayService[] = [
+  { id: 'fable', label: 'Claude Fable 5', model: 'claude-fable-5', shape: 'anthropic', maxTokens: 512 },
+  { id: 'opus', label: 'Claude Opus 5', model: 'claude-opus-5', shape: 'anthropic', maxTokens: 512 },
+  { id: 'gemini', label: 'Gemini 3.7 Flash', model: 'gemini-3.7-flash', shape: 'openai', maxTokens: 512 },
+  { id: 'kimi', label: 'Kimi K3', model: 'k3', shape: 'openai', maxTokens: 8000 },
+];
+
+/**
+ * healthy      — HTTP 200, an answer came back.
+ * unconfigured — the relay answered 503 "not configured": the house has not
+ *                set that provider's key. Its own calm state, not a failure.
+ * failed       — any other HTTP answer.
+ * unreachable  — the network itself refused; there is no HTTP status.
+ */
+export type ProbeVerdict = 'healthy' | 'unconfigured' | 'failed' | 'unreachable';
+
+export interface ProbeResult {
+  verdict: ProbeVerdict;
+  /** null when the network never answered. */
+  status: number | null;
+  latencyMs: number;
+  /** The first line of the model's answer, or the trouble in one phrase. */
+  answer: string;
+}
+
+function firstLine(text: string): string {
+  return (
+    text
+      .split('\n')
+      .map(line => line.trim())
+      .find(line => line.length > 0) ?? ''
+  );
+}
+
+/** The answer's text, read by the shape the provider speaks. */
+function probeAnswer(service: RelayService, json: unknown): string {
+  if (service.shape === 'anthropic') {
+    const blocks = (json as { content?: Array<{ type?: string; text?: string }> }).content ?? [];
+    return firstLine(blocks.filter(b => b.type === 'text').map(b => b.text ?? '').join('\n'));
+  }
+  const content = (json as {
+    choices?: Array<{ message?: { content?: string | Array<{ type?: string; text?: string }> } }>;
+  }).choices?.[0]?.message?.content;
+  // OpenAI-compatible content is a string; some providers send typed parts.
+  const text =
+    typeof content === 'string'
+      ? content
+      : (content ?? []).filter(b => b.type === 'text').map(b => b.text ?? '').join('\n');
+  return firstLine(text);
+}
+
+/**
+ * One knock on the relay for one model. The request body is the tiny probe
+ * and nothing else — no photograph, no closet, no key (the relay holds the
+ * keys server-side).
+ */
+export async function probeRelay(service: RelayService): Promise<ProbeResult> {
+  const started = performance.now();
+  let res: Response;
+  try {
+    res = await fetch(RELAY_ENDPOINT, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        model: service.model,
+        max_tokens: service.maxTokens,
+        messages: [{ role: 'user', content: PROBE_PROMPT }],
+      }),
+    });
+  } catch {
+    return {
+      verdict: 'unreachable',
+      status: null,
+      latencyMs: Math.round(performance.now() - started),
+      answer: 'The relay could not be reached from here.',
+    };
+  }
+  const latencyMs = Math.round(performance.now() - started);
+  const body = await res.text().catch(() => '');
+  if (res.status === 200) {
+    let answer = '';
+    try {
+      answer = probeAnswer(service, JSON.parse(body));
+    } catch {
+      /* a 200 that does not parse is still a 200; the answer line says so */
+    }
+    return { verdict: 'healthy', status: 200, latencyMs, answer: answer || 'The answer came back empty.' };
+  }
+  if (res.status === 503 && /not configured/i.test(body)) {
+    return { verdict: 'unconfigured', status: 503, latencyMs, answer: 'The house has not set this key yet.' };
+  }
+  return {
+    verdict: 'failed',
+    status: res.status,
+    latencyMs,
+    answer: firstLine(body) || `The relay answered ${res.status}.`,
+  };
+}
+
+/* ---------- the alpha board: remote truth ---------- */
+
+/**
+ * The stats function beside the relay. Another squad is building it to this
+ * contract: GET with an x-admin-token header, answering
+ * { generatedAt, users, profiles, wardrobes: [{ id, user_id, updated_at,
+ * bytes, v }] }. Until it is deployed, every ask lands in the 'absent' state.
+ */
+export const ADMIN_STATS_ENDPOINT = 'https://wvupsqfevlrmhqfjreyx.supabase.co/functions/v1/admin-stats';
+
+/** sessionStorage, deliberately: the token leaves when the tab closes. */
+export const ADMIN_TOKEN_KEY = 'almari-admin-token';
+
+export function loadAdminToken(): string {
+  try {
+    return window.sessionStorage.getItem(ADMIN_TOKEN_KEY) ?? '';
+  } catch {
+    return '';
+  }
+}
+
+export function saveAdminToken(token: string): void {
+  try {
+    if (token.trim()) window.sessionStorage.setItem(ADMIN_TOKEN_KEY, token.trim());
+    else window.sessionStorage.removeItem(ADMIN_TOKEN_KEY);
+  } catch {
+    /* private mode — the token holds for this render only */
+  }
+}
+
+export interface AlphaWardrobeRow {
+  id: string;
+  user_id: string;
+  updated_at: string;
+  bytes: number;
+  /** Envelope version; null or absent means the row was stored bare. */
+  v?: number | string | null;
+}
+
+export interface AlphaStats {
+  generatedAt: string;
+  users: number;
+  profiles: number;
+  wardrobes: AlphaWardrobeRow[];
+}
+
+/**
+ * ok      — the numbers, as the service counted them.
+ * refused — 401: the token was refused.
+ * absent  — 404 or no network answer: the service is not deployed yet.
+ *           A calm state while the other squad builds it, never a red one.
+ * failed  — the service answered, but not with numbers.
+ */
+export type AlphaStatsResult =
+  | { kind: 'ok'; stats: AlphaStats }
+  | { kind: 'refused' }
+  | { kind: 'absent' }
+  | { kind: 'failed'; status: number };
+
+export async function fetchAlphaStats(token: string): Promise<AlphaStatsResult> {
+  let res: Response;
+  try {
+    res = await fetch(ADMIN_STATS_ENDPOINT, { headers: { 'x-admin-token': token } });
+  } catch {
+    return { kind: 'absent' };
+  }
+  if (res.status === 401) return { kind: 'refused' };
+  if (res.status === 404) return { kind: 'absent' };
+  if (!res.ok) return { kind: 'failed', status: res.status };
+  try {
+    const json = (await res.json()) as Partial<AlphaStats>;
+    return {
+      kind: 'ok',
+      stats: {
+        generatedAt: typeof json.generatedAt === 'string' ? json.generatedAt : '',
+        users: typeof json.users === 'number' ? json.users : 0,
+        profiles: typeof json.profiles === 'number' ? json.profiles : 0,
+        wardrobes: Array.isArray(json.wardrobes) ? json.wardrobes : [],
+      },
+    };
+  } catch {
+    return { kind: 'failed', status: res.status };
+  }
 }
 
 /** The whole panel, in order. The orphan check is last because it is the slow one. */

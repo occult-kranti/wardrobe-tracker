@@ -21,17 +21,18 @@
  */
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { build } from 'esbuild';
+import { sharedAliases } from '../packages/shared/aliases.mjs';
 import { mkdtempSync, readFileSync, writeFileSync, existsSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
 
 const dir = mkdtempSync(join(tmpdir(), 'feedintake-'));
-await build({
-  entryPoints: [
-    fileURLToPath(new URL('../src/lib/feedIntake.ts', import.meta.url)),
-    fileURLToPath(new URL('../src/lib/intake.ts', import.meta.url)),
-  ],
+await build({ alias: sharedAliases(),
+  entryPoints: {
+    feedIntake: fileURLToPath(new URL('../src/lib/feedIntake.ts', import.meta.url)),
+    intake: fileURLToPath(new URL('../packages/shared/intake.ts', import.meta.url)),
+  },
   bundle: true,
   format: 'esm',
   outdir: dir,
@@ -297,11 +298,11 @@ const ownShot = LIVE && liveArg && !liveArg.startsWith('-') ? liveArg : null;
 if (!LIVE) {
   console.log('\n(live mode skipped — run with --live; the relay holds the key)');
 } else {
-  console.log('\n--- live mode: one real read through the relay (Claude Sonnet 4.5) ---');
+  console.log('\n--- live mode: one real read through the relay (Claude Fable 5) ---');
   // No key here and none needed: the relay (supabase/functions/ai-proxy) holds
   // the provider keys server-side and routes a `claude*` model to Anthropic.
   const RELAY = 'https://wvupsqfevlrmhqfjreyx.supabase.co/functions/v1/ai-proxy';
-  const MODEL = 'claude-sonnet-4-5';
+  const MODEL = 'claude-fable-5';
 
   // 1. The screenshot: the owner's own, or a synthetic 2x2 grid built from
   //    the wardrobe photo pool. Three solo tiles; the bottom-right tile is a
@@ -370,7 +371,9 @@ print(out)
     },
     body: JSON.stringify({
       model: MODEL,
-      max_tokens: 8000,
+      // Matches MAX_TOKENS in src/lib/anthropic.ts: Fable 5 always thinks, and
+      // the thinking comes out of this same budget as the answer.
+      max_tokens: 16000,
       messages: [{
         role: 'user',
         content: [

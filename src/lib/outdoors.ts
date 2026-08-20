@@ -1,4 +1,4 @@
-import type { ClothingItem, Season } from '../types';
+import type { ClothingItem, Season } from '@almari/shared/types';
 
 /**
  * WHAT IT IS LIKE OUT — asked, not tracked.

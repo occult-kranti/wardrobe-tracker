@@ -97,6 +97,14 @@ to review against: CPW precedence, similarity weights 0.45/0.25/0.15/0.10/
 - Channel 2 — Android fallback: `eas build --profile preview --platform
   android` → internal-distribution APK, embeds the `preview` channel.
 - iOS is Expo Go only — no store, no TestFlight for the alpha.
+- **The store builds of Expo Go lag the SDK.** Confirmed live 2026-08-19: the
+  Play Store Expo Go does not support SDK 57 (Expo is "still waiting on
+  approval"), so a fully-updated phone still shows "Project is incompatible
+  with this version of Expo Go". The fix is on the device, never in the code:
+  open https://expo.dev/go on the phone, select SDK 57, install the Android
+  build from there — or plug the phone in over USB and press `a` in a running
+  `npx expo start` (the CLI installs the matching Expo Go itself). The alpha
+  kit and every QR page must link expo.dev/go, not the Play Store.
 - `runtimeVersion: { policy: "appVersion" }` is set: bump `app.json` `version`
   on any native-dependency change so an incompatible JS bundle can never load
   over an older Expo Go. Expo Go supports only built-in SDK modules — Phase

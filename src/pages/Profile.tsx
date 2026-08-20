@@ -5,11 +5,11 @@ import { useWardrobe } from '../context/WardrobeContext';
 import { Button, Card, Chip, EmptyState, Field, LinkButton, Masthead, Modal, SectionTitle, Stat, inputClass } from '../components/ui';
 import { Basting, PlateEmptyCloset } from '../components/art';
 import { AccountMark, LookThumb, newestFirst, shortDate } from '../components/social';
-import { HOUSEHOLD_KIND_LABELS, postVisibleTo, type HouseholdKind } from '../types';
+import { HOUSEHOLD_KIND_LABELS, postVisibleTo, type HouseholdKind } from '@almari/shared/types';
 import { createHousehold, joinHousehold, leaveHousehold } from '../lib/household';
 import { showToast } from '../components/Toast';
 import { personaById } from '../lib/personaWardrobe';
-import { formatMoney } from '../lib/cost';
+import { formatMoney } from '@almari/shared/cost';
 
 /**
  * A WARDROBE'S OWN PAGE — who keeps it, how they dress, and what they show.
@@ -143,7 +143,7 @@ export default function Profile() {
         <Card>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-5">
             <Stat value={wardrobe.activeItems.length} label="In the closet" />
-            <Stat value={worn.toLocaleString('en-US')} label="Wears recorded" />
+            <Stat value={worn.toLocaleString('en-IN')} label="Wears recorded" />
             <Stat value={wardrobe.outfits.length} label="Outfits" />
             <Stat value={spend > 0 ? formatMoney(spend) : '—'} label="What it cost" />
           </div>

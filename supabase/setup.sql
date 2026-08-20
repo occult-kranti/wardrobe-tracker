@@ -48,14 +48,37 @@ create table if not exists public.wardrobes (
 comment on table public.wardrobes is
   'Whole-wardrobe sync documents. The local record on the device is the original; this is the copy that makes a second device possible.';
 
+-- The `state` column carries an ENVELOPE, not a bare document:
+--   { "v": 1, "alg": "none", "payload": { ...the wardrobe document... } }
+-- docs/35 commits Almari to end-to-end encrypted sync. Nothing here is
+-- encrypted yet — alg 'none' means the payload is the document in the clear —
+-- but the discriminator exists now so that the day encryption lands is a new
+-- `alg` value rather than a migration run across live rows. Rows written
+-- before the envelope carry the document bare; the client reads those as the
+-- alg 'none' they always were, so no backfill is needed and none is done. No
+-- CHECK constraint enforces the shape, precisely because those older rows are
+-- valid and must stay valid.
+comment on column public.wardrobes.state is
+  'Envelope: {v, alg, payload}. alg ''none'' for alpha (plaintext payload). Rows predating the envelope hold the document bare and read as alg ''none''.';
+
 -- Look up "my wardrobes" without scanning anyone else's.
 create index if not exists wardrobes_user_id_idx on public.wardrobes (user_id);
 
 -- ----------------------------------------------------------------------------
--- updated_at — stamped on every write, no matter which client wrote it.
--- The app stamps it too; the trigger is the guarantee that no writer can
--- forget, because the conflict rule ("newer wins") is only as good as the
--- clock on the row.
+-- updated_at — stamped by the DATABASE on every write, whichever client wrote.
+--
+-- THE TRIGGER STAYS, and it now covers insert as well as update. The conflict
+-- rule ("newer wins") is only as good as the clock on the row, and a clock
+-- that any client could set is not a guarantee — a device whose system time
+-- runs fast would stamp a row into the future and win every comparison until
+-- real time caught up. One clock, in one place, settles that: whatever a
+-- client proposes, this is what the row carries.
+--
+-- The client's half of the bargain (src/lib/sync.ts): it reads the stamp back
+-- off the returned row and records THAT in its sync meta, rather than filing
+-- away the time it proposed. Before, the two disagreed by construction — the
+-- trigger overwrote what the client had already written down — and the sync
+-- meta held a time no row had ever carried.
 -- ----------------------------------------------------------------------------
 create or replace function public.set_updated_at()
 returns trigger
@@ -69,7 +92,7 @@ $$;
 
 drop trigger if exists wardrobes_set_updated_at on public.wardrobes;
 create trigger wardrobes_set_updated_at
-  before update on public.wardrobes
+  before insert or update on public.wardrobes
   for each row execute function public.set_updated_at();
 
 -- ============================================================================

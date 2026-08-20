@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
 import { useWardrobe } from '../context/WardrobeContext';
-import { categoryLabel, displayTag, PRESET_COLORS, type ClothingItem } from '../types';
-import { todayLocal, addDays } from '../lib/dates';
-import { findSimilarItems, matchSummary, wearContext, type SimilarMatch } from '../lib/similarity';
+import { categoryLabel, displayTag, PRESET_COLORS, type ClothingItem } from '@almari/shared/types';
+import { todayLocal, addDays } from '@almari/shared/dates';
+import { findSimilarItems, matchSummary, wearContext, type SimilarMatch } from '@almari/shared/similarity';
 import { Button, Card, Chip, EmptyState, Masthead, SectionTitle, inputClass } from '../components/ui';
 import { Basting, GarmentPlate, PlateEmptyCloset } from '../components/art';
 import { IconCheck } from '../components/icons';

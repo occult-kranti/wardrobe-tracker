@@ -37,6 +37,7 @@
  */
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { build } from 'esbuild';
+import { sharedAliases } from '../packages/shared/aliases.mjs';
 import {
   mkdtempSync, readFileSync, writeFileSync, existsSync,
   mkdirSync, readdirSync, unlinkSync, statSync,
@@ -47,7 +48,7 @@ import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 
 const RELAY = 'https://wvupsqfevlrmhqfjreyx.supabase.co/functions/v1/ai-proxy';
-const MODEL = 'claude-sonnet-4-5';
+const MODEL = 'claude-fable-5';
 const SRC = fileURLToPath(new URL('../test_images', import.meta.url));
 const OUT = fileURLToPath(new URL('../public/wardrobe/cofounder', import.meta.url));
 const CACHE = fileURLToPath(new URL('../node_modules/.cache/cofounder-intake', import.meta.url));
@@ -56,11 +57,11 @@ const GALLERY = ['todaysoutfit1.png', 'todaysoutfit2.png', 'test.png', 'test2.pn
 const FEEDS = ['insta feed.png', 'instafeed2.png'];
 
 const dir = mkdtempSync(join(tmpdir(), 'cofounder-'));
-await build({
-  entryPoints: [
-    fileURLToPath(new URL('../src/lib/feedIntake.ts', import.meta.url)),
-    fileURLToPath(new URL('../src/lib/intake.ts', import.meta.url)),
-  ],
+await build({ alias: sharedAliases(),
+  entryPoints: {
+    feedIntake: fileURLToPath(new URL('../src/lib/feedIntake.ts', import.meta.url)),
+    intake: fileURLToPath(new URL('../packages/shared/intake.ts', import.meta.url)),
+  },
   bundle: true,
   format: 'esm',
   outdir: dir,
@@ -96,7 +97,9 @@ async function ask(buf, mediaType, prompt, kind, label) {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
         model: MODEL,
-        max_tokens: 8000,
+        // Matches MAX_TOKENS in src/lib/anthropic.ts: Fable 5 always thinks, and
+        // the thinking comes out of this same budget as the answer.
+        max_tokens: 16000,
         messages: [{
           role: 'user',
           content: [

@@ -1,9 +1,9 @@
 import { useMemo, useState, type CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
 import { useWardrobe } from '../context/WardrobeContext';
-import { categoryLabel, isPlannedLog, SOURCE_LABELS, type ClothingItem, type ItemSource } from '../types';
-import { daysSince, isFutureDate, todayLocal } from '../lib/dates';
-import { aggregateCostPerWear, costPerWear, formatMoney, formatPerWear } from '../lib/cost';
+import { categoryLabel, isPlannedLog, SOURCE_LABELS, type ClothingItem, type ItemSource } from '@almari/shared/types';
+import { daysSince, isFutureDate, todayLocal } from '@almari/shared/dates';
+import { aggregateCostPerWear, costPerWear, formatMoney, formatPerWear } from '@almari/shared/cost';
 import { Button, Card, EmptyState, Masthead, SectionTitle, Stat, TableRail } from '../components/ui';
 import { Basting, GarmentPlate, LeaderLine, PlateEmptyLedger } from '../components/art';
 import AddItemModal from '../components/AddItemModal';
@@ -34,7 +34,7 @@ const bastingRow: CSSProperties = {
 function monthTick(key: string): string {
   const [y, m] = key.split('-').map(Number);
   const d = new Date(y, m - 1, 1);
-  const short = d.toLocaleDateString('en-US', { month: 'short' });
+  const short = d.toLocaleDateString('en-IN', { month: 'short' });
   return d.getFullYear() === new Date().getFullYear() ? short : `${short} ’${String(y).slice(2)}`;
 }
 
@@ -42,7 +42,7 @@ function monthTick(key: string): string {
 function monthLabel(dateStr: string): string {
   const d = new Date(`${dateStr}T00:00:00`);
   const sameYear = d.getFullYear() === new Date().getFullYear();
-  return d.toLocaleDateString('en-US', sameYear ? { month: 'long' } : { month: 'long', year: 'numeric' });
+  return d.toLocaleDateString('en-IN', sameYear ? { month: 'long' } : { month: 'long', year: 'numeric' });
 }
 
 /** Brand-group sentinels — pieces with no maker to rank. Never real makers. */
@@ -252,7 +252,7 @@ export default function Statistics() {
      piece is bought. Stated as arithmetic, never as an achievement. */
 
   // Under three months the curve is theatre, not information: a closet logged for
-  // six weeks runs $52 → $7 on arithmetic alone, and no caption beats that slope.
+  // six weeks runs ₹52 → ₹7 on arithmetic alone, and no caption beats that slope.
   const MIN_CPW_MONTHS = 3;
   const cpwSeries = useMemo(() => months.filter(m => m.cpw !== null), [months]);
   const cpwNow = cpwSeries.length > 0 ? cpwSeries[cpwSeries.length - 1].cpw : null;
@@ -381,8 +381,8 @@ export default function Statistics() {
               house with no door out. The way on is the first piece. */}
           <EmptyState
             plate={<PlateEmptyLedger />}
-            title="The accounts are still empty."
-            body="Every piece added and every wear logged lands here — what the closet holds, what it cost, and what it actually does."
+            title="The ledger is still empty."
+            body="Pieces and wears land here. Every wear you log divides what a piece cost by one more, so the ledger can say what each thing has come down to per wear."
             action={
               <Button tone="primary" onClick={() => setAddOpen(true)}>
                 Add the first piece
@@ -397,7 +397,7 @@ export default function Statistics() {
 
   return (
     <div className="space-y-6">
-      <Masthead title="Ledger" meta={`${daysLogged.toLocaleString('en-US')} days logged`} />
+      <Masthead title="Ledger" meta={`${daysLogged.toLocaleString('en-IN')} days logged`} />
 
       {/* Cumulative, factual, unloseable. Stated like a bank balance.
           "Wears recorded" is the item-wear total — the same words used to label a
@@ -405,9 +405,9 @@ export default function Statistics() {
       <Card>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-5">
           <Stat value={activeItems.length} label="In the closet" />
-          <Stat value={itemWears.toLocaleString('en-US')} label="Wears recorded" />
+          <Stat value={itemWears.toLocaleString('en-IN')} label="Wears recorded" />
           <Stat value={outfits.length} label="Outfits" />
-          <Stat value={unworn.length} label="Resting" />
+          <Stat value={unworn.length} label="Not worn yet" />
         </div>
       </Card>
 
@@ -553,7 +553,7 @@ export default function Statistics() {
           </div>
           <Basting className="my-4" />
           <p className="text-[14px] text-text-2 leading-snug">
-            {formatMoney(costTotals.basis)} across {costTotals.wears.toLocaleString('en-US')} wears
+            {formatMoney(costTotals.basis)} across {costTotals.wears.toLocaleString('en-IN')} wears
             of the pieces it bought. Every wear divides the same money one more way; every piece
             added starts the sum again.
           </p>
@@ -726,7 +726,7 @@ export default function Statistics() {
                     Wears
                   </th>
                   <th className="type-ledger text-[11px] text-text-2 font-normal pb-2 pl-3 text-right rule-double w-[86px]">
-                    $/wear
+                    Per wear
                   </th>
                 </tr>
               </thead>

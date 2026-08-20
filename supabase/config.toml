@@ -9,3 +9,8 @@ project_id = "wvupsqfevlrmhqfjreyx"
 
 [functions.ai-proxy]
 verify_jwt = false
+
+# admin-stats has no JWT either — its lock is the ADMIN_TOKEN header, checked
+# inside the function. The one-off equivalent is `--no-verify-jwt` at deploy.
+[functions.admin-stats]
+verify_jwt = false

@@ -5,6 +5,7 @@ import { Button, Card, Chip, EmptyState, Field, LinkButton, Masthead, Modal, Sec
 import { Basting, GarmentPlate, PlateEmptyCloset } from '../components/art';
 import { IconCamera, IconChevronLeft, IconPlus } from '../components/icons';
 import { showToast } from '../components/Toast';
+import ConfirmDialog from '../components/ConfirmDialog';
 import {
   drawFurniture, defaultSlotLabels, FORM_LABELS, FORM_NOTES, SLOT_NOUN, maxSlotsFor,
   ORNAMENT_LABELS, ORNAMENT_NOTES,
@@ -14,7 +15,7 @@ import { hasKey, keyLooksWrong, prepareImage, readPhotograph, saveKey } from '..
 import {
   FURNITURE_FORMS, MAX_FURNITURE, MAX_FURNITURE_NAME, MAX_SLOT_LABEL, ORNAMENTS,
   type ClothingItem, type Furniture as FurniturePiece, type FurnitureForm, type Ornament,
-} from '../types';
+} from '@almari/shared/types';
 
 /**
  * FURNITURE — where a garment physically lives.
@@ -208,7 +209,7 @@ function DrawPiece({ open, onClose }: { open: boolean; onClose: () => void }) {
             draw it.
           </p>
           <p className="text-[13px] text-text-2 mt-2 leading-snug">
-            The photograph goes to Claude Sonnet by Anthropic, through Almari&rsquo;s relay — the
+            The photograph goes to Claude Fable by Anthropic, through Almari&rsquo;s relay — the
             key is held on the server, never on this device.
           </p>
           <input
@@ -518,6 +519,7 @@ export function FurniturePiece() {
   const [openSlot, setOpenSlot] = useState<string | null>(null);
   const [putting, setPutting] = useState(false);
   const [picked, setPicked] = useState<string[]>([]);
+  const [confirmRemove, setConfirmRemove] = useState(false);
 
   if (!piece) {
     return (
@@ -551,8 +553,11 @@ export function FurniturePiece() {
     showToast(`Put away. ${moved} ${moved === 1 ? 'piece is' : 'pieces are'} in ${slot.label}.`, 'success');
   };
 
+  // How many pieces would lose their address — read here so the warning and
+  // the toast state the same truth from the same count.
+  const held = activeItems.filter(i => i.place?.furnitureId === piece.id).length;
+
   const remove = () => {
-    const held = activeItems.filter(i => i.place?.furnitureId === piece.id).length;
     const putBack = removeFurniture(piece.id);
     navigate('/furniture', { replace: true });
     showToast(
@@ -591,7 +596,7 @@ export function FurniturePiece() {
             />
           </Field>
           <div className="mt-4">
-            <Button tone="destructive" compact onClick={remove}>Remove this place</Button>
+            <Button tone="destructive" compact onClick={() => setConfirmRemove(true)}>Remove this place</Button>
             <p className="type-ledger text-[10px] text-text-2 mt-2 leading-relaxed">
               The clothes stay. Only the line saying where they sleep goes.
             </p>
@@ -725,6 +730,31 @@ export function FurniturePiece() {
           <Button tone="tertiary" onClick={() => setPutting(false)}>Never mind</Button>
         </div>
       </Modal>
+
+      {/* The gate. What happens to the clothes inside is stated from the
+          code's own truth (removeFurniture in WardrobeContext): they stay in
+          the closet with every wear, and only their address goes. */}
+      <ConfirmDialog
+        open={confirmRemove}
+        title="Remove this place"
+        danger
+        body={
+          held > 0
+            ? `This removes “${piece.name}” from the dressing room. The ${
+                held === 1 ? 'piece filed in it stays' : `${held} pieces filed in it stay`
+              } in the closet with every wear ${held === 1 ? 'it' : 'they'} earned — ${
+                held === 1 ? 'it only stops' : 'they only stop'
+              } having an address. Undo is offered for a moment after; once the notice fades, the place is gone for good.`
+            : `This removes “${piece.name}” from the dressing room. Nothing is filed in it, so no clothes are touched. Undo is offered for a moment after; once the notice fades, the place is gone for good.`
+        }
+        confirmLabel="Remove it"
+        cancelLabel="Keep it"
+        onConfirm={() => {
+          setConfirmRemove(false);
+          remove();
+        }}
+        onClose={() => setConfirmRemove(false)}
+      />
     </div>
   );
 }

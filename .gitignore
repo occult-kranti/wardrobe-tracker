@@ -33,6 +33,8 @@ test_images/
 
 # Supabase CLI local state
 supabase/.temp/
+# Python venv for the intake pipelines (build-time only, see requirements.txt)
+.venv/
 # Source packs (large, and the generated output is committed)
 *.zip
 scripts/fill-states.json

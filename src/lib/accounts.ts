@@ -4,7 +4,8 @@ import {
   type AppState,
   type CommunityState,
   type Theme,
-} from '../types';
+} from '@almari/shared/types';
+import { todayLocal } from '@almari/shared/dates';
 
 /**
  * Where each wardrobe lives.
@@ -219,7 +220,7 @@ export function adoptLegacyWardrobe(): Account | null {
     handle: '@you',
     monogram: 'Y',
     color: 'var(--color-accent)',
-    createdAt: new Date().toISOString().slice(0, 10),
+    createdAt: todayLocal(),
   };
   try {
     window.localStorage.setItem(wardrobeKey(account.id), raw);

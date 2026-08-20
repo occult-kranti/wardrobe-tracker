@@ -1,5 +1,8 @@
 /**
- * The tour's one flag — 'toile-tour' in this device's local storage.
+ * The tour's one flag, and the page guides' one list — both in this device's
+ * local storage, both plain reads and writes.
+ *
+ * The tour's flag is 'toile-tour'.
  *
  * Three values: absent ('new'), 'done', 'again'. The tour reads it once, on the
  * Today page's mount; every way out of the sheet writes 'done', because a tour
@@ -41,5 +44,64 @@ export function requestTour(): void {
     window.localStorage.setItem(TOUR_KEY, 'again');
   } catch {
     /* as above */
+  }
+}
+
+/**
+ * THE PAGE GUIDES — which screens have had their guide opened at least once.
+ *
+ * A separate key from the tour, and deliberately not folded into its three
+ * values: the tour is one thing that happens once, and this is a set that grows
+ * as someone walks the app. Sharing a key would mean replaying the tour wiped
+ * fifteen unrelated marks, or that a single guide could resurrect the tour.
+ *
+ * The only thing this state drives is a small mark beside the "What is this
+ * page?" control, which goes out once the guide has been read. Nothing here
+ * opens anything: an unread guide waits, it does not ask.
+ *
+ * One key holding a JSON list rather than one key per screen, so the whole set
+ * clears in a single write and a browser's storage inspector shows one row
+ * instead of sixteen.
+ */
+const GUIDES_KEY = 'toile-guides';
+
+/**
+ * The recorded list, or null where storage would not answer at all.
+ *
+ * The two failures are worth keeping apart. Storage that throws means the mark
+ * can never be cleared, so it must never be shown; a value that is merely
+ * malformed means storage works and this one row is rubbish, which is an empty
+ * list and recoverable on the next write.
+ */
+function readGuides(): string[] | null {
+  let raw: string | null;
+  try {
+    raw = window.localStorage.getItem(GUIDES_KEY);
+  } catch {
+    return null;
+  }
+  if (!raw) return [];
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter((v): v is string => typeof v === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+/** Has this screen's guide been opened before? Silent-on-failure, as above. */
+export function guideSeen(key: string): boolean {
+  const seen = readGuides();
+  if (seen === null) return true;
+  return seen.includes(key);
+}
+
+export function markGuideSeen(key: string): void {
+  const seen = readGuides();
+  if (seen === null || seen.includes(key)) return;
+  try {
+    window.localStorage.setItem(GUIDES_KEY, JSON.stringify([...seen, key]));
+  } catch {
+    /* a mark that cannot be recorded simply never shows */
   }
 }

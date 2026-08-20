@@ -1,5 +1,5 @@
 import { defaultSlotLabels, maxSlotsFor } from './furnitureArt';
-import type { ClothingItem, Furniture, FurnitureForm } from '../types';
+import type { ClothingItem, Furniture, FurnitureForm } from '@almari/shared/types';
 
 /**
  * FURNISHING A SAMPLE WARDROBE.

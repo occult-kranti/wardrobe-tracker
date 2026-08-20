@@ -12,7 +12,8 @@ import Wishlist from './pages/Wishlist';
 import BeforeYouBuy from './pages/BeforeYouBuy';
 import Rail, { RailProfile } from './pages/Rail';
 import Events from './pages/Events';
-import Feed from './pages/Feed';
+import Feed, { Story } from './pages/Feed';
+import Explore from './pages/Explore';
 import Chats, { ChatThread } from './pages/Chats';
 import Profile from './pages/Profile';
 import SwitchWardrobe, { StartWardrobe } from './pages/SwitchWardrobe';
@@ -36,6 +37,9 @@ const ELEMENTS: Record<string, React.ReactElement> = {
   '/wishlist': <Wishlist />,
   '/compare': <BeforeYouBuy />,
   '/feed': <Feed />,
+  '/explore': <Explore />,
+  '/explore/:postId': <Explore />,
+  '/story/:accountId': <Story />,
   '/chats': <Chats />,
   '/chats/:id': <ChatThread />,
   '/profile': <Profile />,

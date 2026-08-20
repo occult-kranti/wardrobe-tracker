@@ -12,13 +12,14 @@
  */
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { build } from 'esbuild';
+import { sharedAliases } from '../packages/shared/aliases.mjs';
 import { mkdtempSync, readFileSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 const out = join(mkdtempSync(join(tmpdir(), 'intake-')), 'i.mjs');
-await build({
-  entryPoints: [fileURLToPath(new URL('../src/lib/intake.ts', import.meta.url))],
+await build({ alias: sharedAliases(),
+  entryPoints: [fileURLToPath(new URL('../packages/shared/intake.ts', import.meta.url))],
   bundle: true,
   format: 'esm',
   outfile: out,

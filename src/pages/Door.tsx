@@ -8,7 +8,7 @@ import { IconEyelet, IconEyeletFilled, IconPlus } from '../components/icons';
 import { byLastOpened, lastOpenedAt } from '../lib/accounts';
 import { PERSONAS } from '../lib/personaWardrobe';
 import { nameFor, safeNext } from '../lib/routes';
-import type { Account, SyncMode } from '../types';
+import type { Account, SyncMode } from '@almari/shared/types';
 
 /**
  * THE DOOR — what "signing in" honestly is here, asked in two steps.
@@ -41,7 +41,7 @@ export const START_LEDE =
 // The count is derived, not written down — a number in prose goes stale the
 // day a persona is added, and this line already had to be corrected once.
 export const SAMPLES_NOTE =
-  `Samples are ${PERSONAS.length} worked closets — a full year of wear, saved looks, and a shared rail between them. Useful for seeing the populated screens before cataloguing your own.`;
+  `Samples are ${PERSONAS.length} worked closets — a full year of wear, saved outfits, and clothes lent between them. Useful for seeing what a year of this looks like before you catalogue your own.`;
 
 /** What the door is holding for you, if you arrived by a deep link. */
 export function NextNote({ next }: { next: string | null }) {
@@ -130,9 +130,9 @@ export function AccountPanel({ idPrefix = 'acct' }: { idPrefix?: string }) {
     <div>
       <p className="text-[14px] text-text-2 leading-relaxed">
         Almari works entirely on this device, and that does not change. An account does one thing:
-        it keeps a copy of a synced wardrobe&rsquo;s record, so another device can open it. No
-        newsletter, nothing sold, nothing nags. It runs on the owner&rsquo;s Supabase free tier and
-        costs you nothing; any change would be announced in advance.
+        it lets a wardrobe you choose open on your phone and your laptop both. No newsletter,
+        nothing sold, nothing nags. The maker pays for it out of a free tier, so it costs you
+        nothing; any change would be announced in advance.
       </p>
       <form className="space-y-5 mt-4" onSubmit={e => { void submit(e); }}>
         <Field label="Email" htmlFor={`${idPrefix}-email`}>
@@ -261,7 +261,7 @@ export function WardrobeList({
       {samples.length > 0 ? (
         <>
           {mine.length > 0 ? <Basting className="my-4" /> : null}
-          <p className="type-ledger text-[11px] text-text-2 mt-6 mb-1">Worked examples</p>
+          <p className="type-ledger text-[11px] text-text-2 mt-6 mb-1">Sample wardrobes</p>
           <ul>{samples.map(row)}</ul>
         </>
       ) : null}
@@ -371,6 +371,15 @@ export default function Door({ starting = false }: { starting?: boolean }) {
             <p className="type-editorial text-[14px] text-text-2 mt-1">Your wardrobe, on record.</p>
           </div>
         </header>
+
+        {/* What the app does, before the plumbing that runs it. The wordmark and
+            the tagline name the product; this line is the only place in the
+            interface that says what it is for, and until now that sentence
+            lived only in the manifest and a meta description nobody reads. */}
+        <p className="text-[14px] text-text-2 mb-6 leading-relaxed">
+          Track what you own, what you actually wear, and what each piece costs per wear.
+          Nothing leaves this device unless you ask it to.
+        </p>
 
         {!pastAccount ? (
           <Card>

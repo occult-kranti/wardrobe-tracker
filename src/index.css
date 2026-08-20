@@ -67,9 +67,9 @@
   --pattern-ink: 0, 0, 0;
   --pattern-alpha: 0.06;
 
-  --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
-  --font-ui: 'Switzer', ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  --font-display: 'Fraunces', 'Fraunces Fallback', Georgia, 'Times New Roman', serif;
+  --font-ui: 'Switzer', 'Switzer Fallback', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'Plex Mono Fallback Menlo', 'Plex Mono Fallback Consolas', ui-monospace, 'SF Mono', Menlo, monospace;
 
   --radius: 2px;                 /* print-cornered: radius 2 globally */
   color-scheme: light;
@@ -358,6 +358,61 @@
   --pattern-ink: 226, 205, 158;  /* the grid scribed in the glass, struck gold */
   --pattern-alpha: 0.04;
   color-scheme: dark;
+}
+
+/* ============================================================
+   THE FALLBACK FACES ARE METRIC-TUNED (docs/41 §7).
+
+   The Showing fixes every caption row in pixels, so a font swap can only
+   shift WIDTHS — but a fallback that sets words a different width still
+   moves truncation points and wrap counts while the webfonts arrive, and
+   Switzer arrives over the network. Each stack's fallback is restated in
+   the webfont's own metrics: size-adjust matches the frequency-weighted
+   lowercase advance (measured with fontTools over the shipped woff2s and
+   the host faces, 2026-08-19); the ascent/descent/line-gap overrides state
+   the webfont's vertical metrics so line boxes agree before and after.
+
+     Fraunces   asc .978  desc .255  gap 0     advance .5211em
+     Georgia    advance .4459em  → size-adjust 116.9%
+     Switzer    asc .980  desc .250  gap .090  advance .4522em
+     Segoe UI   advance .4486em  → 100.8%   (Arial .4471em, within 0.4%)
+     Plex Mono  asc 1.025 desc .275  gap 0     advance .6000em
+     Menlo      advance .6021em  → 99.7% · Consolas .5498em → 109.1%
+
+   Consolas and Menlo disagree too widely for one rule, so the mono stack
+   carries a tuned face for each; local() fails closed, so whichever face
+   the machine owns is the one that answers. ============================ */
+@font-face {
+  font-family: 'Fraunces Fallback';
+  src: local('Georgia');
+  size-adjust: 116.9%;
+  ascent-override: 97.8%;
+  descent-override: 25.5%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: 'Switzer Fallback';
+  src: local('Segoe UI'), local('Roboto'), local('Helvetica Neue'), local('Arial');
+  size-adjust: 100.8%;
+  ascent-override: 98%;
+  descent-override: 25%;
+  line-gap-override: 9%;
+}
+@font-face {
+  font-family: 'Plex Mono Fallback Menlo';
+  src: local('Menlo');
+  size-adjust: 99.7%;
+  ascent-override: 102.5%;
+  descent-override: 27.5%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: 'Plex Mono Fallback Consolas';
+  src: local('Consolas');
+  size-adjust: 109.1%;
+  ascent-override: 102.5%;
+  descent-override: 27.5%;
+  line-gap-override: 0%;
 }
 
 @theme inline {
@@ -736,12 +791,17 @@
      brocade border inside an outer mount. In this room every plate takes that
      double frame — the card's own gold hairline, then a second, fainter gold
      rule floated 3px outside it. Decoration in the border, never in the text:
-     gold stays a frame colour here, exactly as §2 requires. */
-  :root[data-theme="gilt"] .plate {
+     gold stays a frame colour here, exactly as §2 requires.
+     :not(:focus-visible) on every mounting rule below: the decoration sits in
+     the same outline slot as the house focus ring and, at (0,3,0), was
+     silently beating it — a keyboard-focused plate looked exactly like an
+     unfocused one in the three mounted rooms (found by the Showing stress
+     suite, 2026-08-20). The frame steps aside while the ring speaks. */
+  :root[data-theme="gilt"] .plate:not(:focus-visible) {
     outline: 1px solid color-mix(in srgb, var(--color-gold) 40%, transparent);
     outline-offset: 3px;
   }
-  :root[data-theme="gilt"] .plate-ink {
+  :root[data-theme="gilt"] .plate-ink:not(:focus-visible) {
     outline: 1px solid color-mix(in srgb, var(--color-gold) 55%, transparent);
     outline-offset: 3px;
   }
@@ -752,11 +812,11 @@
 
   /* The dye house takes the same mounting, struck in brass on plum. The bold
      rooms carry the double frame; the quiet rooms stay plain. */
-  :root[data-theme="dyehouse"] .plate {
+  :root[data-theme="dyehouse"] .plate:not(:focus-visible) {
     outline: 1px solid color-mix(in srgb, var(--color-gold) 30%, transparent);
     outline-offset: 3px;
   }
-  :root[data-theme="dyehouse"] .plate-ink {
+  :root[data-theme="dyehouse"] .plate-ink:not(:focus-visible) {
     outline: 1px solid color-mix(in srgb, var(--color-gold) 45%, transparent);
     outline-offset: 3px;
   }
@@ -769,11 +829,11 @@
      silver. It was refused once, when the border was rose gold and the two
      warm lines read as one thick smudge; gold against silver separates
      cleanly, which is the whole reason the metals were changed. */
-  :root[data-theme="obsidian"] .plate {
+  :root[data-theme="obsidian"] .plate:not(:focus-visible) {
     outline: 1px solid color-mix(in srgb, var(--color-silver) 26%, transparent);
     outline-offset: 3px;
   }
-  :root[data-theme="obsidian"] .plate-ink {
+  :root[data-theme="obsidian"] .plate-ink:not(:focus-visible) {
     outline: 1px solid color-mix(in srgb, var(--color-silver) 40%, transparent);
     outline-offset: 3px;
   }
@@ -966,6 +1026,30 @@
     to   { opacity: 1; }
   }
   .animate-fade { animation: fade-in 140ms ease-out both; }
+
+  /* ——— the showing (docs/41) ——— */
+
+  /* One entrance per tile: opacity only, 160ms ease-out, fired once by the
+     wall's single IntersectionObserver and never re-fired on re-scroll.
+     Under reduced motion the class is never dealt at all, so the tile is
+     simply there — the same page at rest, pixel-identical. */
+  .showing-fade { opacity: 0; transition: opacity 160ms ease-out; }
+  .showing-fade.is-shown { opacity: 1; }
+
+  /* Off-screen tiles keep their arithmetic size without rendering (§7).
+     The fallbacks pour the breakpoint's nominal column width through
+     h = 1.25 × w + caption; the `auto` keyword makes the engine remember
+     true rendered sizes, so fallback error on never-rendered tiles moves
+     the scrollbar, never CLS. The 2×2 turn takes no containment — its size
+     is legislated by the rows the racks define. */
+  .cv-rack { content-visibility: auto; contain-intrinsic-size: auto 166px 260px; }
+  @media (min-width: 768px) {
+    .cv-rack { contain-intrinsic-size: auto 232px 342px; }
+  }
+  @media (min-width: 1024px) {
+    .cv-rack { contain-intrinsic-size: auto 227px 336px; }
+  }
+  .cv-turn-phone { content-visibility: auto; contain-intrinsic-size: auto 343px 517px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

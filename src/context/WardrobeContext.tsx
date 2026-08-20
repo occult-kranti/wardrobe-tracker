@@ -2,8 +2,8 @@ import { createContext, useContext, useCallback, useEffect, useMemo, useRef, typ
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { showToast } from '../components/Toast';
 import { defaultSlotLabels, maxSlotsFor } from '../lib/furnitureArt';
-import { todayLocal, isFutureDate, addDays } from '../lib/dates';
-import { migrate } from '../lib/migrate';
+import { todayLocal, isFutureDate, addDays } from '@almari/shared/dates';
+import { migrate } from '@almari/shared/migrate';
 import { wardrobeKey } from '../lib/accounts';
 import { useSession } from './SessionContext';
 import {
@@ -33,7 +33,7 @@ import {
   type FurnitureForm,
   type Ornament,
   MAX_FURNITURE,
-} from '../types';
+} from '@almari/shared/types';
 
 interface WardrobeContextType extends AppState {
   /** Active (non-retired) items — what every browse surface should use. */

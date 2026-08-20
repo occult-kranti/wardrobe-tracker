@@ -8,9 +8,10 @@ import {
   type AppSettings,
   type ClothingItem,
   type WishlistItem,
-} from '../types';
-import { todayLocal, addDays } from '../lib/dates';
-import { findSimilarItems, wearContext } from '../lib/similarity';
+} from '@almari/shared/types';
+import { todayLocal, addDays } from '@almari/shared/dates';
+import { formatMoney, formatPrice } from '@almari/shared/cost';
+import { findSimilarItems, wearContext } from '@almari/shared/similarity';
 import {
   Button,
   Card,
@@ -56,19 +57,11 @@ function daysUntil(dateStr: string): number {
   return Math.round((then.getTime() - now.getTime()) / 86400000);
 }
 
-function money(n: number): string {
-  return `$${Math.round(n).toLocaleString('en-US')}`;
-}
-
-function price(n: number): string {
-  return `$${n.toLocaleString('en-US', { maximumFractionDigits: n % 1 === 0 ? 0 : 2 })}`;
-}
-
 /** 'YYYY-MM-DD' → '12 Mar'. Never parse a stored day as UTC. */
 function shortDay(dateStr: string): string {
   const d = new Date(`${dateStr}T00:00:00`);
   if (Number.isNaN(d.getTime())) return dateStr;
-  return d.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+  return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
 }
 
 /** The card is asking exactly when the wait has run out and it hasn't asked yet. */
@@ -186,7 +179,7 @@ function WishCard({
   const meta = [
     categoryLabel(settings, item.category),
     item.brand,
-    item.price !== undefined ? price(item.price) : undefined,
+    item.price !== undefined ? formatPrice(item.price) : undefined,
   ].filter(Boolean) as string[];
 
   return (
@@ -488,7 +481,7 @@ export default function Wishlist() {
             <Field
               label="Let it wait"
               htmlFor="wish-wait"
-              hint="Nothing is said while it waits — no reminder, no count, no badge. When the wait is up, the card asks once."
+              hint="Nothing is said while it waits. No reminder, no count. When the wait is up, the card asks once."
             >
               <select
                 id="wish-wait"
@@ -567,7 +560,7 @@ export default function Wishlist() {
           <Card>
             {stayedYours > 0 ? (
               <p className="type-editorial text-[21px] sm:text-[23px] leading-snug text-balance">
-                {money(stayedYours)} stayed yours.
+                {formatMoney(stayedYours)} stayed yours.
               </p>
             ) : (
               <p className="type-editorial text-[21px] sm:text-[23px] leading-snug text-balance">
@@ -593,7 +586,7 @@ export default function Wishlist() {
                     </p>
                   </div>
                   <span className="type-ledger text-[12px] text-text-2 tabular shrink-0">
-                    {item.price !== undefined ? price(item.price) : '—'}
+                    {item.price !== undefined ? formatPrice(item.price) : '—'}
                   </span>
                   <IconButton
                     label={`Remove ${item.name} from the ledger`}
@@ -626,9 +619,9 @@ export default function Wishlist() {
       {openItems.length > 0 ? (
         <Card>
           <div className="flex items-end justify-between gap-6">
-            {/* No prices on file means no sum to state — "$0" would assert one. */}
+            {/* No prices on file means no sum to state — "₹0" would assert one. */}
             {openTotal > 0 ? (
-              <Stat value={money(openTotal)} label="Still on the list" />
+              <Stat value={formatMoney(openTotal)} label="Still on the list" />
             ) : (
               <p className="type-ledger text-[11px] text-text-2">No prices noted</p>
             )}

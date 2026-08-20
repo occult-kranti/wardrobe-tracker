@@ -1,0 +1,603 @@
+/**
+ * The wardrobe, in memory and on the shelf.
+ *
+ * Ports the semantics of src/context/WardrobeContext.tsx +
+ * src/hooks/useLocalStorage.ts over the AsyncStorage adapter
+ * (src/lib/storage.ts). docs/34 §2.4's four laws, each with its line here:
+ *
+ *  1. WRITES NEVER HAPPEN INSIDE THE STATE UPDATER — one write per
+ *     committed state, coalesced over the same 250 ms settle window the
+ *     web uses (the persist effect below).
+ *  2. A FAILED WRITE IS SAID OUT LOUD — once per run of trouble, not per
+ *     keystroke (the `errored` ref + the storage-full toast).
+ *  3. PENDING WRITES FLUSH ON BACKGROUNDING/UNMOUNT — the web's pagehide
+ *     maps to RN's AppState 'background'/'inactive'.
+ *  4. MIGRATE ON READ — every load passes the document through migrate()
+ *     from @almari/shared/migrate before anything trusts it. This closes
+ *     the seam storage.ts left open: a v7 export, or the bare pre-account
+ *     blob the web once wrote, opens correctly here.
+ *
+ * The maths and the day-handling come from @almari/shared only — logWear's
+ * dates are local YYYY-MM-DD via shared/dates, never toISOString(), and a
+ * future date is a PLAN (stored flag, exactly as the web decided after the
+ * matured-plan bug).
+ *
+ * SYNC, NOW HERE, exactly where the web keeps it (src/context/
+ * WardrobeContext.tsx): the provider that owns the state owns the push.
+ * The session (src/lib/session.tsx) is consumed OPTIONALLY — this provider's
+ * own tests mount it bare, and a wardrobe that never heard of accounts is
+ * the founding case, not an error. The push is keyed on the committed state
+ * and compared by content, so an adopted pull does not echo straight back
+ * up; backgrounding QUEUES a pending push rather than sending it (a fetch
+ * started on the way down may die silently, a storage write survives);
+ * samples never reach the wire — shouldSync refuses them.
+ *
+ * What is deliberately NOT here yet: photos on disk, and the corrupted-
+ * document "export the corpse" offer (Phase 0 edge case, tracked; today a
+ * corrupt read falls back to a fresh state exactly as the web's hook does).
+ */
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
+import { AppState as RNAppState } from 'react-native';
+
+import { isFutureDate, todayLocal } from '@almari/shared/dates';
+import { migrate } from '@almari/shared/migrate';
+import {
+  initialState,
+  isActive,
+  type Account,
+  type AppState,
+  type AppSettings,
+  type ClothingItem,
+  type Outfit,
+  type SyncMode,
+  type WearLog,
+} from '@almari/shared/types';
+
+import { showToast } from '../components/Toast';
+import { handleFor, mintSyncId, monogramFor, useSessionOptional } from './session';
+import {
+  ACCOUNTS_KEY,
+  LEGACY_KEY,
+  SESSION_KEY,
+  storage,
+  wardrobeKey,
+} from './storage';
+import {
+  loadPulled,
+  onSyncAdopted,
+  pushNow,
+  queuePush,
+  shouldSync,
+  syncModeOf,
+} from './sync';
+import { buildSampleState, SAMPLE_ACCOUNT } from './sampleWardrobe';
+
+/** The web's own settle window (src/hooks/useLocalStorage.ts). */
+const SETTLE_MS = 250;
+
+/**
+ * Hermes ships no crypto.randomUUID and expo-crypto is not among our deps
+ * (a new dependency is an owner decision). Ids are opaque strings — the
+ * house's own Toast already mints them this way. Not a formula; no shared
+ * source exists for it.
+ */
+function newId(): string {
+  const rand = () => Math.random().toString(36).slice(2, 10);
+  return `${Date.now().toString(36)}-${rand()}${rand()}`;
+}
+
+/**
+ * A registry row, shaped as the web's Account (shared/types). Unknown keys
+ * on rows written by other builds are preserved on rewrite — the registry
+ * obeys the same lossless manners as the document.
+ */
+interface AccountRow {
+  id: string;
+  name: string;
+  handle: string;
+  monogram: string;
+  color: string;
+  createdAt: string;
+  isSample?: boolean;
+  seedVersion?: number;
+  sync?: SyncMode;
+  syncId?: string;
+  [key: string]: unknown;
+}
+
+/** The registry row in the shared Account shape the sync client speaks. */
+function toSharedAccount(row: AccountRow): Account {
+  return {
+    id: row.id,
+    name: row.name,
+    handle: row.handle,
+    monogram: row.monogram,
+    color: row.color,
+    createdAt: row.createdAt,
+    ...(row.isSample === true ? { isSample: true } : {}),
+    ...(row.sync ? { sync: row.sync } : {}),
+    ...(row.syncId ? { syncId: row.syncId } : {}),
+  };
+}
+
+export type WardrobeStatus = 'loading' | 'none' | 'open';
+
+interface WardrobeContextValue {
+  /** 'none' means the door has not been walked through yet. */
+  status: WardrobeStatus;
+  items: ClothingItem[];
+  /** Active (non-retired) items — what every browse surface should use. */
+  activeItems: ClothingItem[];
+  outfits: Outfit[];
+  wearLogs: WearLog[];
+  settings: AppSettings;
+  /** Sample wardrobes are labelled everywhere and never sync. */
+  isSample: boolean;
+  wardrobeName: string | null;
+  /** The open wardrobe's registry row, in the shared Account shape the sync
+      client speaks — the blob's address, exposed for sync. Null at the door. */
+  syncAccount: Account | null;
+  /** Where the record lives — 'device' unless its owner chose otherwise. */
+  syncMode: SyncMode;
+  /** The per-wardrobe toggle. Mints the remote row's uuid on first 'cloud';
+      turning it off keeps the id, so turning it back on finds the same row.
+      Refuses samples — a worked example belongs to the device. */
+  setSyncMode: (mode: SyncMode) => Promise<void>;
+  /** Returns the new piece's id, so a caller writing several can relate them. */
+  addItem: (item: Omit<ClothingItem, 'id' | 'dateAdded' | 'wearCount' | 'laundryStatus'>) => string;
+  logWear: (itemIds: string[], outfitId?: string, date?: string) => void;
+  /** Undo — the web's removeWearLog, lastWorn recomputed from what survives. */
+  removeWearLog: (id: string) => void;
+  getItem: (id: string) => ClothingItem | undefined;
+  /** The door's two handles. */
+  startEmpty: (name?: string) => Promise<void>;
+  startSample: () => Promise<void>;
+}
+
+const WardrobeContext = createContext<WardrobeContextValue | null>(null);
+
+async function readJson(key: string): Promise<unknown> {
+  const raw = await storage.getItem(key);
+  if (raw === null) return null;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    // The web's hook answers corrupt JSON with the initial value; migrate(null)
+    // is that same answer here. Nothing already saved is overwritten until the
+    // person changes something.
+    return null;
+  }
+}
+
+async function readAccounts(): Promise<AccountRow[]> {
+  const parsed = await readJson(ACCOUNTS_KEY);
+  return Array.isArray(parsed) ? (parsed as AccountRow[]) : [];
+}
+
+export function WardrobeProvider({ children }: { children: ReactNode }) {
+  const [status, setStatus] = useState<WardrobeStatus>('loading');
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [account, setAccount] = useState<AccountRow | null>(null);
+  const [state, setState] = useState<AppState>(initialState);
+
+  // The state just hydrated from the shelf is not news — writing it back
+  // would only re-serialize what was just read (the web's `mounted` skip).
+  const hydrating = useRef(true);
+  const pending = useRef<{ key: string; value: AppState } | null>(null);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const errored = useRef(false);
+
+  /* ---------- load: migrate on read (law 4) ---------- */
+
+  const hydrate = useCallback((id: string, row: AccountRow | null, doc: unknown) => {
+    hydrating.current = true;
+    setActiveId(id);
+    setAccount(row);
+    setState(migrate(doc));
+    setStatus('open');
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const session = (await readJson(SESSION_KEY)) as { activeId?: string } | null;
+        let id = typeof session?.activeId === 'string' ? session.activeId : null;
+        let accounts = await readAccounts();
+
+        // The pre-accounts closet at the bare key is adopted, never orphaned —
+        // ports src/lib/accounts.ts adoptLegacyWardrobe, same row, same id.
+        if (!id) {
+          const legacy = await storage.getItem(LEGACY_KEY);
+          if (legacy !== null) {
+            const adopted: AccountRow = {
+              id: 'you',
+              name: 'Your wardrobe',
+              handle: '@you',
+              monogram: 'Y',
+              color: 'var(--color-accent)',
+              createdAt: todayLocal(),
+            };
+            await storage.setItem(wardrobeKey(adopted.id), legacy);
+            await storage.removeItem(LEGACY_KEY);
+            accounts = [...accounts.filter(a => a.id !== adopted.id), adopted];
+            await storage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts));
+            await storage.setItem(SESSION_KEY, JSON.stringify({ activeId: adopted.id }));
+            id = adopted.id;
+          }
+        }
+
+        if (cancelled) return;
+        if (!id) {
+          setStatus('none');
+          return;
+        }
+        const doc = await readJson(wardrobeKey(id));
+        if (cancelled) return;
+        hydrate(id, accounts.find(a => a.id === id) ?? null, doc);
+      } catch {
+        if (!cancelled) setStatus('none');
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [hydrate]);
+
+  /* ---------- persist: coalesced, spoken failures, flushed (laws 1–3) ---------- */
+
+  const flush = useCallback(() => {
+    if (timer.current !== null) {
+      clearTimeout(timer.current);
+      timer.current = null;
+    }
+    const job = pending.current;
+    if (!job) return;
+    pending.current = null;
+    storage
+      .setItem(job.key, JSON.stringify(job.value))
+      .then(() => {
+        errored.current = false;
+      })
+      .catch(() => {
+        // Said once per run of trouble, not once per keystroke.
+        if (!errored.current) {
+          errored.current = true;
+          showToast(
+            'This device would not take the write — its storage is full. Export a backup from Settings now, then remove a few photographs.',
+            'error',
+          );
+        }
+      });
+  }, []);
+
+  useEffect(() => {
+    if (status !== 'open' || activeId === null) return;
+    if (hydrating.current) {
+      hydrating.current = false;
+      return;
+    }
+    pending.current = { key: wardrobeKey(activeId), value: state };
+    if (timer.current !== null) clearTimeout(timer.current);
+    timer.current = setTimeout(flush, SETTLE_MS);
+  }, [state, status, activeId, flush]);
+
+  useEffect(() => {
+    // pagehide/visibilitychange, restated for a phone: backgrounding must
+    // not be able to lose an edit made a moment before.
+    const sub = RNAppState.addEventListener('change', next => {
+      if (next === 'background' || next === 'inactive') flush();
+    });
+    return () => {
+      sub.remove();
+      flush();
+    };
+  }, [flush]);
+
+  /* ---------- cloud sync: this wardrobe only, and only if its owner chose it ----------
+
+     Ports the sync section of src/context/WardrobeContext.tsx over the
+     adapter. The push is keyed on the committed state and compared by
+     content, so the state just adopted from the account (identical to what
+     the account holds) does not echo straight back up. Offline, pushNow
+     queues and the session layer flushes on the next foreground moment.
+     Samples never reach here — shouldSync refuses them.
+
+     Conflict semantics, stated honestly: last-writer-wins, whole wardrobe at
+     a time. A pull that finds a newer row replaces the local record; a push
+     stamps updated_at = now. No field-level merge is attempted. */
+
+  const session = useSessionOptional();
+  const authUser = session?.authUser ?? null;
+  const sharedAccount = useMemo(() => (account ? toSharedAccount(account) : null), [account]);
+  const syncOn =
+    sharedAccount !== null && authUser !== null && shouldSync(sharedAccount) && !!sharedAccount.syncId;
+  const lastPushedJson = useRef<string | null>(null);
+  const pushTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** The scheduled-but-unsent push, so backgrounding can still keep it. */
+  const pendingPush = useRef<{ account: Account; state: AppState; userId: string } | null>(null);
+
+  useEffect(() => {
+    if (!syncOn || !authUser || !sharedAccount?.syncId) return;
+    const json = JSON.stringify(state);
+    // The first pass after mount is the state just read from the store, and an
+    // adopted pull is marked before it is committed — neither is news.
+    if (lastPushedJson.current === null) {
+      lastPushedJson.current = json;
+      return;
+    }
+    if (json === lastPushedJson.current) return;
+    lastPushedJson.current = json;
+    if (pushTimer.current !== null) clearTimeout(pushTimer.current);
+    pendingPush.current = { account: sharedAccount, state, userId: authUser.id };
+    pushTimer.current = setTimeout(() => {
+      pushTimer.current = null;
+      const job = pendingPush.current;
+      pendingPush.current = null;
+      if (job) void pushNow(job.account, job.state, job.userId);
+    }, 800);
+    return () => {
+      if (pushTimer.current !== null) clearTimeout(pushTimer.current);
+    };
+  }, [state, syncOn, authUser, sharedAccount]);
+
+  /**
+   * A push still inside its debounce when the app backgrounds, or this
+   * provider unmounts, must not evaporate. On backgrounding it is QUEUED
+   * rather than sent — a fetch started on the way down can die without
+   * either callback, while the queue's storage write survives. On unmount
+   * the app is very much alive, so it is simply sent.
+   */
+  useEffect(() => {
+    const stash = () => {
+      if (pushTimer.current !== null) {
+        clearTimeout(pushTimer.current);
+        pushTimer.current = null;
+      }
+      const job = pendingPush.current;
+      pendingPush.current = null;
+      if (job) void queuePush(job.account, job.state);
+    };
+    const send = () => {
+      if (pushTimer.current !== null) {
+        clearTimeout(pushTimer.current);
+        pushTimer.current = null;
+      }
+      const job = pendingPush.current;
+      pendingPush.current = null;
+      if (job) void pushNow(job.account, job.state, job.userId);
+    };
+    const sub = RNAppState.addEventListener('change', next => {
+      if (next === 'background' || next === 'inactive') stash();
+    });
+    return () => {
+      sub.remove();
+      send();
+    };
+  }, []);
+
+  // A pull that wrote this wardrobe's store announces itself here; the open
+  // provider adopts what was written. (An AsyncStorage write fires no event
+  // of its own, so the announcement is the sync module's own registry.)
+  useEffect(() => {
+    if (activeId === null) return;
+    const unsubscribe = onSyncAdopted(adoptedId => {
+      if (adoptedId !== activeId) return;
+      void loadPulled(activeId).then(pulled => {
+        if (!pulled) return;
+        // Mark BEFORE committing: the adopted state is what the account
+        // holds, so the push effect must not echo it straight back up.
+        lastPushedJson.current = JSON.stringify(pulled);
+        setState(migrate(pulled));
+      });
+    });
+    return unsubscribe;
+  }, [activeId]);
+
+  /**
+   * The settings toggle — where the open wardrobe's record lives. Writes the
+   * registry row and the in-memory account in the same breath. Mirrors the
+   * web's SwitchWardrobe: the first 'cloud' mints the remote row's uuid;
+   * flipping back to 'device' keeps it, so the same row is found again. The
+   * first copy reaches the account on the next edit, exactly as on the web —
+   * the push effect above is keyed on the state, not on the choice.
+   */
+  const setSyncMode = useCallback(async (mode: SyncMode) => {
+    if (!account || account.isSample === true) return;
+    const updates: Partial<AccountRow> =
+      mode === 'cloud'
+        ? { sync: 'cloud', syncId: account.syncId ?? mintSyncId() }
+        : { sync: 'device' };
+    const accounts = await readAccounts();
+    await storage.setItem(
+      ACCOUNTS_KEY,
+      JSON.stringify(accounts.map(a => (a.id === account.id ? { ...a, ...updates } : a))),
+    );
+    setAccount(prev => (prev ? { ...prev, ...updates } : prev));
+  }, [account]);
+
+  /* ---------- the door ---------- */
+
+  const startEmpty = useCallback(async (name?: string) => {
+    const accounts = await readAccounts();
+    const trimmed = (name ?? '').trim();
+    // A blank name is never a dead end: it becomes "Wardrobe", then
+    // "Wardrobe 2" — ports uniqueWardrobeName + createAccount.
+    const taken = new Set(accounts.map(a => a.name.trim().toLowerCase()));
+    let finalName = trimmed || 'Wardrobe';
+    for (let n = 2; taken.has(finalName.toLowerCase()) && n < 500; n++) {
+      finalName = `${trimmed || 'Wardrobe'} ${n}`;
+    }
+    const row: AccountRow = {
+      id: `w-${newId().slice(-8)}`,
+      name: finalName,
+      handle: handleFor(finalName),
+      monogram: monogramFor(finalName),
+      color: 'var(--color-accent)',
+      createdAt: todayLocal(),
+    };
+    // A wardrobe starts genuinely empty — value at item #1 is the cold-start rule.
+    await storage.setItem(wardrobeKey(row.id), JSON.stringify(initialState));
+    await storage.setItem(ACCOUNTS_KEY, JSON.stringify([...accounts, row]));
+    await storage.setItem(SESSION_KEY, JSON.stringify({ activeId: row.id }));
+    hydrate(row.id, row, initialState);
+  }, [hydrate]);
+
+  const startSample = useCallback(async () => {
+    const accounts = await readAccounts();
+    const doc = buildSampleState();
+    const row: AccountRow = { ...SAMPLE_ACCOUNT, createdAt: todayLocal() };
+    await storage.setItem(wardrobeKey(row.id), JSON.stringify(doc));
+    await storage.setItem(
+      ACCOUNTS_KEY,
+      JSON.stringify([...accounts.filter(a => a.id !== row.id), row]),
+    );
+    await storage.setItem(SESSION_KEY, JSON.stringify({ activeId: row.id }));
+    hydrate(row.id, row, doc);
+  }, [hydrate]);
+
+  /* ---------- the record (ported bodies — WardrobeContext.tsx) ---------- */
+
+  const addItem = useCallback(
+    (item: Omit<ClothingItem, 'id' | 'dateAdded' | 'wearCount' | 'laundryStatus'>) => {
+      const newItem: ClothingItem = {
+        ...item,
+        id: newId(),
+        dateAdded: new Date().toISOString(),
+        wearCount: 0,
+        laundryStatus: 'clean',
+      };
+      setState(prev => ({ ...prev, items: [...prev.items, newItem] }));
+      return newItem.id;
+    },
+    [],
+  );
+
+  const logWear = useCallback((itemIds: string[], outfitId?: string, date?: string) => {
+    const logDate = date ?? todayLocal();
+    const planned = isFutureDate(logDate);
+    setState(prev => {
+      // Wearing an outfit always credits every item in it.
+      const creditedIds = outfitId
+        ? Array.from(new Set([...itemIds, ...(prev.outfits.find(o => o.id === outfitId)?.itemIds ?? [])]))
+        : itemIds;
+      // Future dates are plans: recorded, but they don't move wear counts or
+      // laundry until the person confirms the day actually happened. The flag
+      // is STORED — derived-from-date let every plan silently read as a wear
+      // the morning its date arrived.
+      const newLog: WearLog = planned
+        ? { id: newId(), date: logDate, itemIds: creditedIds, outfitId, planned: true }
+        : { id: newId(), date: logDate, itemIds: creditedIds, outfitId };
+      if (planned) {
+        return { ...prev, wearLogs: [...prev.wearLogs, newLog] };
+      }
+      return {
+        ...prev,
+        wearLogs: [...prev.wearLogs, newLog],
+        items: prev.items.map(item =>
+          creditedIds.includes(item.id)
+            ? {
+                ...item,
+                wearCount: item.wearCount + 1,
+                lastWorn: !item.lastWorn || logDate > item.lastWorn ? logDate : item.lastWorn,
+                // The bench is about NOW. A wear logged for today moves the
+                // piece to the bench; a backfilled wear from last week cannot
+                // know what the laundry has done since, so it leaves the
+                // bench alone and moves only the count and the date.
+                laundryStatus: logDate === todayLocal() ? ('worn' as const) : item.laundryStatus,
+              }
+            : item,
+        ),
+        outfits: prev.outfits.map(o =>
+          o.id === outfitId
+            ? { ...o, wearCount: o.wearCount + 1, lastWorn: !o.lastWorn || logDate > o.lastWorn ? logDate : o.lastWorn }
+            : o,
+        ),
+      };
+    });
+  }, []);
+
+  const removeWearLog = useCallback((id: string) => {
+    setState(prev => {
+      const log = prev.wearLogs.find(l => l.id === id);
+      if (!log) return prev;
+      // The STORED flag, never the date: deriving it here meant a plan whose
+      // day had arrived read as a wear, and undoing it decremented counts that
+      // had never been incremented.
+      const wasPlanned = log.planned === true;
+      const remaining = prev.wearLogs.filter(l => l.id !== id);
+      // lastWorn is recomputed from the surviving record, not left pointing at
+      // a date that is no longer on it.
+      const lastFor = (itemId: string): string | undefined => {
+        let last: string | undefined;
+        for (const l of remaining) {
+          if (l.planned === true || isFutureDate(l.date)) continue;
+          if (!l.itemIds.includes(itemId)) continue;
+          if (!last || l.date > last) last = l.date;
+        }
+        return last;
+      };
+      return {
+        ...prev,
+        wearLogs: remaining,
+        items: wasPlanned
+          ? prev.items
+          : prev.items.map(item =>
+              log.itemIds.includes(item.id)
+                ? { ...item, wearCount: Math.max(0, item.wearCount - 1), lastWorn: lastFor(item.id) }
+                : item,
+            ),
+        outfits:
+          wasPlanned || !log.outfitId
+            ? prev.outfits
+            : prev.outfits.map(o =>
+                o.id === log.outfitId ? { ...o, wearCount: Math.max(0, o.wearCount - 1) } : o,
+              ),
+      };
+    });
+  }, []);
+
+  const getItem = useCallback((id: string) => state.items.find(i => i.id === id), [state.items]);
+
+  const activeItems = useMemo(() => state.items.filter(isActive), [state.items]);
+
+  const value = useMemo<WardrobeContextValue>(
+    () => ({
+      status,
+      items: state.items,
+      activeItems,
+      outfits: state.outfits,
+      wearLogs: state.wearLogs,
+      settings: state.settings,
+      isSample: account?.isSample === true,
+      wardrobeName: account?.name ?? null,
+      syncAccount: sharedAccount,
+      syncMode: sharedAccount ? syncModeOf(sharedAccount) : 'device',
+      setSyncMode,
+      addItem,
+      logWear,
+      removeWearLog,
+      getItem,
+      startEmpty,
+      startSample,
+    }),
+    [status, state, activeItems, account, sharedAccount, setSyncMode, addItem, logWear, removeWearLog, getItem, startEmpty, startSample],
+  );
+
+  return <WardrobeContext.Provider value={value}>{children}</WardrobeContext.Provider>;
+}
+
+export function useWardrobe(): WardrobeContextValue {
+  const value = useContext(WardrobeContext);
+  if (!value) throw new Error('useWardrobe must sit under a WardrobeProvider');
+  return value;
+}

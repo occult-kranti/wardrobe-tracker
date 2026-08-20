@@ -1,6 +1,6 @@
-import { addDays, formatLocalDate } from './dates';
+import { addDays, formatLocalDate } from '@almari/shared/dates';
 import { lookOf } from './communitySeed';
-import type { CommunityState, FeedPost } from '../types';
+import type { CommunityState, FeedPost } from '@almari/shared/types';
 import type { PersonaOutfitSeed, PersonaSeed } from './personaData';
 
 /**

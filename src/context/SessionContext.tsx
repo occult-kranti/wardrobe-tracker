@@ -33,7 +33,7 @@ import {
 import { buildPersonaState, PERSONAS, PERSONA_SEED_VERSION } from '../lib/personaWardrobe';
 import { mergeCommunity, normalizeCommunity, seedCommunity } from '../lib/communitySeed';
 import { mergeSchedule } from '../lib/feedEngine';
-import { todayLocal } from '../lib/dates';
+import { todayLocal } from '@almari/shared/dates';
 import {
   announceAdopted,
   accountFromRow,
@@ -51,7 +51,7 @@ import {
   type AuthResult,
   type AuthUser,
 } from '../lib/supabase';
-import { initialState, type Account, type CommunityState, type Theme } from '../types';
+import { initialState, type Account, type CommunityState, type Theme } from '@almari/shared/types';
 
 /**
  * Which wardrobe is open, who else is on this device, and the little that is
@@ -165,7 +165,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
           handle: handleFor(row.name),
           monogram: monogramFor(row.name),
           color: ACCOUNT_COLORS[(base + i) % ACCOUNT_COLORS.length],
-          createdAt: new Date().toISOString().slice(0, 10),
+          createdAt: todayLocal(),
         });
       });
       persist([...accountsRef.current, ...added]);
@@ -333,7 +333,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       id,
       monogram: draft.monogram?.slice(0, 2).toUpperCase() || monogramFor(name),
       color: ACCOUNT_COLORS[accounts.length % ACCOUNT_COLORS.length],
-      createdAt: new Date().toISOString().slice(0, 10),
+      createdAt: todayLocal(),
       // A synced wardrobe's remote row id is minted here, once, so the first
       // push has somewhere stable to land even if it happens offline-queued.
       ...(draft.sync === 'cloud' && !draft.syncId ? { syncId: crypto.randomUUID() } : {}),
@@ -401,7 +401,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         // which is what it is — never cropped into a face beside a name.
         monogram: monogramFor(persona.name),
         color: ACCOUNT_COLORS[added.length % ACCOUNT_COLORS.length],
-        createdAt: new Date().toISOString().slice(0, 10),
+        createdAt: todayLocal(),
         isSample: true,
         seedVersion: PERSONA_SEED_VERSION,
       });

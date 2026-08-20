@@ -1,6 +1,6 @@
-import type { CommunityState, FeedPost, ChatMessage, Household, SharedLook } from '../types';
+import type { CommunityState, FeedPost, ChatMessage, Household, SharedLook } from '@almari/shared/types';
 import type { PersonaSeed } from './personaData';
-import { todayLocal, addDays } from './dates';
+import { todayLocal, addDays } from '@almari/shared/dates';
 
 /**
  * Seeds the shared layer: what each sample wardrobe has chosen to show, one

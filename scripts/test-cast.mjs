@@ -12,17 +12,18 @@
  */
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { build } from 'esbuild';
+import { sharedAliases } from '../packages/shared/aliases.mjs';
 import { mkdtempSync } from 'fs'; import { tmpdir } from 'os'; import { join } from 'path';
 
 const out = join(mkdtempSync(join(tmpdir(), 'cast-')), 'cast.mjs');
-await build({
+await build({ alias: sharedAliases(),
   entryPoints: [fileURLToPath(new URL('../src/lib/personaCast.ts', import.meta.url))],
   bundle: true, format: 'esm', outfile: out, logLevel: 'error',
 });
 const { CAST, CAST_BRIEFS } = await import(pathToFileURL(out).href);
 
 const dataOut = join(mkdtempSync(join(tmpdir(), 'cast-')), 'data.mjs');
-await build({
+await build({ alias: sharedAliases(),
   entryPoints: [fileURLToPath(new URL('../src/lib/personaData.ts', import.meta.url))],
   bundle: true, format: 'esm', outfile: dataOut, logLevel: 'error',
 });

@@ -12,8 +12,8 @@ import {
   type WardrobeEvent,
   type WearLog,
   type WishlistItem,
-} from '../types';
-import { todayLocal, addDays } from './dates';
+} from '@almari/shared/types';
+import { todayLocal, addDays } from '@almari/shared/dates';
 import { PERSONAS as GENERATED, BRAND_SHOTS, type PersonaSeed } from './personaData';
 import { CAST, CAST_ARCS } from './personaCast';
 
@@ -694,6 +694,9 @@ export function buildPersonaState(persona: PersonaSeed): AppState {
 
   return {
     schemaVersion: SCHEMA_VERSION,
+    // A sample wardrobe is a web document — the persona crops under
+    // public/wardrobe/ are resolved by URL, never read off a disk.
+    photoEncoding: 'inline',
     items: furnished.items,
     outfits,
     wearLogs: logs,

@@ -1,5 +1,5 @@
 import type { PersonaSeed, PersonaItemSeed, PersonaOutfitSeed, PersonaCalendarDay } from './personaData';
-import type { ItemSource, WishStatus } from '../types';
+import type { ItemSource, WishStatus } from '@almari/shared/types';
 
 /**
  * ONE MORE SAMPLE WARDROBE, authored here rather than generated.

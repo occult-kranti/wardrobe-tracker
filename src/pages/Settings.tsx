@@ -3,10 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { soundOn, setSound, chime } from '../lib/sound';
 import { useWardrobe } from '../context/WardrobeContext';
 import { useSession } from '../context/SessionContext';
-import { SCHEMA_VERSION, displayTag, initialState, type AppState, type Theme } from '../types';
-import { daysSince, formatLocalDate, todayLocal } from '../lib/dates';
+import { SCHEMA_VERSION, displayTag, initialState, type AppState, type Theme } from '@almari/shared/types';
+import { daysSince, formatLocalDate, todayLocal } from '@almari/shared/dates';
 import { THEME_ORDER } from '../lib/accounts';
-import { migrate } from '../lib/migrate';
+import { exportDocText, exportFileName, readExportDoc } from '../lib/exportDoc';
 import { buildDemoState, DEMO_SUMMARY } from '../lib/demoData';
 import { requestTour } from '../lib/tutorial';
 import {
@@ -18,6 +18,7 @@ import {
   Masthead,
   SectionTitle,
   inputClass, LinkButton } from '../components/ui';
+import ConfirmDialog from '../components/ConfirmDialog';
 import { Basting } from '../components/art';
 import {
   IconClose,
@@ -49,10 +50,11 @@ import {
  *  1. Own your taxonomy. Categories are the user's data — rename, add, reorder,
  *     and mark any of them quiet. Six fixed boxes erase everyone who dresses
  *     outside them. Occasions are free-form lowercase tags.
- *  2. Export the WHOLE state, generically. The old export hand-picked three keys
- *     and silently dropped the wishlist; anything added later would have been
- *     dropped too. It now serializes every data field the context holds, and
- *     import runs the file through migrate() so unknown fields round-trip intact.
+ *  2. Export the whole state, by an allowlist that lives in lib/exportDoc so the
+ *     native app writes the same file. The oldest export hand-picked three keys
+ *     and silently dropped the wishlist; its replacement filtered the context
+ *     with a denylist and leaked a Set into every backup. Named fields only now,
+ *     and import runs the file through migrate() so unknown fields round-trip.
  *  3. Say plainly where the data lives. The backup reminder is a quiet inline
  *     card that can be dismissed — never a notification, never blocking.
  *
@@ -62,19 +64,6 @@ import {
  */
 
 /* ---------- local helpers (not in the shared primitives) ---------- */
-
-/** Derived values on the context that must never be written into a backup. */
-const DERIVED_KEYS = new Set(['activeItems']);
-
-/**
- * Everything on the context that is data rather than behaviour. Generic on
- * purpose: a field added to AppState tomorrow lands in the export by itself.
- */
-function serializableState(ctx: object): Record<string, unknown> {
-  return Object.fromEntries(
-    Object.entries(ctx).filter(([key, value]) => typeof value !== 'function' && !DERIVED_KEYS.has(key))
-  );
-}
 
 /** Whole days since an ISO timestamp, in local time. Null if it won't parse. */
 function daysSinceISO(iso: string): number | null {
@@ -87,7 +76,7 @@ function daysSinceISO(iso: string): number | null {
 function longDay(iso: string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return 'unknown';
-  return d.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+  return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 /** A 44px pressed-state toggle: the Chip's eyelet at a real touch size. */
@@ -255,7 +244,7 @@ function ProviderRows() {
               className={inputClass}
               value={draft.model}
               onChange={e => setDraft(d => ({ ...d, model: e.target.value }))}
-              placeholder="claude-sonnet-4-5"
+              placeholder="claude-opus-5"
               autoComplete="off"
               spellCheck={false}
             />
@@ -356,19 +345,17 @@ export default function Settings() {
   const synced = active ? syncModeOf(active) === 'cloud' : false;
   const records = items.length + outfits.length + wearLogs.length + wishlist.length;
 
-  /* ---------- export: the whole state, generically ---------- */
+  /* ---------- export: the whole state, by the allowlist ---------- */
 
   const handleExport = () => {
-    const payload = {
-      ...serializableState(wardrobe),
-      schemaVersion: SCHEMA_VERSION,
-      exportedAt: new Date().toISOString(),
-    };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    // What a backup IS lives in lib/exportDoc — an allowlist, shared with the
+    // native app. This function does only the browser's half: a blob, a click.
+    const text = exportDocText(wardrobe, new Date().toISOString());
+    const blob = new Blob([text], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `almari-backup-${todayLocal()}.json`;
+    a.download = exportFileName(todayLocal());
     a.click();
     URL.revokeObjectURL(url);
     markExported();
@@ -384,9 +371,9 @@ export default function Settings() {
     const reader = new FileReader();
     reader.onload = ev => {
       try {
-        const parsed = JSON.parse(String(ev.target?.result ?? ''));
-        // migrate() carries every older shape forward and keeps unknown fields.
-        setPending({ state: migrate(parsed), fileName: file.name });
+        // readExportDoc parses and migrates: every older shape carried forward,
+        // unknown fields kept.
+        setPending({ state: readExportDoc(String(ev.target?.result ?? '')), fileName: file.name });
       } catch {
         showToast('That file did not read as a backup.', 'error');
       }
@@ -462,7 +449,10 @@ export default function Settings() {
 
   return (
     <div className="space-y-6 max-w-3xl">
-      <Masthead title="Settings" meta={`Schema ${SCHEMA_VERSION}`} />
+      {/* The schema number used to open this page, where the one person who
+          cannot act on it met it first. It still appears under About, which is
+          where a version number belongs. */}
+      <Masthead title="Settings" />
 
       {/* ---------- backup reminder ---------- */}
       {showReminder ? (
@@ -582,7 +572,7 @@ export default function Settings() {
         </ul>
 
         <p className="text-[13px] text-text-2 leading-snug mt-4">
-          Quiet is for what you keep but don't style — hidden from browse and the generator,
+          Quiet is for what you keep but don't style — hidden from browse and from outfit suggestions,
           no photo expected. Categories can't be removed yet; making one quiet takes it out of
           the way without touching the pieces filed under it.
         </p>
@@ -696,7 +686,7 @@ export default function Settings() {
         <Row
           title="From a photograph"
           body="Photograph what you are wearing, or a whole layout at once. Every piece is found, cut out of the photograph on this device, and arrives as a draft to check."
-          control={<LinkButton to="/intake?worn=1">Open the bench</LinkButton>}
+          control={<LinkButton to="/intake?worn=1">Catalogue from photos</LinkButton>}
         />
         <Basting className="my-4" />
         <ProviderRows />
@@ -747,49 +737,54 @@ export default function Settings() {
           />
 
           {pending ? (
-            <div className="bg-sunken rounded-[2px] p-4">
-              <p className="type-ledger text-[11px] text-text-2">{pending.fileName}</p>
-              <p className="text-[14px] text-text leading-relaxed mt-2">
-                That file holds {pending.state.items.length} pieces, {pending.state.outfits.length}{' '}
-                outfits, {pending.state.wearLogs.length} wear logs and{' '}
-                {pending.state.wishlist.length} wishlist entries. Bringing it in replaces what is
-                on this device now.
-              </p>
-              <div className="flex flex-wrap gap-2 mt-4">
-                <Button onClick={confirmImport}>Bring it in</Button>
-                <Button onClick={() => setPending(null)}>Cancel</Button>
-              </div>
-            </div>
+            <ConfirmDialog
+              open
+              title="Bring in this backup"
+              danger={records > 0}
+              body={
+                <>
+                  <p className="type-ledger text-[11px] text-text-2">{pending.fileName}</p>
+                  <p className="mt-2">
+                    That file holds {pending.state.items.length} pieces,{' '}
+                    {pending.state.outfits.length} outfits, {pending.state.wearLogs.length} wear
+                    logs and {pending.state.wishlist.length} wishlist entries.{' '}
+                    {records > 0
+                      ? `Bringing it in replaces the ${records} records on this device now. There is no undo, and no other copy of them unless you exported one.`
+                      : 'Nothing is on this device yet, so nothing is replaced.'}
+                  </p>
+                </>
+              }
+              confirmLabel="Bring it in"
+              cancelLabel="Cancel"
+              onConfirm={confirmImport}
+              onClose={() => setPending(null)}
+            />
           ) : null}
 
           <Basting />
 
           <Row
             title="Sample wardrobe"
-            body={`A worked example — ${DEMO_SUMMARY.items} pieces including ${DEMO_SUMMARY.jewellery} pieces of jewellery, ${DEMO_SUMMARY.outfits} saved outfits, a year of wear history, and a wishlist mid-cooling-off. Useful for seeing the populated screens before cataloguing your own.`}
+            body={`A worked example — ${DEMO_SUMMARY.items} pieces including ${DEMO_SUMMARY.jewellery} pieces of jewellery, ${DEMO_SUMMARY.outfits} saved outfits, a year of wear history, and a wishlist mid-cooling-off. Useful for seeing what a year of this looks like before you catalogue your own.`}
             control={
               <Button onClick={() => setShowDemo(true)}>Load sample</Button>
             }
           />
 
-          {showDemo ? (
-            <div className="bg-sunken rounded-[2px] p-4">
-              <p className="text-[15px] text-text leading-tight">
-                {hasRecords ? 'Replace what is here with the sample?' : 'Load the sample wardrobe?'}
-              </p>
-              <p className="text-[14px] text-text-2 leading-relaxed mt-2">
-                {hasRecords
-                  ? `This device currently holds ${records} records. Loading the sample replaces all of them, and there is no copy unless you exported one.`
-                  : 'Nothing is on this device yet, so nothing will be lost. Reset from here whenever you want to start your own.'}
-              </p>
-              <div className="flex flex-wrap gap-2 mt-4">
-                <Button tone={hasRecords ? 'destructive' : 'primary'} onClick={handleLoadDemo}>
-                  {hasRecords ? 'Replace with the sample' : 'Load it'}
-                </Button>
-                <Button onClick={() => setShowDemo(false)}>Cancel</Button>
-              </div>
-            </div>
-          ) : null}
+          <ConfirmDialog
+            open={showDemo}
+            title="Load the sample"
+            danger={hasRecords}
+            body={
+              hasRecords
+                ? `This replaces the ${records} records on this device — every piece, outfit, wear log and wishlist entry — with the sample wardrobe. There is no undo, and no other copy of them unless you exported one.`
+                : 'Nothing is on this device yet, so nothing is lost. Reset from here whenever you want to start your own.'
+            }
+            confirmLabel={hasRecords ? 'Replace with the sample' : 'Load it'}
+            cancelLabel="Cancel"
+            onConfirm={handleLoadDemo}
+            onClose={() => setShowDemo(false)}
+          />
 
           <Basting />
 
@@ -803,23 +798,16 @@ export default function Settings() {
             }
           />
 
-          {showReset ? (
-            <div className="bg-sunken rounded-[2px] p-4">
-              <p className="text-[15px] text-text leading-tight">Reset everything?</p>
-              <p className="text-[14px] text-text-2 leading-relaxed mt-2">
-                This clears {items.length} pieces, {outfits.length} outfits, {wearLogs.length} wear
-                logs and {wishlist.length} wishlist entries, along with every category and
-                occasion tag you have added. It cannot be undone, and there is no copy anywhere
-                unless you exported one.
-              </p>
-              <div className="flex flex-wrap gap-2 mt-4">
-                <Button tone="destructive" onClick={handleReset}>
-                  Reset everything
-                </Button>
-                <Button onClick={() => setShowReset(false)}>Keep it</Button>
-              </div>
-            </div>
-          ) : null}
+          <ConfirmDialog
+            open={showReset}
+            title="Reset everything"
+            danger
+            body={`This clears ${items.length} pieces, ${outfits.length} outfits, ${wearLogs.length} wear logs and ${wishlist.length} wishlist entries, along with every category and occasion tag you have added. There is no undo, and no copy anywhere unless you exported one.`}
+            confirmLabel="Reset everything"
+            cancelLabel="Keep it"
+            onConfirm={handleReset}
+            onClose={() => setShowReset(false)}
+          />
         </div>
       </Card>
 
@@ -874,7 +862,7 @@ export default function Settings() {
       <Card>
         <SectionTitle aside="alpha only">Project lead portal</SectionTitle>
         <Row
-          title="Project lead portal"
+          title="What is on this device"
           body="A control room for the person running the alpha: what is stored on this device, whose wardrobes are here, and the means to clear them. It touches this device and nothing else."
           control={<LinkButton to="/admin">Open the portal</LinkButton>}
         />

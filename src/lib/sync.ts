@@ -1,6 +1,6 @@
 import { getSupabase } from './supabase';
 import { loadWardrobe, saveWardrobe } from './accounts';
-import type { Account, AppState, SyncMode } from '../types';
+import type { Account, AppState, SyncMode } from '@almari/shared/types';
 
 /**
  * THE SYNC ADAPTER — how a wardrobe's record travels between devices.
@@ -25,7 +25,35 @@ import type { Account, AppState, SyncMode } from '../types';
 
 /* ==================== pure rules (unit-tested) ==================== */
 
-/** The shape of one row in public.wardrobes — see supabase/setup.sql. */
+/**
+ * WHAT THE `state` COLUMN HOLDS — an envelope, not a bare document.
+ *
+ * docs/35 records end-to-end encrypted sync as the committed trust target.
+ * The column is plaintext jsonb today and this envelope does not change that
+ * by one byte: `alg` is 'none' and `payload` IS the wardrobe document, in the
+ * clear. What it buys is the day encryption arrives — a new `alg` value, read
+ * by the same code path, instead of a migration run across every alpha
+ * tester's live row while they are using it.
+ *
+ * toRow/fromRow are the single choke point every synced byte passes through,
+ * which is why the discriminator goes here and nowhere else.
+ */
+export const ENVELOPE_VERSION = 1;
+
+/** The encodings a payload may be in. 'none' is alpha; more will follow. */
+export type StateAlg = 'none';
+
+export interface StateEnvelope {
+  v: number;
+  alg: StateAlg;
+  payload: AppState;
+}
+
+/**
+ * A row as the app handles it: the envelope already opened, `state` a plain
+ * wardrobe document. This is what pullAll hands the session layer, and what
+ * every caller outside this file has ever seen.
+ */
 export interface WardrobeRow {
   id: string;
   user_id: string;
@@ -34,12 +62,35 @@ export interface WardrobeRow {
   updated_at: string;
 }
 
+/** A row as the table holds it — see supabase/setup.sql. */
+export interface StoredRow extends Omit<WardrobeRow, 'state'> {
+  state: StateEnvelope;
+}
+
+/**
+ * A row as PostgREST hands it back, which may be either: rows written before
+ * the envelope existed carry the wardrobe document bare, and those rows are
+ * live alpha data that must keep reading.
+ */
+export interface IncomingRow extends Omit<WardrobeRow, 'state'> {
+  state: StateEnvelope | AppState;
+}
+
 /** One push that could not be sent, kept for the next online moment. */
 export interface QueuedPush {
   syncId: string;
   name: string;
   state: AppState;
   queuedAt: string;
+  /**
+   * Which wardrobe on THIS device the push belongs to. The sync meta is keyed
+   * by the local account id and the row is keyed by syncId, so a drain that
+   * only knows the syncId cannot record that it reached agreement. Optional
+   * because entries queued by an earlier build are still sitting in
+   * localStorage: those still send, they simply go unstamped — exactly the
+   * behaviour they already had.
+   */
+  accountId?: string;
 }
 
 /** The account's choice, with old records defaulting to 'device'. */
@@ -67,23 +118,86 @@ export function toRow(
   state: AppState,
   userId: string,
   now: string,
-): WardrobeRow {
-  return { id: account.syncId, user_id: userId, name: account.name, state, updated_at: now };
+): StoredRow {
+  return {
+    id: account.syncId,
+    user_id: userId,
+    name: account.name,
+    state: { v: ENVELOPE_VERSION, alg: 'none', payload: state },
+    updated_at: now,
+  };
 }
 
-/** Table row → the state a wardrobe store can hold. */
-export function fromRow(row: WardrobeRow): { name: string; state: AppState; updatedAt: string } {
-  return { name: row.name, state: row.state, updatedAt: row.updated_at };
+/**
+ * Is this jsonb an envelope, or a wardrobe document written before envelopes?
+ * Told apart by the two keys the envelope has and AppState does not — see
+ * src/types.ts, where the wardrobe document is items/outfits/wearLog/wishlist
+ * /settings and never `alg` or `payload`.
+ */
+function isEnvelope(state: StateEnvelope | AppState): state is StateEnvelope {
+  const candidate = state as Partial<StateEnvelope>;
+  return typeof candidate?.alg === 'string' && candidate.payload !== undefined;
+}
+
+/**
+ * Open an envelope, or read a legacy bare row as what it is: an alg 'none'
+ * payload with the wrapper left off.
+ *
+ * An `alg` this build does not know returns null, and the callers treat null
+ * as "no news". Refusing is the point — when encryption lands, a client that
+ * has not been updated must say nothing rather than write ciphertext into
+ * someone's wardrobe as though it were pieces.
+ */
+export function openState(state: StateEnvelope | AppState): AppState | null {
+  if (!isEnvelope(state)) return state;
+  return state.alg === 'none' ? state.payload : null;
+}
+
+/** Table row → the state a wardrobe store can hold. Null when unreadable. */
+export function fromRow(row: IncomingRow): { name: string; state: AppState | null; updatedAt: string } {
+  return { name: row.name, state: openState(row.state), updatedAt: row.updated_at };
+}
+
+/** The whole row, envelope opened, or null when this build cannot read it. */
+export function openRow(row: IncomingRow): WardrobeRow | null {
+  const state = openState(row.state);
+  if (!state) return null;
+  return { id: row.id, user_id: row.user_id, name: row.name, state, updated_at: row.updated_at };
 }
 
 /**
  * The conflict rule, entire. `lastSyncedAt` is when this device last pushed
  * or adopted the row; a remote row newer than that carries news. Equal is NOT
  * newer — equal is the same write seen twice, and adopting it would echo.
+ *
+ * Compared as INSTANTS, not as text, because the two writers of this column
+ * render time differently. The browser writes toISOString: three fractional
+ * digits and a 'Z'. PostgREST renders a timestamptz: up to six fractional
+ * digits with the trailing zeros trimmed, and a '+00:00' offset. A `>`
+ * between those two strings compares glyphs, and in ASCII 'Z' sorts above
+ * every digit and '.' sorts above '+' — so one instant, written by the two
+ * sides, can read as two.
+ *
+ * How bad it actually was, stated honestly rather than dramatically: across
+ * 202,500 realistic pairs of those renderings, the string compare never once
+ * MISSED news — nothing was ever lost by it. Every disagreement ran the other
+ * way: the same instant in two renderings judged "newer", which would adopt
+ * an echo of this device's own write. It was a latent correctness defect, not
+ * a wardrobe eater. It is fixed anyway, because "equal is not newer" is the
+ * entire conflict policy, and a policy that holds only while both writers
+ * happen to render time the same way is not a policy.
  */
 export function remoteIsNewer(remoteUpdatedAt: string, lastSyncedAt: string | null): boolean {
   if (!lastSyncedAt) return true;
-  return remoteUpdatedAt > lastSyncedAt;
+  const last = Date.parse(lastSyncedAt);
+  // A stamp this device cannot read is no agreement at all — fall back to the
+  // no-stamp rule and let the account's copy in.
+  if (Number.isNaN(last)) return true;
+  const remote = Date.parse(remoteUpdatedAt);
+  // The one case where doing nothing is right. The local record is the
+  // original; it is not replaced on the strength of a clock we cannot read.
+  if (Number.isNaN(remote)) return false;
+  return remote > last;
 }
 
 /**
@@ -130,7 +244,7 @@ export async function drainQueue(
  * how a new wardrobe is introduced on this device.
  */
 export function accountFromRow(
-  row: WardrobeRow,
+  row: Pick<WardrobeRow, 'id' | 'name'>,
   identity: Pick<Account, 'id' | 'handle' | 'monogram' | 'color' | 'createdAt'>,
 ): Account {
   return { ...identity, name: row.name, sync: 'cloud', syncId: row.id };
@@ -224,14 +338,38 @@ export function queuePush(account: Account, state: AppState, queuedAt = new Date
     name: account.name,
     state,
     queuedAt,
+    accountId: account.id,
   }));
 }
 
 /**
- * Push one wardrobe's whole state to its row. `updated_at` is stamped now,
- * here, so the device's clock and the row's clock are the same statement.
- * Offline or refused: the push joins the queue and the next online moment
- * sends it. Never throws — sync must never be the reason the app breaks.
+ * The stamp the meta map records: the one the DATABASE put on the row, never
+ * the one this device merely proposed.
+ *
+ * supabase/setup.sql keeps a BEFORE UPDATE trigger that overwrites updated_at
+ * with now() — deliberately, so that no writer can forget the clock the
+ * conflict rule is judged by. The consequence is that a client which files
+ * away its own `now` has filed away a time the row does not carry, and every
+ * later comparison is between two different clocks. Reading the stamp back
+ * off the returned row is what makes the two agree by construction, rather
+ * than by both sides being careful.
+ *
+ * The proposed time is only the fallback for a response that hands back
+ * nothing — a stale stamp still errs toward adopting the remote row, which is
+ * the safe direction: the account's copy is at worst a redundant echo, while
+ * a stamp from the future would hide real news.
+ */
+function stampFrom(returned: { updated_at?: unknown } | null, proposed: string): string {
+  const at = returned?.updated_at;
+  return typeof at === 'string' && at !== '' ? at : proposed;
+}
+
+/**
+ * Push one wardrobe's whole state to its row. `updated_at` is proposed here
+ * and confirmed by the row that comes back, so the device's clock and the
+ * row's clock are the same statement. Offline or refused: the push joins the
+ * queue and the next online moment sends it. Never throws — sync must never
+ * be the reason the app breaks.
  */
 export async function pushNow(
   account: Account,
@@ -242,9 +380,13 @@ export async function pushNow(
   const now = new Date().toISOString();
   const row = toRow({ name: account.name, syncId: account.syncId }, state, userId, now);
   try {
-    const { error } = await getSupabase().from('wardrobes').upsert(row);
+    const { data, error } = await getSupabase()
+      .from('wardrobes')
+      .upsert(row)
+      .select('updated_at')
+      .single();
     if (error) throw error;
-    stampSynced(account.id, now);
+    stampSynced(account.id, stampFrom(data, now));
     return 'sent';
   } catch {
     queuePush(account, state, now);
@@ -261,10 +403,18 @@ export async function flushQueue(userId: string): Promise<void> {
   if (queue.length === 0) return;
   const { remaining } = await drainQueue(queue, async push => {
     const now = new Date().toISOString();
-    const { error } = await getSupabase()
+    const { data, error } = await getSupabase()
       .from('wardrobes')
-      .upsert({ id: push.syncId, user_id: userId, name: push.name, state: push.state, updated_at: now });
+      .upsert(toRow({ name: push.name, syncId: push.syncId }, push.state, userId, now))
+      .select('updated_at')
+      .single();
     if (error) throw error;
+    // A drained push is a wardrobe reaching agreement with the account, and
+    // it must be recorded as one. Left unstamped — as it was — lastSyncedAt
+    // stays at whatever the last successful push wrote, stale by the whole
+    // offline stretch, and the next pull judges the row it just sent against
+    // a time from before it went offline.
+    if (push.accountId) stampSynced(push.accountId, stampFrom(data, now));
   });
   writeQueue(remaining);
 }
@@ -285,7 +435,11 @@ export async function pullAccount(account: Account): Promise<'adopted' | 'curren
       .eq('id', account.syncId)
       .maybeSingle();
     if (error || !data) return 'none';
-    const row = data as WardrobeRow;
+    // An envelope this build cannot open is not news and not an error: the
+    // row belongs to a newer Almari, and saying nothing leaves the local
+    // record — the original — exactly where it is.
+    const row = openRow(data as IncomingRow);
+    if (!row) return 'none';
     if (!remoteIsNewer(row.updated_at, lastSyncedAt(account.id))) return 'current';
     saveWardrobe(account.id, row.state);
     stampSynced(account.id, row.updated_at);
@@ -311,7 +465,10 @@ export async function pullAll(
       .from('wardrobes')
       .select('id,user_id,name,state,updated_at');
     if (error || !data) return empty;
-    const rows = data as WardrobeRow[];
+    // Rows whose envelope this build cannot open drop out here rather than
+    // reaching the session layer: an unreadable row must not be introduced as
+    // a wardrobe, because an introduced wardrobe is one a person can open.
+    const rows = (data as IncomingRow[]).map(openRow).filter((r): r is WardrobeRow => r !== null);
     const adoptedIds: string[] = [];
     const fresh: WardrobeRow[] = [];
     for (const row of rows) {

@@ -14,7 +14,7 @@
  *      and routes by the model's name: a `claude*` model goes to Anthropic,
  *      anything else to Kimi by Moonshot AI. The app POSTs the provider's own
  *      request shape and sends no key, because it does not have one; the
- *      relay adds the key. The default is Claude Sonnet 4.5 — cataloguing a
+ *      relay adds the key. The default is Claude Fable 5 — cataloguing a
  *      photograph works out of the box.
  *   2. Your own endpoint, set in Settings. Two shapes are spoken:
  *      an endpoint whose URL points at Anthropic (or any `/v1/messages`
@@ -36,13 +36,23 @@
 
 const RELAY_ENDPOINT = 'https://wvupsqfevlrmhqfjreyx.supabase.co/functions/v1/ai-proxy';
 /**
- * Claude Sonnet 4.5 by Anthropic — the model the relay asks by default, and
- * the name the copy gives. The relay routes by the model's name: a `claude*`
- * model is forwarded to Anthropic, anything else to Kimi by Moonshot AI. The
- * default moved from Kimi K3 after a timed shootout on a real wardrobe
- * photograph: 3.9s against 14.2s for the same picture and prompt.
+ * Claude Fable 5 by Anthropic — the model the relay asks by default, and the
+ * name the copy gives. The relay routes by the model's name: a `claude*` model
+ * is forwarded to Anthropic, anything else to Kimi by Moonshot AI.
+ *
+ * The bake-off that chose it, run through this relay on a real wardrobe
+ * photograph: Fable 5 and Opus 5 each found 14 pieces where Sonnet 4.5 found
+ * 12 — Sonnet missed a camouflage tee worn under a hoodie. Fable is the slower
+ * and the dearer of the two that saw everything (median 19.8s against 14.3s;
+ * $10/$50 against $5/$25 per MTok) and is the default anyway, because a
+ * photograph is read once and the reading is the whole product. Run
+ * `scripts/model-bakeoff.mjs` to put the numbers back on the table.
+ *
+ * Thinking is always on for Fable 5: `thinking: {type:'disabled'}` comes back
+ * 400, so the request below sends no thinking parameter at all — and no
+ * temperature, top_p, top_k or assistant prefill, none of which Fable accepts.
  */
-const RELAY_MODEL = 'claude-sonnet-4-5';
+const RELAY_MODEL = 'claude-fable-5';
 /** Who the relay is talking to, for honest error copy. Derived, not written down twice. */
 const RELAY_PROVIDER = RELAY_MODEL.startsWith('claude') ? 'Claude (by Anthropic)' : 'Kimi (by Moonshot AI)';
 /** The relay speaks the provider's own shape — Anthropic Messages for a claude* model. */
@@ -118,11 +128,14 @@ const ANTHROPIC_VERSION = '2023-06-01';
 
 /**
  * The Claude models for the work, for keys saved before the relay existed.
- * Both are verified against a live key. If a key has no access to the
- * preferred one, the call steps down once rather than failing — a working
- * catalogue beats a correct error.
+ * Deliberately not Fable 5: the relay's default is a promise about the owner's
+ * account, not about somebody else's, and a person's own key may have no
+ * access to Fable at all. Opus 5 read the same 14 pieces as Fable in the
+ * bake-off and is far more widely reachable. If a key cannot see it, the call
+ * steps down once to Haiku rather than failing — a working catalogue beats a
+ * correct error.
  */
-const ANTHROPIC_PREFERRED = 'claude-sonnet-4-5';
+const ANTHROPIC_PREFERRED = 'claude-opus-5';
 const ANTHROPIC_FALLBACK = 'claude-haiku-4-5';
 
 const KEY_STORE = 'toile-key';
@@ -165,12 +178,15 @@ export function keyLooksWrong(key: string): boolean {
 const SEND_EDGE = 1400;
 
 /**
- * Generous on purpose: a reasoning model (the Kimi path) spends thinking from
- * the same budget as the answer, and a full-closet detection list is long.
- * Under ~4096 tokens a reasoning model's thinking can eat the whole allowance
- * and the answer arrives empty.
+ * Generous on purpose, and raised for Fable 5. A reasoning model spends its
+ * thinking from the same budget as the answer, and a full-closet detection
+ * list is long, so the ceiling has to leave room for both — too low and the
+ * thinking eats the whole allowance and the answer arrives empty. Fable 5
+ * always thinks and cannot be told not to, which makes the headroom
+ * load-bearing rather than merely kind; Kimi K3, the fallback, wants at least
+ * 8000 for the same reason, so the raise is safe on every path.
  */
-const MAX_TOKENS = 8000;
+const MAX_TOKENS = 16000;
 
 export interface Prepared {
   /** Base64 without the data: prefix, which the Anthropic shape wants. */

@@ -1,6 +1,6 @@
-import type { CommunityState, Household, HouseholdKind, PassOffer, SharedPiece } from '../types';
-import { HOUSEHOLD_KIND_LABELS } from '../types';
-import { todayLocal } from './dates';
+import type { CommunityState, Household, HouseholdKind, PassOffer, SharedPiece } from '@almari/shared/types';
+import { HOUSEHOLD_KIND_LABELS } from '@almari/shared/types';
+import { todayLocal } from '@almari/shared/dates';
 
 /**
  * Pure transitions over the shared store. Every rule here came out of the

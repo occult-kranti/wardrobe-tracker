@@ -1,13 +1,13 @@
-import { useMemo, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useSession } from '../context/SessionContext';
 import { useWardrobe } from '../context/WardrobeContext';
 import { Button, Card, EmptyState, Field, LinkButton, Masthead, Modal, SectionTitle, inputClass, selectClass } from '../components/ui';
 import { Basting, PlateEmptyWishlist } from '../components/art';
 import { IconChevronLeft, IconPlus } from '../components/icons';
 import { AccountMark, LookCard, PieceCard, shortDate, oldestFirst, nowLocalStamp } from '../components/social';
-import { todayLocal } from '../lib/dates';
-import type { BorrowStatus, ChatMessage, SharedLook, SharedPiece } from '../types';
+import { todayLocal } from '@almari/shared/dates';
+import type { BorrowStatus, ChatMessage, SharedLook, SharedPiece } from '@almari/shared/types';
 
 /**
  * CONVERSATIONS — one group and a thread per pair.
@@ -29,9 +29,43 @@ const STATUS_LABELS: Record<BorrowStatus, string> = {
 /** How many closet pieces the send-a-piece grid shows before it says so. */
 const PIECE_PICKER_LIMIT = 60;
 
+/**
+ * What a feed card sends along when a verb points here (social.tsx, PostCard):
+ * Attach carries a snapshot, Ask carries the piece's name and its owner. This
+ * page never consumed those — Attach and Ask from the feed silently dropped.
+ * The native app defined and tested the receiving contract; this is its web
+ * half, the same shapes. A malformed state is no arrival, never a crash.
+ */
+type ChatArrival = {
+  attach?: { look?: SharedLook; piece?: SharedPiece };
+  ask?: { pieceName: string; ownerId: string };
+};
+
+function readArrival(state: unknown): ChatArrival | null {
+  if (!state || typeof state !== 'object') return null;
+  const s = state as Record<string, unknown>;
+  const out: ChatArrival = {};
+  if (s.attach && typeof s.attach === 'object') {
+    const a = s.attach as Record<string, unknown>;
+    if (a.look && typeof a.look === 'object') out.attach = { look: a.look as SharedLook };
+    else if (a.piece && typeof a.piece === 'object') out.attach = { piece: a.piece as SharedPiece };
+  }
+  if (s.ask && typeof s.ask === 'object') {
+    const k = s.ask as Record<string, unknown>;
+    if (typeof k.pieceName === 'string' && typeof k.ownerId === 'string') {
+      out.ask = { pieceName: k.pieceName, ownerId: k.ownerId };
+    }
+  }
+  return out.attach || out.ask ? out : null;
+}
+
 export default function Chats() {
   const { accounts, community, setCommunity, activeId } = useSession();
   const navigate = useNavigate();
+  const location = useLocation();
+  // A verb from the feed lands here first; the thing it carries rides along
+  // until a conversation is chosen for it.
+  const arrival = readArrival(location.state);
   const byId = useMemo(() => new Map(accounts.map(a => [a.id, a])), [accounts]);
   const [starting, setStarting] = useState(false);
   const [picked, setPicked] = useState<string[]>([]);
@@ -55,7 +89,7 @@ export default function Chats() {
       // modal after landing on an existing thread showed a stale selection.
       setPicked([]);
       setGroupName('');
-      navigate(`/chats/${existing.id}`);
+      navigate(`/chats/${existing.id}`, { state: arrival ?? undefined });
       return;
     }
     const id = `c-${crypto.randomUUID().slice(0, 8)}`;
@@ -74,7 +108,7 @@ export default function Chats() {
     setStarting(false);
     setPicked([]);
     setGroupName('');
-    navigate(`/chats/${id}`);
+    navigate(`/chats/${id}`, { state: arrival ?? undefined });
   };
 
   const threads = useMemo(() => {
@@ -103,12 +137,25 @@ export default function Chats() {
           <Button tone="primary" icon={<IconPlus size={16} />} onClick={() => setStarting(true)}>New</Button>
         ) : undefined}
       />
+      {arrival ? (
+        <Card>
+          <p className="text-[14px] text-text-2 leading-snug">
+            Riding along:{' '}
+            {arrival.ask
+              ? `asking after the ${arrival.ask.pieceName}`
+              : arrival.attach?.look
+                ? `“${arrival.attach.look.name}”`
+                : `“${arrival.attach?.piece?.name ?? 'a piece'}”`}
+            . Choose the conversation for it.
+          </p>
+        </Card>
+      ) : null}
       {threads.length === 0 ? (
         <Card>
           <EmptyState
             plate={<PlateEmptyWishlist />}
             title="No conversations yet."
-            body="Threads between the wardrobes on this device — for asking after a piece, sending a look, and saying when it came home. All of it stays on this device."
+            body="Threads between the wardrobes on this device: ask after a piece, send a look, say when something came home. None of it leaves."
             action={
               // Alone on the device there is no one to write to; the way in is a household.
               others.length > 0 ? (
@@ -130,7 +177,7 @@ export default function Chats() {
               : others[0]?.name ?? 'Someone';
             return (
               <li key={conversation.id}>
-                <Link to={`/chats/${conversation.id}`} className="flex items-center gap-3 min-h-[64px] py-2 group">
+                <Link to={`/chats/${conversation.id}`} state={arrival ?? undefined} className="flex items-center gap-3 min-h-[64px] py-2 group">
                   <span className="flex -space-x-2 shrink-0">
                     {others.slice(0, 2).map(a => a ? <AccountMark key={a.id} account={a} size={28} /> : null)}
                   </span>
@@ -206,6 +253,8 @@ export function ChatThread() {
   const { id } = useParams<{ id: string }>();
   const { accounts, community, setCommunity, activeId } = useSession();
   const { outfits, activeItems, getItem, recordLoan, closeLoan } = useWardrobe();
+  const location = useLocation();
+  const navigate = useNavigate();
   const [draft, setDraft] = useState('');
   const [attaching, setAttaching] = useState<null | 'look' | 'piece'>(null);
   const [attached, setAttached] = useState<{ look?: SharedLook; piece?: SharedPiece }>({});
@@ -213,6 +262,23 @@ export function ChatThread() {
   const [askPiece, setAskPiece] = useState('');
   const [askOwner, setAskOwner] = useState('');
   const [askNote, setAskNote] = useState('');
+
+  // The arrival a feed verb sent along is consumed exactly once: the snapshot
+  // lands in the composer, or the ask sheet opens prefilled. The state is
+  // then cleared so back or refresh does not re-arm it.
+  const consumedArrival = useRef(false);
+  useEffect(() => {
+    const arrival = readArrival(location.state);
+    if (consumedArrival.current || !arrival) return;
+    consumedArrival.current = true;
+    if (arrival.attach) setAttached(arrival.attach);
+    if (arrival.ask) {
+      setAsking(true);
+      setAskPiece(arrival.ask.pieceName);
+      setAskOwner(arrival.ask.ownerId);
+    }
+    navigate(location.pathname, { replace: true, state: null });
+  }, [location.state, location.pathname, navigate]);
 
   const byId = useMemo(() => new Map(accounts.map(a => [a.id, a])), [accounts]);
   const found = community.conversations.find(c => c.id === id);

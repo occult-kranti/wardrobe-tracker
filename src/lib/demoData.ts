@@ -1,5 +1,5 @@
-import { SCHEMA_VERSION, DEFAULT_CATEGORIES, DEFAULT_OCCASIONS, type AppState, type ClothingItem, type Outfit, type Season, type WearLog, type WishlistItem } from '../types';
-import { todayLocal, addDays } from './dates';
+import { SCHEMA_VERSION, DEFAULT_CATEGORIES, DEFAULT_OCCASIONS, type AppState, type ClothingItem, type Outfit, type Season, type WearLog, type WishlistItem } from '@almari/shared/types';
+import { todayLocal, addDays } from '@almari/shared/dates';
 import { GARMENT_ART } from './garmentArt';
 import { furnish } from './furnishing';
 
@@ -778,6 +778,10 @@ export function buildDemoState(): AppState {
 
   return {
     schemaVersion: SCHEMA_VERSION,
+    // The demo closet is a web document: its photographs are the generated
+    // plates and the sample crops the browser resolves by URL, not files on a
+    // phone's disk. Same value migrate() seeds on any older export.
+    photoEncoding: 'inline',
     furniture: furnished.furniture,
     items: furnished.items,
     outfits,

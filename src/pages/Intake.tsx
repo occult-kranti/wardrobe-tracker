@@ -5,11 +5,11 @@ import { showToast } from '../components/Toast';
 import { Button, Chip, LinkButton, Masthead, EmptyState } from '../components/ui';
 import { Basting, GarmentPlate, PlateEmptyCloset } from '../components/art';
 import { IconCheck, IconClose, IconImport, IconCopy, IconCamera, IconChevronLeft, IconFeed } from '../components/icons';
-import { categoryLabel, displayTag, PRESET_COLORS, SEASON_LABELS, type CategoryId } from '../types';
+import { categoryLabel, displayTag, PRESET_COLORS, SEASON_LABELS, type CategoryId } from '@almari/shared/types';
 import {
   readIntake, draftToItem, findDuplicates,
   type IntakeDraft, type IntakeRead, type IntakeSkip,
-} from '../lib/intake';
+} from '@almari/shared/intake';
 import { INTAKE_PROMPT, OUTFIT_PROMPT } from '../lib/intakePrompt';
 import { INTAKE_SAMPLES, type IntakeSample } from '../lib/intakeSamples';
 import { prepareImage, readPhotograph, type Prepared } from '../lib/anthropic';
@@ -605,7 +605,7 @@ export default function Intake() {
             <div className="rounded-[2px] border border-accent/60 bg-sunken p-4">
               <p className="type-ledger text-[11px] text-accent">This one step uses the network</p>
               <p className="text-[13px] text-text-2 mt-2 leading-relaxed">
-                The photograph goes to Claude Sonnet by Anthropic, through Almari&rsquo;s relay, which
+                The photograph goes to Claude Fable by Anthropic, through Almari&rsquo;s relay, which
                 holds the key on the server so this device never has one — or to your own
                 endpoint, if you have set one in Settings. It comes back as words and
                 coordinates. The cutting, the background removal and the writing all happen
@@ -689,7 +689,7 @@ export default function Intake() {
             <div className="rounded-[2px] border border-accent/60 bg-sunken p-4 mt-4">
               <p className="type-ledger text-[11px] text-accent">One journey per screenshot</p>
               <p className="text-[13px] text-text-2 mt-2 leading-relaxed">
-                The screenshots go to Claude Sonnet by Anthropic, through Almari&rsquo;s relay — the
+                The screenshots go to Claude Fable by Anthropic, through Almari&rsquo;s relay — the
                 key is held on the server, never on this device — only when you press the button.
                 Group photos are left alone, and nothing is written until you say so.
               </p>
@@ -740,7 +740,7 @@ export default function Intake() {
             <div className="rounded-[2px] border border-accent/60 bg-sunken p-4 mt-4">
               <p className="type-ledger text-[11px] text-accent">One journey per photograph</p>
               <p className="text-[13px] text-text-2 mt-2 leading-relaxed">
-                The photographs go to Claude Sonnet by Anthropic, through Almari&rsquo;s relay — the
+                The photographs go to Claude Fable by Anthropic, through Almari&rsquo;s relay — the
                 key is held on the server, never on this device — only when you press the
                 button. Nothing is written until you say so.
               </p>
@@ -787,7 +787,7 @@ export default function Intake() {
               onChange={e => setText(e.target.value)}
               rows={8}
               spellCheck={false}
-              placeholder={'{\n  "toileIntake": 1,\n  "pieces": [ … ]\n}'}
+              placeholder={'{\n  "pieces": [ … ]\n}'}
               className="w-full mt-2 bg-sunken border border-border rounded-[2px] p-3 text-base lg:text-[12px] text-text resize-none font-mono normal-case tracking-normal"
             />
             {result?.error ? (

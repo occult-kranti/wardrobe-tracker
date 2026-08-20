@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useWardrobe } from '../context/WardrobeContext';
-import { categoryLabel, type BorrowStatus, type CircleMessage, type CircleProfile } from '../types';
+import { categoryLabel, type BorrowStatus, type CircleMessage, type CircleProfile } from '@almari/shared/types';
 import { Button, Card, Chip, EmptyState, LinkButton, Masthead, SectionTitle, inputClass } from '../components/ui';
 import { Basting, GarmentPlate, PlateEmptyWishlist, TagPortrait } from '../components/art';
 import { IconChevronLeft } from '../components/icons';
@@ -346,7 +346,7 @@ export function RailProfile() {
 
       {showcased.length > 0 ? (
         <Card>
-          <SectionTitle aside="curated">On the rail</SectionTitle>
+          <SectionTitle aside="on show">On the rail</SectionTitle>
           <ul className="space-y-5">
             {showcased.map(outfit => (
               <li key={outfit.id}>

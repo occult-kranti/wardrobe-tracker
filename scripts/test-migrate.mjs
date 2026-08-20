@@ -1,20 +1,40 @@
 // Verifies a real v1 localStorage payload survives migration with no loss.
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { spawnSync } from 'node:child_process';
 import { build } from 'esbuild';
+import { sharedAliases } from '../packages/shared/aliases.mjs';
 import { writeFileSync, mkdtempSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 
-const out = join(mkdtempSync(join(tmpdir(), 'mig-')), 'migrate.mjs');
-await build({
-  entryPoints: [fileURLToPath(new URL('../src/lib/migrate.ts', import.meta.url))],
-  bundle: true,
-  format: 'esm',
-  outfile: out,
-  logLevel: 'error',
-});
+/* `--tz <IANA>` runs this file as the timezone child described at the foot of
+   the file. The assignment below has to happen before the first Date is built,
+   because assigning process.env.TZ is what clears V8's cached zone — and it has
+   to happen here rather than being inherited, because on this repo's Git-Bash a
+   TZ prefix is swallowed before it reaches node. The child reports the zone it
+   actually resolved so a swallowed TZ is a loud failure and never a silent
+   pass. The pattern is scripts/test-dates.mjs's; read its header for the long
+   version. `--bundle` lets the child reuse the parent's build. */
+const argv = process.argv.slice(2);
+const zoneArg = argv.includes('--tz') ? argv[argv.indexOf('--tz') + 1] : null;
+if (zoneArg) process.env.TZ = zoneArg;
+const bundleArg = argv.includes('--bundle') ? argv[argv.indexOf('--bundle') + 1] : null;
+
+const out = bundleArg ?? join(mkdtempSync(join(tmpdir(), 'mig-')), 'migrate.mjs');
+if (!bundleArg) {
+  await build({ alias: sharedAliases(),
+    entryPoints: [fileURLToPath(new URL('../packages/shared/migrate.ts', import.meta.url))],
+    bundle: true,
+    format: 'esm',
+    outfile: out,
+    logLevel: 'error',
+  });
+}
 
 const { migrate } = await import(pathToFileURL(out).href);
+
+// A child reports its one zone and exits; it never reaches the suite below.
+if (zoneArg) await runZoneCase(zoneArg);
 
 const v1 = {
   items: [
@@ -59,7 +79,7 @@ const v1 = {
 
 const m = migrate(v1);
 const checks = [
-  ['schemaVersion set', m.schemaVersion === 7],
+  ['schemaVersion set', m.schemaVersion === 8],
   // v4 adds events. A pre-v4 export must gain an empty, valid list rather than
   // an undefined the Events page would crash on, and an export that already
   // carries events must round-trip with its reservations intact.
@@ -302,6 +322,48 @@ const checks = [
     const b = migrate({ ...v1, furniture: [{ id: 'f2', name: 'B', form: 'rail', slots: NaN }] });
     return a.furniture[0].slots.length === 1 && b.furniture[0].slots.length === 1;
   })()],
+
+  // v8: the photograph contract. The web app stores photographs as base64 data
+  // URIs inside this document; the native app keeps the files on disk under
+  // FileSystem.documentDirectory and writes relative paths into the same
+  // `imageUrl` field. Both are strings, so neither side could ever tell which
+  // it was holding — the mismatch would have been silent, and a silent one is
+  // the kind that arrives as forty broken photographs. The document declares
+  // its own encoding now, and every document written before this field existed
+  // was written by the web app, so no declaration means 'inline'.
+  ['a document with no encoding declares inline', m.photoEncoding === 'inline'],
+  ['a native document KEEPS file', (() => {
+    // Migration must never clobber a document the native app wrote. Rewriting
+    // 'file' to 'inline' here would tell every reader that a set of relative
+    // paths were data URIs, and every photograph in the wardrobe would resolve
+    // to nothing at once.
+    const onDisk = migrate({ ...v1, photoEncoding: 'file' });
+    return onDisk.photoEncoding === 'file';
+  })()],
+  ['a file document survives being migrated twice', (() => {
+    // The classic version-step bug: the first pass reads the old document and
+    // keeps 'file', the second pass sees a current document and "helpfully"
+    // normalises it. Loading the file twice must not edit it.
+    const once = migrate({ ...v1, photoEncoding: 'file' });
+    return JSON.stringify(migrate(once)) === JSON.stringify(once);
+  })()],
+  ['an unknown encoding is repaired to inline, not trusted', (() => {
+    // A value out of a hand-edited file or a build we have never seen is not a
+    // reading we can act on. 'inline' is the safe repair: a data URI renders as
+    // itself no matter who reads it, while trusting a path we cannot resolve
+    // would blank every photograph on the device that reads it.
+    const nonsense = migrate({ ...v1, photoEncoding: 'webdav' });
+    const empty = migrate({ ...v1, photoEncoding: '' });
+    const wrongType = migrate({ ...v1, photoEncoding: 7 });
+    return nonsense.photoEncoding === 'inline' && empty.photoEncoding === 'inline'
+      && wrongType.photoEncoding === 'inline';
+  })()],
+  ['a native document keeps its unknown keys too', (() => {
+    // Lossless forever. Declaring an encoding must not cost a document the
+    // fields this build has never heard of.
+    const onDisk = migrate({ ...v1, photoEncoding: 'file', someFutureKey: { keep: 'me' } });
+    return onDisk.photoEncoding === 'file' && onDisk.someFutureKey?.keep === 'me';
+  })()],
 ];
 
 // Idempotency: migrating twice must be a no-op.
@@ -316,6 +378,53 @@ checks.push(['purchased:true -> bought', bought.wishlist[0].status === 'bought']
 checks.push(['null safe', migrate(null).items.length === 0]);
 checks.push(['garbage safe', migrate('nonsense').items.length === 0]);
 
+/* The furniture dateAdded repair writes a day, and a day is a local fact.
+   WardrobeContext stamps todayLocal() when a person makes a new piece, so a
+   repair that stamped the UTC day would give a document two different meanings
+   for the same field: a wardrobe furnished in Kiritimati (UTC+14) before 14:00
+   local would be repaired to YESTERDAY, one in Niue (UTC-11) after 13:00 to
+   TOMORROW.
+
+   Those two zones are not decoration. Kiritimati's local day differs from UTC's
+   for the fourteen hours from 10:00 UTC; Niue's differs for the eleven hours
+   before 11:00 UTC. Between them they cover every hour of every day, so at
+   least one of these children always disagrees with UTC and a UTC repair can
+   never slip through on a lucky hour. The check below asserts exactly that,
+   which is what stops the pair going quietly vacuous if someone trims the list. */
+const TZ_ZONES = ['Pacific/Kiritimati', 'Pacific/Niue'];
+const zoneResults = [];
+for (const zone of TZ_ZONES) {
+  const run = spawnSync(process.execPath, [fileURLToPath(import.meta.url), '--tz', zone, '--bundle', out], {
+    env: { ...process.env, TZ: zone },
+    encoding: 'utf8',
+  });
+  const marker = (run.stdout ?? '').split('\n').find(l => l.startsWith('##ZONE##'));
+  if (!marker) {
+    if (run.stderr) process.stderr.write(run.stderr);
+    checks.push([`${zone}: the child produced a result`, false]);
+    continue;
+  }
+  const r = JSON.parse(marker.slice('##ZONE##'.length));
+  zoneResults.push(r);
+  checks.push([`${zone}: the child process really is in ${zone} (resolved ${r.resolved})`, r.resolved === zone]);
+  // If midnight passed between the two readings the answer is legitimately
+  // either one; that is the flake, not the bug. Both are accepted and the run
+  // says so rather than failing on a clock nobody controls.
+  if (r.local !== r.localAfter) {
+    console.log(`NOTE - midnight crossed mid-run in ${zone} (${r.local} -> ${r.localAfter}); both days accepted`);
+  }
+  checks.push([
+    `${zone}: repaired furniture dateAdded is the LOCAL day, not the UTC one `
+      + `(repaired ${r.repaired}, local ${r.local}, UTC ${r.utc})`,
+    r.repaired === r.local || r.repaired === r.localAfter,
+  ]);
+  checks.push([`${zone}: the repaired day is still YYYY-MM-DD`, /^\d{4}-\d{2}-\d{2}$/.test(r.repaired)]);
+}
+checks.push([
+  'at least one zone disagrees with UTC right now, so the pair above is not vacuous',
+  zoneResults.length === TZ_ZONES.length && zoneResults.some(r => r.local !== r.utc),
+]);
+
 let failed = 0;
 for (const [name, ok] of checks) {
   console.log(ok ? 'PASS' : 'FAIL', '-', name);
@@ -323,3 +432,42 @@ for (const [name, ok] of checks) {
 }
 console.log(failed === 0 ? '\nALL MIGRATION CHECKS PASSED' : `\n${failed} CHECK(S) FAILED`);
 process.exit(failed === 0 ? 0 : 1);
+
+/**
+ * One zone, in a process of its own.
+ *
+ * migrate's repair reads the ambient process timezone, through Date's local
+ * getters — there is no timeZone option to hand it. A harness that formatted
+ * with an explicit timeZone would therefore exercise a code path the app never
+ * runs and prove nothing at all about the repair. The zone has to be the
+ * process's own, and a process's zone is settled the first time a Date is
+ * built, which is the whole reason this is a child and not a closure.
+ *
+ * The oracle is Intl with an EXPLICIT timeZone. It goes nowhere near
+ * src/lib/dates.ts or Date's local getters, so agreeing with it means the
+ * repair named the right day — where comparing against a second copy of
+ * formatLocalDate would only ever prove the copy was faithful.
+ */
+async function runZoneCase(zone) {
+  const dayIn = when => {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: zone, year: 'numeric', month: '2-digit', day: '2-digit',
+    }).formatToParts(when);
+    const part = type => parts.find(p => p.type === type).value;
+    return `${part('year')}-${part('month')}-${part('day')}`;
+  };
+  const local = dayIn(new Date());
+  const repaired = migrate({
+    items: [],
+    furniture: [{ id: 'f1', name: 'The rail', form: 'rail', slots: [{ id: 'f1-s1', label: 'Inside' }] }],
+  }).furniture[0].dateAdded;
+  console.log(`##ZONE##${JSON.stringify({
+    zone,
+    resolved: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    repaired,
+    local,
+    localAfter: dayIn(new Date()),
+    utc: new Date().toISOString().slice(0, 10),
+  })}`);
+  process.exit(0);
+}

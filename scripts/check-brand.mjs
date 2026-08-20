@@ -9,11 +9,25 @@
  * Usage: node scripts/check-brand.mjs
  */
 import { fileURLToPath } from 'node:url';
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative, extname } from 'node:path';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
-const SRC = join(ROOT, 'src');
+
+/* Where the linter looks. This is a list rather than the single `src` constant
+   it used to be because docs/34 §2.8 moves eight modules — types.ts and, from
+   lib/, dates, cost, similarity, migrate, feedEngine, intake, routes — out of
+   src/ and into packages/shared. A linter whose scope is one hard-coded
+   directory loses that code the day it moves and says nothing: it goes on
+   exiting 0 while covering less, inside a green verify. Adding a root is one
+   line here; the emptiness check further down is what makes forgetting to add
+   it fail instead of pass. */
+const WALK_ROOTS = ['src', 'packages/shared'];
+
+// The token sheet is the web app's and stays in src/ whatever else moves. The
+// theme checks read it directly rather than through the walk, so it needs a
+// path of its own now that there is no single source root.
+const TOKEN_SHEET = join(ROOT, 'src', 'index.css');
 
 function walk(dir) {
   return readdirSync(dir).flatMap(name => {
@@ -22,7 +36,17 @@ function walk(dir) {
   });
 }
 
-const files = walk(SRC).filter(f => ['.ts', '.tsx', '.css'].includes(extname(f)));
+// Kept per-root, not flattened on the spot, so that an empty root can be named
+// in the failure. "The lint scanned nothing" and "packages/shared is not where
+// you said it was" are different bugs and should not print the same sentence.
+const filesByRoot = new Map(
+  WALK_ROOTS.map(root => {
+    const dir = join(ROOT, root);
+    const found = existsSync(dir) ? walk(dir) : [];
+    return [root, found.filter(f => ['.ts', '.tsx', '.css'].includes(extname(f)))];
+  })
+);
+const files = [...filesByRoot.values()].flat();
 const violations = [];
 // Allowlists are written with forward slashes; path.relative emits backslashes
 // on Windows, so normalise before any comparison.
@@ -36,8 +60,7 @@ const COLOR_ALLOWED = new Set([
   'src/index.css',
   'src/components/art.tsx',
   'src/lib/demoData.ts',
-  'src/types.ts',        // PRESET_COLORS is the user-facing swatch palette
-  'src/lib/similarity.ts',
+  'packages/shared/types.ts', // PRESET_COLORS is the user-facing swatch palette
   'src/lib/garmentArt.ts', // generated garment plates; artwork, like art.tsx
   'src/lib/personaData.ts', // generated closets; the hexes are garment colours
   // Same reason: these are the colours of cloth, not of the interface. A
@@ -51,6 +74,22 @@ const COLOR_ALLOWED = new Set([
   // instead, by scripts/test-intake.mjs, which is where it matters.
   'src/lib/intakePrompt.ts',
 ]);
+
+// The demo seed names its icons through lucide's own module because it is data,
+// not interface, and test-demo.mjs is what checks it. This used to be an inline
+// `rel !== ...` in the loop below; it is a named list now so the dead-entry
+// check at the end can see it, which an inline comparison could never be.
+const LUCIDE_ALLOWED = new Set(['src/lib/demoData.ts']);
+
+// The intake prompt is allowed to say the gendered words it tells the model to
+// avoid — same reasoning as the note on intakePrompt.ts above. Hoisted out of
+// the loop for the same reason as LUCIDE_ALLOWED.
+const ADDRESS_ALLOWED = new Set(['src/lib/intakePrompt.ts']);
+
+/* Every path allowlist in this file, by name, for the dead-entry check at the
+   end. An allowlist that is not registered here is not checked for rot, so a
+   new one goes in this object as well as in its rule. */
+const ALLOWLISTS = { COLOR_ALLOWED, LUCIDE_ALLOWED, ADDRESS_ALLOWED };
 
 const EMOJI = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}]/u;
 const HEX = /#[0-9a-fA-F]{6}\b/;
@@ -94,7 +133,7 @@ for (const file of files) {
       `0x${bad.toString(16).padStart(2, '0')} written raw — use the escape sequence`);
   }
 
-  if (rel !== 'src/lib/demoData.ts' && /lucide-react/.test(text)) {
+  if (!LUCIDE_ALLOWED.has(rel) && /lucide-react/.test(text)) {
     add(file, lines.findIndex(l => l.includes('lucide-react')) + 1, 'no-lucide',
       'lucide-react is banned — use src/components/icons.tsx');
   }
@@ -137,7 +176,7 @@ for (const file of files) {
     // them from this check by encoding the letters would make the filter
     // unreadable to the next person who has to widen it.
     if (BANNED_ADDRESS.test(line) && /['"`>]/.test(line) && !/scrubs-gendered/.test(line)
-        && rel !== 'src/lib/intakePrompt.ts') {
+        && !ADDRESS_ALLOWED.has(rel)) {
       add(file, n, 'banned-address', line.trim().slice(0, 80));
     }
   });
@@ -164,7 +203,7 @@ for (const file of files) {
    added by hand here and a third is coming; this is the check that makes adding
    one an all-or-nothing act. */
 {
-  const css = readFileSync(join(SRC, 'index.css'), 'utf8');
+  const css = readFileSync(TOKEN_SHEET, 'utf8');
   const blockOf = selector => {
     const at = css.indexOf(selector);
     if (at < 0) return null;
@@ -200,7 +239,7 @@ for (const file of files) {
     if (body === null) continue; // a room that does not exist yet is not a fault
     const missing = [...base].filter(t => !tokensIn(body).has(t));
     if (missing.length) {
-      add(join(SRC, 'index.css'), 0, 'every-room-declares-every-colour',
+      add(TOKEN_SHEET, 0, 'every-room-declares-every-colour',
         `${name} omits ${missing.join(', ')} — it will inherit the light room's value`);
     }
   }
@@ -224,7 +263,7 @@ for (const file of files) {
     // Comments live in the value capture; compare the colour, not the prose.
     const clean = v => (v ?? '').split('/*')[0].trim();
     if (other !== undefined && clean(other) !== clean(value)) {
-      add(join(SRC, 'index.css'), 0, 'the-dark-room-agrees-with-itself',
+      add(TOKEN_SHEET, 0, 'the-dark-room-agrees-with-itself',
         `${token} is ${clean(value)} under prefers-color-scheme but ${clean(other)} under data-theme="dark"`);
     }
   }
@@ -277,6 +316,56 @@ for (const file of files.filter(f => extname(f) === '.tsx')) {
   for (const m of text.matchAll(/["'`>][^"'`<>]{4,}?!(?:["'`<]|\s)/g)) {
     bangs++;
     if (bangs > 1) add(file, 0, 'exclamation-budget', m[0].trim().slice(0, 60));
+  }
+}
+
+/* The linter has to have looked at something.
+   Every check above reports only what it finds, so a walk root that resolves to
+   a directory that is missing, renamed, or empty produces zero violations and
+   prints "clean" — the loudest possible lie this file can tell. Two floors,
+   because they catch different accidents: a root that contributes nothing is
+   almost certainly a move nobody updated here (the packages/shared lift is
+   exactly that shape), while a collapse in the total means the walk or the
+   extension filter itself broke. */
+for (const [root, found] of filesByRoot) {
+  if (found.length === 0) {
+    add(join(ROOT, root), 0, 'the-linter-looked-at-the-whole-tree',
+      `walk root "${root}" holds no .ts/.tsx/.css files — it moved, or it never existed`);
+  }
+}
+// 74 files today, all of them src/. The floor is set well under that so an
+// ordinary refactor that consolidates a dozen modules does not cry wolf, and
+// well over the number any single surviving root could supply on its own: after
+// the packages/shared lift, src/ alone is ~66 and shared ~8, so no arrangement
+// where the walk has quietly lost a whole root clears 60.
+const FILE_FLOOR = 60;
+if (files.length < FILE_FLOOR) {
+  add(join(ROOT, WALK_ROOTS[0] ?? '.'), 0, 'the-linter-looked-at-the-whole-tree',
+    `${files.length} files scanned, floor is ${FILE_FLOOR} — roots: ${
+      [...filesByRoot].map(([r, f]) => `${r}=${f.length}`).join(', ') || '(none declared)'}`);
+}
+
+/* A dead allowlist entry is a silent hole.
+   An entry that matches no scanned file is one of two things and both read as
+   green: a file that moved, in which case the exemption is gone AND the rule is
+   now scanning something nobody signed off on; or a typo, in which case the
+   file it was meant to exempt was never exempt at all. src/types.ts is
+   COLOR_ALLOWED and is on the packages/shared lift list, so this is the check
+   that turns that move into a red lint instead of a quiet loss of coverage.
+
+   src/lib/similarity.ts used to be listed here too and was removed: it holds no
+   hex at all, so the entry exempted nothing and only survived this check
+   because the file existed. An exemption that covers nothing is worse than no
+   exemption — it reads as a signed-off allowance and it silently swallows the
+   first raw hex anybody writes there. If similarity.ts ever needs a colour, the
+   lint should go red and somebody should look at it. */
+const scanned = new Set(files.map(rel2posix));
+for (const [listName, list] of Object.entries(ALLOWLISTS)) {
+  for (const entry of list) {
+    if (!scanned.has(entry)) {
+      add(join(ROOT, entry), 0, 'no-dead-allowlist-entries',
+        `${listName} exempts ${entry}, which matches no scanned file — remove the entry or restore the file`);
+    }
   }
 }
 

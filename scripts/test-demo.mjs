@@ -1,10 +1,11 @@
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { build } from 'esbuild';
+import { sharedAliases } from '../packages/shared/aliases.mjs';
 import { mkdtempSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 const out = join(mkdtempSync(join(tmpdir(),'demo-')),'d.mjs');
-await build({ entryPoints:[fileURLToPath(new URL('../src/lib/demoData.ts', import.meta.url))], bundle:true, format:'esm', outfile:out, logLevel:'error' });
+await build({ alias: sharedAliases(), entryPoints:[fileURLToPath(new URL('../src/lib/demoData.ts', import.meta.url))], bundle:true, format:'esm', outfile:out, logLevel:'error' });
 const { buildDemoState, DEMO_SUMMARY } = await import(pathToFileURL(out).href);
 const s = buildDemoState();
 const active = s.items.filter(i=>!i.retired);
@@ -144,7 +145,7 @@ console.log(fail===0?'ALL DEMO CHECKS PASSED':`${fail} FAILED`);
    log-consistency invariant, no gendered address anywhere in what reaches a
    screen, and no measurement taxonomy in the data at all. */
 const pw = join(mkdtempSync(join(tmpdir(),'pw-')),'p.mjs');
-await build({ entryPoints:[fileURLToPath(new URL('../src/lib/personaWardrobe.ts', import.meta.url))], bundle:true, format:'esm', outfile:pw, logLevel:'error' });
+await build({ alias: sharedAliases(), entryPoints:[fileURLToPath(new URL('../src/lib/personaWardrobe.ts', import.meta.url))], bundle:true, format:'esm', outfile:pw, logLevel:'error' });
 const { PERSONAS, buildPersonaState, PHOTO_OVERRIDES } = await import(pathToFileURL(pw).href);
 
 let pfail = 0;

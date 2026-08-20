@@ -1,4 +1,4 @@
-import { FORM_MAX_SLOTS, FURNITURE_FORMS, MAX_FURNITURE_NAME, MAX_SLOT_LABEL, type FurnitureForm } from '../types';
+import { FORM_MAX_SLOTS, FURNITURE_FORMS, MAX_FURNITURE_NAME, MAX_SLOT_LABEL, type FurnitureForm } from '@almari/shared/types';
 
 /**
  * READING A PIECE OF FURNITURE OUT OF A PHOTOGRAPH.

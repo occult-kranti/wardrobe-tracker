@@ -2,10 +2,10 @@ import { useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useWardrobe } from '../context/WardrobeContext';
 import { useSession } from '../context/SessionContext';
-import { todayLocal } from '../lib/dates';
+import { todayLocal } from '@almari/shared/dates';
 import { nowLocalStamp } from '../components/social';
 import { ShareSheet } from '../components/ShareSheet';
-import { categoryLabel, displayTag, type ClothingItem, type Outfit, type ShareScope } from '../types';
+import { categoryLabel, displayTag, type ClothingItem, type Outfit, type ShareScope } from '@almari/shared/types';
 import {
   Button, Card, Chip, EmptyState, Field, IconButton, Masthead, SectionTitle, TagRail, inputClass,
 } from '../components/ui';
@@ -40,7 +40,7 @@ function localDate(dateStr: string): Date {
 function shortDate(dateStr: string): string {
   const d = localDate(dateStr);
   if (Number.isNaN(d.getTime())) return dateStr;
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return d.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' });
 }
 
 function wearsPhrase(n: number): string {
@@ -578,13 +578,13 @@ export default function Outfits() {
 
       {/* ---------- the draw ---------- */}
       <Card>
-        <SectionTitle aside={`${pool.length} ready`}>Draw a set</SectionTitle>
+        <SectionTitle aside={`${pool.length} ready`}>Deal a set</SectionTitle>
 
         {pool.length === 0 ? (
           <EmptyState
             plate={<PlateWashline />}
             title="Everything's on the line. Laundry first."
-            body="The draw only deals pieces that are clean, mended, and in rotation. It will have something the moment a wash finishes."
+            body="Only pieces that are clean, mended, and in rotation are dealt. There will be something the moment a wash finishes."
           />
         ) : (
           <>
@@ -615,19 +615,19 @@ export default function Outfits() {
                 }
                 body={
                   occasion
-                    ? 'Clear the tag to draw from everything that is clean and in rotation.'
-                    : 'The rest are in the wash, benched, or resting in a quiet category.'
+                    ? 'Clear the tag to deal from everything that is clean and in rotation.'
+                    : 'The rest are in the wash, waiting on a repair, or in a category you have taken out of suggestions.'
                 }
               />
             ) : (
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <p className="text-[14px] text-text-2 leading-snug">
                   {drawPool.length} pieces are clean and in rotation
-                  {occasion ? ` for ${displayTag(occasion).toLowerCase()}` : ''}. The draw takes a few
+                  {occasion ? ` for ${displayTag(occasion).toLowerCase()}` : ''}. A deal takes a few
                   of them at random and hands them to the builder.
                 </p>
                 <Button onClick={draw} className="shrink-0 w-full sm:w-auto">
-                  Draw a set
+                  Deal a set
                 </Button>
               </div>
             )}
@@ -673,7 +673,7 @@ export default function Outfits() {
           <EmptyState
             plate={<PlateEmptyOutfits />}
             title="No outfits put together yet."
-            body="An outfit is a set you already know works — saved once, logged in a tap after that. Build one by hand, or let the draw deal a set from what's clean."
+            body="An outfit is a set you already know works — saved once, logged in a tap after that. Build one by hand, or deal one from what is clean."
             action={
               !building ? (
                 <Button tone="primary" onClick={openBuilder} icon={<IconPlus size={14} />}>

@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 7,
+  "items": [
+    {
+      "id": "a", "name": "White Oxford", "category": "tops", "color": "#f5f0eb",
+      "season": ["spring"], "occasion": ["work"], "imageUrl": "", "dateAdded": "2026-01-01",
+      "wearCount": 14, "cost": 68, "favorite": true, "laundryStatus": "clean",
+      "place": { "furnitureId": "f1", "slotId": "s1" }
+    },
+    {
+      "id": "c", "name": "Overcoat", "category": "outerwear", "color": "#3a362e",
+      "season": ["winter"], "occasion": ["work"], "imageUrl": "", "dateAdded": "2026-01-15",
+      "wearCount": 4, "cost": "420", "favorite": false, "laundryStatus": "clean"
+    },
+    {
+      "id": "d", "name": "Scarf", "category": "accessories", "color": "#be1231",
+      "season": [], "occasion": [], "imageUrl": "", "dateAdded": "2026-01-20",
+      "wearCount": 2, "cost": "not a price", "favorite": false, "laundryStatus": "clean"
+    },
+    {
+      "id": "e", "name": "Gifted Ring", "category": "accessories", "color": "#c9a227",
+      "season": [], "occasion": [], "imageUrl": "", "dateAdded": "2026-01-25",
+      "wearCount": 9, "cost": 0, "favorite": false, "laundryStatus": "clean"
+    }
+  ],
+  "outfits": [
+    { "id": "o1", "name": "Monday", "itemIds": ["a"], "favorite": true, "dateCreated": "2026-03-01", "wearCount": 3 }
+  ],
+  "wearLogs": [
+    { "id": "l1", "date": "2026-08-01", "itemIds": ["a"] }
+  ],
+  "wishlist": [
+    { "id": "w1", "name": "Cardigan", "category": "tops", "color": "#d4a574", "priority": "high", "dateAdded": "2026-07-01", "status": "waiting", "price": 88 }
+  ],
+  "circle": { "profiles": [], "groups": [], "messages": [], "loans": [] },
+  "events": [],
+  "furniture": [
+    {
+      "id": "f1", "name": "The almirah in the back bedroom", "form": "almirah-fitted",
+      "ornament": "mughal", "dateAdded": "2026-06-01",
+      "slots": [
+        { "id": "s1", "label": "Hanging ledge" },
+        { "id": "s2", "label": "The locker", "packed": true }
+      ]
+    },
+    {
+      "id": "f2", "name": "Bedroom chest", "form": "chest", "dateAdded": "2026-06-02",
+      "slots": [ { "id": "s1", "label": "Top drawer", "depth": "deep" } ],
+      "roomId": "attic"
+    }
+  ],
+  "settings": {
+    "categories": [
+      { "id": "tops", "label": "Tops" },
+      { "id": "bottoms", "label": "Bottoms" },
+      { "id": "outerwear", "label": "Outerwear" },
+      { "id": "accessories", "label": "Accessories" }
+    ],
+    "occasions": ["casual", "work"],
+    "theme": "dark"
+  },
+  "someFutureKey": { "keep": "me" }
+}

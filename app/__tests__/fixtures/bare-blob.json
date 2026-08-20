@@ -1,0 +1,22 @@
+{
+  "items": [
+    {
+      "id": "a", "name": "White Oxford", "category": "tops", "color": "#f5f0eb",
+      "season": ["spring"], "occasion": ["work"], "imageUrl": "", "dateAdded": "2026-01-01",
+      "wearCount": 14, "cost": 68, "favorite": true, "laundryStatus": "clean"
+    },
+    {
+      "id": "b", "name": "Kilt", "category": "skirts-custom", "color": "#31415e",
+      "season": [], "occasion": ["market-day"], "imageUrl": "", "dateAdded": "2026-02-01",
+      "wearCount": 0, "favorite": false, "laundryStatus": "washing"
+    }
+  ],
+  "outfits": [
+    { "id": "o1", "name": "Monday", "itemIds": ["a"], "favorite": true, "dateCreated": "2026-03-01", "wearCount": 3 }
+  ],
+  "wearLogs": [ { "id": "l1", "date": "2026-08-01", "itemIds": ["a"] } ],
+  "wishlist": [
+    { "id": "w1", "name": "Cardigan", "category": "tops", "color": "#d4a574", "priority": "high", "dateAdded": "2026-07-01", "purchased": true, "price": 88 }
+  ],
+  "someFutureKey": { "keep": "me" }
+}

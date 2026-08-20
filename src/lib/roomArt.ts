@@ -1,5 +1,5 @@
 import { drawChair, drawFurniture } from './furnitureArt';
-import type { Furniture } from '../types';
+import type { Furniture } from '@almari/shared/types';
 
 /**
  * THE DRESSING ROOM — your own furniture, standing in a room.

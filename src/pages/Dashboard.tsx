@@ -2,10 +2,10 @@ import { useCallback, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useWardrobe } from '../context/WardrobeContext';
 import { useSession } from '../context/SessionContext';
-import { categoryLabel, isQuietCategory, type ClothingItem, type Outfit, type WearLog } from '../types';
-import { todayLocal, isFutureDate, daysSince, addDays } from '../lib/dates';
-import { isPlannedLog } from '../types';
-import { costPerWear, formatPerWear } from '../lib/cost';
+import { categoryLabel, isQuietCategory, type ClothingItem, type Outfit, type WearLog } from '@almari/shared/types';
+import { todayLocal, isFutureDate, daysSince, addDays } from '@almari/shared/dates';
+import { isPlannedLog } from '@almari/shared/types';
+import { costPerWear, formatPerWear } from '@almari/shared/cost';
 import { Button, Card, Chip, EmptyState, Masthead, Modal, SectionTitle, Stat } from '../components/ui';
 import { IconArrowRight, IconCheck, IconEyeletFilled } from '../components/icons';
 import { Basting, GarmentPlate, PlateEmptyCloset, WaxSeal } from '../components/art';
@@ -41,7 +41,7 @@ function localDate(dateStr: string): Date {
 }
 
 function shortDate(dateStr: string): string {
-  return localDate(dateStr).toLocaleDateString('en-US', {
+  return localDate(dateStr).toLocaleDateString('en-IN', {
     weekday: 'short',
     month: 'short',
     day: 'numeric',
@@ -52,7 +52,7 @@ function shortDate(dateStr: string): string {
 function monthLabel(dateStr: string): string {
   const d = localDate(dateStr);
   const sameYear = d.getFullYear() === new Date().getFullYear();
-  return d.toLocaleDateString('en-US', sameYear ? { month: 'long' } : { month: 'long', year: 'numeric' });
+  return d.toLocaleDateString('en-IN', sameYear ? { month: 'long' } : { month: 'long', year: 'numeric' });
 }
 
 function wearsPhrase(n: number): string {
@@ -363,8 +363,8 @@ export default function Dashboard() {
         <Card>
           <EmptyState
             plate={<PlateEmptyCloset />}
-            title="Nothing on the rail yet."
-            body="Almari is a record, not a form. The first piece you add starts it — one photo or none, a name, and every wear it earns from here."
+            title="Nothing in the closet yet."
+            body="The first piece starts the record. All it needs is a name; the photo is optional, and every wear it earns after that is counted."
             action={
               <Button tone="primary" onClick={() => setAddOpen(true)}>
                 Add the first piece
@@ -396,7 +396,7 @@ export default function Dashboard() {
         <Card key={plan.id}>
           <p className="type-ledger text-[11px] text-text-2">Held for {plan.date === today ? 'today' : shortDate(plan.date)}</p>
           <p className="type-editorial text-[20px] mt-1.5 leading-snug">
-            You had {describeLog(plan)} down{plan.date === today ? ' for today' : ''}.
+            You planned {describeLog(plan)}{plan.date === today ? ' for today' : ''}.
           </p>
           <div className="flex items-center gap-3 mt-4">
             <Button
@@ -540,7 +540,7 @@ export default function Dashboard() {
           <Stat value={activeItems.length} label="In the closet" />
           <Stat value={outfits.length} label="Outfits" />
           <Stat value={itemWears} label="Wears recorded" />
-          <Stat value={restingCount} label="Resting" />
+          <Stat value={restingCount} label="Not worn yet" />
         </div>
       </Card>
 
@@ -676,7 +676,7 @@ export default function Dashboard() {
                 permission prompt, no network call — the person tapping it is
                 standing at the window, which beats a forecast. */}
             <div className="flex flex-wrap items-center gap-2 mb-4">
-              <span className="type-ledger text-[10px] text-text-2 mr-1">Out there</span>
+              <span className="type-ledger text-[10px] text-text-2 mr-1">Weather today</span>
               {OUTDOORS.map(o => (
                 <Chip
                   key={o.id}

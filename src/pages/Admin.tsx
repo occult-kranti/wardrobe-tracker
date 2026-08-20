@@ -16,6 +16,7 @@ import { Basting } from '../components/art';
 import { ACCOUNTS_KEY, SESSION_KEY, wardrobeKey } from '../lib/accounts';
 import {
   BUDGET_BYTES,
+  RELAY_SERVICES,
   announceStorage,
   appendLog,
   cleanOrphans,
@@ -23,17 +24,25 @@ import {
   clearLog,
   deleteAccounts,
   deleteAllAccounts,
+  fetchAlphaStats,
   formatBytes,
   listPieces,
+  loadAdminToken,
+  probeRelay,
   readLedger,
   readLog,
   removePiece,
   removePieceImage,
   runSmokeChecks,
+  saveAdminToken,
   type AccountLedger,
   type AdminLogEntry,
+  type AlphaStatsResult,
   type DeviceLedger,
   type OrphanRef,
+  type ProbeResult,
+  type ProbeVerdict,
+  type RelayService,
   type SmokeCheck,
 } from '../lib/admin';
 
@@ -42,89 +51,27 @@ import {
  *
  * Fifteen to twenty people are about to carry this app on their own devices,
  * and someone has to be able to answer "what is on this one" and act on the
- * answer. Everything here reads and changes only what this browser holds —
- * the account, other devices and every remote copy are left alone, and the
- * copy says so wherever something can be destroyed.
+ * answer. Everything destructive here reads and changes only what this
+ * browser holds — the account, other devices and every remote copy are left
+ * alone, and the copy says so wherever something can be destroyed.
+ *
+ * Two boards look beyond the device, and only look: the services board
+ * probes the AI relay with a one-line test message, and the alpha board asks
+ * the stats service what the alpha holds. Neither sends anything from any
+ * closet, and neither can change anything remote.
  *
  * The law of the page: no destructive action without its own warning, and the
  * warning names what is lost. There are no single-click deletes.
  */
 
-const ADMIN_PASSCODE = 'almari-lead';
 const NUKE_PHRASE = 'DELETE EVERYTHING';
-const GATE_KEY = 'toile-admin-gate';
 
-function gateOpen(): boolean {
-  try {
-    return window.sessionStorage.getItem(GATE_KEY) === 'open';
-  } catch {
-    return false;
-  }
-}
-
+// The passcode gate was retired by owner order, 2026-08-19: the portal opens
+// directly. It was a courtesy lock, never security — everything here changes
+// only this device, the two remote boards only read, and every destructive
+// step still stands behind its own naming sheet. The warnings are the locks.
 export default function Admin() {
-  const [unlocked, setUnlocked] = useState(gateOpen);
-  if (!unlocked) return <Gate onOpen={() => setUnlocked(true)} />;
   return <Portal />;
-}
-
-/* ---------- the gate ---------- */
-
-function Gate({ onOpen }: { onOpen: () => void }) {
-  const [draft, setDraft] = useState('');
-  const [refused, setRefused] = useState(false);
-
-  const submit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (draft.trim() === ADMIN_PASSCODE) {
-      try {
-        window.sessionStorage.setItem(GATE_KEY, 'open');
-      } catch {
-        /* private mode — the gate simply asks again next visit */
-      }
-      onOpen();
-    } else {
-      setRefused(true);
-    }
-  };
-
-  return (
-    <div className="space-y-6 max-w-3xl">
-      <Masthead title="Project lead portal" meta="this device only" />
-      <Card>
-        <p className="type-editorial text-[20px] leading-snug text-balance">
-          A courtesy lock, not a wall.
-        </p>
-        <p className="text-[14px] text-text-2 leading-relaxed mt-2">
-          This passcode keeps a curious shoulder out of the alpha's controls, and that is all it
-          is. It is not security and pretends to be nothing more: everything behind it reads and
-          changes only what is stored on this device.
-        </p>
-        <form onSubmit={submit} className="mt-5 space-y-4 max-w-[420px]">
-          <Field label="Passcode" htmlFor="admin-pass">
-            <input
-              id="admin-pass"
-              type="password"
-              className={inputClass}
-              value={draft}
-              onChange={e => {
-                setDraft(e.target.value);
-                setRefused(false);
-              }}
-              autoComplete="off"
-              spellCheck={false}
-            />
-          </Field>
-          {refused ? (
-            <p className="type-ledger text-[11px] text-danger">That is not the passcode.</p>
-          ) : null}
-          <Button type="submit" tone="primary" disabled={!draft.trim()}>
-            Open the portal
-          </Button>
-        </form>
-      </Card>
-    </div>
-  );
 }
 
 /* ---------- shared bits ---------- */
@@ -144,7 +91,7 @@ type Pending =
 function stamp(iso: string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleString('en-US', {
+  return d.toLocaleString('en-IN', {
     day: 'numeric',
     month: 'short',
     hour: '2-digit',
@@ -209,6 +156,231 @@ function Confirm({
         </Button>
       </div>
     </Modal>
+  );
+}
+
+/* ---------- the services board ---------- */
+
+/**
+ * How each verdict is worn. The dot is a radius-2 square (circles belong to
+ * eyelets and seals) and is decorative — the word beside it carries the
+ * meaning, so color is never the only messenger. "Unconfigured" dresses in
+ * border-and-quiet on purpose: a key the house has not set is dormant, not
+ * broken.
+ */
+const VERDICT_DOT: Record<ProbeVerdict, string> = {
+  healthy: 'bg-success',
+  unconfigured: 'bg-border',
+  failed: 'bg-danger-fill',
+  unreachable: 'bg-danger-fill',
+};
+
+const VERDICT_TEXT: Record<ProbeVerdict, string> = {
+  healthy: 'text-success',
+  unconfigured: 'text-text-2',
+  failed: 'text-danger',
+  unreachable: 'text-danger',
+};
+
+const VERDICT_WORD: Record<ProbeVerdict, string> = {
+  healthy: 'healthy',
+  unconfigured: 'no key set',
+  failed: 'failed',
+  unreachable: 'unreachable',
+};
+
+function ProbeLine({ result }: { result: ProbeResult }) {
+  return (
+    <div className="mt-1.5">
+      <p className="flex items-center gap-2">
+        <span aria-hidden className={`w-2.5 h-2.5 rounded-[2px] shrink-0 ${VERDICT_DOT[result.verdict]}`} />
+        <span className={`type-ledger text-[11px] tabular ${VERDICT_TEXT[result.verdict]}`}>
+          {VERDICT_WORD[result.verdict]} · HTTP {result.status ?? '—'} · {result.latencyMs} ms
+        </span>
+      </p>
+      <p className="text-[13px] text-text-2 leading-snug mt-1 break-words">{result.answer}</p>
+    </div>
+  );
+}
+
+function ServicesCard() {
+  const [results, setResults] = useState<Record<string, ProbeResult>>({});
+  const [running, setRunning] = useState<ReadonlySet<string>>(new Set());
+  const [testingAll, setTestingAll] = useState(false);
+
+  const probe = async (service: RelayService) => {
+    setRunning(prev => new Set(prev).add(service.id));
+    try {
+      const result = await probeRelay(service);
+      setResults(prev => ({ ...prev, [service.id]: result }));
+    } finally {
+      setRunning(prev => {
+        const next = new Set(prev);
+        next.delete(service.id);
+        return next;
+      });
+    }
+  };
+
+  // Sequential on purpose: four probes at once would race one relay and
+  // charge every latency figure with the others' company.
+  const probeAll = async () => {
+    setTestingAll(true);
+    try {
+      for (const service of RELAY_SERVICES) await probe(service);
+    } finally {
+      setTestingAll(false);
+    }
+  };
+
+  const busy = testingAll || running.size > 0;
+
+  return (
+    <Card>
+      <SectionTitle aside={`${RELAY_SERVICES.length} models through one relay`}>Services</SectionTitle>
+      <p className="text-[14px] text-text-2 leading-relaxed">
+        The relay the intake walks through, asked directly. Each test sends one line and reports
+        what came back — no photograph, no closet, no key leaves this page. A model with no key
+        set is dormant, not broken; the house sets keys server-side.
+      </p>
+      <ul className="mt-4 divide-y divide-border">
+        {RELAY_SERVICES.map(service => (
+          <li key={service.id} className="py-3 flex flex-wrap items-start gap-3">
+            <div className="flex-1 min-w-0 basis-48">
+              <p className="text-[14px] text-text leading-tight">{service.label}</p>
+              <p className="type-ledger text-[10px] text-text-2 mt-0.5">
+                {service.model} · {service.shape === 'anthropic' ? 'Messages shape' : 'chat-completions shape'}
+              </p>
+              {running.has(service.id) ? (
+                <p className="type-ledger text-[11px] text-text-2 mt-1.5">asking…</p>
+              ) : results[service.id] ? (
+                <ProbeLine result={results[service.id]} />
+              ) : null}
+            </div>
+            <Button compact disabled={busy} onClick={() => void probe(service)}>
+              Test
+            </Button>
+          </li>
+        ))}
+      </ul>
+      <Basting className="my-4" />
+      <Button disabled={busy} onClick={() => void probeAll()}>
+        {testingAll ? 'Testing each in turn' : 'Test all'}
+      </Button>
+    </Card>
+  );
+}
+
+/* ---------- the alpha board ---------- */
+
+/** '8f3c2a1b-…' → '8f3c2a1b'. Enough to tell rows apart, short enough to scan. */
+function shortId(id: string): string {
+  return id.length > 8 ? id.slice(0, 8) : id;
+}
+
+function AlphaCard() {
+  const [token, setToken] = useState(loadAdminToken);
+  const [fetching, setFetching] = useState(false);
+  const [result, setResult] = useState<AlphaStatsResult | null>(null);
+
+  const ask = async () => {
+    const trimmed = token.trim();
+    saveAdminToken(trimmed);
+    setFetching(true);
+    try {
+      setResult(await fetchAlphaStats(trimmed));
+    } finally {
+      setFetching(false);
+    }
+  };
+
+  const stats = result?.kind === 'ok' ? result.stats : null;
+
+  return (
+    <Card>
+      <SectionTitle aside={stats ? `as of ${stamp(stats.generatedAt)}` : 'remote truth'}>
+        The alpha
+      </SectionTitle>
+      <p className="text-[14px] text-text-2 leading-relaxed">
+        What the sync service holds, counted at the source — only the wardrobes whose owners
+        chose an account appear here. The token stays in this tab and leaves when it closes.
+      </p>
+      <form
+        className="mt-4 flex flex-wrap items-end gap-3 max-w-[560px]"
+        onSubmit={e => {
+          e.preventDefault();
+          void ask();
+        }}
+      >
+        <div className="flex-1 min-w-[220px]">
+          <Field label="Stats token" htmlFor="admin-stats-token">
+            <input
+              id="admin-stats-token"
+              type="password"
+              className={inputClass}
+              value={token}
+              onChange={e => setToken(e.target.value)}
+              autoComplete="off"
+              spellCheck={false}
+            />
+          </Field>
+        </div>
+        <Button type="submit" disabled={fetching || !token.trim()}>
+          {fetching ? 'Asking the service' : 'Fetch the numbers'}
+        </Button>
+      </form>
+
+      {result?.kind === 'refused' ? (
+        <p className="text-[13px] text-danger mt-4">The token was refused.</p>
+      ) : null}
+      {result?.kind === 'absent' ? (
+        <p className="text-[13px] text-text-2 mt-4">
+          The stats service is not deployed yet. The numbers will appear here once it answers.
+        </p>
+      ) : null}
+      {result?.kind === 'failed' ? (
+        <p className="text-[13px] text-danger mt-4">The stats service answered {result.status}.</p>
+      ) : null}
+
+      {stats ? (
+        <div className="mt-6">
+          <div className="grid grid-cols-2 gap-x-4 gap-y-6 max-w-[420px]">
+            <Stat value={stats.users} label="Accounts on the service" />
+            <Stat value={stats.profiles} label="Profiles" />
+          </div>
+          {stats.wardrobes.length === 0 ? (
+            <p className="text-[14px] text-text-2 mt-5">No wardrobe has chosen sync yet.</p>
+          ) : (
+            <TableRail label="Wardrobes on the service" className="mt-5">
+              <table className="w-full text-left tabular">
+                <thead>
+                  <tr>
+                    <th className="type-ledger text-[11px] text-text-2 font-normal pb-2 rule-double">Wardrobe</th>
+                    <th className="type-ledger text-[11px] text-text-2 font-normal pb-2 pl-3 rule-double">Owner</th>
+                    <th className="type-ledger text-[11px] text-text-2 font-normal pb-2 pl-3 rule-double w-32">Updated</th>
+                    <th className="type-ledger text-[11px] text-text-2 font-normal pb-2 pl-3 text-right rule-double w-20">Size</th>
+                    <th className="type-ledger text-[11px] text-text-2 font-normal pb-2 pl-3 rule-double w-20">Envelope</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {stats.wardrobes.map(w => (
+                    <tr key={w.id} className="border-t border-border">
+                      <td className="py-2 type-ledger text-[13px] text-text">{shortId(w.id)}</td>
+                      <td className="pl-3 py-2 type-ledger text-[13px] text-text-2">{shortId(w.user_id)}</td>
+                      <td className="pl-3 py-2 text-[13px] text-text-2 whitespace-nowrap">{stamp(w.updated_at)}</td>
+                      <td className="pl-3 py-2 text-right text-[13px] text-text whitespace-nowrap">{formatBytes(w.bytes)}</td>
+                      <td className="pl-3 py-2 type-ledger text-[13px] text-text-2">
+                        {w.v === null || w.v === undefined || w.v === '' ? 'bare' : `v${w.v}`}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </TableRail>
+          )}
+        </div>
+      ) : null}
+    </Card>
   );
 }
 
@@ -356,11 +528,15 @@ function Portal() {
 
   return (
     <div className="space-y-6 max-w-3xl">
-      <Masthead title="Project lead portal" meta="this device only" />
+      <Masthead title="Project lead portal" meta="the alpha's control room" />
       <p className="type-editorial text-[20px] leading-snug text-balance -mt-2">
-        The alpha's control room. Everything here reads — and changes — only what this
-        browser holds.
+        The alpha's control room. Changes land only on what this browser holds; the two boards
+        that look further only read.
       </p>
+
+      {/* ---------- the alpha, watched: relay probes and remote counts ---------- */}
+      <ServicesCard />
+      <AlphaCard />
 
       {/* ---------- dashboard ---------- */}
       <Card>

@@ -43,7 +43,11 @@ await page.goto(`${ORIGIN}/#/feed`, { waitUntil: 'domcontentloaded' });
 await page.waitForTimeout(700);
 const stranded = await page.evaluate(() => ({
   hash: location.hash,
-  text: document.body.innerText.slice(0, 200),
+  // 600, not 200: the door's lede grew and pushed the deep-link sentence past
+  // a 200-character window, which failed a check about copy that was still
+  // there. The window is the probe, not the contract — keep it wider than the
+  // longest lede the door is likely to carry.
+  text: document.body.innerText.slice(0, 600),
   theme: document.documentElement.getAttribute('data-theme'),
 }));
 check('a signed-out deep link redirects instead of stranding the URL',
@@ -155,6 +159,25 @@ check('answering the weather narrows the picker without emptying it',
   !after.blank && after.count > 0 && after.count <= before, `${before} → ${after.count}`);
 check('the weather never asks for your location', !after.asked, '');
 
+/* ============ the ledger speaks in rupees ============ */
+// Owner decision 2026-08-19: currency and numerals are Indian, app-wide —
+// display only, the stored numbers stay bare. Against a worked sample closet
+// the totals pass one lakh, so the grouping is truly exercised: ₹1,34,000
+// must pass and a western-grouped ₹134,000 must fail.
+{
+  await page.goto(`${ORIGIN}/#/ledger`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(700);
+  const ledgerText = await page.evaluate(() => document.body.innerText);
+  const amounts = ledgerText.match(/₹[\d,]+(?:\.\d\d)?/g) ?? [];
+  check('the ledger states its sums in rupees', amounts.length > 0, amounts.slice(0, 3).join(' '));
+  // Canonical en-IN: the last group carries three digits, every group before it two.
+  const inGrouping = /^₹\d{1,3}(?:\.\d\d)?$|^₹\d{1,2}(?:,\d{2})*,\d{3}(?:\.\d\d)?$/;
+  const offGrid = amounts.filter(a => !inGrouping.test(a));
+  check('and groups the digits the Indian way',
+    amounts.length > 0 && offGrid.length === 0, offGrid.join(' ') || amounts[0]);
+  check('no dollar amount survives on the ledger', !/\$\s?\d/.test(ledgerText), '');
+}
+
 /* ============ cutting a background out, on the device ============ */
 // Driven through the interface with a real photograph, because the claim being
 // tested is "a person can lift a garment off its background here", not "a
@@ -242,7 +265,7 @@ check('the weather never asks for your location', !after.asked, '');
       declaredFirst: !!warn && !!send
         && !!(warn.compareDocumentPosition(send) & Node.DOCUMENT_POSITION_FOLLOWING),
       namesRelay: /Almari.s relay/i.test(text),
-      namesModel: /Claude Sonnet by Anthropic/i.test(text),
+      namesModel: /Claude Fable by Anthropic/i.test(text),
       serverKey: /holds the key on the server/i.test(text),
       saysLocal: /cutting, the background removal and the writing all happen on this/i.test(text),
       stillOffersPrompt: /Copy the prompt/i.test(text),
@@ -457,6 +480,12 @@ check('the weather never asks for your location', !after.asked, '');
     key => JSON.parse(localStorage.getItem(key)).items.length, await activeKey());
   const beforeRemove = await countPieces();
   await page.getByRole('button', { name: /remove this place/i }).first().click();
+  await page.waitForTimeout(600);
+  // The gate stands before the act (owner's order, 2026-08-19): a warning
+  // that names the place and says what happens to the clothes filed in it.
+  const gate = page.getByRole('button', { name: /^remove it$/i }).first();
+  check('a warning stands before the removal', await gate.count() === 1, '');
+  if (await gate.count()) await gate.click();
   await page.waitForTimeout(1200);
   const afterRemove = await countPieces();
   check('removing furniture never removes clothes', beforeRemove === afterRemove,
@@ -797,29 +826,21 @@ check('the weather never asks for your location', !after.asked, '');
 
 /* ============ the project lead portal ============ */
 {
-  // The portal administers the device: a courtesy gate, then guarded controls.
-  // Every destructive step must pass a naming sheet; the nuclear one must be
-  // typed out. These checks run while a worked closet (meher) is open.
+  // The portal administers the device. The passcode gate was retired by owner
+  // order (2026-08-19): the portal opens directly, and the locks are the
+  // naming sheets — every destructive step must pass one; the nuclear one must
+  // be typed out. These checks run while a worked closet (meher) is open.
   await page.goto(`${ORIGIN}/#/admin`, { waitUntil: 'domcontentloaded' });
-  await page.waitForTimeout(700);
-
-  check('the portal opens on its gate, not the controls',
-    await page.locator('#admin-pass').count() === 1, '');
-
-  await page.locator('#admin-pass').fill('not-the-code');
-  await page.getByRole('button', { name: /open the portal/i }).click();
-  await page.waitForTimeout(400);
-  check('a wrong passcode stays outside',
-    /not the passcode/i.test(await page.evaluate(() => document.body.innerText)), '');
-
-  await page.locator('#admin-pass').fill('almari-lead');
-  await page.getByRole('button', { name: /open the portal/i }).click();
   await page.waitForTimeout(800);
+
+  check('the portal opens directly onto the controls, no gate',
+    await page.locator('#admin-pass').count() === 0, '');
+
   const opened = await page.evaluate(() => ({
     meher: /meher/i.test(document.body.innerText),
     checks: /run the checks/i.test(document.body.innerText),
   }));
-  check('the right passcode opens the ledger of wardrobes', opened.meher && opened.checks, '');
+  check('the ledger of wardrobes is standing open', opened.meher && opened.checks, '');
 
   // The smoke panel first, against the real wardrobes alone — a stunt account
   // injected later must not be what the checks are measured on.

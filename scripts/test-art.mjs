@@ -9,12 +9,13 @@
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { chromium } from 'playwright';
 import { build } from 'esbuild';
+import { sharedAliases } from '../packages/shared/aliases.mjs';
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 const out = join(mkdtempSync(join(tmpdir(), 'art-')), 'a.mjs');
-await build({
+await build({ alias: sharedAliases(),
   entryPoints: [fileURLToPath(new URL('../src/lib/garmentArt.ts', import.meta.url))],
   bundle: true,
   format: 'esm',

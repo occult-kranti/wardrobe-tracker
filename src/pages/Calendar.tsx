@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useWardrobe } from '../context/WardrobeContext';
-import { addDays, formatLocalDate, isFutureDate, todayLocal } from '../lib/dates';
-import { isPlannedLog, type ClothingItem, type Outfit, type WearLog } from '../types';
+import { addDays, formatLocalDate, isFutureDate, todayLocal } from '@almari/shared/dates';
+import { isPlannedLog, type ClothingItem, type Outfit, type WearLog } from '@almari/shared/types';
 import { Button, Card, EmptyState, IconButton, Masthead, Modal, SectionTitle, TagRail } from '../components/ui';
 import {
   IconArrowRight, IconChevronLeft, IconChevronRight, IconEyelet, IconPlus,
@@ -32,7 +32,7 @@ function localDate(dateStr: string): Date {
 }
 
 function weekdayShort(dateStr: string): string {
-  return localDate(dateStr).toLocaleDateString('en-US', { weekday: 'short' });
+  return localDate(dateStr).toLocaleDateString('en-IN', { weekday: 'short' });
 }
 
 function dayNumber(dateStr: string): number {
@@ -40,11 +40,11 @@ function dayNumber(dateStr: string): number {
 }
 
 function shortDate(dateStr: string): string {
-  return localDate(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return localDate(dateStr).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' });
 }
 
 function longDate(dateStr: string): string {
-  return localDate(dateStr).toLocaleDateString('en-US', {
+  return localDate(dateStr).toLocaleDateString('en-IN', {
     weekday: 'long',
     month: 'long',
     day: 'numeric',
@@ -63,16 +63,16 @@ function spanLabel(startStr: string, endStr: string): string {
   const a = localDate(startStr);
   const b = localDate(endStr);
   if (a.getMonth() === b.getMonth() && a.getFullYear() === b.getFullYear()) {
-    return a.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    return a.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
   }
   if (a.getFullYear() === b.getFullYear()) {
-    return `${a.toLocaleDateString('en-US', { month: 'short' })} – ${b.toLocaleDateString('en-US', {
+    return `${a.toLocaleDateString('en-IN', { month: 'short' })} – ${b.toLocaleDateString('en-IN', {
       month: 'short',
       year: 'numeric',
     })}`;
   }
   const opts = { month: 'short', year: 'numeric' } as const;
-  return `${a.toLocaleDateString('en-US', opts)} – ${b.toLocaleDateString('en-US', opts)}`;
+  return `${a.toLocaleDateString('en-IN', opts)} – ${b.toLocaleDateString('en-IN', opts)}`;
 }
 
 function wearsPhrase(n: number): string {

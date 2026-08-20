@@ -8,11 +8,12 @@ const [, , baseUrl = 'http://localhost:4173/', outDir = './shots'] = process.arg
 mkdirSync(outDir, { recursive: true });
 
 import { build } from 'esbuild';
+import { sharedAliases } from '../packages/shared/aliases.mjs';
 import { mkdtempSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 const bundled = join(mkdtempSync(join(tmpdir(), 'demo-')), 'd.mjs');
-await build({ entryPoints: [fileURLToPath(new URL('../src/lib/demoData.ts', import.meta.url))], bundle: true, format: 'esm', outfile: bundled, logLevel: 'error' });
+await build({ alias: sharedAliases(), entryPoints: [fileURLToPath(new URL('../src/lib/demoData.ts', import.meta.url))], bundle: true, format: 'esm', outfile: bundled, logLevel: 'error' });
 const { buildDemoState } = await import(pathToFileURL(bundled).href);
 const state = buildDemoState();
 

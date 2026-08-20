@@ -210,3 +210,191 @@ spec in `docs/36-badges-rewards.md`. Accepted asks, folded into the phases
 | Feed framing — label personas as sample wardrobes (ships regardless); keep-vs-demote the tab is owner decision 3, arbitrated by the G2 diary gates | label: Phase C (new C5); tab: pending | 3 / — |
 | Honors per `docs/36` | gated on owner decision 1 (amend non-negotiable #4 in the open); if approved, Phase J, off by default | — |
 | Notifications | veto reaffirmed — no push; re-engagement rests on the two-tap loop and ledger payoff, measured by the G2 diary gates (≤2-tap logging, week-1/week-12 completion) | — |
+
+---
+
+## The native era (opened 2026-08-19)
+
+Phases A–H above are the **web** sprint and are complete; the web PWA is
+feature-complete for alpha and every standing gate is green. What follows is the
+native build, run as waves under `docs/34` (the plan of record) with the wave law
+from `CLAUDE.md`: disjoint file ownership declared before each wave, one squad
+owning the build at a time, verification between waves and never during.
+
+### Owner decisions taken 2026-08-19
+
+These bind the phases below, and two of them **override `docs/34`**:
+
+| # | Decision | Effect |
+|---|---|---|
+| 1 | **Sync stays inside Phase 1** — `docs/34`'s exit line kept as written | Overrides the tech-lead and QA loops, which both recommended narrowing to "sign-in + a real closet" and deferring sync to a Phase 1.5. The sync-clock fixes become critical path. |
+| 2 | **Photo encoding: native inlines on export** | Native keeps files on disk, converts to base64 at export, so the document round-trips with web both ways. `photoEncoding` on `AppState`, default `'inline'`. |
+| 3 | **`app/` stays isolated — no npm workspaces** | Metro's `nodeModulesPaths` lists `app/node_modules` first, root as fallback. Preserves "root stays web-only" and keeps the SDK 57 pins authoritative. |
+| 4 | **Squads may apply `supabase/setup.sql`** to the live project | Applied and verified 2026-08-19. |
+| 5 | **The relay's model is Claude Fable 5** | Opus 5 was the fallback if Fable were unavailable; it is available. Measured, not assumed — see below. |
+
+### Wave 1 — web truth (done, all gates green)
+
+Nothing moved and nothing native was touched. The wave made the contracts that
+Phase 1 depends on *testable* while the tree was still simple, and fixed three
+confirmed defects before a second client could inherit them.
+
+- **EXPORT-TRUTH** — export/import logic extracted to a pure `src/lib/exportDoc.ts`
+  (bound for `packages/shared`). The denylist became an allowlist plus a
+  *structural* gate refusing any value that could not have come from `JSON.parse`.
+  This closed a live defect: every backup ever written carried a spurious
+  `"packedItemIds": {}`, because a `ReadonlySet` is not a function and slipped
+  the old filter.
+- **SYNC-CLOCK** — `remoteIsNewer` compares instants, not glyphs; `flushQueue`
+  now stamps the meta it never stamped; both upserts read `updated_at` back from
+  the database so client and server cannot disagree; the trigger became
+  `before insert or update`, closing a fast-client-clock gap. The state column
+  gained the `{v, alg, payload}` envelope, `alg: 'none'` for alpha, so turning
+  on E2E later is a new `alg` value rather than a migration of live rows.
+  **Severity correction, on the record:** a 202,500-pair sweep showed the old
+  string compare never once *missed* news — every disagreement was a same-instant
+  echo. It was latent robustness, not data loss.
+- **SCHEMA-PHOTO** — `photoEncoding` on `AppState`, `SCHEMA_VERSION` 7 → 8,
+  migration case written and run red *before* the type changed, per the
+  lossless-export law in `CLAUDE.md`.
+- **LINT-GUARD** — `check-brand.mjs` gained explicit walk roots, a
+  dead-allowlist-entry failure, and a minimum-scanned-file floor, so the Wave 2
+  lift cannot silently shrink brand coverage inside a green `verify`.
+- **TIME-TRUTH** — `test-dates.mjs` (five-zone matrix incl. Lord Howe's 30-minute
+  DST, plus a `scripts/fixtures/date-truth.json` for Wave 3 to replay on Hermes),
+  `test-routes.mjs`, and `check-native-storage.mjs`. `dates.ts` and `cost.ts`
+  came back clean in all five zones.
+
+**Found and fixed between waves:** `safeNext` matched the raw path, so
+`/profile/../open` was admitted and then resolved to the door it promises never
+to return. No origin escape (HashRouter does not normalise), but Phase 1 was
+going to port that guard verbatim to native, where a deep link arrives from any
+installed app. Dot segments are now refused outright.
+
+### Wave 2a — model, decisions, plan (done)
+
+- **MODEL** — the relay's default is `claude-fable-5`. Measured through the real
+  relay, app prompts, real photographs: Sonnet 4.5 found 12 pieces at ~9.8 s;
+  Fable 5 and Opus 5 both found 14 at ~19.8 s and ~14.3 s. Sonnet 4.5 missed a
+  camouflage tee worn under a hoodie that both 5-series models caught.
+  `MAX_TOKENS` 8000 → 16000, because Fable always thinks and thinking spends from
+  the same budget as the answer. Disclosure copy updated in all six places and
+  the `namesModel` check with it — a stale model name is a lie to the user.
+  `scripts/model-bakeoff.mjs` re-runs the comparison the next time the lineup moves.
+- **FIXES** — `expo.android.allowBackup: false` (Android auto-backup was copying
+  the app data directory to Google by default, which makes "local-first, your
+  closet is yours" untrue); five UTC day labels replaced with `todayLocal()`;
+  the dead `similarity.ts` brand-lint exemption removed.
+- **PLAN** — `docs/39-explore-and-calendar.md`.
+
+### Wave 2b — voice and teaching (done)
+
+Advisor, marketing-lead and first-time-customer runs over the app, feeding a copy
+pass that removes AI-sounding lines, and a per-page guide surface built from
+`Layout` so no page file is touched.
+
+### Wave B — the owner's second slate (done, 2026-08-19)
+
+Nine squads in one workflow: five planners in parallel with four builders, then
+a synthesis, then the feed build.
+
+- **RUPEE** — currency and numerals are INR with Indian grouping, app-wide and
+  display-only: `formatMoney`/`formatPrice`/`formatPerWear` emit ₹ with en-IN
+  grouping (₹12,34,567, not ₹1,234,567), every `en-US` locale call became
+  `en-IN`. Recorded prices stay bare numbers — no `AppState` change, no
+  migration. The 246-case date-truth fixture was re-pinned to the new truth;
+  the doc inside it demands exactly this sentence in the commit.
+- **PORTAL** — `#/admin` is now the alpha monitoring dashboard: a Services
+  board with live relay probes (Fable 5, Opus 5, Gemini 3.7 Flash, Kimi K3)
+  and an Alpha board reading a new `admin-stats` edge function (counts and
+  byte-sizes only, never a wardrobe's contents) behind an `x-admin-token`
+  header.
+- **RELAY** — `ai-proxy` routes three providers now: `claude*` → Anthropic,
+  `gemini*` → Google's OpenAI-compatible door with `GEMINI_KEY`, anything else
+  → Kimi. The owner's Gemini key was probed live: both endpoints answered;
+  the newest model on it is `gemini-3.7-flash`. `scripts/test-relay.mjs`
+  probes the deployed relay under `--live`. **Deploys and the secret-set are
+  owner actions** — the environment refuses them from here, rightly.
+- **THE GATE** — `ConfirmDialog` stands before every destructive act in
+  `ItemDetail`, `Furniture` and `Settings`; the portal keeps its own
+  typed-phrase gate. Found between waves: two dialog bodies claimed "there is
+  no undo" one line above the Undo toast they precede — the copy now tells
+  the truth per site.
+- **FEED** — the home feed beautified (stories rail of monogram eyelets, a
+  view-only `/story/:accountId` viewer with progress hairlines), a new
+  `/explore` with search and quiet chips, and 45 CC0 commons assets (2.0MB,
+  credits filed) so the alpha feed is alive with zero backend and zero runtime
+  network. Four verbs, no counts, samples say they are samples.
+- **PLAN** — `docs/40-social-feed-plan.md` (the social plan of record):
+  Instagram-familiar surfaces built from the four verbs, S1–S3 phasing,
+  Supabase tables/RLS/storage written out, and an owner-decisions section
+  that names every contract amendment it needs. Two squad overrides await the
+  owner's countersign there: commons stories on the home rail, and the 2.0MB
+  buffer weight against the plan's 1.5MB cap.
+- **EXPO GO, SOLVED** — the Play Store build of Expo Go lags the SDK (Expo is
+  "still waiting on approval" for 57), so a fully-updated phone still refuses
+  an SDK 57 project. The fix is on the device: install Expo Go for SDK 57
+  from `expo.dev/go`, or press `a` in `npx expo start` with the phone on USB.
+  The alpha kit must link `expo.dev/go`, never the Play Store.
+
+### Waves 3, 4a, 4b — done (2026-08-19 → 20)
+
+- **Wave 3, the lift** — `packages/shared` holds exactly six (`types`, `dates`,
+  `cost`, `similarity`, `migrate`, `intake`), lossless-proved; one alias table
+  feeds vite, tsconfig and all 18 esbuild calls; the parity check with a
+  standing red-proof rides inside `verify`; the metro doorway is wired.
+  Independently reviewed and approved.
+- **Wave 4a, the wardrobe opens** — native door (empty / sample starts),
+  Closet with detail sheet and add-piece, Today with two-tap logging,
+  migrate-on-read proven against v7 and bare-blob fixtures. 57 app tests.
+- **Wave 4b, four squads** — the account door (skip stays first, sign in /
+  create second; sessions in the keychain via expo-secure-store); per-wardrobe
+  opt-in sync, byte-for-byte the web's envelope semantics; Conversations (a
+  fifth tab, persona threads seeded to the web's own keys, membership lock,
+  Ask/Attach arrivals contract); the Look Book alive (11 seeded posts, stories
+  rail + viewer with the commons island, 12 CC0 stills at 153KB, verbs
+  navigating to chats); and the Hermes stress net — **the 246-case date-truth
+  fixture replays green on the jest-expo pipeline**, plus corruption, quota,
+  midnight and garbage-migration parades. App suite: 455 tests, 0 failures.
+- **The Showing** — docs/41's dealt-band mosaic built on web Explore (pure
+  band arithmetic in `src/lib/showing.ts`, ~25 new pins, one spec erratum
+  recorded on §2.5's guest-window bound). Browser stress suite in flight.
+- **Found by the waves, fixed by the lead**: the web's own Chats page never
+  consumed the navigation state the feed's Attach/Ask verbs send — the verbs
+  silently dropped. The arrival contract the native squad defined now has its
+  web half. The portal's passcode gate was retired by owner order; the naming
+  sheets are the locks.
+
+### The redirection (owner, 2026-08-20)
+
+The alpha's goal narrows to **a functional wardrobe closet app** — sharing
+with friends and conversations stay; the Instagram-style feed and Explore are
+**hidden behind a flag**, not deleted. They live on in full on a showcase
+branch, deployed beside the app. The shell becomes a five-slot bottom bar in
+Instagram's grammar — home · wardrobe · (feed, flagged off) · conversations ·
+profile — with swipe-between-screens; `docs/42-navigation-shell.md` is the
+panel-made spec. Coding squads run on Opus by owner allocation.
+
+### Goals and subgoals, restated
+
+1. **Alpha ships a closet, not a network.** Two-tap logging, intake, cost per
+   wear in rupees, furniture, sharing with friends, conversations. Feed and
+   Explore wait behind `FEED_FLAG` for their own release.
+2. **One shell, two apps.** The five-slot bar and swipe grammar per docs/42;
+   a native profile screen; web nav follows the same flag.
+3. **Trust holds.** Local-first, opt-in sync with the plain sentence, E2E the
+   committed target, the portal monitoring users/services/relay.
+4. **Every wave verifies before it lands** — verify + browser suites + the
+   455-test app corpus + the stress nets; commit and merge on green, showcase
+   branch cut before the flag flips.
+
+### What is next
+
+| Wave | Owns | Goal |
+|---|---|---|
+| 5 | shell + flag, both apps | docs/42 built: the five-slot bar, swipe grammar, native profile, `FEED_FLAG` hiding feed/explore/stories on main; showcase branch keeps them; deploy.yml grows a `/showcase/` publish. |
+| 6 | `app/**` | Closet depth: photos + intake on native, furniture, export/import round-trip against web, outfits. |
+| 7 | both | The design pass (Phase 3 visual diff, art moments per design-android), alpha kit, QR distribution. |
+
+`docs/39` phases N1–N8 and `docs/40` S1–S3 interleave when the feed's own
+release comes; N2 onward still needs the `PLAN.md` amendment named there.

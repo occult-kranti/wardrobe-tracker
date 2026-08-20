@@ -19,11 +19,11 @@ import {
   BENCHED_STATUSES, LAUNDRY_LABELS, PRESET_COLORS, RETIRE_REASONS, SEASON_LABELS, SOURCE_LABELS,
   categoryLabel, displayTag,
   type AppSettings, type ClothingItem, type LaundryStatus, type Season,
-} from '../types';
-import { wearContext } from '../lib/similarity';
+} from '@almari/shared/types';
+import { wearContext } from '@almari/shared/similarity';
 import { useSession } from '../context/SessionContext';
 import { offerPass, passRecipients, settlePass } from '../lib/household';
-import { costPerWear } from '../lib/cost';
+import { costPerWear } from '@almari/shared/cost';
 
 /**
  * Closet — the browse surface. Clothing photos are the hero; everything else is
@@ -378,7 +378,7 @@ export default function Closet() {
   const showStateRail =
     benchFilter !== '' || showMendingChip || stateChipStatuses.some(s => s !== 'clean');
 
-  /** Colors actually present in the closet — a palette, not a picker. */
+  /** Colours actually present in the closet — a palette, not a picker. */
   const paletteColors = useMemo(() => {
     const tally = new Map<string, number>();
     for (const item of browsable) {
@@ -429,13 +429,13 @@ export default function Closet() {
             <LinkButton to="/intake?worn=1" compact icon={<IconCamera size={16} />}>
               Today&rsquo;s outfit
             </LinkButton>
-            <LinkButton to="/intake" compact>A whole layout</LinkButton>
+            <LinkButton to="/intake" compact>Several pieces at once</LinkButton>
             {/* The quiet roads in, secondary like their neighbours — the one
                 primary on this page stays Add a piece. "From photos" is the
                 owner's own gallery; "From a feed" is a screenshot of a feed
                 they already scroll. */}
             <LinkButton to="/intake?photos=1" compact>From photos</LinkButton>
-            <LinkButton to="/intake?feed=1" compact>From a feed</LinkButton>
+            <LinkButton to="/intake?feed=1" compact>From a screenshot</LinkButton>
           </span>
         )}
       />
@@ -449,7 +449,7 @@ export default function Closet() {
         <EmptyState
           plate={<PlateEmptyCloset />}
           title="Nothing hangs here yet."
-          body="Add one piece — a photo, a name, a color — and the ledger starts counting from its first wear."
+          body="One piece is enough to start: a name, and a photo if you have one. The ledger counts from its first wear."
           action={
             <div className="flex flex-col items-center gap-2">
               <Button tone="primary" icon={<IconPlus size={16} />} onClick={() => setAddOpen(true)}>
@@ -462,25 +462,25 @@ export default function Closet() {
                 to="/intake?worn=1"
                 className="type-ledger text-[11px] text-accent underline underline-offset-[3px] min-h-11 inline-flex items-center"
               >
-                Or photograph what you are wearing
+                Or photograph what you have on
               </Link>
               <Link
                 to="/intake"
                 className="type-ledger text-[11px] text-text-2 underline underline-offset-[3px] min-h-11 inline-flex items-center"
               >
-                Or catalogue a whole layout at once
+                Lay several pieces out and photograph the lot
               </Link>
               <Link
                 to="/intake?photos=1"
                 className="type-ledger text-[11px] text-text-2 underline underline-offset-[3px] min-h-11 inline-flex items-center"
               >
-                Or read your photos
+                Take them from your camera roll
               </Link>
               <Link
                 to="/intake?feed=1"
                 className="type-ledger text-[11px] text-text-2 underline underline-offset-[3px] min-h-11 inline-flex items-center"
               >
-                Or read a feed screenshot
+                Read a screenshot of a feed
               </Link>
             </div>
           }
@@ -720,7 +720,7 @@ export default function Closet() {
 
               {paletteColors.length > 0 && (
                 <div>
-                  <p className="type-ledger text-[11px] text-text-2 mb-2">Color</p>
+                  <p className="type-ledger text-[11px] text-text-2 mb-2">Colour</p>
                   <div className="flex flex-wrap gap-2">
                     {paletteColors.map(hex => (
                       <Chip

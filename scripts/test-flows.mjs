@@ -17,7 +17,7 @@ const ORIGIN = process.argv[2] ?? 'http://localhost:4174';
 
 const ROUTES = [
   '/', '/closet', '/outfits', '/calendar', '/ledger', '/wishlist', '/compare',
-  '/events', '/feed', '/chats', '/profile', '/rail', '/settings', '/intake', '/open',
+  '/events', '/feed', '/explore', '/chats', '/profile', '/rail', '/settings', '/intake', '/open',
 ];
 
 let failed = 0;
@@ -102,6 +102,9 @@ const survey = page => page.evaluate(() => {
     // A screen with nothing on it is a break, however valid the DOM is.
     empty: (document.body.innerText || '').trim().length < 12,
     scrollsSideways: doc.scrollWidth > doc.clientWidth + 1,
+    // Owner decision 2026-08-19: the currency is the rupee, app-wide. A
+    // dollar amount on any screen is a regression, whatever page it is on.
+    dollarAmounts: /\$\s?\d/.test(document.body.innerText || ''),
     overflowBy: doc.scrollWidth - doc.clientWidth,
     railOnScreen: nav ? nav.r.top < window.innerHeight - 8 && nav.r.bottom > 0 : null,
     railHeight: nav ? Math.round(nav.r.height) : null,
@@ -159,6 +162,7 @@ const survey = page => page.evaluate(() => {
     const s = await survey(page);
     check(`phone ${route.padEnd(9)} renders`, !s.empty, s.text.slice(0, 50));
     check(`phone ${route.padEnd(9)} does not scroll sideways`, !s.scrollsSideways, `${s.overflowBy}px`);
+    check(`phone ${route.padEnd(9)} keeps its sums in rupees`, !s.dollarAmounts, '');
     if (route !== '/open') {
       check(`phone ${route.padEnd(9)} keeps the rail on screen`, s.railOnScreen !== false, '');
     }

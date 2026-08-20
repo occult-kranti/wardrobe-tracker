@@ -1,4 +1,4 @@
-import { FORM_MAX_SLOTS, type Furniture, type FurnitureForm, type Ornament } from '../types';
+import { FORM_MAX_SLOTS, type Furniture, type FurnitureForm, type Ornament } from '@almari/shared/types';
 
 /**
  * DRAWING THE FURNITURE.

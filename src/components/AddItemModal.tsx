@@ -10,10 +10,10 @@ import {
   type ClothingItem,
   type ItemSource,
   type Season,
-} from '../types';
+} from '@almari/shared/types';
 import { Button, Chip, Field, Modal, inputClass, selectClass } from './ui';
 import { prepareImage, readPhotograph } from '../lib/anthropic';
-import { readIntake } from '../lib/intake';
+import { readIntake } from '@almari/shared/intake';
 import { INTAKE_PROMPT } from '../lib/intakePrompt';
 import { Basting, GarmentPlate } from './art';
 import { IconCamera, IconCheck, IconClose, IconPlus, IconUp, IconDown } from './icons';
@@ -302,7 +302,7 @@ export default function AddItemModal({ open, onClose, editItem }: Props) {
                   <p className="type-ledger text-[11px] text-text-2">Drawn stand-in</p>
                   <p className="text-[13px] text-text-2 mt-1 leading-snug">
                     Without a photo the closet shows this flat, drawn in the colour and
-                    kind of piece you pick. That is a finished state, not a gap.
+                    kind of piece you pick.
                   </p>
                   <div className="flex flex-wrap items-center gap-3 mt-3">
                     <Button
@@ -349,9 +349,10 @@ export default function AddItemModal({ open, onClose, editItem }: Props) {
                     {cutting ? 'Close the bench' : 'Try lifting the background'}
                   </Button>
                   <span className="type-ledger text-[10px] text-text-2">
-                    Claude Sonnet by Anthropic, through Almari&rsquo;s relay — the key is held on the
-                    server, never on this device · everything else stays here · your own
-                    endpoint can be set in Settings
+                    Reading the photo is the one step here that uses the network. It makes a
+                    single trip to Claude Fable by Anthropic and comes back as words. No key is
+                    kept on this device, nothing else leaves it, and Settings can point this at
+                    a service of your own.
                   </span>
                 </div>
 
@@ -454,7 +455,7 @@ export default function AddItemModal({ open, onClose, editItem }: Props) {
           className="w-full flex items-center justify-between gap-3 min-h-11 text-left"
         >
           <span className="type-ledger text-[11px] text-text-2">
-            {more ? 'Fewer details' : 'More details — brand, cost, season, notes'}
+            {more ? 'Fewer details' : 'More details — cost, brand, season, notes'}
           </span>
           {more ? <IconUp size={16} className="text-text-2" /> : <IconDown size={16} className="text-text-2" />}
         </button>
@@ -574,7 +575,7 @@ export default function AddItemModal({ open, onClose, editItem }: Props) {
 
         {/* ---------- the ledger side ---------- */}
         <div className="grid sm:grid-cols-2 gap-5">
-          <Field label="Cost" htmlFor="add-item-cost" hint="Optional. It feeds cost per wear.">
+          <Field label="Cost" htmlFor="add-item-cost" hint="Optional, and the one thing cost per wear needs.">
             <input
               id="add-item-cost"
               type="number"

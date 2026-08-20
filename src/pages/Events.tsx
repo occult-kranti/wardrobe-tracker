@@ -8,8 +8,8 @@ import {
   type EventKind,
   type EventReservation,
   type WardrobeEvent,
-} from '../types';
-import { addDays, daysSince, todayLocal } from '../lib/dates';
+} from '@almari/shared/types';
+import { addDays, daysSince, todayLocal } from '@almari/shared/dates';
 import {
   Button, Card, Chip, EmptyState, Field, Masthead, Modal, SectionTitle, inputClass,
 } from '../components/ui';

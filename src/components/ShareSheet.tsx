@@ -3,7 +3,7 @@ import { useSession } from '../context/SessionContext';
 import { Button, Field, Modal, inputClass, selectClass } from './ui';
 import { Basting } from './art';
 import { LookCard } from './social';
-import { HOUSEHOLD_KIND_LABELS, SCOPE_LABELS, type ShareScope, type SharedLook } from '../types';
+import { HOUSEHOLD_KIND_LABELS, SCOPE_LABELS, type ShareScope, type SharedLook } from '@almari/shared/types';
 
 /**
  * Putting a look on the feed, and saying who it is for.

@@ -1,0 +1,7 @@
+{
+  "name": "@almari/shared",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Framework-free wardrobe logic shared by the web app and the native app. TypeScript source consumed directly by each bundler; no build step, zero runtime dependencies."
+}
