@@ -34,18 +34,22 @@ import { RADIUS } from '../../tokens/themes';
 import { useTheme } from '../../tokens/ThemeContext';
 import { TYPE } from '../../tokens/typography';
 
-export default function FeedScreen() {
-  // THE FLAG, FIRST LINE (docs/42 §2, native gate 2). `TopTabs.Protected`
-  // already takes this room off the bar and out of the pager; this covers the
-  // other way in — a deep link handed over by another app. It lands on Today
-  // SILENTLY: no plaque, no explainer, no date. A door that is not in the
-  // house this season gets no sign saying so.
-  //
-  // Before every hook on purpose. FEED_ENABLED is a module constant, so the
-  // branch is fixed for the life of the process and the hook order below it
-  // can never change between renders.
+// THE FLAG, FIRST LINE (docs/42 §2, native gate 2). `TopTabs.Protected`
+// already takes this room off the bar and out of the pager; this covers the
+// other way in — a deep link handed over by another app. It lands on Today
+// SILENTLY: no plaque, no explainer, no date. A door that is not in the
+// house this season gets no sign saying so.
+//
+// The gate is its own hook-free component so the screen below keeps an
+// unconditional hook order — the rules-of-hooks lint is right that an early
+// return above hooks is the defect class, even when the flag is a module
+// constant that can never flip mid-process.
+export default function FeedRoute() {
   if (!FEED_ENABLED) return <Redirect href="/" />;
+  return <FeedScreen />;
+}
 
+function FeedScreen() {
   const { tokens } = useTheme();
   const fonts = useFamilies();
   const { community, accounts, activeId, setCommunity } = useCommunity();

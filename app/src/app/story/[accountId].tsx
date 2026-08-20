@@ -109,16 +109,21 @@ function frameOfCommons(b: NativeBufferEntry): StoryFrame {
   };
 }
 
-export default function Story() {
-  // THE FLAG, FIRST LINE (docs/42 §2, native gate 2). The story deck reads
-  // the store the feed writes, so it is seated by the same flag; with the
-  // Look Book out of the house this season a `/story/…` link handed over by
-  // another app lands on Today, silently and without a plaque.
-  //
-  // Before every hook on purpose: FEED_ENABLED is a module constant, so the
-  // branch is fixed for the life of the process.
+// THE FLAG, FIRST LINE (docs/42 §2, native gate 2). The story deck reads
+// the store the feed writes, so it is seated by the same flag; with the
+// Look Book out of the house this season a `/story/…` link handed over by
+// another app lands on Today, silently and without a plaque.
+//
+// The gate is its own hook-free component so the viewer below keeps an
+// unconditional hook order — the rules-of-hooks lint is right that an early
+// return above hooks is the defect class, even when the flag is a module
+// constant that can never flip mid-process.
+export default function StoryRoute() {
   if (!FEED_ENABLED) return <Redirect href="/" />;
+  return <Story />;
+}
 
+function Story() {
   const { accountId } = useLocalSearchParams<{ accountId: string }>();
   const { tokens } = useTheme();
   const fonts = useFamilies();
