@@ -19,6 +19,7 @@ import {
   type ResolvedThemeName,
   type ThemeTokens,
 } from '../src/tokens/themes';
+import { TYPE } from '../src/tokens/typography';
 
 const ROOMS: ResolvedThemeName[] = ['light', 'dark', 'salon', 'gilt', 'dyehouse', 'obsidian'];
 
@@ -108,5 +109,32 @@ describe('the walk order and the shared physics mirror the web', () => {
     expect(resolveTheme('system', null)).toBe('light');
     expect(resolveTheme('gilt', 'dark')).toBe('gilt');
     expect(resolveTheme('dyehouse', 'light')).toBe('dyehouse');
+  });
+});
+
+/**
+ * THE 13px FLOOR HAS NO EXCEPTION LEFT.
+ *
+ * `TYPE.rail: 11` was ported as the one documented exception to the interactive
+ * floor, for OUTFITS on the phone rail. That word left the rail, the bar's
+ * labels moved to TYPE.label, and the token was left with no consumers — a
+ * standing licence to go below 13px that nothing was standing on. tsc catches a
+ * consumer of a deleted key; this catches the token being quietly put back.
+ */
+describe('the type scale states one interactive size', () => {
+  test('TYPE has no rail — the 11px exception is gone, not commented out', () => {
+    expect(Object.keys(TYPE)).not.toContain('rail');
+    expect((TYPE as Record<string, unknown>).rail).toBeUndefined();
+  });
+
+  test('the interactive label size IS the floor the themes declare', () => {
+    expect(TYPE.label).toBe(LABEL_FLOOR);
+  });
+
+  test('11px survives only as non-interactive ledger metadata (brand law 7)', () => {
+    const belowFloor = Object.entries(TYPE).filter(
+      ([key, value]) => typeof value === 'number' && value < LABEL_FLOOR && !key.endsWith('Spacing'),
+    );
+    expect(belowFloor.map(([key]) => key)).toEqual(['ledgerMeta']);
   });
 });

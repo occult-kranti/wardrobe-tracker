@@ -1,14 +1,21 @@
 /**
- * THE LOOKS ROOM, SHOWCASE — the same room with the Look Book in the house.
+ * THE OUTFITS ROOM, SHOWCASE — the same room with the Look Book in the house.
  *
  * The branch `feed-showcase` differs from this one by exactly one line in
  * packages/shared/flags.ts (`= true`). That line is the only thing this file
  * mocks; the routes, the provider, the shared shelf and the room are the
  * shipped tree. So this suite is the OTHER half of the flag matrix —
  * outfits.test.tsx proves the alpha's room offers no share surface at all,
- * and this proves the one-line flip seats a working one on the look itself,
- * where the feed's own plaque already says it lives ("Sharing happens one
- * look at a time, from the outfit itself").
+ * and this proves the one-line flip seats a working one on the outfit
+ * itself, where the feed's own plaque already says it lives ("Sharing happens
+ * one look at a time, from the outfit itself").
+ *
+ * IT IS ALSO WHERE R2 IS PROVED NOT TO HAVE OVERSHOT. The room took the web's
+ * word — the masthead and every sentence in it say "outfit" — and the feed
+ * KEPT its own: the share row on this very screen still says "look", because
+ * a share is the Look Book's verb reaching in. Two words, one screen, each
+ * meaning exactly one thing. That is the collision dissolved rather than
+ * merely renamed, and the test below asserts both halves at once.
  *
  * Why a separate file: jest.mock is hoisted per module registry, so a flag
  * cannot hold two values inside one file. A second file is the honest way to
@@ -146,7 +153,7 @@ beforeEach(async () => {
 });
 
 describe('showing a look, with the Look Book in the house', () => {
-  test('the flag is the only difference, and it seats a share row on the look', async () => {
+  test('the flag is the only difference, and it seats a share row on the outfit', async () => {
     expect(FEED_ENABLED).toBe(true);
     const shell = renderRouter('./src/app', { initialUrl: '/outfits/o-blacks' });
 
@@ -155,6 +162,25 @@ describe('showing a look, with the Look Book in the house', () => {
     // No metric rides along with it (toile-social §3).
     expect(shell.queryByText(/\bview(s|ed)?\b/i)).toBeNull();
     expect(shell.queryByText(/seen by/i)).toBeNull();
+
+    await settle();
+  });
+
+  test('R2: the room speaks "outfit" and the feed keeps "look", on one screen', async () => {
+    const shell = renderRouter('./src/app', { initialUrl: '/outfits/o-blacks' });
+    await shell.findByText('Not shared');
+
+    // THE ROOM'S OWN VERBS took the web's word — every one of them.
+    expect(shell.getByText('Amend this outfit')).toBeTruthy();
+    expect(shell.getByText('Remove this outfit')).toBeTruthy();
+    expect(shell.getByText('Back to the outfits')).toBeTruthy();
+    expect(shell.queryByText('Amend this look')).toBeNull();
+    expect(shell.queryByText('Remove this look')).toBeNull();
+
+    // THE FEED'S VERB KEPT ITS OWN — the one place "look" still belongs, and
+    // the reason R2 is a boundary rather than a find-and-replace. Renaming
+    // this too would have moved the collision instead of dissolving it.
+    expect(shell.getByText('Share this look')).toBeTruthy();
 
     await settle();
   });

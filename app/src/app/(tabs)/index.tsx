@@ -4,6 +4,11 @@
  * what is on the record today, and the two-tap log: pick pieces, one
  * confirm tap, the seal toast. Copy is the web's own, byte for byte.
  *
+ * The week strip under the masthead is the calendar, standing behind Today
+ * (docs/42 §6): seven quiet columns ending on today, a month door at its
+ * head, and a tap that opens the day's own page. It never stands in front of
+ * the hero button — logging TODAY is two taps here and stays two taps.
+ *
  * Web-only for now (named, not forgotten): outfit choices and suggestions,
  * "Same as yesterday", matured-plan questions, the weather ask, the tour,
  * the recent-ledger band. Each returns with its own wave.
@@ -17,6 +22,8 @@ import { todayLocal } from '@almari/shared/dates';
 import { isPlannedLog, type ClothingItem, type WearLog } from '@almari/shared/types';
 
 import { Button } from '../../components/Button';
+import { calendarHref } from '../../components/calendar/addresses';
+import { WeekStrip } from '../../components/calendar/WeekStrip';
 import { Masthead } from '../../components/Masthead';
 import { showToast } from '../../components/Toast';
 import { IconCheck, IconEyeletFilled } from '../../icons';
@@ -154,6 +161,19 @@ export default function TodayScreen() {
           <Text style={[ledgerLabel, { marginBottom: 12 }]}>
             {wardrobeName ?? 'A sample'} · a sample, not your record
           </Text>
+        ) : null}
+
+        {/* THE WEEK STRIP — the calendar behind Today (docs/42 §6). It waits
+            for the closet to hold something: over an empty wardrobe it would
+            be seven numerals with nothing to open, and the first thing on the
+            page should be the sentence that says where to start. */}
+        {activeItems.length > 0 ? (
+          <WeekStrip
+            today={today}
+            wearLogs={wearLogs}
+            onOpenDay={date => router.push(calendarHref(date))}
+            onOpenMonth={() => router.push(calendarHref())}
+          />
         ) : null}
 
         {activeItems.length === 0 ? (

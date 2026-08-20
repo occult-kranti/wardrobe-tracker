@@ -178,14 +178,20 @@ describe('doors only for rooms whose ports exist', () => {
     await shell.findByText('The House');
 
     // The floor-plan order of record holds these seats; none may be drawn
-    // until its native screen lands (docs/42 §4).
+    // until its native screen lands (docs/42 §4). Wave 7 built the Ledger,
+    // the Wishlist and the export port, so those three doors now STAND — the
+    // positive half asserts them, and the unbuilt list keeps shrinking as
+    // rooms land, never the other way.
+    expect(shell.getByText(/open the ledger/i)).toBeTruthy();
+    expect(shell.getByText(/the wishlist/i)).toBeTruthy();
+    expect(shell.getByText(/export the record/i)).toBeTruthy();
+    // "The buying table" now stands as a heading over the Wishlist's real
+    // door, so it left the unbuilt list; Before you buy itself still has no
+    // port and keeps no row.
+    expect(shell.getByText(/the buying table/i)).toBeTruthy();
     for (const unbuilt of [
-      /ledger/i,
-      /wishlist/i,
       /before you buy/i,
-      /buying table/i,
       /shared rail/i,
-      /export the record/i,
     ]) {
       expect(shell.queryByText(unbuilt)).toBeNull();
     }

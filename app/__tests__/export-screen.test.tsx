@@ -168,8 +168,9 @@ describe('the data card sits on the settings screen without displacing anything'
     expect(shell.getByText('Your data')).toBeTruthy();
     expect(shell.getByLabelText('Export a backup')).toBeTruthy();
     expect(shell.getByLabelText('Choose a file')).toBeTruthy();
-    // The list is still honestly unfinished, and no longer promises export.
-    expect(shell.getByText('Theme and storage will live here.')).toBeTruthy();
+    // Wave 7: the placeholder promise was kept — the room section stands
+    // where "Theme and storage will live here." used to point.
+    expect(shell.getByText('The room')).toBeTruthy();
   });
 
   test('the count names all four kinds of record, wishlist included', async () => {

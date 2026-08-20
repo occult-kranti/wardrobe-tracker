@@ -1,41 +1,58 @@
 /**
- * BUILD A LOOK — and, with the same hands, amend one.
+ * BUILD AN OUTFIT — and, with the same hands, amend one.
  *
  * Ports the web builder (src/pages/Outfits.tsx) to a bottom plate. What
  * travelled: a name, any number of pieces from any category, an optional
- * occasion, and the rule that a look is not a slot machine — two coats and
- * three necklaces is a valid answer, so nothing here is one-per-category.
+ * occasion, the rule that an outfit is not a slot machine (two coats and
+ * three necklaces is a valid answer, so nothing here is one-per-category) —
+ * and, from R5 this wave, the web's own grouping of the picker by category.
  *
- * WHAT DID NOT TRAVEL, and why each is a deliberate absence rather than an
- * oversight:
+ * R5, AND THE OBJECTION IT ANSWERS. This sheet used to offer one flat
+ * alphabetical grid of the whole active closet. That had one real virtue —
+ * every active piece is offered, including quiet ones and ones whose category
+ * no longer exists — and one real cost, which the advisor named: in a closet
+ * of any size, nothing is findable. The grouping keeps the virtue and pays
+ * off the cost:
  *
- *  - THE DEAL. The web can deal a set from getWearablePool(). The native
- *    provider exposes no such pool, and inventing a second definition of
- *    "ready to wear" on the phone is exactly the duplicated-maths defect
- *    docs/34 §5 exists to prevent. The room says nothing about a deal, so
- *    nothing here is a promise the app cannot keep.
- *  - THE CATEGORY GROUPING. The web groups the picker by settings.categories,
- *    hides quiet categories behind a toggle, and then needs a sweep for
- *    "orphans" — pieces filed under a category since deleted, which otherwise
- *    drop silently out of every outfit anybody could build. One flat grid of
- *    the active closet, in the closet's own alphabetical order, cannot have
- *    that defect: every active piece is offered, including quiet ones and
- *    ones whose category no longer exists. The piece's name is printed under
- *    every tile, so nothing is identified by photograph alone. The trade is
- *    findability in a very large closet, and it is a trade this file is
- *    making knowingly.
+ *   - SECTION ORDER IS settings.categories, the same order the closet lists
+ *     them in. Categories are user data; nothing here assumes a
+ *     top/bottom/shoe shape.
+ *   - QUIET CATEGORIES ARE STILL SHOWN. The web hides them behind a checkbox
+ *     because its picker is one of several ways in; this sheet is the only
+ *     one, and a piece nobody can reach is a piece that has silently left
+ *     every outfit anybody could build.
+ *   - PIECES FILED UNDER A CATEGORY SINCE DELETED get their own section at the
+ *     end, labelled with the category's own id, exactly as the web's orphan
+ *     sweep does. That is the defect the flat grid could not have; it is not
+ *     re-introduced here.
+ *   - EVERY TILE STILL PRINTS ITS PIECE'S NAME, so nothing is identified by
+ *     photograph alone.
+ *
+ * WHAT STILL DID NOT TRAVEL: THE DEAL. The web can deal a set from
+ * getWearablePool(). The native provider exposes no such pool, and inventing
+ * a second definition of "ready to wear" on the phone is exactly the
+ * duplicated-maths defect docs/34 §5 exists to prevent. The room says nothing
+ * about a deal, so nothing here is a promise the app cannot keep.
+ *
+ * THE OCCASION CAN NOW BE TAKEN OFF (R4). It could not before, and the reason
+ * was the record's rather than this sheet's: updateOutfit's whitelist assigned
+ * only keys whose value was not `undefined`, so a patch had no way to say
+ * "take this off" and the only fake was an empty string — a value the web
+ * never writes. R4 gave the patch a clear sentinel (`null`), so the control
+ * now does what the record can do, in both modes, with no paragraph of
+ * apology under it.
  *
  * THE DISABLED BUTTON IS THE BUG THIS SHEET WAS BUILT AROUND. The provider
- * refuses a nameless or empty look by answering null (lib/wardrobe.tsx
+ * refuses a nameless or empty outfit by answering null (lib/wardrobe.tsx
  * addOutfit), and a refusal that can explain itself is worth more than a
- * control that has gone grey. "Save the look" is ALWAYS pressable, and a
+ * control that has gone grey. "Save the outfit" is ALWAYS pressable, and a
  * press that cannot be honoured answers in a sentence naming the missing
  * half. See looks.ts refusalSentence.
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View, useWindowDimensions } from 'react-native';
 
-import { displayTag, type ClothingItem } from '@almari/shared/types';
+import { displayTag, type ClothingItem, type UserCategory } from '@almari/shared/types';
 
 import { Button } from '../Button';
 import { Chip } from '../Chip';
@@ -48,57 +65,49 @@ import { Sheet } from '../furniture/Sheet';
 import { piecesPhrase, refusalSentence } from './looks';
 import { Tile } from './Tile';
 
-export interface LookDraft {
+export interface OutfitDraft {
   name: string;
   itemIds: string[];
+  /** Absent means "for nothing in particular" — never `''`. */
   occasion?: string;
 }
 
 /**
- * Commit the draft. Answers the look's id, or null when the record refused it
- * — the provider's own protocol, carried through unchanged so the sheet never
- * has to guess whether a save happened.
+ * Commit the draft. Answers the outfit's id, or null when the record refused
+ * it — the provider's own protocol, carried through unchanged so the sheet
+ * never has to guess whether a save happened.
  */
-export type CommitLook = (draft: LookDraft) => string | null;
+export type CommitOutfit = (draft: OutfitDraft) => string | null;
+
+/** One section of the picker: a category, and what is filed under it. */
+interface PieceGroup {
+  id: string;
+  label: string;
+  items: ClothingItem[];
+}
 
 export function BuildSheet({
   open,
   mode,
   initial,
   items,
+  categories,
   occasions,
-  occasionClearable = true,
   onClose,
   onCommit,
 }: {
   open: boolean;
-  /** 'build' writes a new look; 'amend' edits the one already open. */
+  /** 'build' writes a new outfit; 'amend' edits the one already open. */
   mode: 'build' | 'amend';
-  initial?: LookDraft;
+  initial?: OutfitDraft;
   /** The active closet — retired pieces are not offered (they are not gone). */
   items: ClothingItem[];
+  /** This wardrobe's own categories, in its own order — the section order (R5). */
+  categories: UserCategory[];
   /** This wardrobe's own occasion tags; free text, six by default. */
   occasions: string[];
-  /**
-   * May the occasion be taken back off?
-   *
-   * On a new look, yes: nothing is written, so an unchosen tag is simply
-   * absent. On a look that ALREADY carries one, no — and the reason is the
-   * record's, not this sheet's. updateOutfit's whitelist assigns only keys
-   * whose value is not `undefined` (lib/wardrobe.tsx), so a patch cannot say
-   * "take this off"; the only way to fake it is to write an empty string,
-   * which is a value the web never writes and which the provider's addOutfit
-   * goes out of its way to avoid ("a look with no occasion is byte-identical
-   * to one written by the web"). Inventing it here would put a shape into
-   * somebody's document that no migration case has ever seen.
-   *
-   * So the control does what the record can do, and the sheet says why. The
-   * dressing room made the same call about packing a shelf: read-only is
-   * honest, inventing the control is not.
-   */
-  occasionClearable?: boolean;
   onClose: () => void;
-  onCommit: CommitLook;
+  onCommit: CommitOutfit;
 }) {
   const { tokens } = useTheme();
   const fonts = useFamilies();
@@ -110,9 +119,9 @@ export function BuildSheet({
   /** Said only after a press: the room never scolds a form nobody submitted. */
   const [refused, setRefused] = useState<string | null>(null);
 
-  // Opening the sheet re-reads the draft. Without this, amending look B after
-  // amending look A would show A's fields — the sheet is mounted once and the
-  // state would outlive the look it belongs to.
+  // Opening the sheet re-reads the draft. Without this, amending outfit B
+  // after amending outfit A would show A's fields — the sheet is mounted once
+  // and the state would outlive the outfit it belongs to.
   useEffect(() => {
     if (!open) return;
     setName(initial?.name ?? '');
@@ -124,11 +133,37 @@ export function BuildSheet({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
+  /**
+   * The picker's sections (R5). Ports the web's `groups` memo minus its quiet
+   * filter — see the header for why quiet categories stay offered here.
+   *
+   * The orphan sweep at the end is load-bearing: without it a piece filed
+   * under a category somebody has since deleted is reachable from no section
+   * at all, and drops silently out of every outfit that could be built.
+   */
+  const groups = useMemo<PieceGroup[]>(() => {
+    const known = new Set(categories.map(c => c.id));
+    const rows: PieceGroup[] = categories
+      .map(c => ({ id: c.id, label: c.label, items: items.filter(i => i.category === c.id) }))
+      .filter(g => g.items.length > 0);
+
+    const orphans: string[] = [];
+    for (const item of items) {
+      if (!known.has(item.category) && !orphans.includes(item.category)) orphans.push(item.category);
+    }
+    for (const id of orphans) {
+      // categoryLabel's own fallback is the raw id (@almari/shared/types), so
+      // an orphan section is labelled the one way the record can label it.
+      rows.push({ id, label: id, items: items.filter(i => i.category === id) });
+    }
+    return rows;
+  }, [categories, items]);
+
   const toggle = (id: string) =>
     setPicked(prev => (prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]));
 
   const commit = () => {
-    const draft: LookDraft = {
+    const draft: OutfitDraft = {
       name,
       itemIds: picked,
       occasion: occasion.trim().length > 0 ? occasion : undefined,
@@ -144,7 +179,9 @@ export function BuildSheet({
     // room thought was fine, that is said too rather than swallowed.
     const id = onCommit(draft);
     if (id === null) {
-      setRefused('This look was not written down. Nothing was lost — the pieces and the name are still here.');
+      setRefused(
+        'This outfit was not written down. Nothing was lost — the pieces and the name are still here.',
+      );
       return;
     }
     onClose();
@@ -163,14 +200,57 @@ export function BuildSheet({
     color: tokens.text2,
   };
 
+  /** One piece, pressable. Stated once so every section draws the same tile. */
+  const pieceTile = (item: ClothingItem) => {
+    const on = picked.includes(item.id);
+    return (
+      <Pressable
+        key={item.id}
+        accessibilityRole="button"
+        accessibilityState={{ selected: on }}
+        accessibilityLabel={item.name}
+        onPress={() => {
+          toggle(item.id);
+          setRefused(null);
+        }}
+        style={{ width: tileWidth }}
+      >
+        <View>
+          <Tile item={item} size={tileWidth} picked={on} />
+          {on ? (
+            <View style={[styles.mark, { backgroundColor: tokens.inkFill, borderRadius: RADIUS }]}>
+              <IconCheck size={12} color={tokens.onInk} />
+            </View>
+          ) : null}
+        </View>
+        <Text
+          numberOfLines={2}
+          style={{
+            fontFamily: fonts.ui,
+            fontSize: 13,
+            lineHeight: 17,
+            color: tokens.text,
+            marginTop: 6,
+          }}
+        >
+          {item.name}
+        </Text>
+      </Pressable>
+    );
+  };
+
   return (
-    <Sheet open={open} onClose={onClose} label={mode === 'build' ? 'Close build a look' : 'Close amend this look'}>
+    <Sheet
+      open={open}
+      onClose={onClose}
+      label={mode === 'build' ? 'Close build an outfit' : 'Close amend this outfit'}
+    >
       <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         <Text
           accessibilityRole="header"
           style={{ fontFamily: fonts.display, fontSize: TYPE.editorial, color: tokens.text }}
         >
-          {mode === 'build' ? 'Build a look' : 'Amend this look'}
+          {mode === 'build' ? 'Build an outfit' : 'Amend this outfit'}
         </Text>
         <Text
           style={{
@@ -181,8 +261,8 @@ export function BuildSheet({
             marginTop: 8,
           }}
         >
-          Take as many pieces as the look needs, from anywhere in the closet. Two coats and three
-          necklaces is a valid answer.
+          Take as many pieces as the outfit needs, from any category. Two coats and three necklaces
+          is a valid answer.
         </Text>
 
         <Text style={[ledger, { marginTop: 20, marginBottom: 8 }]}>What to call it</Text>
@@ -218,28 +298,14 @@ export function BuildSheet({
                 <Chip
                   key={tag}
                   selected={occasion === tag}
-                  onPress={() =>
-                    setOccasion(occasion === tag ? (occasionClearable ? '' : tag) : tag)
-                  }
+                  // R4: tapping the chosen tag again takes it off, in BOTH
+                  // modes. The amend path sends null and the record clears.
+                  onPress={() => setOccasion(occasion === tag ? '' : tag)}
                 >
                   {displayTag(tag)}
                 </Chip>
               ))}
             </View>
-            {occasionClearable ? null : (
-              <Text
-                style={{
-                  fontFamily: fonts.ui,
-                  fontSize: 13,
-                  lineHeight: 19,
-                  color: tokens.text2,
-                  marginTop: 10,
-                }}
-              >
-                What a look is for can be changed here, but not taken off again — the record has no
-                way yet to say a look is for nothing in particular.
-              </Text>
-            )}
           </>
         ) : null}
 
@@ -260,54 +326,23 @@ export function BuildSheet({
             has something to work with.
           </Text>
         ) : (
-          <View style={[styles.grid, { gap }]}>
-            {items.map(item => {
-              const on = picked.includes(item.id);
-              return (
-                <Pressable
-                  key={item.id}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: on }}
-                  accessibilityLabel={item.name}
-                  onPress={() => {
-                    toggle(item.id);
-                    setRefused(null);
-                  }}
-                  style={{ width: tileWidth }}
-                >
-                  <View>
-                    <Tile item={item} size={tileWidth} picked={on} />
-                    {on ? (
-                      <View
-                        style={[
-                          styles.mark,
-                          { backgroundColor: tokens.inkFill, borderRadius: RADIUS },
-                        ]}
-                      >
-                        <IconCheck size={12} color={tokens.onInk} />
-                      </View>
-                    ) : null}
-                  </View>
-                  <Text
-                    numberOfLines={2}
-                    style={{
-                      fontFamily: fonts.ui,
-                      fontSize: 13,
-                      lineHeight: 17,
-                      color: tokens.text,
-                      marginTop: 6,
-                    }}
-                  >
-                    {item.name}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
+          groups.map(group => {
+            const chosen = group.items.filter(i => picked.includes(i.id)).length;
+            return (
+              <View key={group.id} style={styles.group}>
+                <View style={styles.groupHead}>
+                  <Text style={ledger}>{group.label}</Text>
+                  {/* A count of what is in, never a target and never a ratio. */}
+                  {chosen > 0 ? <Text style={ledger}>{chosen} in</Text> : null}
+                </View>
+                <View style={[styles.grid, { gap }]}>{group.items.map(pieceTile)}</View>
+              </View>
+            );
+          })
         )}
 
         {/* THE REFUSAL, IN WORDS. Never a red plate: nothing has gone wrong,
-            the look is simply not finished being described. */}
+            the outfit is simply not finished being described. */}
         {refused ? (
           <Text
             accessibilityLiveRegion="polite"
@@ -328,7 +363,7 @@ export function BuildSheet({
             Not now
           </Button>
           <Button tone="primary" onPress={commit}>
-            {mode === 'build' ? 'Save the look' : 'Save the changes'}
+            {mode === 'build' ? 'Save the outfit' : 'Save the changes'}
           </Button>
         </View>
       </ScrollView>
@@ -341,6 +376,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
+  },
+  group: {
+    marginBottom: 20,
+  },
+  groupHead: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    gap: 12,
+    marginBottom: 8,
   },
   grid: {
     flexDirection: 'row',

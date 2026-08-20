@@ -686,7 +686,8 @@ describe('the looks rail — a hook into the room, linked by address only', () =
   test('an empty wardrobe still offers the way in', async () => {
     await seed(JSON.stringify({ items: [] }));
     const shell = renderRouter('./src/app', { initialUrl: '/closet' });
-    expect(await shell.findByLabelText('Build a look')).toBeTruthy();
+    // R2 (2026-08-20): the room adopted the web's own word — Outfits.
+    expect(await shell.findByLabelText('Build an outfit')).toBeTruthy();
   });
 
   test('the looks this wardrobe holds are named on the rail, and all of them lead one place', async () => {
@@ -702,6 +703,7 @@ describe('the looks rail — a hook into the room, linked by address only', () =
     const shell = renderRouter('./src/app', { initialUrl: '/closet' });
     expect(await shell.findByLabelText('Monday')).toBeTruthy();
     expect(shell.getByLabelText('The wedding')).toBeTruthy();
-    expect(shell.getByLabelText('All looks')).toBeTruthy();
+    // R2 (2026-08-20): the room adopted the web's own word — Outfits.
+    expect(shell.getByLabelText('All outfits')).toBeTruthy();
   });
 });

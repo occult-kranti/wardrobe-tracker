@@ -6,11 +6,17 @@
  * no compose box.
  *
  * The verbs that live in a thread (toile-social): a message may CARRY a
- * look or a piece (Attach — a snapshot, nothing moves) and may BE a request
- * (Ask after it — status `asked`, owner named). Lending stays with the
- * owner; the app's wardrobe provider does not carry loans yet, so a
- * request's status reads as a fact here and the owner's advance buttons
- * arrive with the provider's loan wave (seam recorded in MessageRow).
+ * look or a piece (Attach — a snapshot, nothing moves), may BE a request
+ * (Ask after it — status `asked`, owner named), and may now be ANSWERED:
+ * lending stays with the owner, and answering writes the loan through the
+ * wardrobe provider exactly as the web's ChatThread does.
+ *
+ * TWO HALVES, ONE PRESS. Advancing a request writes to two different places,
+ * and they differ on purpose: the STATUS lives on the shared shelf, which
+ * both wardrobes read, while the LOAN lives in the open wardrobe's own
+ * document, which nobody else can see. The web says it plainly and it holds
+ * here — the borrower's rail learns of the loan the day their own app writes
+ * their half, and no code path here may write it for them.
  *
  * NOBODY ANSWERS BY MACHINE: on the web the sample wardrobes speak only in
  * their seeded threads — no relay call, no generated replies. The same
@@ -33,7 +39,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { todayLocal } from '@almari/shared/dates';
-import type { ChatMessage, SharedLook, SharedPiece } from '@almari/shared/types';
+import type { BorrowStatus, ChatMessage, SharedLook, SharedPiece } from '@almari/shared/types';
 
 import { LookLine, PieceLine } from '../../components/chats/AttachmentLines';
 import { nowLocalStamp, oldestFirst } from '../../components/chats/format';
@@ -43,6 +49,7 @@ import {
   newLocalId,
   parseAsk,
   parseAttach,
+  toAccount,
   useChatsStore,
 } from '../../components/chats/store';
 import { Button } from '../../components/Button';
@@ -65,7 +72,7 @@ export default function ChatThreadScreen() {
   const id = firstParam(params.id);
   const store = useChatsStore();
   const { ready, activeId, accounts, community } = store;
-  const { outfits, activeItems, getItem } = useWardrobe();
+  const { outfits, activeItems, getItem, recordLoan, closeLoan } = useWardrobe();
 
   const [draft, setDraft] = useState('');
   const [attached, setAttached] = useState<{ look?: SharedLook; piece?: SharedPiece }>({});
@@ -204,6 +211,42 @@ export default function ChatThreadScreen() {
     setAskNote('');
   };
 
+  /**
+   * Answer a request — ports the web's `advance` (src/pages/Chats.tsx),
+   * both halves, in the web's own order.
+   *
+   * THE STATUS moves on the shared shelf, where the other wardrobe will read
+   * it. THE LOAN is written into the open wardrobe's own document by the
+   * provider. The status write is awaited first so that a provider that
+   * throws cannot leave a plate showing a stale word.
+   *
+   * WHO THE COUNTERPARTY IS depends on which side of the request is holding
+   * the phone, and getting it wrong would write a loan against the wrong
+   * name. Lending is the owner's alone, so there the counterparty is the
+   * asker — the web's `byId.get(message.authorId)`. Marking a piece home may
+   * come from either side, so the counterparty is simply the OTHER party:
+   * the asker when the owner presses it, the owner when the borrower does.
+   * Aimed that way, a borrower whose own rail records the piece as borrowed
+   * closes THAT row; a borrower whose rail never recorded it closes nothing
+   * and creates nothing, because the borrower's half of a loan is not this
+   * app's to write.
+   *
+   * Nothing here counts anything, and no wear is logged: lending a piece is
+   * not wearing it.
+   */
+  const advance = async (message: ChatMessage, status: BorrowStatus) => {
+    const request = message.request;
+    if (!request || !activeId) return;
+    await store.setRequestStatus(message.id, status);
+
+    const me = accounts.find(a => a.id === activeId);
+    const counterpartyId = request.ownerId === activeId ? message.authorId : request.ownerId;
+    const counterparty = counterpartyId ? byId.get(counterpartyId) : undefined;
+    if (!me || !counterparty) return;
+    if (status === 'lent') recordLoan(request.pieceName, toAccount(me), toAccount(counterparty));
+    if (status === 'returned') closeLoan(request.pieceName, counterparty.id);
+  };
+
   return (
     <SafeAreaView edges={['top']} style={[styles.screen, { backgroundColor: tokens.bg }]}>
       <ScrollView style={styles.page} contentContainerStyle={{ paddingBottom: 32 }}>
@@ -240,7 +283,13 @@ export default function ChatThreadScreen() {
         <View style={[styles.plate, { backgroundColor: tokens.surface, borderColor: tokens.border, alignItems: 'stretch' }]}>
           <View style={{ gap: 20 }}>
             {messages.map(message => (
-              <MessageRow key={message.id} message={message} author={byId.get(message.authorId)} />
+              <MessageRow
+                key={message.id}
+                message={message}
+                author={byId.get(message.authorId)}
+                activeId={activeId}
+                onAdvance={advance}
+              />
             ))}
             {messages.length === 0 ? (
               <Text style={body}>Nothing said yet. The first line starts the record.</Text>

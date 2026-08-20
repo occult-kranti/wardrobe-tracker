@@ -25,6 +25,8 @@ import { useFocusEffect } from 'expo-router';
 import { todayLocal } from '@almari/shared/dates';
 import {
   EMPTY_COMMUNITY,
+  type Account,
+  type BorrowStatus,
   type ChatMessage,
   type CommunityState,
   type Conversation,
@@ -45,8 +47,42 @@ export interface ChatAccount {
   handle: string;
   monogram: string;
   color: string;
+  createdAt?: string;
   isSample?: boolean;
   [key: string]: unknown;
+}
+
+/**
+ * A registry row in the shared Account shape the wardrobe provider's loan
+ * ledger speaks (recordLoan takes two Accounts).
+ *
+ * Field by field, never a cast: a ChatAccount keeps unknown keys under an
+ * index signature, so every field the provider types as a string has to be
+ * PROVED to be one — asserting the row is an Account would hand `unknown`
+ * to code that will call .toLowerCase() on it one day. Mirrors the house
+ * pattern in src/lib/wardrobe.tsx (toSharedAccount), conditional spreads
+ * and all, so an optional the row never had is not invented as undefined.
+ *
+ * `createdAt` is the one required field an older row might lack. The
+ * provider reads an Account only through upsertProfile, which copies
+ * id/handle/name/monogram/color and never createdAt, so today's date is a
+ * floor that reaches no ledger rather than a fact being made up.
+ */
+export function toAccount(row: ChatAccount): Account {
+  const str = (value: unknown): string | undefined =>
+    typeof value === 'string' && value ? value : undefined;
+  return {
+    id: row.id,
+    name: row.name,
+    handle: row.handle,
+    monogram: row.monogram,
+    color: row.color,
+    createdAt: str(row.createdAt) ?? todayLocal(),
+    ...(str(row.city) ? { city: str(row.city) } : {}),
+    ...(str(row.tagline) ? { tagline: str(row.tagline) } : {}),
+    ...(str(row.portrait) ? { portrait: str(row.portrait) } : {}),
+    ...(row.isSample === true ? { isSample: true } : {}),
+  };
 }
 
 /**
@@ -179,6 +215,17 @@ export interface ChatsStore extends ChatsSnapshot {
   /** Append one message; the write lands before the screen re-renders. */
   appendMessage: (message: ChatMessage) => Promise<void>;
   /**
+   * Move one borrow request to its next state — the state half of the web's
+   * `advance` (src/pages/Chats.tsx). The ledger half (recordLoan/closeLoan)
+   * belongs to the wardrobe provider and stays with the screen, because only
+   * the screen knows which wardrobe is open and which is the counterparty.
+   *
+   * A message with no request is left exactly as it stands: a status can only
+   * be moved on a record that has one, and inventing `request` on a plain
+   * line would turn a sentence into a loan.
+   */
+  setRequestStatus: (messageId: string, status: BorrowStatus) => Promise<void>;
+  /**
    * Start a thread — or land on the existing one when a pair is already
    * talking (the web's own dedupe; a pair should not end up with two
    * threads). Returns the conversation id to navigate to.
@@ -234,6 +281,23 @@ export function useChatsStore(): ChatsStore {
     [refresh],
   );
 
+  const setRequestStatus = useCallback(
+    async (messageId: string, status: BorrowStatus) => {
+      // Read-modify-write, like every other mutation here: the copy on screen
+      // may predate a line the other screen just wrote.
+      const community = await readCommunity();
+      const next = {
+        ...community,
+        messages: community.messages.map(m =>
+          m.id === messageId && m.request ? { ...m, request: { ...m.request, status } } : m,
+        ),
+      };
+      await writeCommunity(next);
+      await refresh();
+    },
+    [refresh],
+  );
+
   const startConversation = useCallback(
     async (memberIds: string[], name?: string) => {
       const community = await readCommunity();
@@ -281,5 +345,12 @@ export function useChatsStore(): ChatsStore {
     await refresh();
   }, [refresh]);
 
-  return { ...snap, refresh, appendMessage, startConversation, installSampleThreads };
+  return {
+    ...snap,
+    refresh,
+    appendMessage,
+    setRequestStatus,
+    startConversation,
+    installSampleThreads,
+  };
 }

@@ -31,7 +31,7 @@
  * Nothing is written until a compartment is tapped, and either screen can be
  * left at any point with the piece exactly where it was.
  */
-import { Link, useLocalSearchParams, useRouter, type Href } from 'expo-router';
+import { Link, Redirect, useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -48,6 +48,7 @@ import { countsFor, unfiledCount, useDressingRoom } from '../../components/furni
 import { Masthead } from '../../components/Masthead';
 import { showToast } from '../../components/Toast';
 import { IconPlus } from '../../icons';
+import { useWardrobe } from '../../lib/wardrobe';
 import { useFamilies } from '../../tokens/FontsContext';
 import { RADIUS } from '../../tokens/themes';
 import { useTheme } from '../../tokens/ThemeContext';
@@ -104,7 +105,33 @@ function PlaceCard({
   );
 }
 
-export default function DressingRoomScreen() {
+/**
+ * THE DOOR, FIRST LINE (lead ruling R7). A cold deep link into the dressing
+ * room of a device that has no wardrobe on it yet lands on the door, exactly as
+ * the four rooms on the bar already do — silently, with no plaque explaining
+ * what it missed. Without this, `/furniture` opened cold drew an empty room over
+ * a wardrobe that does not exist, with a "Back to the closet" button pointing at
+ * a closet that does not either.
+ *
+ * `loading` is not `none`: the shelf is asked before the door is, so a wardrobe
+ * that exists gets a blank beat on its own paper rather than a flash of somebody
+ * else's empty closet, and nobody is sent to the door on the strength of an
+ * answer that had not arrived.
+ *
+ * The gate is its own component, holding two hooks and no early return between
+ * them, so the screen below keeps an unconditional hook order — the Wave-5
+ * pattern from the feed and story gates, and the rules-of-hooks lint is right
+ * that an early return above a screen's hooks is the defect class.
+ */
+export default function DressingRoomRoute() {
+  const { status } = useWardrobe();
+  const { tokens } = useTheme();
+  if (status === 'loading') return <View style={{ flex: 1, backgroundColor: tokens.bg }} />;
+  if (status === 'none') return <Redirect href="/open" />;
+  return <DressingRoomScreen />;
+}
+
+function DressingRoomScreen() {
   const { tokens } = useTheme();
   const fonts = useFamilies();
   const router = useRouter();

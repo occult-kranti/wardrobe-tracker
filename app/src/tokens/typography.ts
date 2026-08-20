@@ -68,11 +68,15 @@ export const TYPE = {
   ledgerMeta: 11,
   /** 0.06em at 11px */
   ledgerSpacing: 11 * 0.06,
-  /** .type-label-rail — the nav rail's own measured size. At the house's
-      13px, OUTFITS rendered edge-to-edge in a 360px rail slot; 11px leaves
-      air. The one documented exception to the 13px floor, ported with its
-      reason (src/index.css .type-label-rail). */
-  rail: 11,
+  /* THE 11px RAIL EXCEPTION IS NOT HERE, and its absence is the point.
+     `rail: 11` was ported as the one documented exception to the 13px
+     interactive floor, for OUTFITS rendering edge-to-edge in a 360px rail
+     slot. That word has since left the rail (src/app/(tabs)/_layout.tsx),
+     the bar's labels sit at TYPE.label like every other control, and the
+     token had no consumers left. A standing exception to the floor with
+     nothing standing on it is an invitation, so it is gone rather than
+     kept warm. If a label ever genuinely cannot make 13px again, the fix
+     is the label, not a second size. */
   /** .type-editorial runs at 20px where the web shows an empty state */
   editorial: 20,
 } as const;

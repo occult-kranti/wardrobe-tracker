@@ -87,6 +87,7 @@ jest.mock('expo-file-system', () => {
   };
 });
 
+import { todayLocal } from '@almari/shared/dates';
 import { FORM_MAX_SLOTS, MAX_FURNITURE, type FurnitureForm } from '@almari/shared/types';
 
 import {
@@ -992,5 +993,606 @@ describe('photographs — the document agrees with the disk', () => {
       await ctx!.setItemPhoto('i-nope', 'file:///cache/one.jpg');
     });
     expect(ctx!.items[0].imageUrl).toBe('');
+  });
+});
+
+
+/* ============================================================================
+   R3 · R4 — THE LOOK'S UNDO, AND THE SENTINEL THAT CLEARS A FIELD
+
+   Both are lead rulings of this wave, and both are about a record being able
+   to go back to what it said: a look tidied away by mistake comes back whole,
+   and an occasion chosen once can be un-chosen. Every case here fails against
+   the provider as it stood before the rulings — the undo case because nothing
+   came back to call, the sentinel cases because null was written INTO the
+   field instead of taking it off.
+   ============================================================================ */
+
+const LOOK = {
+  id: 'o-1',
+  name: 'Monday',
+  itemIds: ['i-1'],
+  favorite: false,
+  dateCreated: '2026-06-01T00:00:00.000Z',
+  wearCount: 5,
+  lastWorn: '2026-06-10',
+  occasion: 'work',
+  notes: 'The collar sits better under the grey coat.',
+  stylingNote: 'Not with the brown belt.',
+  imageUrl: 'data:image/jpeg;base64,AAAA',
+};
+
+async function openWithLook(extra: Record<string, unknown> = {}) {
+  await seed(
+    JSON.stringify({
+      items: [piece('i-1', 'The white oxford', { wearCount: 5, lastWorn: '2026-06-10' })],
+      outfits: [{ ...LOOK, ...extra }],
+    }),
+  );
+  await openWardrobe();
+}
+
+describe('R3 — removing a look hands back the way to put it back', () => {
+  test('the closure restores the look whole, with the wears it had', async () => {
+    await openWithLook();
+
+    let undo: (() => void) | undefined;
+    act(() => {
+      undo = ctx!.removeOutfit('o-1');
+    });
+    expect(ctx!.outfits).toHaveLength(0);
+    expect(typeof undo).toBe('function');
+
+    act(() => {
+      undo!();
+    });
+    // Whole, not field by field — the five wears, the date, the note and the
+    // photograph all come back, because the previous STATE came back.
+    expect(ctx!.outfits).toHaveLength(1);
+    expect(ctx!.outfits[0]).toEqual(LOOK);
+  });
+
+  test('the closure is captured before React runs, so an undo reached for at once works', async () => {
+    await openWithLook();
+
+    // Remove and undo inside ONE act: on the web this is the toast being
+    // pressed in the same tick it appeared. A closure that read the state from
+    // inside the updater would still be holding null here.
+    act(() => {
+      const undo = ctx!.removeOutfit('o-1');
+      undo();
+    });
+    expect(ctx!.outfits).toHaveLength(1);
+    expect(ctx!.outfits[0].name).toBe('Monday');
+  });
+
+  test('removing a look still takes the look and nothing else', async () => {
+    await openWithLook();
+    act(() => {
+      ctx!.removeOutfit('o-1');
+    });
+    // The piece keeps every wear it earned while in that look.
+    expect(ctx!.items[0].wearCount).toBe(5);
+    expect(ctx!.items[0].lastWorn).toBe('2026-06-10');
+  });
+});
+
+describe('R4 — null is the clear sentinel, and only where a field may go', () => {
+  test('null takes an occasion OFF the record — absent, never blank', async () => {
+    await openWithLook();
+    act(() => {
+      ctx!.updateOutfit('o-1', { occasion: null });
+    });
+    const look = ctx!.outfits[0];
+    // Absent, so the look is byte-identical to one the web wrote that never
+    // had an occasion. `occasion: undefined` would serialise the same but read
+    // differently to `in`, and `''` would not serialise the same at all.
+    expect('occasion' in look).toBe(false);
+    expect(JSON.parse(JSON.stringify(look)).occasion).toBeUndefined();
+  });
+
+  test('every clearable field clears, and the record keeps everything else', async () => {
+    await openWithLook();
+    act(() => {
+      ctx!.updateOutfit('o-1', {
+        occasion: null,
+        notes: null,
+        stylingNote: null,
+        imageUrl: null,
+      });
+    });
+    const look = ctx!.outfits[0];
+    for (const key of ['occasion', 'notes', 'stylingNote', 'imageUrl']) {
+      expect(key in look).toBe(false);
+    }
+    expect(look.name).toBe('Monday');
+    expect(look.itemIds).toEqual(['i-1']);
+    expect(look.wearCount).toBe(5);
+    expect(look.lastWorn).toBe('2026-06-10');
+    expect(look.dateCreated).toBe('2026-06-01T00:00:00.000Z');
+  });
+
+  test('undefined is silence, not a clear — an unmentioned field is left alone', async () => {
+    await openWithLook();
+    act(() => {
+      ctx!.updateOutfit('o-1', { name: 'Tuesday', occasion: undefined });
+    });
+    expect(ctx!.outfits[0].name).toBe('Tuesday');
+    expect(ctx!.outfits[0].occasion).toBe('work');
+  });
+
+  test('a field a look may not be WITHOUT ignores the sentinel rather than breaking the row', async () => {
+    await openWithLook();
+    // A caller typing its own alias wider can hand null to any of these; the
+    // guarantee has to hold at runtime or it is not one. An unnamed look is
+    // not a cleared field, it is a record nothing can draw.
+    act(() => {
+      (ctx!.updateOutfit as (id: string, patch: Record<string, unknown>) => void)('o-1', {
+        name: null,
+        itemIds: null,
+        favorite: null,
+      });
+    });
+    const look = ctx!.outfits[0];
+    expect(look.name).toBe('Monday');
+    expect(look.itemIds).toEqual(['i-1']);
+    expect(look.favorite).toBe(false);
+  });
+
+  test('the sentinel did not open a door to the wears', async () => {
+    await openWithLook();
+    act(() => {
+      (ctx!.updateOutfit as (id: string, patch: Record<string, unknown>) => void)('o-1', {
+        wearCount: null,
+        lastWorn: null,
+        id: null,
+        dateCreated: null,
+      });
+    });
+    const look = ctx!.outfits[0];
+    expect(look.id).toBe('o-1');
+    expect(look.wearCount).toBe(5);
+    expect(look.lastWorn).toBe('2026-06-10');
+    expect(look.dateCreated).toBe('2026-06-01T00:00:00.000Z');
+  });
+});
+
+/* ============================================================================
+   R6 — LOANS: WHAT IS OUT, AND WITH WHOM
+
+   Mirrors recordLoan/closeLoan in src/context/WardrobeContext.tsx exactly:
+   the same signatures, the same loan record, the same one-open-loan rule, and
+   the same refusal to touch a piece's wears when it comes home. The lending
+   side is always the wardrobe doing the writing; nothing here writes the
+   borrower's half.
+   ============================================================================ */
+
+const ME = {
+  id: 'me',
+  name: 'Your wardrobe',
+  handle: '@you',
+  monogram: 'Y',
+  color: '#105F7D',
+  createdAt: '2026-06-01',
+};
+const PRIYA = {
+  id: 'priya',
+  name: "Priya's wardrobe",
+  handle: '@priya',
+  monogram: 'P',
+  color: '#8C2F2F',
+  createdAt: '2026-06-01',
+};
+const ASHA = {
+  id: 'asha',
+  name: "Asha's wardrobe",
+  handle: '@asha',
+  monogram: 'A',
+  color: '#3F5E3A',
+  createdAt: '2026-06-01',
+};
+
+/**
+ * The document AFTER the provider has written it — never the seeded bytes.
+ *
+ * The fixture is already at that key, so a bare read can answer with the seed
+ * and pass an assertion the provider never made. Red-proofing found exactly
+ * that hole: a mutation that let a lend overwrite an existing rail profile left
+ * this suite green, because the read had raced the write and won. The marker
+ * waited on is a loan, which only the provider can have put there.
+ */
+type RailProfile = { id: string; [key: string]: unknown };
+type RailDoc = { circle: { profiles: RailProfile[]; loans: unknown[] } };
+
+async function settled(): Promise<RailDoc> {
+  await waitFor(async () => {
+    const raw = await storage.getItem(wardrobeKey('acct-1'));
+    expect(JSON.parse(raw!).circle?.loans ?? []).not.toHaveLength(0);
+  });
+  return JSON.parse((await storage.getItem(wardrobeKey('acct-1')))!);
+}
+
+/**
+ * One person on the rail, named. Deliberately not a bare `find(...)!`:
+ * "nobody by that name is on the rail" and "their name is wrong" are different
+ * failures, and a dereference would report the first as the second.
+ */
+function railProfile(doc: RailDoc, id: string): RailProfile {
+  const found = doc.circle.profiles.find(p => p.id === id);
+  expect(found).toBeDefined();
+  return found as RailProfile;
+}
+
+describe('R6 — loans, mirrored from the web context', () => {
+  test('an accepted ask opens one loan out of this closet, dated today', async () => {
+    await seed(JSON.stringify({ items: [piece('i-1', 'The good linen shirt')] }));
+    await openWardrobe();
+
+    act(() => {
+      ctx!.recordLoan('The good linen shirt', ME, PRIYA);
+    });
+
+    expect(ctx!.loans).toHaveLength(1);
+    const loan = ctx!.loans[0];
+    expect(loan.pieceName).toBe('The good linen shirt');
+    expect(loan.withId).toBe('priya');
+    // 'to' — out of this closet. The borrower's own app writes their 'from'.
+    expect(loan.direction).toBe('to');
+    // The local day, from @almari/shared/dates — never toISOString().
+    expect(loan.since).toBe(todayLocal());
+    expect(loan.returned).toBeUndefined();
+    expect(loan.id).toBeTruthy();
+  });
+
+  test('both people land on the rail, and only I am marked as me', async () => {
+    await seed(JSON.stringify({ items: [] }));
+    await openWardrobe();
+    act(() => {
+      ctx!.recordLoan('A coat', ME, PRIYA);
+    });
+
+    // Read through the document the provider writes, since the rail's own
+    // screen has no native port yet.
+    const doc = await settled();
+    const mine = railProfile(doc, 'me');
+    const theirs = railProfile(doc, 'priya');
+    expect(mine.isMe).toBe(true);
+    expect(mine.handle).toBe('@you');
+    expect(theirs.name).toBe("Priya's wardrobe");
+    expect('isMe' in theirs).toBe(false);
+    expect(theirs.lendable).toEqual([]);
+    expect(theirs.showcase).toEqual([]);
+  });
+
+  test('a second accept of the same ask opens nothing — the button is idempotent', async () => {
+    await seed(JSON.stringify({ items: [] }));
+    await openWardrobe();
+    act(() => {
+      ctx!.recordLoan('A coat', ME, PRIYA);
+      ctx!.recordLoan('A coat', ME, PRIYA);
+    });
+    expect(ctx!.loans).toHaveLength(1);
+  });
+
+  test('the same piece to a different person is a different loan', async () => {
+    await seed(JSON.stringify({ items: [] }));
+    await openWardrobe();
+    act(() => {
+      ctx!.recordLoan('A coat', ME, PRIYA);
+    });
+    act(() => {
+      ctx!.closeLoan('A coat', 'priya');
+    });
+    act(() => {
+      ctx!.recordLoan('A coat', ME, ASHA);
+    });
+    expect(ctx!.loans).toHaveLength(2);
+    expect(ctx!.loans.filter(l => !l.returned)).toHaveLength(1);
+    expect(ctx!.loans.find(l => !l.returned)!.withId).toBe('asha');
+  });
+
+  test('lending the same piece again after it came home opens a new loan', async () => {
+    await seed(JSON.stringify({ items: [] }));
+    await openWardrobe();
+    act(() => {
+      ctx!.recordLoan('A coat', ME, PRIYA);
+    });
+    act(() => {
+      ctx!.closeLoan('A coat', 'priya');
+    });
+    act(() => {
+      ctx!.recordLoan('A coat', ME, PRIYA);
+    });
+    expect(ctx!.loans).toHaveLength(2);
+  });
+
+  test('an existing profile is never overwritten by whatever the caller was holding', async () => {
+    await seed(
+      JSON.stringify({
+        items: [],
+        circle: {
+          profiles: [
+            {
+              id: 'priya',
+              handle: '@priya',
+              name: 'Priya',
+              monogram: 'P',
+              color: '#123456',
+              lendable: ['x'],
+              showcase: [],
+            },
+          ],
+          groups: [],
+          messages: [],
+          loans: [],
+        },
+      }),
+    );
+    await openWardrobe();
+    act(() => {
+      ctx!.recordLoan('A coat', ME, PRIYA);
+    });
+
+    const doc = await settled();
+    const theirs = railProfile(doc, 'priya');
+    expect(theirs.name).toBe('Priya');
+    expect(theirs.color).toBe('#123456');
+    expect(theirs.lendable).toEqual(['x']);
+  });
+
+  test('home again stamps the loan and moves NOTHING else — no wear is invented', async () => {
+    await seed(
+      JSON.stringify({
+        items: [piece('i-1', 'A coat', { wearCount: 3, lastWorn: '2026-06-10' })],
+      }),
+    );
+    await openWardrobe();
+    act(() => {
+      ctx!.recordLoan('A coat', ME, PRIYA);
+    });
+    act(() => {
+      ctx!.closeLoan('A coat', 'priya');
+    });
+
+    expect(ctx!.loans[0].returned).toBe(todayLocal());
+    // A piece coming back is not a piece having been worn, and the person who
+    // wore it was not its owner.
+    expect(ctx!.items[0].wearCount).toBe(3);
+    expect(ctx!.items[0].lastWorn).toBe('2026-06-10');
+    expect(ctx!.items[0].laundryStatus).toBe('clean');
+    expect(ctx!.wearLogs).toHaveLength(0);
+  });
+
+  test('closing a loan that is not open changes nothing', async () => {
+    await seed(JSON.stringify({ items: [] }));
+    await openWardrobe();
+    act(() => {
+      ctx!.recordLoan('A coat', ME, PRIYA);
+    });
+    act(() => {
+      ctx!.closeLoan('A coat', 'priya');
+    });
+    const stamped = ctx!.loans[0].returned;
+    act(() => {
+      ctx!.closeLoan('A coat', 'priya');
+      ctx!.closeLoan('A scarf that was never lent', 'priya');
+    });
+    expect(ctx!.loans).toHaveLength(1);
+    expect(ctx!.loans[0].returned).toBe(stamped);
+  });
+});
+
+/* ============================================================================
+   THE WISHLIST — the list that cools
+
+   The provider half the wishlist room is built against. Mirrors
+   addWishlistItem / updateWishlistItem / deleteWishlistItem /
+   moveWishlistToCloset in src/context/WardrobeContext.tsx.
+   ============================================================================ */
+
+const WISH = {
+  name: 'The navy overcoat',
+  category: 'outerwear' as const,
+  color: '#22304A',
+  brand: 'A shop',
+  price: 9800,
+  priority: 'medium' as const,
+  status: 'waiting' as const,
+  notes: 'Only if the grey one goes.',
+};
+
+describe('the wishlist — addWish / updateWish / removeWish / promoteWish', () => {
+  test('a wish goes on the list with its own id and the day it was added', async () => {
+    await seed(JSON.stringify({ items: [] }));
+    await openWardrobe();
+
+    let id = '';
+    act(() => {
+      id = ctx!.addWish(WISH);
+    });
+    expect(id).toBeTruthy();
+    expect(ctx!.wishlist).toHaveLength(1);
+    const wish = ctx!.wishlist[0];
+    expect(wish.id).toBe(id);
+    expect(wish.name).toBe('The navy overcoat');
+    expect(wish.price).toBe(9800);
+    expect(wish.status).toBe('waiting');
+    expect(wish.dateAdded).toBeTruthy();
+  });
+
+  test('a wish is amended field by field, and its identity is not something a patch can touch', async () => {
+    await seed(JSON.stringify({ items: [] }));
+    await openWardrobe();
+    let id = '';
+    act(() => {
+      id = ctx!.addWish(WISH);
+    });
+    const added = ctx!.wishlist[0].dateAdded;
+
+    act(() => {
+      (ctx!.updateWish as (id: string, patch: Record<string, unknown>) => void)(id, {
+        price: 8400,
+        priority: 'high',
+        id: 'w-hijacked',
+        dateAdded: '1999-01-01T00:00:00.000Z',
+      });
+    });
+    const wish = ctx!.wishlist[0];
+    expect(wish.price).toBe(8400);
+    expect(wish.priority).toBe('high');
+    expect(wish.id).toBe(id);
+    expect(wish.dateAdded).toBe(added);
+  });
+
+  test('null clears a wish field, and refuses on one the record may not be without', async () => {
+    await seed(JSON.stringify({ items: [] }));
+    await openWardrobe();
+    let id = '';
+    act(() => {
+      id = ctx!.addWish({ ...WISH, link: 'https://example.test/coat' });
+    });
+
+    act(() => {
+      ctx!.updateWish(id, { brand: null, price: null, notes: null, link: null });
+    });
+    const wish = ctx!.wishlist[0];
+    for (const key of ['brand', 'price', 'notes', 'link']) {
+      expect(key in wish).toBe(false);
+    }
+
+    act(() => {
+      (ctx!.updateWish as (id: string, patch: Record<string, unknown>) => void)(id, {
+        name: null,
+        status: null,
+        category: null,
+        color: null,
+        priority: null,
+      });
+    });
+    const still = ctx!.wishlist[0];
+    expect(still.name).toBe('The navy overcoat');
+    expect(still.status).toBe('waiting');
+    expect(still.category).toBe('outerwear');
+    expect(still.color).toBe('#22304A');
+    expect(still.priority).toBe('medium');
+  });
+
+  test('the cooling-off wait can be answered, and the answer can be taken back off', async () => {
+    await seed(JSON.stringify({ items: [] }));
+    await openWardrobe();
+    let id = '';
+    act(() => {
+      id = ctx!.addWish({ ...WISH, coolingOff: { endsAt: '2026-08-27', asked: false } });
+    });
+
+    // Keep: the status moves AND the question is marked asked, so the card
+    // asks once and then never again.
+    act(() => {
+      ctx!.updateWish(id, { status: 'kept', coolingOff: { endsAt: '2026-08-27', asked: true } });
+    });
+    expect(ctx!.wishlist[0].status).toBe('kept');
+    expect(ctx!.wishlist[0].coolingOff).toEqual({ endsAt: '2026-08-27', asked: true });
+
+    act(() => {
+      ctx!.updateWish(id, { coolingOff: null });
+    });
+    expect('coolingOff' in ctx!.wishlist[0]).toBe(false);
+  });
+
+  test('a wish taken off the list hands back the way to put it back', async () => {
+    await seed(JSON.stringify({ items: [] }));
+    await openWardrobe();
+    let id = '';
+    act(() => {
+      id = ctx!.addWish(WISH);
+    });
+    const before = ctx!.wishlist[0];
+
+    let undo: (() => void) | undefined;
+    act(() => {
+      undo = ctx!.removeWish(id);
+    });
+    expect(ctx!.wishlist).toHaveLength(0);
+
+    act(() => {
+      undo!();
+    });
+    expect(ctx!.wishlist).toHaveLength(1);
+    expect(ctx!.wishlist[0]).toEqual(before);
+  });
+
+  test('bought: the piece joins the closet at zero wears and the wish stays on the record', async () => {
+    await seed(JSON.stringify({ items: [] }));
+    await openWardrobe();
+    let id = '';
+    act(() => {
+      id = ctx!.addWish(WISH);
+    });
+
+    let pieceId: string | null = null;
+    act(() => {
+      pieceId = ctx!.promoteWish(id);
+    });
+    expect(pieceId).toBeTruthy();
+
+    expect(ctx!.items).toHaveLength(1);
+    const bought = ctx!.items[0];
+    expect(bought.id).toBe(pieceId);
+    expect(bought.name).toBe('The navy overcoat');
+    expect(bought.category).toBe('outerwear');
+    expect(bought.color).toBe('#22304A');
+    expect(bought.brand).toBe('A shop');
+    // The price becomes the cost, which is the only number cost-per-wear has
+    // to work from.
+    expect(bought.cost).toBe(9800);
+    expect(bought.notes).toBe('Only if the grey one goes.');
+    // A thing you own is a thing you have not worn yet, whatever it cost.
+    expect(bought.wearCount).toBe(0);
+    expect(bought.laundryStatus).toBe('clean');
+    expect(bought.favorite).toBe(false);
+    expect(bought.season).toEqual([]);
+    expect(bought.occasion).toEqual([]);
+    expect(bought.imageUrl).toBe('');
+
+    // The wish is NOT deleted: the web's wishlist prints its bought section
+    // from exactly these rows, and the two apps write one document.
+    expect(ctx!.wishlist).toHaveLength(1);
+    expect(ctx!.wishlist[0].status).toBe('bought');
+    expect(ctx!.wishlist[0].id).toBe(id);
+  });
+
+  test('promoting a wish that is not there answers null and writes nothing', async () => {
+    await seed(JSON.stringify({ items: [] }));
+    await openWardrobe();
+    let answer: string | null = 'x';
+    act(() => {
+      answer = ctx!.promoteWish('w-nope');
+    });
+    expect(answer).toBeNull();
+    expect(ctx!.items).toHaveLength(0);
+    expect(ctx!.wishlist).toHaveLength(0);
+  });
+
+  test('the list and the ledger survive the debounce, the write, and a fresh mount', async () => {
+    await seed(JSON.stringify({ items: [] }));
+    const first = await openWardrobe();
+
+    act(() => {
+      ctx!.addWish(WISH);
+      ctx!.recordLoan('A coat', ME, PRIYA);
+    });
+
+    await waitFor(async () => {
+      const raw = await storage.getItem(wardrobeKey('acct-1'));
+      expect(raw).toContain('The navy overcoat');
+    });
+
+    first.unmount();
+    ctx = null;
+    await openWardrobe();
+    expect(ctx!.wishlist).toHaveLength(1);
+    expect(ctx!.wishlist[0].name).toBe('The navy overcoat');
+    expect(ctx!.loans).toHaveLength(1);
+    expect(ctx!.loans[0].pieceName).toBe('A coat');
   });
 });

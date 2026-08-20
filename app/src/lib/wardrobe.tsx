@@ -70,14 +70,17 @@ import {
   type Account,
   type AppState,
   type AppSettings,
+  type CircleProfile,
   type ClothingItem,
   type Furniture,
   type FurnitureForm,
+  type Loan,
   type Occasion,
   type Ornament,
   type Outfit,
   type SyncMode,
   type WearLog,
+  type WishlistItem,
 } from '@almari/shared/types';
 
 import { showToast } from '../components/Toast';
@@ -250,7 +253,51 @@ function toSharedAccount(row: AccountRow): Account {
   };
 }
 
+/**
+ * A person on the rail, put on the record without disturbing one already there.
+ *
+ * A VERBATIM MIRROR of upsertProfile in src/context/WardrobeContext.tsx, and
+ * mirrored rather than imported for the same reason the slot labels are: it
+ * lives inside a web context module the app cannot reach, and what it writes is
+ * STORED DATA that travels through sync and export. The one asymmetry is the
+ * web's own and is deliberate — `isMe` may be raised on a profile that already
+ * exists, but nothing else about an existing profile is ever overwritten. A
+ * lend must never quietly rewrite somebody's name or colour from whatever the
+ * caller happened to be holding.
+ */
+function upsertProfile(
+  profiles: CircleProfile[],
+  account: Account,
+  isMe = false,
+): CircleProfile[] {
+  const existing = profiles.find(p => p.id === account.id);
+  if (existing) {
+    if (!isMe || existing.isMe) return profiles;
+    return profiles.map(p => (p.id === account.id ? { ...p, isMe: true } : p));
+  }
+  return [
+    ...profiles,
+    {
+      id: account.id,
+      handle: account.handle,
+      name: account.name,
+      monogram: account.monogram,
+      color: account.color,
+      lendable: [],
+      showcase: [],
+      ...(isMe ? { isMe: true } : {}),
+    },
+  ];
+}
+
 export type WardrobeStatus = 'loading' | 'none' | 'open';
+
+/**
+ * The fields a look is allowed to be WITHOUT — and so the only ones `null` may
+ * take off the record. A look's name, its pieces and its pin are part of what a
+ * look IS; clearing those would not empty a field, it would break a record.
+ */
+type OutfitClearable = 'occasion' | 'notes' | 'stylingNote' | 'imageUrl';
 
 /**
  * What may be amended on a look.
@@ -259,10 +306,22 @@ export type WardrobeStatus = 'loading' | 'none' | 'open';
  * identity and `wearCount` / `lastWorn` belong to logWear alone. A patch type
  * that could reach them is a patch type that will, one day, reset somebody's
  * wear count to zero because a form field was blank.
+ *
+ * NULL IS THE CLEAR SENTINEL (lead ruling R4). The three states are distinct
+ * and all three are needed: ABSENT (or undefined) means this patch says nothing
+ * about the field and it is left exactly as it was; a VALUE sets it; NULL takes
+ * it off the record entirely. Without the third, an occasion chosen once could
+ * never be un-chosen — the form had no way to say "none" that did not also
+ * mean "leave it alone" — and a look would carry a tag its owner had already
+ * changed their mind about, forever.
+ *
+ * Cleared means ABSENT, never blank: a look whose occasion is cleared here must
+ * be byte-identical to one the web wrote that never had an occasion at all,
+ * because those two looks are the same look and an export cannot say otherwise.
  */
-export type OutfitPatch = Partial<
-  Pick<Outfit, 'name' | 'itemIds' | 'occasion' | 'favorite' | 'notes' | 'stylingNote' | 'imageUrl'>
->;
+export type OutfitPatch = Partial<Pick<Outfit, 'name' | 'itemIds' | 'favorite'>> & {
+  [K in OutfitClearable]?: Outfit[K] | null;
+};
 
 /** The same list, at runtime — see updateOutfit for why both exist. */
 const OUTFIT_PATCHABLE = [
@@ -274,6 +333,89 @@ const OUTFIT_PATCHABLE = [
   'stylingNote',
   'imageUrl',
 ] as const satisfies ReadonlyArray<keyof OutfitPatch>;
+
+/** The clearable subset, at runtime. Same reason both forms exist. */
+const OUTFIT_CLEARABLE: ReadonlySet<string> = new Set<OutfitClearable>([
+  'occasion',
+  'notes',
+  'stylingNote',
+  'imageUrl',
+]);
+
+/**
+ * What may be amended on a wish. Same three-state rule as OutfitPatch, same
+ * reason: a brand typed by mistake, a price that turned out to be wrong, a
+ * cooling-off wait that has been answered — each has to be removable, and
+ * "removable" cannot share a spelling with "unmentioned".
+ *
+ * `id` and `dateAdded` are the record's identity and are not patchable at all.
+ */
+type WishClearable = 'brand' | 'price' | 'imageUrl' | 'link' | 'notes' | 'coolingOff' | 'releasedAt';
+
+export type WishPatch = Partial<
+  Pick<WishlistItem, 'name' | 'category' | 'color' | 'priority' | 'status'>
+> & {
+  [K in WishClearable]?: WishlistItem[K] | null;
+};
+
+const WISH_PATCHABLE = [
+  'name',
+  'category',
+  'color',
+  'brand',
+  'price',
+  'imageUrl',
+  'link',
+  'priority',
+  'notes',
+  'status',
+  'coolingOff',
+  'releasedAt',
+] as const satisfies ReadonlyArray<keyof WishPatch>;
+
+const WISH_CLEARABLE: ReadonlySet<string> = new Set<WishClearable>([
+  'brand',
+  'price',
+  'imageUrl',
+  'link',
+  'notes',
+  'coolingOff',
+  'releasedAt',
+]);
+
+/**
+ * ONE PATCH, APPLIED — the whitelist enforced at RUNTIME, not only in a type.
+ *
+ * A consumer that types its own alias wider (one already does:
+ * app/src/components/outfits/contract.ts declares Partial<Outfit>) can hand a
+ * patcher a `wearCount`, and TypeScript will not stop it, because a wider
+ * parameter type is a legal way to call a narrower one. A spread would then
+ * quietly reset somebody's wear count from a form field that happened to be
+ * blank. Wears are days that happened; only logWear and removeWearLog may move
+ * them, so the guarantee is made here, where it cannot be typed around.
+ */
+function applyPatch<T extends object>(
+  record: T,
+  patch: Record<string, unknown>,
+  patchable: readonly string[],
+  clearable: ReadonlySet<string>,
+): T {
+  const next: T = { ...record };
+  const bag = next as unknown as Record<string, unknown>;
+  for (const key of patchable) {
+    const value = patch[key];
+    // Silence about a field is not an instruction about it.
+    if (value === undefined) continue;
+    if (value === null) {
+      // Absent, not blanked. A field a record is not allowed to be without
+      // ignores the sentinel rather than obeying it into a broken row.
+      if (clearable.has(key)) delete bag[key];
+      continue;
+    }
+    bag[key] = value;
+  }
+  return next;
+}
 
 interface WardrobeContextValue {
   /** 'none' means the door has not been walked through yet. */
@@ -308,10 +450,57 @@ interface WardrobeContextValue {
    * empty record nobody asked for.
    */
   addOutfit: (name: string, itemIds: string[], occasion?: Occasion) => string | null;
-  /** Amend a look. Ports the web's field-by-field edits; wears are never patched. */
+  /**
+   * Amend a look. Ports the web's field-by-field edits; wears are never
+   * patched, and `null` takes a clearable field off the record (R4).
+   */
   updateOutfit: (id: string, patch: OutfitPatch) => void;
-  /** Ports deleteOutfit: the look goes, every piece in it keeps everything. */
-  removeOutfit: (id: string) => void;
+  /**
+   * Ports deleteOutfit: the look goes, every piece in it keeps everything.
+   * Returns the way to put it back — the same put-it-back closure
+   * removeFurniture hands out, for the same reason (R3). A caller that does
+   * not want an undo may ignore it.
+   */
+  removeOutfit: (id: string) => () => void;
+
+  /* ---------- the wishlist: the list that cools ---------- */
+
+  /** Everything on the list, in the order it was added. Every status. */
+  wishlist: WishlistItem[];
+  /** Put something on the list. Returns its id. */
+  addWish: (wish: Omit<WishlistItem, 'id' | 'dateAdded'>) => string;
+  /**
+   * Amend a wish. `null` clears a clearable field; `id` and `dateAdded` are
+   * the record's identity and cannot be reached.
+   *
+   * KEEP AND LET GO ARE EXPRESSED HERE, and both halves matter. The web's
+   * keepWishlistItem/releaseWishlistItem each set the status AND mark the
+   * cooling-off question asked, because the contract is that the card asks
+   * ONCE and then never again; a patch that moves the status and leaves
+   * `coolingOff.asked` false would let the same question come back. So:
+   *   keep    → { status: 'kept',   coolingOff: { ...w.coolingOff, asked: true } }
+   *   let go  → { status: 'let-go', releasedAt: todayLocal(),
+   *               coolingOff: { ...w.coolingOff, asked: true } }
+   * (`coolingOff` is left alone when the wish never had one.)
+   */
+  updateWish: (id: string, patch: WishPatch) => void;
+  /** Take a wish off the list. Returns the put-it-back closure. */
+  removeWish: (id: string) => () => void;
+  /**
+   * It was bought. The piece joins the closet at zero wears and the wish stays
+   * on the record as 'bought' — ports moveWishlistToCloset. Returns the new
+   * piece's id, or null when there is no such wish.
+   */
+  promoteWish: (id: string) => string | null;
+
+  /* ---------- the shared rail's ledger: what is out, and with whom ---------- */
+
+  /** This wardrobe's own loans. Local records; nothing here is a social graph. */
+  loans: Loan[];
+  /** Ports recordLoan: an accepted ask opens a loan out of THIS closet. */
+  recordLoan: (pieceName: string, me: Account, other: Account) => void;
+  /** Ports closeLoan: "home again" closes the open loan for that piece. */
+  closeLoan: (pieceName: string, withId: string) => void;
 
   /* ---------- furniture: where a piece lives ---------- */
 
@@ -735,28 +924,19 @@ export function WardrobeProvider({ children }: { children: ReactNode }) {
   );
 
   /**
-   * The whitelist is enforced HERE, not only in OutfitPatch's type.
-   *
-   * A consumer that types its own alias as Partial<Outfit> — one already does
-   * (app/src/components/outfits/contract.ts) — can hand this a `wearCount`
-   * and TypeScript will not stop it, because a wider parameter type is a
-   * legal way to call a narrower one. A spread would then quietly reset
-   * somebody's wear count from a form field that happened to be blank. Wears
-   * are days that happened; only logWear and removeWearLog may move them.
+   * The whitelist is enforced at RUNTIME (applyPatch), not only in
+   * OutfitPatch's type — see that helper for the reason, which is a real
+   * consumer and not a hypothetical one. NULL CLEARS (R4), and only the four
+   * fields a look is allowed to be without.
    */
   const updateOutfit = useCallback((id: string, patch: OutfitPatch) => {
     setState(prev => ({
       ...prev,
-      outfits: prev.outfits.map(o => {
-        if (o.id !== id) return o;
-        const next = { ...o };
-        for (const key of OUTFIT_PATCHABLE) {
-          if (patch[key] !== undefined) {
-            (next as Record<string, unknown>)[key] = patch[key];
-          }
-        }
-        return next;
-      }),
+      outfits: prev.outfits.map(o =>
+        o.id === id
+          ? applyPatch(o, patch as Record<string, unknown>, OUTFIT_PATCHABLE, OUTFIT_CLEARABLE)
+          : o,
+      ),
     }));
   }, []);
 
@@ -765,9 +945,154 @@ export function WardrobeProvider({ children }: { children: ReactNode }) {
    * moves. Every piece keeps every wear it earned while in it, and the wear
    * logs keep their outfitId — a log is a record of a day that happened, and
    * a day does not stop having happened because the look was tidied away.
+   *
+   * The whole previous state comes back in the closure so a notice can offer
+   * Undo (R3, parity with removeFurniture) — never a field-by-field inverse,
+   * which is how half-restores happen.
    */
   const removeOutfit = useCallback((id: string) => {
+    // Captured NOW, not inside the updater: removeFurniture's own reason —
+    // an Undo on a toast can be reached for before React has run anything,
+    // and an undo that quietly does nothing is worse than no undo at all.
+    const before = stateRef.current;
     setState(prev => ({ ...prev, outfits: prev.outfits.filter(o => o.id !== id) }));
+    return () => setState(before);
+  }, []);
+
+  /* ---------- the wishlist (ported bodies — WardrobeContext.tsx) ---------- */
+
+  const addWish = useCallback((wish: Omit<WishlistItem, 'id' | 'dateAdded'>): string => {
+    const entry: WishlistItem = {
+      ...wish,
+      id: newId(),
+      dateAdded: new Date().toISOString(),
+    };
+    setState(prev => ({ ...prev, wishlist: [...prev.wishlist, entry] }));
+    return entry.id;
+  }, []);
+
+  const updateWish = useCallback((id: string, patch: WishPatch) => {
+    setState(prev => ({
+      ...prev,
+      wishlist: prev.wishlist.map(w =>
+        w.id === id
+          ? applyPatch(w, patch as Record<string, unknown>, WISH_PATCHABLE, WISH_CLEARABLE)
+          : w,
+      ),
+    }));
+  }, []);
+
+  const removeWish = useCallback((id: string) => {
+    const before = stateRef.current;
+    setState(prev => ({ ...prev, wishlist: prev.wishlist.filter(w => w.id !== id) }));
+    return () => setState(before);
+  }, []);
+
+  /**
+   * IT WAS BOUGHT — ports moveWishlistToCloset.
+   *
+   * The piece joins the closet at ZERO WEARS (a thing you own is a thing you
+   * have not worn yet, whatever it cost), and the wish STAYS on the record
+   * marked 'bought'. It is not deleted: the web's wishlist prints a bought
+   * section from exactly those rows, and the two apps write one document — a
+   * promote on the phone that dropped the row would empty a list in the
+   * browser that had been there for months. 'bought' is what "off the list"
+   * means here; the list that cools is the waiting one.
+   *
+   * The wish is read from stateRef so the new id can be answered in the same
+   * breath, and the guard is repeated inside the updater because a pull can
+   * change the document between the read and the commit.
+   */
+  const promoteWish = useCallback((id: string): string | null => {
+    const wish = stateRef.current.wishlist.find(w => w.id === id);
+    if (!wish) return null;
+    const piece: ClothingItem = {
+      id: newId(),
+      name: wish.name,
+      category: wish.category,
+      color: wish.color,
+      brand: wish.brand,
+      imageUrl: wish.imageUrl || '',
+      dateAdded: new Date().toISOString(),
+      wearCount: 0,
+      favorite: false,
+      season: [],
+      occasion: [],
+      cost: wish.price,
+      notes: wish.notes,
+      laundryStatus: 'clean',
+    };
+    setState(prev => {
+      if (!prev.wishlist.some(w => w.id === id)) return prev;
+      const next: AppState = {
+        ...prev,
+        items: [...prev.items, piece],
+        wishlist: prev.wishlist.map(w => (w.id === id ? { ...w, status: 'bought' as const } : w)),
+      };
+      // A wish photographed on this phone arrives as a file, and this is the
+      // moment the document holds one — the same stamp addItem makes.
+      return isStoredPhoto(piece.imageUrl) ? stampFilePhotos(next) : next;
+    });
+    return piece.id;
+  }, []);
+
+  /* ---------- the shared rail's ledger (ported bodies) ---------- */
+
+  /**
+   * "Lend it" was pressed in a conversation. The request lives in the shared
+   * community store; the loan it opens lives HERE, in the lending wardrobe's
+   * own ledger. One open loan per piece and person — a second accept of the
+   * same ask opens nothing, which is what makes the button idempotent.
+   *
+   * Only the owner ever sees those buttons, so the lending side is always the
+   * wardrobe doing the writing. The borrower's own rail learns of it the day
+   * their app writes their half; no code path here may write it for them.
+   */
+  const recordLoan = useCallback((pieceName: string, me: Account, other: Account) => {
+    setState(prev => {
+      const alreadyOut = prev.circle.loans.some(
+        l => !l.returned && l.pieceName === pieceName && l.withId === other.id,
+      );
+      if (alreadyOut) return prev;
+      return {
+        ...prev,
+        circle: {
+          ...prev.circle,
+          profiles: upsertProfile(upsertProfile(prev.circle.profiles, me, true), other),
+          loans: [
+            ...prev.circle.loans,
+            {
+              id: newId(),
+              pieceName,
+              withId: other.id,
+              direction: 'to' as const,
+              since: todayLocal(),
+            },
+          ],
+        },
+      };
+    });
+  }, []);
+
+  /**
+   * Home again. The loan is stamped returned and NOTHING ELSE MOVES — no wear
+   * is logged, no count changes, no laundry status is touched. The web is
+   * exact about this and so is this port: a piece coming back is not a piece
+   * having been worn, and the person who wore it was not its owner. Inventing
+   * a wear here would put days into somebody's ledger that they did not have.
+   */
+  const closeLoan = useCallback((pieceName: string, withId: string) => {
+    setState(prev => ({
+      ...prev,
+      circle: {
+        ...prev.circle,
+        loans: prev.circle.loans.map(l =>
+          !l.returned && l.pieceName === pieceName && l.withId === withId
+            ? { ...l, returned: todayLocal() }
+            : l,
+        ),
+      },
+    }));
   }, []);
 
   /* ---------- furniture (ported bodies — WardrobeContext.tsx) ---------- */
@@ -1010,6 +1335,8 @@ export function WardrobeProvider({ children }: { children: ReactNode }) {
       activeItems,
       outfits: state.outfits,
       furniture: state.furniture,
+      wishlist: state.wishlist,
+      loans: state.circle.loans,
       wearLogs: state.wearLogs,
       settings: state.settings,
       isSample: account?.isSample === true,
@@ -1021,6 +1348,12 @@ export function WardrobeProvider({ children }: { children: ReactNode }) {
       addOutfit,
       updateOutfit,
       removeOutfit,
+      addWish,
+      updateWish,
+      removeWish,
+      promoteWish,
+      recordLoan,
+      closeLoan,
       addFurniture,
       removeFurniture,
       filePiece,
@@ -1034,7 +1367,10 @@ export function WardrobeProvider({ children }: { children: ReactNode }) {
     }),
     [
       status, state, activeItems, account, sharedAccount, setSyncMode, addItem,
-      addOutfit, updateOutfit, removeOutfit, addFurniture, removeFurniture, filePiece,
+      addOutfit, updateOutfit, removeOutfit,
+      addWish, updateWish, removeWish, promoteWish,
+      recordLoan, closeLoan,
+      addFurniture, removeFurniture, filePiece,
       setItemPhoto, removeItemPhoto,
       logWear, removeWearLog, getItem, startEmpty, startSample,
     ],

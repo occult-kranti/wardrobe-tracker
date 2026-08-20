@@ -1,8 +1,13 @@
 /**
- * THE LOOKS ROOM'S ADDRESSES, in one place.
+ * THE OUTFITS ROOM'S ADDRESSES, in one place.
  *
  *   /outfits            the room
- *   /outfits/<lookId>   one look, open
+ *   /outfits/<outfitId> one outfit, open
+ *
+ * The route did not move under R2 — it never said "looks" in the first place.
+ * What moved is the word on the screen, which now matches the address and the
+ * web (masthead "Outfits"). "Looks" and "Look Book" are the FEED's words and
+ * stay there.
  *
  * THE ONE CAST IN THIS FEATURE, and why it is confined here — the same reason
  * the dressing room states (app/src/components/furniture/addresses.ts).
@@ -22,17 +27,17 @@ import type { Href } from 'expo-router';
 const href = (path: string): Href => path as unknown as Href;
 
 /** The room. */
-export const LOOKS: Href = href('/outfits');
+export const OUTFITS: Href = href('/outfits');
 
-/** One look, open. */
-export function lookHref(id: string): Href {
+/** One outfit, open. */
+export function outfitHref(id: string): Href {
   return href(`/outfits/${encodeURIComponent(id)}`);
 }
 
 /**
  * Where the Closet is, for the way back when there is nothing to pop.
  *
- * The Closet is the room that sends people here (its Looks rail links by
- * address only), so it is where "back" means even on a cold deep link.
+ * The Closet is the room that sends people here (its rail links by address
+ * only), so it is where "back" means even on a cold deep link.
  */
 export const CLOSET: Href = href('/closet');

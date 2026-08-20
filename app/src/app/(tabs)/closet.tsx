@@ -899,7 +899,7 @@ function LooksRail() {
             {o.name}
           </Chip>
         ))}
-        <Chip onPress={go}>{outfits.length > 0 ? 'All looks' : 'Build a look'}</Chip>
+        <Chip onPress={go}>{outfits.length > 0 ? 'All outfits' : 'Build an outfit'}</Chip>
       </ScrollView>
     </View>
   );

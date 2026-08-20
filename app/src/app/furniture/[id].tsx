@@ -18,7 +18,7 @@
  * The place opens asking which compartment; tapping one files that piece and
  * goes back where it came from. Nothing is written until the tap.
  */
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -32,12 +32,39 @@ import { piecePhrase, slotCountPhrase, SLOT_NOUN } from '../../components/furnit
 import { countsFor, inSlot, useDressingRoom } from '../../components/furniture/room';
 import { Masthead } from '../../components/Masthead';
 import { showToast } from '../../components/Toast';
+import { useWardrobe } from '../../lib/wardrobe';
 import { useFamilies } from '../../tokens/FontsContext';
 import { RADIUS } from '../../tokens/themes';
 import { useTheme } from '../../tokens/ThemeContext';
 import { TYPE } from '../../tokens/typography';
 
-export default function PlaceScreen() {
+/**
+ * THE DOOR, FIRST LINE (lead ruling R7). A cold deep link into one place of a
+ * device that has no wardrobe on it yet lands on the door, exactly as the four
+ * rooms on the bar already do — silently, with no plaque explaining what it
+ * missed. Without this, `/furniture/<id>` opened cold drew "That place is not in
+ * this wardrobe" about a wardrobe nobody has opened yet — an answer to a
+ * question that was never asked.
+ *
+ * `loading` is not `none`: the shelf is asked before the door is, so a wardrobe
+ * that exists gets a blank beat on its own paper rather than a flash of somebody
+ * else's empty closet, and nobody is sent to the door on the strength of an
+ * answer that had not arrived.
+ *
+ * The gate is its own component, holding two hooks and no early return between
+ * them, so the screen below keeps an unconditional hook order — the Wave-5
+ * pattern from the feed and story gates, and the rules-of-hooks lint is right
+ * that an early return above a screen's hooks is the defect class.
+ */
+export default function PlaceRoute() {
+  const { status } = useWardrobe();
+  const { tokens } = useTheme();
+  if (status === 'loading') return <View style={{ flex: 1, backgroundColor: tokens.bg }} />;
+  if (status === 'none') return <Redirect href="/open" />;
+  return <PlaceScreen />;
+}
+
+function PlaceScreen() {
   const { tokens } = useTheme();
   const fonts = useFamilies();
   const router = useRouter();

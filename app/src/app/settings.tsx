@@ -1,9 +1,18 @@
 /**
- * Settings — the account, the per-wardrobe sync choice, and the door the
- * record leaves and returns through. Ported from the web's Settings account
- * section, its "Your data" card, and SwitchWardrobe's "Where the record
- * lives" (docs/34 §2.2). Theme and storage are still to come; the screen says
- * so rather than pretending the list is finished.
+ * Settings — the account, the per-wardrobe sync choice, the room this screen
+ * is shown in, and the door the record leaves and returns through. Ported from
+ * the web's Settings account section, its "Appearance" card, its "Your data"
+ * card, and SwitchWardrobe's "Where the record lives" (docs/34 §2.2). Storage
+ * is still to come; the screen says so rather than pretending the list is
+ * finished.
+ *
+ * THE ROOM ARRIVES HERE, not on the House. The House states which room is on
+ * (profile.tsx reads THEME_LABELS[resolved] and always has); this screen is
+ * where it is chosen, because a choice that repaints the whole interface
+ * belongs beside the other house choices and not in a hall the reader is
+ * passing through. The choice is the SCREEN's, never the wardrobe's, and it is
+ * written under the web's own key in the web's own shape — see
+ * tokens/ThemeContext.tsx for the convention and why it is not two.
  *
  * SETTINGS HAS LEFT THE BAR (docs/42 §6). It moved from `(tabs)/settings.tsx`
  * to this pushed route outside the tabs so the fifth slot could be the House;
@@ -26,11 +35,11 @@
  */
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { todayLocal } from '@almari/shared/dates';
-import type { AppState } from '@almari/shared/types';
+import { THEME_LABELS, type AppState } from '@almari/shared/types';
 
 import { Button } from '../components/Button';
 import { ConfirmSheet } from '../components/feed/ConfirmSheet';
@@ -47,12 +56,18 @@ import {
 import { AccountPanel, Choice, TRUST_SENTENCE, useSession } from '../lib/session';
 import { useWardrobe } from '../lib/wardrobe';
 import { useFamilies } from '../tokens/FontsContext';
-import { RADIUS } from '../tokens/themes';
+import {
+  RADIUS,
+  THEMES,
+  THEME_ORDER,
+  type ResolvedThemeName,
+  type ThemeName,
+} from '../tokens/themes';
 import { useTheme } from '../tokens/ThemeContext';
 import { TYPE } from '../tokens/typography';
 
 export default function SettingsScreen() {
-  const { tokens } = useTheme();
+  const { tokens, theme, setTheme } = useTheme();
   const fonts = useFamilies();
   const router = useRouter();
   const { authUser, authReady } = useSession();
@@ -196,6 +211,28 @@ export default function SettingsScreen() {
     );
   }, [pending, replaceState, syncAccount, authUser, refreshShelfCount]);
 
+  /* ---------- the room this screen is shown in ---------- */
+
+  /**
+   * A room applies the moment it is pressed — there is nothing to confirm and
+   * nothing to undo, because pressing another one is the undo. The only news
+   * worth a sentence is a device that took the change but would not write it
+   * down, which the reader would otherwise discover on the next cold open.
+   */
+  const chooseRoom = useCallback(
+    async (name: ThemeName) => {
+      if (name === theme) return;
+      const outcome = await setTheme(name);
+      if (outcome === 'unwritten') {
+        showToast(
+          'The room changed here, but this device would not write the choice down. It will open in the last room it saved.',
+          'error',
+        );
+      }
+    },
+    [setTheme, theme],
+  );
+
   const editorial = {
     fontFamily: fonts.displayItalic,
     fontStyle: fonts.displayItalic === 'Fraunces-Italic' ? ('normal' as const) : ('italic' as const),
@@ -321,6 +358,31 @@ export default function SettingsScreen() {
           )}
         </View>
 
+        {/* The room. A device choice, not a wardrobe one — and the copy is the
+            web's own Appearance row, which names the six rooms rather than
+            asking anyone to press seven swatches to find out. */}
+        <View style={[plate, { marginTop: 16 }]}>
+          <Text style={editorial}>The room</Text>
+          <Text style={[ledger, { marginBottom: 12 }]}>This screen, not this wardrobe</Text>
+          <Text style={body}>
+            Six rooms in the same building: the pattern room where cloth is cut, the salon where a
+            collection is shown, the gilding room where the gold leaf is laid, the dye house where
+            the madder vats stain the walls rose, the obsidian where the glass reflects, and the
+            atelier at night. The choice belongs to this screen, not to a wardrobe, so it holds
+            when you open a different one.
+          </Text>
+          <View style={styles.rooms}>
+            {THEME_ORDER.map(name => (
+              <RoomRow
+                key={name}
+                name={name}
+                selected={theme === name}
+                onPress={() => void chooseRoom(name)}
+              />
+            ))}
+          </View>
+        </View>
+
         {/* Your data — the record leaves whole and comes back whole. */}
         <View style={[plate, { marginTop: 16 }]}>
           <Text style={editorial}>Your data</Text>
@@ -368,10 +430,102 @@ export default function SettingsScreen() {
           onClose={() => setPending(null)}
         />
 
-        {/* What the placeholder promised still stands; the list is not done. */}
-        <Text style={[ledger, { marginTop: 16 }]}>Theme and storage will live here.</Text>
+        {/* What the placeholder promised still stands; the list is not done.
+            The room has landed, so only storage is still owed a sentence. */}
+        <Text style={[ledger, { marginTop: 16 }]}>Storage will live here.</Text>
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+/* ---------- the room, drawn in its own paint ---------- */
+
+/**
+ * One room, as a swatch: its surface, an ink hairline across it, and the
+ * washing blue that carries its interface. Three tokens is the whole room in
+ * miniature — the ground you read on, the rule that divides it, and the one
+ * ink that means "press me" — and it is drawn rather than described because
+ * no sentence tells you what the gilding room looks like.
+ *
+ * 'system' has no tokens of its own, so it draws as what it actually is: the
+ * two rooms the device can hand back, side by side (resolveTheme sends
+ * 'system' to the atelier at night or the pattern room, nowhere else).
+ */
+function Swatch({ rooms }: { rooms: ResolvedThemeName[] }) {
+  return (
+    <View style={styles.swatch}>
+      {rooms.map(room => {
+        const paint = THEMES[room];
+        return (
+          <View
+            key={room}
+            testID={`room-swatch-${room}`}
+            style={[styles.swatchCell, { backgroundColor: paint.surface, borderColor: paint.border }]}
+          >
+            <View style={[styles.swatchRule, { backgroundColor: paint.inkFill }]} />
+            <View style={[styles.swatchAccent, { backgroundColor: paint.accent }]} />
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
+/**
+ * A room on the list. Selection sinks into the ground and takes the ink-weight
+ * border — the Chip's law (brand law 3), never an accent fill, which here would
+ * also fight the swatch it sits beside. The eyelet is the non-colour cue: a
+ * punched hole, filled when this is the room you are in.
+ */
+function RoomRow({
+  name,
+  selected,
+  onPress,
+}: {
+  name: ThemeName;
+  selected: boolean;
+  onPress: () => void;
+}) {
+  const { tokens } = useTheme();
+  const fonts = useFamilies();
+  /* The six rooms keep the house's own names (@almari/shared THEME_LABELS, the
+     same list the House reads). 'system' does not: shared calls it "Follow the
+     device" because a browser is a device's guest, and a phone IS the device. */
+  const label = name === 'system' ? 'As the phone is' : THEME_LABELS[name];
+
+  return (
+    <Pressable
+      testID={`room-row-${name}`}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ selected }}
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.room,
+        {
+          borderColor: selected ? tokens.text : tokens.border,
+          backgroundColor: selected ? tokens.sunken : 'transparent',
+          opacity: pressed ? 0.85 : 1,
+        },
+      ]}
+    >
+      <View
+        style={[
+          styles.eyelet,
+          {
+            borderColor: selected ? tokens.text : tokens.text2,
+            backgroundColor: selected ? tokens.text : 'transparent',
+          },
+        ]}
+      />
+      <Swatch rooms={name === 'system' ? ['light', 'dark'] : [name]} />
+      <Text
+        style={{ fontFamily: fonts.ui, fontSize: TYPE.label, color: tokens.text, flexShrink: 1 }}
+        numberOfLines={1}
+      >
+        {label}
+      </Text>
+    </Pressable>
   );
 }
 
@@ -407,6 +561,51 @@ const styles = StyleSheet.create({
   control: {
     alignSelf: 'flex-start',
     marginTop: 12,
+  },
+  rooms: {
+    alignSelf: 'stretch',
+    gap: 8,
+    marginTop: 12,
+  },
+  room: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    /* 44 is the floor, not a target — padding narrows, hit area never does. */
+    minHeight: 44,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: RADIUS,
+  },
+  /* A punched hole — one of the two shapes allowed a circle. */
+  eyelet: {
+    width: 9,
+    height: 9,
+    borderRadius: 5,
+    borderWidth: 1.5,
+  },
+  swatch: {
+    width: 56,
+    height: 32,
+    flexDirection: 'row',
+    borderRadius: RADIUS,
+    overflow: 'hidden',
+  },
+  swatchCell: {
+    flex: 1,
+    paddingHorizontal: 5,
+    paddingVertical: 6,
+    justifyContent: 'space-between',
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  swatchRule: {
+    height: StyleSheet.hairlineWidth,
+    alignSelf: 'stretch',
+  },
+  swatchAccent: {
+    width: 14,
+    height: 4,
   },
   /* Basting, restated: depth is a hairline, never a shadow. */
   hairline: {

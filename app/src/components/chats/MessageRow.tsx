@@ -8,31 +8,38 @@
  * in the ledger — "Staying home" is a neutral fact, never alarm-styled
  * (toile-social law 8).
  *
- * SEAM, recorded: the web shows the owner "Lend it / It stays home / Mark
- * returned" on a request they own, and those write LOANS through the
- * wardrobe provider (recordLoan/closeLoan). The app's provider does not
- * carry loans yet, so the status is read-only here; the buttons arrive with
- * the provider's loan wave rather than half-writing a ledger.
+ * THE SEAM IS CLOSED: the provider carries loans now (recordLoan/closeLoan),
+ * so a request the open wardrobe may answer carries its actions. The plate
+ * and its entitlement rule live in RequestPlate; this row only says who is
+ * reading and how to advance, because a message knows neither.
+ *
+ * `activeId` and `onAdvance` are optional on purpose — a row rendered
+ * without them is the read-only plate, which is what a list preview wants.
  */
 import { StyleSheet, Text, View } from 'react-native';
 
-import type { ChatMessage } from '@almari/shared/types';
+import type { BorrowStatus, ChatMessage } from '@almari/shared/types';
 
 import { LookLine, PieceLine } from './AttachmentLines';
-import { shortDate, STATUS_LABELS } from './format';
+import { shortDate } from './format';
+import { RequestPlate } from './RequestPlate';
 import { TagMark } from './TagMark';
 import type { ChatAccount } from './store';
 import { useFamilies } from '../../tokens/FontsContext';
-import { RADIUS } from '../../tokens/themes';
 import { useTheme } from '../../tokens/ThemeContext';
 import { TYPE } from '../../tokens/typography';
 
 export function MessageRow({
   message,
   author,
+  activeId,
+  onAdvance,
 }: {
   message: ChatMessage;
   author?: ChatAccount;
+  /** The open wardrobe — who is reading this row. */
+  activeId?: string | null;
+  onAdvance?: (message: ChatMessage, status: BorrowStatus) => void;
 }) {
   const { tokens } = useTheme();
   const fonts = useFamilies();
@@ -77,25 +84,12 @@ export function MessageRow({
         ) : null}
 
         {message.request ? (
-          <View style={[styles.request, { borderColor: tokens.border }]}>
-            <Text
-              style={{ fontFamily: fonts.ui, fontSize: 14, color: tokens.text, flexShrink: 1 }}
-            >
-              {message.request.pieceName}
-            </Text>
-            <Text
-              style={{
-                fontFamily: fonts.mono,
-                fontSize: TYPE.ledgerMeta,
-                letterSpacing: TYPE.ledgerSpacing,
-                textTransform: 'uppercase',
-                color: tokens.text2,
-              }}
-            >
-              {/* A status without a label is written as it stands. */}
-              {STATUS_LABELS[message.request.status] ?? message.request.status}
-            </Text>
-          </View>
+          <RequestPlate
+            request={message.request}
+            askerId={message.authorId}
+            activeId={activeId}
+            onAdvance={onAdvance ? status => onAdvance(message, status) : undefined}
+          />
         ) : null}
       </View>
     </View>
@@ -111,17 +105,5 @@ const styles = StyleSheet.create({
   body: {
     flex: 1,
     minWidth: 0,
-  },
-  request: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 8,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: RADIUS,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    marginTop: 8,
   },
 });
