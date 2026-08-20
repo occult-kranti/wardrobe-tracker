@@ -67,8 +67,8 @@
  */
 import { Redirect } from 'expo-router';
 import TopTabs from 'expo-router/js-top-tabs';
-import { useEffect, useState, type ComponentType } from 'react';
-import { AccessibilityInfo, Animated, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType } from 'react';
+import { AccessibilityInfo, Animated, Easing, View } from 'react-native';
 
 import { FEED_ENABLED } from '@almari/shared/flags';
 import { NAV_SLOTS } from '@almari/shared/nav';
@@ -108,6 +108,37 @@ const SCREEN_FOR: Record<string, string> = {
 
 /** Instagram's account-switch gesture, translated (docs/42 §1). */
 const HOUSE_HINT = 'Hold to switch wardrobes.';
+
+/**
+ * THE REDUCED-MOTION TAP: 140ms of opacity and not one pixel of travel
+ * (docs/42 §3, and QA 6 — "taps crossfade 140ms with no slide"). Brand law 9
+ * makes opacity the reduced-motion answer to every other treatment, and 140 is
+ * the floor of the house's 140–200ms ease-out fade.
+ *
+ * WHERE IT IS PAINTED, AND WHY IT IS DELIVERABLE. `TopTabs` gives no way to
+ * wrap a scene — MaterialTopTabView sets `renderScene` itself, after the
+ * navigator's own props are spread, so a scene wrapper passed from here is
+ * overwritten. But TabView's `pagerStyle` IS a named prop that survives that
+ * spread, and it lands on `Animated.createAnimatedComponent(PagerView)` —
+ * which holds the sheets and NOT the tab bar, since the bar is rendered as the
+ * pager's sibling. So an Animated opacity on `pagerStyle` fades the sheets
+ * alone: the rail never blinks, and the eyelet is punched at the trough where
+ * there is nothing on screen to see it happen.
+ *
+ * WHAT IT IS NOT. A true crossfade would hold both sheets on screen at once at
+ * opposing opacities, and that needs the scene wrapper `TopTabs` will not
+ * give. This is the cross-DISSOLVE the medium allows: out through the room's
+ * own ground, the swap at the trough, back in — symmetric, 70 + 70, and read
+ * by an eye as one 140ms fade rather than as a blink.
+ *
+ * WHAT STAYS THE PAGER'S. With motion allowed, a tap and a swipe-release are
+ * both animated by react-native-pager-view, which exposes no duration and no
+ * easing (SDK 57 versioned docs, read this session). §3's 180ms
+ * `Easing.out(Easing.cubic)` describes that settle; the bead honours it
+ * exactly by being bound 1:1 to the pager's offset, which is the only honest
+ * way to keep "the bead arrives as the sheet squares up" true.
+ */
+const CROSSFADE_MS = 140;
 
 /**
  * The tab bar's own props, as MaterialTopTabView hands them over: react-
@@ -151,6 +182,54 @@ export default function TabsLayout() {
     };
   }, []);
 
+  /** The sheets' own opacity — 1 at rest, and only ever moved by a tap. */
+  const sceneOpacity = useMemo(() => new Animated.Value(1), []);
+  const pending = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  const clearPending = useCallback(() => {
+    pending.current.forEach(clearTimeout);
+    pending.current = [];
+  }, []);
+
+  const crossfade = useCallback(
+    (arrive: () => void) => {
+      // A second tap owns the bar: the first one's clock is thrown away
+      // rather than left to fire over the top of it (QA 3's "a second tap
+      // mid-settle never strands" applied to the fade as well as the bead).
+      clearPending();
+      sceneOpacity.stopAnimation();
+      Animated.sequence([
+        Animated.timing(sceneOpacity, {
+          toValue: 0,
+          duration: CROSSFADE_MS / 2,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.timing(sceneOpacity, {
+          toValue: 1,
+          duration: CROSSFADE_MS / 2,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+      ]).start();
+      // The swap lands at the trough, where nothing is on screen to see it —
+      // and the eyelet is punched at the same instant, for the same reason.
+      pending.current.push(setTimeout(arrive, CROSSFADE_MS / 2));
+      // A sheet is never left invisible because an animation was interrupted
+      // or never got a frame: the resting value is restored on the clock.
+      pending.current.push(setTimeout(() => sceneOpacity.setValue(1), CROSSFADE_MS));
+    },
+    [clearPending, sceneOpacity],
+  );
+
+  useEffect(
+    () => () => {
+      clearPending();
+      sceneOpacity.setValue(1);
+    },
+    [clearPending, sceneOpacity],
+  );
+
   // The shelf answers before the shell paints — a blank beat, not a flash
   // of somebody else's empty closet.
   if (status === 'loading') return <View style={{ flex: 1, backgroundColor: tokens.bg }} />;
@@ -161,6 +240,12 @@ export default function TabsLayout() {
     <TopTabs
       // The sheets sit under the bar, not over a top rail.
       tabBarPosition="bottom"
+      // The ground the crossfade dips through: the room's own paper, so the
+      // trough is a blank sheet rather than a hole in the app.
+      style={{ backgroundColor: tokens.bg }}
+      // The sheets alone — the tab bar is the pager's sibling, not its child,
+      // so the rail never blinks with them.
+      pagerStyle={{ opacity: sceneOpacity }}
       screenOptions={{
         swipeEnabled: true,
         // A neighbour kept warm; the rest of the house rendered on arrival.
@@ -192,9 +277,14 @@ export default function TabsLayout() {
             target: route.key,
             canPreventDefault: true,
           });
-          if (state.index !== index && !event.defaultPrevented) {
-            navigation.navigate(route.name);
-          }
+          if (state.index === index || event.defaultPrevented) return;
+          const arrive = () => navigation.navigate(route.name);
+          // With motion allowed the pager slides the sheet across and the bead
+          // rides its offset. With stillness asked for, nothing slides: the
+          // sheets dissolve through the room's ground and the bead is punched
+          // at the trough.
+          if (reduceMotion) crossfade(arrive);
+          else arrive();
         };
 
         const longPress = (index: number) => {

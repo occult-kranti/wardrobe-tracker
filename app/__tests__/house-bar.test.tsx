@@ -58,16 +58,21 @@ const offset = (at: number) =>
 
 /**
  * Jest fires no layout of its own, so the bar's measurements are handed to it
- * the way a device would: a 400dp bar and four 100dp slots, which puts the
- * measured centres at 50 · 150 · 250 · 350.
+ * the way a device would: a 400dp bar divided equally by the VISIBLE roster,
+ * which puts four slots' centres at 50 · 150 · 250 · 350 and five slots' at
+ * 40 · 120 · 200 · 280 · 360. The division is the geometry law's own — the
+ * bar over the visible count — so the bench cannot flatter a bar that has
+ * quietly started measuring against the full roster.
  */
-function measure(bar: ReturnType<typeof render>) {
+function measure(bar: ReturnType<typeof render>, barWidth = 400) {
   fireEvent(bar.getByTestId('house-bar', { includeHiddenElements: true }), 'layout', {
-    nativeEvent: { layout: { x: 0, y: 0, width: 400, height: 62 } },
+    nativeEvent: { layout: { x: 0, y: 0, width: barWidth, height: 62 } },
   });
-  bar.getAllByRole('tab').forEach((slot, i) => {
+  const tabs = bar.getAllByRole('tab');
+  const slotWidth = barWidth / tabs.length;
+  tabs.forEach((slot, i) => {
     fireEvent(slot, 'layout', {
-      nativeEvent: { layout: { x: i * 100, y: 0, width: 100, height: 56 } },
+      nativeEvent: { layout: { x: i * slotWidth, y: 0, width: slotWidth, height: 56 } },
     });
   });
 }
@@ -222,5 +227,147 @@ describe('the retreat and the reduced-motion answer', () => {
     measure(bar);
     // Closet's own centre, 150, less half the bead. The offset is ignored.
     expect(beadTranslate(bar)).toBe(147);
+  });
+});
+
+/**
+ * THE ARTIST PASS (docs/42 §3 "the feel", §8 the motif budget, §10 QA 3).
+ *
+ * Three claims, and each one is a number rather than a vibe: the rule bisects
+ * the bead; the bead is a LINEAR map of the finger's own offset; and the
+ * animated node that carries it survives the render the pager fires in the
+ * middle of its own settle.
+ */
+describe('the bead, tuned', () => {
+  test('the rule bisects the bead — punched through the hairline, not hung under it', () => {
+    const bar = mount();
+    const wrap = StyleSheet.flatten(
+      bar.getByTestId('house-bar', { includeHiddenElements: true }).props.style,
+    ) as ViewStyle | undefined;
+    const rule = StyleSheet.flatten(bar.getByTestId('house-bar-rule').props.style) as ViewStyle;
+    const eyelet = StyleSheet.flatten(
+      bar.getByTestId('house-bar-eyelet', { includeHiddenElements: true }).props.style,
+    ) as ViewStyle;
+
+    // The air above the bar is the BAR'S MARGIN, never the wrapper's padding.
+    // An absolutely positioned child's `top` is resolved against its parent's
+    // padding edge, so air held as padding here would drop the whole bead
+    // below the rule and the mark would hang from the rail instead of being
+    // punched through it.
+    expect(wrap?.paddingTop).toBeUndefined();
+
+    const ruleY = rule.marginTop as number;
+    const beadCentreY = (eyelet.top as number) + (eyelet.height as number) / 2;
+    expect(ruleY).toBe(3);
+    expect(beadCentreY).toBe(ruleY);
+  });
+
+  test('the bead waits for the rail to be measured rather than flashing at its end', () => {
+    const bar = mount({ activeIndex: 2 });
+    const before = StyleSheet.flatten(
+      bar.getByTestId('house-bar-eyelet', { includeHiddenElements: true }).props.style,
+    ) as ViewStyle;
+    // No layout has been fired yet, so every stop resolves to zero and the
+    // bead's honest x is half off the rail's left end. It is not drawn there.
+    expect(before.opacity).toBe(0);
+
+    measure(bar);
+    const after = StyleSheet.flatten(
+      bar.getByTestId('house-bar-eyelet', { includeHiddenElements: true }).props.style,
+    ) as ViewStyle;
+    expect(after.opacity).toBe(1);
+    expect(beadTranslate(bar)).toBe(247);
+  });
+
+  test('the bead is 1:1 under the finger — a linear map with no easing of its own', () => {
+    const at = (o: number) => {
+      const bar = mount({ activeIndex: 1, position: offset(o) });
+      measure(bar);
+      const x = beadTranslate(bar);
+      bar.unmount();
+      return x;
+    };
+
+    // Measured centres 50 · 150 · 250 · 350; the bead's box starts 3 left.
+    expect(at(1)).toBe(147);
+    expect(at(1.25)).toBe(172);
+    expect(at(1.5)).toBe(197);
+    expect(at(1.75)).toBe(222);
+    expect(at(2)).toBe(247);
+
+    // Equal quarters of the finger's travel are equal quarters of the bead's.
+    // That IS 1:1, and it is what keeps the bead pinned to the sheet it marks:
+    // any easing injected between the stops would make it lead or trail.
+    expect([at(1.25) - at(1), at(1.5) - at(1.25), at(1.75) - at(1.5), at(2) - at(1.75)]).toEqual([
+      25, 25, 25, 25,
+    ]);
+  });
+
+  test('the rail has two ends — an over-scroll cannot walk the bead off it', () => {
+    const low = mount({ activeIndex: 0, position: offset(-0.6) });
+    measure(low);
+    expect(beadTranslate(low)).toBe(47);
+    low.unmount();
+
+    const high = mount({ activeIndex: 3, position: offset(3.8) });
+    measure(high);
+    expect(beadTranslate(high)).toBe(347);
+  });
+
+  test('the showcase roster moves the stops, because the geometry reads the visible bar', () => {
+    // Five slots in 400dp: centres 40 · 120 · 200 · 280 · 360.
+    const bar = mount({ slots: SHOWCASE, activeIndex: 2, position: offset(2.5) });
+    measure(bar);
+    // Halfway between LOOKS (200) and CHATS (280), less half the bead.
+    expect(beadTranslate(bar)).toBe(237);
+    bar.unmount();
+
+    // And the fifth slot has a stop of its own to be punched at — a bar that
+    // measured a fixed four would strand the bead at the rail's left end.
+    const last = mount({ slots: SHOWCASE, activeIndex: 4, reduceMotion: true });
+    measure(last);
+    expect(beadTranslate(last)).toBe(357);
+  });
+
+  test('one settle, no drift — the pager’s mid-settle render rebuilds nothing', () => {
+    const position = offset(0);
+    const built = jest.spyOn(position, 'interpolate');
+
+    // The shell rebuilds the roster array on every render (state.routes.map),
+    // so the bench does too: geometry that keyed on the array's identity would
+    // throw its animated node away on each of those renders.
+    const tree = (activeIndex: number) => (
+      <SafeAreaProvider initialMetrics={METRICS}>
+        <ThemeProvider>
+          <FontsProvider loaded={false}>
+            <HouseBar
+              slots={ALPHA.slice()}
+              activeIndex={activeIndex}
+              position={position}
+              reduceMotion={false}
+              onPress={() => {}}
+              onLongPress={() => {}}
+            />
+          </FontsProvider>
+        </ThemeProvider>
+      </SafeAreaProvider>
+    );
+
+    const bar = render(tree(0));
+    measure(bar);
+    const afterLayout = built.mock.calls.length;
+    // The measurements moved the stops, so a node had to be built for them.
+    expect(afterLayout).toBeGreaterThan(0);
+
+    // Now the pager selects its page — which happens in the MIDDLE of its own
+    // settle and re-renders this bar with a new index and a new roster array.
+    // A node rebuilt here is detached and re-attached mid-flight, and a
+    // natively driven node re-attached mid-flight resumes from its stale JS
+    // value: that is QA 3's bead "stranded between stops".
+    bar.rerender(tree(1));
+    bar.rerender(tree(2));
+    expect(built.mock.calls.length).toBe(afterLayout);
+
+    built.mockRestore();
   });
 });

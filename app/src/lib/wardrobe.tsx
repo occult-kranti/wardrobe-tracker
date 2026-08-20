@@ -32,9 +32,21 @@
  * started on the way down may die silently, a storage write survives);
  * samples never reach the wire — shouldSync refuses them.
  *
- * What is deliberately NOT here yet: photos on disk, and the corrupted-
- * document "export the corpse" offer (Phase 0 edge case, tracked; today a
- * corrupt read falls back to a fresh state exactly as the web's hook does).
+ * PHOTOGRAPHS ARE FILES HERE, and this provider is where the document comes
+ * to agree with the disk. lib/photos.ts writes the bytes under the app's
+ * document directory and hands back a path; `item.imageUrl` holds that path,
+ * and the moment one is written `photoEncoding` is stamped 'file' so the
+ * document says out loud which kind of string its photographs are (shared
+ * types, schema v8 — the field Wave 1 built for exactly this). The file is
+ * removed on the same breath as the record that pointed at it: replacing a
+ * photograph deletes the one it replaced, and a piece losing its photograph
+ * loses the file too. Nothing else in the app may delete a photo file — an
+ * orphan wastes kilobytes, a wrongly-deleted one is somebody's only picture
+ * of a garment.
+ *
+ * What is deliberately NOT here yet: the corrupted-document "export the
+ * corpse" offer (Phase 0 edge case, tracked; today a corrupt read falls back
+ * to a fresh state exactly as the web's hook does).
  */
 import {
   createContext,
@@ -51,18 +63,25 @@ import { AppState as RNAppState } from 'react-native';
 import { isFutureDate, todayLocal } from '@almari/shared/dates';
 import { migrate } from '@almari/shared/migrate';
 import {
+  FORM_MAX_SLOTS,
   initialState,
   isActive,
+  MAX_FURNITURE,
   type Account,
   type AppState,
   type AppSettings,
   type ClothingItem,
+  type Furniture,
+  type FurnitureForm,
+  type Occasion,
+  type Ornament,
   type Outfit,
   type SyncMode,
   type WearLog,
 } from '@almari/shared/types';
 
 import { showToast } from '../components/Toast';
+import { isInlinePhoto, removePhoto, savePhoto, storedPath } from './photos';
 import { handleFor, mintSyncId, monogramFor, useSessionOptional } from './session';
 import {
   ACCOUNTS_KEY,
@@ -93,6 +112,108 @@ const SETTLE_MS = 250;
 function newId(): string {
   const rand = () => Math.random().toString(36).slice(2, 10);
   return `${Date.now().toString(36)}-${rand()}${rand()}`;
+}
+
+/**
+ * How many compartments a form may be given. FORM_MAX_SLOTS is shared data
+ * (packages/shared/types.ts) and the ONLY source of it; this is the web's
+ * maxSlotsFor with the same fallback, not a second table.
+ */
+function maxSlotsFor(form: FurnitureForm): number {
+  return FORM_MAX_SLOTS[form] ?? 8;
+}
+
+/**
+ * DEFAULT SLOT NAMES — a verbatim mirror of defaultSlotLabels in
+ * src/lib/furnitureArt.ts.
+ *
+ * Mirrored rather than imported because that file is a DOM-coupled drawing
+ * module the app cannot reach (docs/34 §2.8 keeps only packages/shared
+ * crossing), and mirrored rather than simplified because these labels are
+ * STORED DATA, not chrome: they go into the document at creation and travel
+ * through sync and export. A chest made on the phone must arrive in the
+ * browser reading "Top drawer", not "Compartment 1", or the same wardrobe
+ * describes itself two ways depending on which app drew it.
+ * __tests__/wardrobe-furniture pins every form's answers.
+ */
+const FITTED_LABELS = [
+  'Hanging ledge', 'Shelves', 'Jewels', 'Locker', 'Bags', 'Shoes', 'Drawer',
+];
+
+function defaultSlotLabels(form: FurnitureForm, count: number): string[] {
+  if (form === 'almirah' || form === 'almirah-carved') {
+    // Named after the parts, in the order the parts are in — because an
+    // almirah is not N of the same thing, and "Compartment 2" would be a
+    // worse name for the locker than the locker already has.
+    const shelves = Math.max(0, count - 1 - (count >= 3 ? 1 : 0) - (count >= 4 ? 1 : 0));
+    const shelfNames =
+      shelves === 0 ? []
+        : shelves === 1 ? ['Shelves']
+          : shelves === 2 ? ['Upper', 'Lower']
+            : ['Upper', 'Middle', 'Lower'].slice(0, shelves);
+    return [
+      'The hanging side',
+      ...(count >= 3 ? ['Locker'] : []),
+      ...shelfNames,
+      ...(count >= 4 ? ['The drawer'] : []),
+    ].slice(0, count);
+  }
+  if (form === 'almirah-fitted') {
+    return FITTED_LABELS.slice(0, count);
+  }
+  if (form === 'rail') {
+    return count === 1 ? ['The rail'] : Array.from({ length: count }, (_, i) => `Section ${i + 1}`);
+  }
+  if (form === 'hooks') {
+    return count === 1 ? ['The peg'] : Array.from({ length: count }, (_, i) => `Peg ${i + 1}`);
+  }
+  if (form === 'box') {
+    if (count === 1) return ['The tray'];
+    const names = ['Top tray', 'Second tray', 'Third tray', 'Bottom tray'];
+    return Array.from({ length: count }, (_, i) => names[i] ?? `Tray ${i + 1}`);
+  }
+  if (form === 'stand' || form === 'rack') {
+    const noun = 'tier';
+    if (count === 1) return [`The ${noun}`];
+    const ordinals = ['Top', 'Second', 'Third', 'Fourth', 'Fifth'];
+    return Array.from({ length: count }, (_, i) =>
+      i === count - 1 ? `Bottom ${noun}` : `${ordinals[i]} ${noun}`);
+  }
+  const noun = form === 'shelves' ? 'shelf' : 'drawer';
+  if (count === 1) return [`The ${noun}`];
+  if (count > 6) {
+    return Array.from({ length: count }, (_, i) => `${noun[0].toUpperCase()}${noun.slice(1)} ${i + 1}`);
+  }
+  const ordinals = ['Top', 'Second', 'Third', 'Fourth', 'Fifth', 'Sixth'];
+  return Array.from({ length: count }, (_, i) =>
+    i === count - 1 ? `Bottom ${noun}` : `${ordinals[i]} ${noun}`);
+}
+
+/**
+ * Is this `imageUrl` a file this app put on the disk?
+ *
+ * The one question that decides whether the document should declare
+ * photoEncoding 'file'. A data: URI is not (that is what the web writes and
+ * what sync brings down); an empty string is not; a path under our document
+ * directory is.
+ */
+function isStoredPhoto(imageUrl: string | undefined): boolean {
+  const raw = (imageUrl ?? '').trim();
+  if (!raw || isInlinePhoto(raw)) return false;
+  return storedPath(raw) !== null;
+}
+
+/**
+ * The document, told the truth about how it holds its photographs.
+ *
+ * Stamped ONLY when a file-backed photograph actually lands. A document that
+ * came down from the web app holds data URIs and must keep saying 'inline'
+ * until one of its pieces genuinely points at a file, because the field is a
+ * statement of fact and a wrong one blanks every photograph at once (the
+ * failure migrate.ts's own comment describes).
+ */
+function stampFilePhotos(prev: AppState): AppState {
+  return prev.photoEncoding === 'file' ? prev : { ...prev, photoEncoding: 'file' };
 }
 
 /**
@@ -131,6 +252,29 @@ function toSharedAccount(row: AccountRow): Account {
 
 export type WardrobeStatus = 'loading' | 'none' | 'open';
 
+/**
+ * What may be amended on a look.
+ *
+ * Deliberately not Partial<Outfit>: `id` and `dateCreated` are the record's
+ * identity and `wearCount` / `lastWorn` belong to logWear alone. A patch type
+ * that could reach them is a patch type that will, one day, reset somebody's
+ * wear count to zero because a form field was blank.
+ */
+export type OutfitPatch = Partial<
+  Pick<Outfit, 'name' | 'itemIds' | 'occasion' | 'favorite' | 'notes' | 'stylingNote' | 'imageUrl'>
+>;
+
+/** The same list, at runtime — see updateOutfit for why both exist. */
+const OUTFIT_PATCHABLE = [
+  'name',
+  'itemIds',
+  'occasion',
+  'favorite',
+  'notes',
+  'stylingNote',
+  'imageUrl',
+] as const satisfies ReadonlyArray<keyof OutfitPatch>;
+
 interface WardrobeContextValue {
   /** 'none' means the door has not been walked through yet. */
   status: WardrobeStatus;
@@ -154,6 +298,68 @@ interface WardrobeContextValue {
   setSyncMode: (mode: SyncMode) => Promise<void>;
   /** Returns the new piece's id, so a caller writing several can relate them. */
   addItem: (item: Omit<ClothingItem, 'id' | 'dateAdded' | 'wearCount' | 'laundryStatus'>) => string;
+
+  /* ---------- looks ---------- */
+
+  /**
+   * Build a look. Returns its id, or null when there is nothing to build one
+   * from — a look needs a name and at least one piece, and a refusal that
+   * answers null lets the caller say what is missing rather than writing an
+   * empty record nobody asked for.
+   */
+  addOutfit: (name: string, itemIds: string[], occasion?: Occasion) => string | null;
+  /** Amend a look. Ports the web's field-by-field edits; wears are never patched. */
+  updateOutfit: (id: string, patch: OutfitPatch) => void;
+  /** Ports deleteOutfit: the look goes, every piece in it keeps everything. */
+  removeOutfit: (id: string) => void;
+
+  /* ---------- furniture: where a piece lives ---------- */
+
+  /** The furniture a piece can be filed in. Empty until someone draws one. */
+  furniture: Furniture[];
+  /**
+   * Make a place. Returns its id, or null when this wardrobe already holds
+   * MAX_FURNITURE — the ceiling governs what may be MADE and never what may
+   * be READ, so a document that already holds more arrives and stays intact.
+   */
+  addFurniture: (
+    name: string,
+    form: FurnitureForm,
+    slotCount: number,
+    ornament?: Ornament,
+  ) => string | null;
+  /**
+   * A chest leaving the room, never clothes leaving the closet: every piece
+   * filed in it keeps its name, photograph, wears, cost and history and loses
+   * only its address. Returns the way to put the whole thing back — the web's
+   * own undo closure, never a field-by-field inverse, which is how half-
+   * restores happen.
+   */
+  removeFurniture: (id: string) => () => void;
+  /**
+   * File a piece into a compartment, or unfile it.
+   *
+   * The web spells this `filePiece(itemId, place | null)`; the app's shape is
+   * flat because the two ids are how every caller here already holds it. A
+   * null furnitureId or slotId REMOVES the address — absent is a real answer
+   * and by far the commonest one, and an unfiled piece must never read as an
+   * error, a chore, or a count.
+   */
+  filePiece: (itemId: string, furnitureId: string | null, slotId?: string | null) => void;
+
+  /* ---------- photographs ---------- */
+
+  /**
+   * Give a piece a photograph. Takes a picker uri or a data URI, writes the
+   * file, points the record at it, stamps photoEncoding 'file', and deletes
+   * whatever photograph it replaced. Rejects with the house's storage
+   * sentence when the disk refuses — a photograph silently not saved is the
+   * one failure a person cannot see until they go looking.
+   */
+  setItemPhoto: (itemId: string, dataUrlOrUri: string) => Promise<void>;
+  /** Take a piece's photograph off the record and off the disk. */
+  removeItemPhoto: (itemId: string) => Promise<void>;
+
   logWear: (itemIds: string[], outfitId?: string, date?: string) => void;
   /** Undo — the web's removeWearLog, lastWorn recomputed from what survives. */
   removeWearLog: (id: string) => void;
@@ -188,6 +394,20 @@ export function WardrobeProvider({ children }: { children: ReactNode }) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [account, setAccount] = useState<AccountRow | null>(null);
   const [state, setState] = useState<AppState>(initialState);
+
+  /**
+   * The last committed state, readable SYNCHRONOUSLY.
+   *
+   * React runs a setState updater when it pleases, not when it is called, so
+   * anything that reads the old value from inside an updater and uses it
+   * afterwards reads null. Two things here need the previous value in the
+   * same breath as the change and cannot wait: the photograph being REPLACED
+   * (whose file has to be deleted) and the undo closure removeFurniture hands
+   * back (which has to hold the whole state that existed before it ran). Both
+   * read this instead.
+   */
+  const stateRef = useRef<AppState>(state);
+  stateRef.current = state;
 
   // The state just hydrated from the shelf is not news — writing it back
   // would only re-serialize what was just read (the web's `mounted` skip).
@@ -476,11 +696,224 @@ export function WardrobeProvider({ children }: { children: ReactNode }) {
         wearCount: 0,
         laundryStatus: 'clean',
       };
-      setState(prev => ({ ...prev, items: [...prev.items, newItem] }));
+      setState(prev => {
+        const next = { ...prev, items: [...prev.items, newItem] };
+        // A piece arriving WITH a photograph already on the disk (the add
+        // sheet saves the file the moment it is chosen, so a person can see
+        // it while they type) is the first moment this document holds a file.
+        return isStoredPhoto(newItem.imageUrl) ? stampFilePhotos(next) : next;
+      });
       return newItem.id;
     },
     [],
   );
+
+  /* ---------- looks (ported bodies — WardrobeContext.tsx addOutfit/deleteOutfit) ---------- */
+
+  const addOutfit = useCallback(
+    (name: string, itemIds: string[], occasion?: Occasion): string | null => {
+      const trimmed = name.trim();
+      // A look with no name, or nothing in it, is not a look. Answering null
+      // lets the screen say which of the two is missing.
+      const pieces = Array.from(new Set(itemIds.filter(id => id.trim().length > 0)));
+      if (!trimmed || pieces.length === 0) return null;
+      const outfit: Outfit = {
+        id: newId(),
+        name: trimmed,
+        itemIds: pieces,
+        favorite: false,
+        dateCreated: new Date().toISOString(),
+        wearCount: 0,
+        // Absent is the absence of the field, not an empty string in it — so a
+        // look with no occasion is byte-identical to one written by the web.
+        ...(occasion ? { occasion } : {}),
+      };
+      setState(prev => ({ ...prev, outfits: [...prev.outfits, outfit] }));
+      return outfit.id;
+    },
+    [],
+  );
+
+  /**
+   * The whitelist is enforced HERE, not only in OutfitPatch's type.
+   *
+   * A consumer that types its own alias as Partial<Outfit> — one already does
+   * (app/src/components/outfits/contract.ts) — can hand this a `wearCount`
+   * and TypeScript will not stop it, because a wider parameter type is a
+   * legal way to call a narrower one. A spread would then quietly reset
+   * somebody's wear count from a form field that happened to be blank. Wears
+   * are days that happened; only logWear and removeWearLog may move them.
+   */
+  const updateOutfit = useCallback((id: string, patch: OutfitPatch) => {
+    setState(prev => ({
+      ...prev,
+      outfits: prev.outfits.map(o => {
+        if (o.id !== id) return o;
+        const next = { ...o };
+        for (const key of OUTFIT_PATCHABLE) {
+          if (patch[key] !== undefined) {
+            (next as Record<string, unknown>)[key] = patch[key];
+          }
+        }
+        return next;
+      }),
+    }));
+  }, []);
+
+  /**
+   * Ports deleteOutfit exactly: the look is filtered out and NOTHING else
+   * moves. Every piece keeps every wear it earned while in it, and the wear
+   * logs keep their outfitId — a log is a record of a day that happened, and
+   * a day does not stop having happened because the look was tidied away.
+   */
+  const removeOutfit = useCallback((id: string) => {
+    setState(prev => ({ ...prev, outfits: prev.outfits.filter(o => o.id !== id) }));
+  }, []);
+
+  /* ---------- furniture (ported bodies — WardrobeContext.tsx) ---------- */
+
+  const furnitureCount = state.furniture.length;
+  /**
+   * Places decided on but not yet committed.
+   *
+   * The ceiling has to be answered SYNCHRONOUSLY — the caller is told an id or
+   * null and draws accordingly — but the committed count only moves on the
+   * next render. Without this, twelve adds inside one render all see the same
+   * count, all get an id, and only some of them exist. Reset the moment the
+   * committed count actually moves.
+   */
+  const pendingFurniture = useRef(0);
+  useEffect(() => {
+    pendingFurniture.current = 0;
+  }, [furnitureCount]);
+
+  const addFurniture = useCallback(
+    (
+      name: string,
+      form: FurnitureForm,
+      slotCount: number,
+      ornament?: Ornament,
+    ): string | null => {
+      // The ceiling governs what may be MADE. It never governs what may be
+      // read: a file that already holds more arrives intact and stays intact.
+      if (furnitureCount + pendingFurniture.current >= MAX_FURNITURE) return null;
+      pendingFurniture.current += 1;
+      const id = `f-${newId().slice(-8)}`;
+      const wanted = Number.isFinite(slotCount) ? Math.round(slotCount) : 1;
+      const count = Math.max(1, Math.min(maxSlotsFor(form), wanted));
+      const labels = defaultSlotLabels(form, count);
+      const piece: Furniture = {
+        id,
+        name: name.trim() || 'A place',
+        form,
+        slots: labels.map((label, i) => ({ id: `${id}-s${i + 1}`, label })),
+        dateAdded: todayLocal(),
+        // Plain is the absence of the field, not a value in it — so a plain
+        // piece is byte-identical to every piece written before ornament
+        // existed.
+        ...(ornament && ornament !== 'plain' ? { ornament } : {}),
+      };
+      // The guard is repeated inside the updater because a pull can raise the
+      // committed count between the decision above and the commit below.
+      setState(prev =>
+        prev.furniture.length >= MAX_FURNITURE
+          ? prev
+          : { ...prev, furniture: [...prev.furniture, piece] },
+      );
+      return id;
+    },
+    [furnitureCount],
+  );
+
+  /**
+   * Removing furniture is a chest leaving the room. It is NOT clothes leaving
+   * the closet.
+   *
+   * The only trace of a chest is the line saying where a garment sleeps.
+   * Nothing else about a garment changes: not its name, its photograph, its
+   * wears, its cost, its history. It simply stops having an address.
+   *
+   * The whole previous state comes back in the closure so a toast can offer
+   * Undo — never a field-by-field inverse, which is how half-restores happen.
+   */
+  const removeFurniture = useCallback((id: string) => {
+    // Captured NOW, not inside the updater: an undo offered on a toast can be
+    // reached for before React has run anything, and an undo that quietly
+    // does nothing is worse than no undo at all.
+    const before = stateRef.current;
+    setState(prev => ({
+      ...prev,
+      furniture: prev.furniture.filter(f => f.id !== id),
+      items: prev.items.map(item => {
+        if (item.place?.furnitureId !== id) return item;
+        const { place: _gone, ...rest } = item;
+        return rest;
+      }),
+    }));
+    return () => setState(before);
+  }, []);
+
+  const filePiece = useCallback(
+    (itemId: string, furnitureId: string | null, slotId?: string | null) => {
+      const place =
+        furnitureId && slotId ? { furnitureId, slotId } : null;
+      setState(prev => ({
+        ...prev,
+        items: prev.items.map(item => {
+          if (item.id !== itemId) return item;
+          if (!place) {
+            // Absent, not empty: an unfiled piece is byte-identical to one
+            // that was never filed.
+            const { place: _gone, ...rest } = item;
+            return rest;
+          }
+          return { ...item, place };
+        }),
+      }));
+    },
+    [],
+  );
+
+  /* ---------- photographs ---------- */
+
+  /**
+   * The disk write happens FIRST and outside the updater (law 1: writes never
+   * happen inside the state updater). Only once there is a real file does the
+   * record point at it — the opposite order leaves a document naming a
+   * photograph that does not exist, which is the failure that blanks tiles.
+   */
+  const setItemPhoto = useCallback(async (itemId: string, dataUrlOrUri: string) => {
+    // The piece is looked up BEFORE the file is written: a photograph saved
+    // for a piece that is not there is an orphan nobody will ever find.
+    const existing = stateRef.current.items.find(i => i.id === itemId);
+    if (!existing) return;
+    const replaced = (existing.imageUrl ?? '').trim();
+
+    const path = await savePhoto(dataUrlOrUri);
+    setState(prev =>
+      prev.items.some(i => i.id === itemId)
+        ? stampFilePhotos({
+            ...prev,
+            items: prev.items.map(i => (i.id === itemId ? { ...i, imageUrl: path } : i)),
+          })
+        : prev,
+    );
+    // The photograph that was replaced goes with it — after the record has
+    // moved on, never before: a delete that ran first and then failed to
+    // commit would leave a piece pointing at a file that is gone.
+    if (replaced && replaced !== path) await removePhoto(replaced);
+  }, []);
+
+  const removeItemPhoto = useCallback(async (itemId: string) => {
+    const existing = stateRef.current.items.find(i => i.id === itemId);
+    const removed = (existing?.imageUrl ?? '').trim();
+    if (!existing || !removed) return;
+    setState(prev => ({
+      ...prev,
+      items: prev.items.map(i => (i.id === itemId ? { ...i, imageUrl: '' } : i)),
+    }));
+    await removePhoto(removed);
+  }, []);
 
   const logWear = useCallback((itemIds: string[], outfitId?: string, date?: string) => {
     const logDate = date ?? todayLocal();
@@ -576,6 +1009,7 @@ export function WardrobeProvider({ children }: { children: ReactNode }) {
       items: state.items,
       activeItems,
       outfits: state.outfits,
+      furniture: state.furniture,
       wearLogs: state.wearLogs,
       settings: state.settings,
       isSample: account?.isSample === true,
@@ -584,13 +1018,26 @@ export function WardrobeProvider({ children }: { children: ReactNode }) {
       syncMode: sharedAccount ? syncModeOf(sharedAccount) : 'device',
       setSyncMode,
       addItem,
+      addOutfit,
+      updateOutfit,
+      removeOutfit,
+      addFurniture,
+      removeFurniture,
+      filePiece,
+      setItemPhoto,
+      removeItemPhoto,
       logWear,
       removeWearLog,
       getItem,
       startEmpty,
       startSample,
     }),
-    [status, state, activeItems, account, sharedAccount, setSyncMode, addItem, logWear, removeWearLog, getItem, startEmpty, startSample],
+    [
+      status, state, activeItems, account, sharedAccount, setSyncMode, addItem,
+      addOutfit, updateOutfit, removeOutfit, addFurniture, removeFurniture, filePiece,
+      setItemPhoto, removeItemPhoto,
+      logWear, removeWearLog, getItem, startEmpty, startSample,
+    ],
   );
 
   return <WardrobeContext.Provider value={value}>{children}</WardrobeContext.Provider>;

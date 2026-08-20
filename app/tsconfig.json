@@ -5,6 +5,26 @@
     "paths": {
       "@almari/shared/*": [
         "../packages/shared/*"
+      ],
+      // THE SAME DOORWAY metro.config.js opens, opened for jest as well.
+      //
+      // packages/shared is OUTSIDE app/, so node resolution from a shared
+      // module walks packages/ -> repo root -> the drive, and never looks in
+      // app/node_modules. Metro does not care: its resolver.nodeModulesPaths
+      // is pinned to app/node_modules and answers every lookup from there.
+      // Jest has no such setting — jest-expo builds its moduleNameMapper from
+      // THESE paths (jest-expo/src/preset/withTypescriptMapping.js), so this
+      // is where the app tells both resolvers the same thing.
+      //
+      // Concretely: babel-preset-expo compiles a shared module's array
+      // destructuring into require('@babel/runtime/helpers/slicedToArray'),
+      // and that require is issued FROM packages/shared. Without this line
+      // every suite that touches @almari/shared/intake dies on "Cannot find
+      // module '@babel/runtime/helpers/interopRequireDefault'" while the same
+      // code runs perfectly in Expo Go. No new dependency: @babel/runtime is
+      // already installed in app/node_modules, and this only says where.
+      "@babel/runtime/*": [
+        "./node_modules/@babel/runtime/*"
       ]
     }
   },

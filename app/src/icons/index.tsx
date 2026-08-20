@@ -145,6 +145,31 @@ export const IconClose = (p: IconProps) => (
   </Icon>
 );
 
+export const IconBookmark = (p: IconProps) => (
+  <Icon {...p}>
+    {/* THE SET-ASIDE TAG — the feed squad's standing ask, drawn as this house
+        draws a saved thing rather than as the generic ribbon.
+
+        A swing ticket taken off the rail and kept: the ticket's body, the
+        punched eyelet its thread passed through, and its one written line.
+        The foot is cut to a V, which is the ticket's own tail and reads as
+        the bookmark silhouette at 20px without borrowing a ribbon nobody in
+        this app ties. No letterform, no star, no heart — nothing that scores
+        or rates; a set-aside piece is filed, never approved of.
+
+        NATIVE-FIRST, and the one glyph in this file that is not yet a twin of
+        src/components/icons.tsx. The web set is another squad's file; the
+        twin is named in this wave's blocked report so the two sets do not
+        quietly diverge. */}
+    <Path d="M7.5 4.5h9v16l-4.5 -3.5 -4.5 3.5z" />
+    {/* the eyelet the thread went through */}
+    <Circle cx="12" cy="8" r="1.5" />
+    {/* the one written line */}
+    <Path d="M9.5 12.5h5" />
+    <Notch x={18} y={4.5} />
+  </Icon>
+);
+
 /**
  * The filled eyelet — the web's own exception to the stroke grammar
  * (src/components/icons.tsx draws it as a filled 12×12 circle with no

@@ -1,8 +1,9 @@
 /**
- * Settings — the account and the per-wardrobe sync choice, ported from the
- * web's Settings account section and SwitchWardrobe's "Where the record
- * lives" (docs/34 §2.2). Theme, storage, and export are still to come; the
- * screen says so rather than pretending the list is finished.
+ * Settings — the account, the per-wardrobe sync choice, and the door the
+ * record leaves and returns through. Ported from the web's Settings account
+ * section, its "Your data" card, and SwitchWardrobe's "Where the record
+ * lives" (docs/34 §2.2). Theme and storage are still to come; the screen says
+ * so rather than pretending the list is finished.
  *
  * SETTINGS HAS LEFT THE BAR (docs/42 §6). It moved from `(tabs)/settings.tsx`
  * to this pushed route outside the tabs so the fifth slot could be the House;
@@ -17,15 +18,32 @@
  *     choice at all (a worked example belongs to the device);
  *   - the plain trust sentence ships wherever sync is offered (docs/35:
  *     until E2E encryption lands, the copy says who can read a synced copy);
- *   - signing out deletes nothing, and the copy says so where the button is.
+ *   - signing out deletes nothing, and the copy says so where the button is;
+ *   - the record leaves whole and returns whole. What a backup IS lives in
+ *     lib/exportClient (the web's allowlist, mirrored); this screen does only
+ *     the phone's half — the press, the counts, the confirm, the sentence
+ *     when a file will not read.
  */
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { todayLocal } from '@almari/shared/dates';
+import type { AppState } from '@almari/shared/types';
+
 import { Button } from '../components/Button';
+import { ConfirmSheet } from '../components/feed/ConfirmSheet';
 import { Masthead } from '../components/Masthead';
+import { showToast } from '../components/Toast';
+import {
+  commitImport,
+  exportBackup,
+  pickBackup,
+  readActiveId,
+  readWholeDocument,
+  withLiveRecord,
+} from '../lib/exportClient';
 import { AccountPanel, Choice, TRUST_SENTENCE, useSession } from '../lib/session';
 import { useWardrobe } from '../lib/wardrobe';
 import { useFamilies } from '../tokens/FontsContext';
@@ -38,11 +56,145 @@ export default function SettingsScreen() {
   const fonts = useFamilies();
   const router = useRouter();
   const { authUser, authReady } = useSession();
-  const { wardrobeName, isSample, syncMode, setSyncMode } = useWardrobe();
+  const wardrobe = useWardrobe();
+  const { wardrobeName, isSample, syncMode, setSyncMode, items, outfits, wearLogs, syncAccount } =
+    wardrobe;
   // Chose "Synced to my account" while signed out: the choice cannot hold, so
   // the sign-in is offered instead of silently starting a sync that cannot
   // happen — the web's own wantSync gesture.
   const [wantSync, setWantSync] = useState(false);
+
+  /* ---------- the record leaves, and comes back ---------- */
+
+  const [pending, setPending] = useState<{ state: AppState; fileName: string } | null>(null);
+  const [busy, setBusy] = useState<'export' | 'import' | null>(null);
+  /**
+   * The one part of the count this screen cannot see.
+   *
+   * The provider hands out items, outfits and wear logs; the wishlist lives in
+   * the document and has no screen on this phone yet. The web counts all four
+   * ("N records"), so the fourth is read off the shelf and the other three
+   * stay live — the number is exact and it moves as the wardrobe moves.
+   */
+  const [shelfWishlist, setShelfWishlist] = useState(0);
+
+  /**
+   * THE PROVIDER HAS NO replaceState — reported as a contract mismatch, not
+   * patched around silently. When squad A adds it, this reads it; until then
+   * commitImport goes through the door a sync pull already uses.
+   */
+  const replaceState = (wardrobe as { replaceState?: (next: AppState) => void }).replaceState;
+
+  const refreshShelfCount = useCallback(async () => {
+    const shelf = await readWholeDocument(await readActiveId());
+    setShelfWishlist(shelf.wishlist.length);
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const shelf = await readWholeDocument(await readActiveId());
+      if (!cancelled) setShelfWishlist(shelf.wishlist.length);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [items.length, outfits.length, wearLogs.length]);
+
+  const records = items.length + outfits.length + wearLogs.length + shelfWishlist;
+
+  const handleExport = useCallback(async () => {
+    if (busy !== null) return;
+    setBusy('export');
+    try {
+      // The SHELF is the whole document — it carries the wishlist, the circle,
+      // the events and every key a newer build wrote. The provider's live
+      // values go over the top so a wear logged a heartbeat ago is in the file.
+      const shelf = await readWholeDocument(await readActiveId());
+      const live = wardrobe as unknown as Partial<AppState>;
+      const source = withLiveRecord(shelf, {
+        items: live.items,
+        outfits: live.outfits,
+        wearLogs: live.wearLogs,
+        settings: live.settings,
+        // Landing with squad A this wave; undefined is skipped, never written.
+        furniture: live.furniture,
+      });
+      const result = await exportBackup({
+        source,
+        wardrobeName,
+        day: todayLocal(),
+        exportedAt: new Date().toISOString(),
+      });
+      if (result.ok) {
+        showToast(
+          result.inlined > 0
+            ? `Exported. ${result.records} records and ${result.inlined} photographs in one file.`
+            : `Exported. ${result.records} records in one file.`,
+          'success',
+        );
+        if (result.missing > 0) {
+          showToast(
+            `${result.missing} photographs were no longer on this device, so the file carries the pieces without them.`,
+            'info',
+          );
+        }
+        return;
+      }
+      showToast(
+        result.reason === 'write-failed'
+          ? 'This device would not take the write — its storage is full. Remove a few photographs, then export again.'
+          : result.reason === 'no-share-sheet'
+            ? 'This phone offers nowhere to send a file, so the backup has no way out of it.'
+            : 'That did not reach the share sheet. Nothing left this device.',
+        'error',
+      );
+    } finally {
+      setBusy(null);
+    }
+  }, [busy, wardrobe, wardrobeName]);
+
+  const handleChooseFile = useCallback(async () => {
+    if (busy !== null) return;
+    setBusy('import');
+    try {
+      const picked = await pickBackup();
+      // A picker closed on purpose is not news, and gets no sentence.
+      if (!picked.ok) {
+        if (picked.reason === 'unreadable') showToast('That file did not read as a backup.', 'error');
+        return;
+      }
+      setPending({ state: picked.state, fileName: picked.fileName });
+    } finally {
+      setBusy(null);
+    }
+  }, [busy]);
+
+  const confirmImport = useCallback(async () => {
+    if (!pending) return;
+    const arriving = pending.state;
+    setPending(null);
+    const outcome = await commitImport(
+      {
+        accountId: await readActiveId(),
+        replaceState,
+        syncAccount,
+        authUserId: authUser?.id ?? null,
+      },
+      arriving,
+    );
+    if (outcome === 'replaced') {
+      showToast(`Imported. ${arriving.items.length} pieces on record.`, 'success');
+      await refreshShelfCount();
+      return;
+    }
+    showToast(
+      outcome === 'storage-full'
+        ? 'This device would not take the write — its storage is full. Nothing was replaced. Remove a few photographs, then bring the backup in again.'
+        : 'There is no wardrobe open to bring it into.',
+      'error',
+    );
+  }, [pending, replaceState, syncAccount, authUser, refreshShelfCount]);
 
   const editorial = {
     fontFamily: fonts.displayItalic,
@@ -169,10 +321,55 @@ export default function SettingsScreen() {
           )}
         </View>
 
+        {/* Your data — the record leaves whole and comes back whole. */}
+        <View style={[plate, { marginTop: 16 }]}>
+          <Text style={editorial}>Your data</Text>
+          <Text style={[ledger, { marginBottom: 12 }]}>{`${records} records`}</Text>
+
+          <Text style={body}>
+            One JSON file holding everything in this wardrobe: pieces, outfits, wear logs, the
+            wishlist, your categories and tags. Photographs travel inside the file, so it opens on
+            the web app with the pictures in it.
+          </Text>
+          <View style={styles.control}>
+            <Button tone="primary" disabled={busy !== null} onPress={() => void handleExport()}>
+              {busy === 'export' ? 'Exporting' : 'Export a backup'}
+            </Button>
+          </View>
+
+          <View style={[styles.hairline, { borderColor: tokens.border }]} />
+
+          <Text style={body}>
+            Import reads a backup from any version of Almari and brings it forward. Fields it does
+            not recognise are kept, not dropped.
+          </Text>
+          <View style={styles.control}>
+            <Button disabled={busy !== null} onPress={() => void handleChooseFile()}>
+              {busy === 'import' ? 'Choosing' : 'Choose a file'}
+            </Button>
+          </View>
+        </View>
+
+        {/* The gate. Exact counts, and the plain fact that there is no undo. */}
+        <ConfirmSheet
+          open={pending !== null}
+          title="Bring in this backup"
+          body={
+            pending === null
+              ? ''
+              : `${pending.fileName}\n\nThat file holds ${pending.state.items.length} pieces, ${pending.state.outfits.length} outfits, ${pending.state.wearLogs.length} wear logs and ${pending.state.wishlist.length} wishlist entries. ${
+                  records > 0
+                    ? `Bringing it in replaces the ${records} records on this device now. There is no undo, and no other copy of them unless you exported one.`
+                    : 'Nothing is on this device yet, so nothing is replaced.'
+                }`
+          }
+          confirmLabel="Bring it in"
+          onConfirm={() => void confirmImport()}
+          onClose={() => setPending(null)}
+        />
+
         {/* What the placeholder promised still stands; the list is not done. */}
-        <Text style={[ledger, { marginTop: 16 }]}>
-          Theme, storage, and export will live here.
-        </Text>
+        <Text style={[ledger, { marginTop: 16 }]}>Theme and storage will live here.</Text>
       </ScrollView>
     </SafeAreaView>
   );
@@ -206,5 +403,14 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS,
     padding: 16,
     marginTop: 12,
+  },
+  control: {
+    alignSelf: 'flex-start',
+    marginTop: 12,
+  },
+  /* Basting, restated: depth is a hairline, never a shadow. */
+  hairline: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    marginVertical: 20,
   },
 });

@@ -21,6 +21,74 @@ import { act, render, waitFor } from '@testing-library/react-native';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 
+/**
+ * The disk, for the photograph half of the provider. `mock`-prefixed so
+ * jest's hoist allows the reference from inside the factory. The shapes are
+ * the SDK 57 object API's own (docs read this session) — see photos.test.ts,
+ * which exercises the file layer directly; here it exists so the provider's
+ * "the file goes when the record does" rule can be watched happening.
+ */
+const mockDisk = { files: new Map<string, string>(), dirs: new Set<string>() };
+
+jest.mock('expo-file-system', () => {
+  const DOCUMENT = 'file:///documents/';
+  const resolve = (args: unknown[]): string => {
+    const [first, ...rest] = args;
+    const base = typeof first === 'string' ? first : String((first as { uri: string }).uri);
+    if (rest.length === 0) return base;
+    const head = base.endsWith('/') ? base : `${base}/`;
+    return head + rest.map(String).join('/');
+  };
+  class Directory {
+    uri: string;
+    constructor(...args: unknown[]) {
+      const uri = resolve(args);
+      this.uri = uri.endsWith('/') ? uri : `${uri}/`;
+    }
+    get exists() {
+      return mockDisk.dirs.has(this.uri);
+    }
+    create() {
+      mockDisk.dirs.add(this.uri);
+    }
+  }
+  class File {
+    uri: string;
+    constructor(...args: unknown[]) {
+      this.uri = resolve(args);
+    }
+    get exists() {
+      return mockDisk.files.has(this.uri);
+    }
+    create() {
+      if (!mockDisk.files.has(this.uri)) mockDisk.files.set(this.uri, '');
+    }
+    write(content: string) {
+      mockDisk.files.set(this.uri, content);
+    }
+    async base64() {
+      const v = mockDisk.files.get(this.uri);
+      if (v === undefined) throw new Error('no such file');
+      return v;
+    }
+    delete() {
+      mockDisk.files.delete(this.uri);
+    }
+    async copy(destination: File) {
+      const v = mockDisk.files.get(this.uri);
+      if (v === undefined) throw new Error('no such file');
+      mockDisk.files.set(destination.uri, v);
+    }
+  }
+  return {
+    Directory,
+    File,
+    Paths: { document: new Directory(DOCUMENT), cache: new Directory('file:///cache/') },
+  };
+});
+
+import { FORM_MAX_SLOTS, MAX_FURNITURE, type FurnitureForm } from '@almari/shared/types';
+
 import {
   ACCOUNTS_KEY,
   LEGACY_KEY,
@@ -288,5 +356,641 @@ describe('persistence — add, settle, reload (docs/34 §2.4 laws 1 and 4)', () 
     expect(ctx!.items[0].cost).toBe(2600);
     expect(ctx!.items[0].wearCount).toBe(0);
     expect(ctx!.items[0].laundryStatus).toBe('clean');
+  });
+});
+
+/* ============================================================================
+   THE LOOKS AND THE FURNITURE — the CRUD squads B, C and D build against.
+
+   Mirrors the semantics of src/context/WardrobeContext.tsx by behaviour, and
+   the assertion scripts/test-features.mjs holds over the browser ("removing
+   furniture never removes clothes") by counting the same things this provider
+   stores. Every case runs through the real provider over the real storage
+   adapter, so what is checked is what is written down.
+   ============================================================================ */
+
+/** A piece, in the shape the document holds one. */
+const piece = (id: string, name: string, extra: Record<string, unknown> = {}) => ({
+  id,
+  name,
+  category: 'tops',
+  color: '#D9C4A3',
+  season: [],
+  occasion: [],
+  imageUrl: '',
+  dateAdded: '2026-06-01',
+  wearCount: 0,
+  favorite: false,
+  laundryStatus: 'clean',
+  ...extra,
+});
+
+describe('looks — addOutfit / updateOutfit / removeOutfit', () => {
+  test('a look is built with a name, its pieces, and a wear count that starts at zero', async () => {
+    await seed(
+      JSON.stringify({ items: [piece('i-1', 'The white oxford'), piece('i-2', 'The good linen shirt')] }),
+    );
+    await openWardrobe();
+
+    let id: string | null = null;
+    act(() => {
+      id = ctx!.addOutfit('Monday', ['i-1', 'i-2'], 'work');
+    });
+
+    expect(id).toBeTruthy();
+    expect(ctx!.outfits).toHaveLength(1);
+    const look = ctx!.outfits[0];
+    expect(look.name).toBe('Monday');
+    expect(look.itemIds).toEqual(['i-1', 'i-2']);
+    expect(look.occasion).toBe('work');
+    expect(look.wearCount).toBe(0);
+    expect(look.favorite).toBe(false);
+    expect(look.dateCreated).toBeTruthy();
+  });
+
+  test('no occasion means the FIELD IS ABSENT, byte-identical to a web-written look', async () => {
+    await seed(JSON.stringify({ items: [piece('i-1', 'A')] }));
+    await openWardrobe();
+    act(() => {
+      ctx!.addOutfit('Plain', ['i-1']);
+    });
+    expect('occasion' in ctx!.outfits[0]).toBe(false);
+  });
+
+  test('a look with no name, or nothing in it, is refused rather than written empty', async () => {
+    await seed(JSON.stringify({ items: [piece('i-1', 'A')] }));
+    await openWardrobe();
+
+    let a: string | null = 'x';
+    let b: string | null = 'x';
+    let c: string | null = 'x';
+    act(() => {
+      a = ctx!.addOutfit('   ', ['i-1']);
+      b = ctx!.addOutfit('Nameless pieces', []);
+      c = ctx!.addOutfit('Blank ids', ['   ']);
+    });
+    expect(a).toBeNull();
+    expect(b).toBeNull();
+    expect(c).toBeNull();
+    expect(ctx!.outfits).toHaveLength(0);
+  });
+
+  test('the same piece twice is one piece — a look is a set, not a tally', async () => {
+    await seed(JSON.stringify({ items: [piece('i-1', 'A')] }));
+    await openWardrobe();
+    act(() => {
+      ctx!.addOutfit('Doubled', ['i-1', 'i-1']);
+    });
+    expect(ctx!.outfits[0].itemIds).toEqual(['i-1']);
+  });
+
+  test('a look is amended field by field, and its wears are not something a patch can touch', async () => {
+    await seed(
+      JSON.stringify({
+        items: [piece('i-1', 'A'), piece('i-2', 'B')],
+        outfits: [
+          {
+            id: 'o-1',
+            name: 'Monday',
+            itemIds: ['i-1'],
+            favorite: false,
+            dateCreated: '2026-06-01T00:00:00.000Z',
+            wearCount: 4,
+          },
+        ],
+      }),
+    );
+    await openWardrobe();
+
+    act(() => {
+      ctx!.updateOutfit('o-1', { name: 'Tuesday', itemIds: ['i-1', 'i-2'], favorite: true });
+    });
+
+    const look = ctx!.outfits[0];
+    expect(look.name).toBe('Tuesday');
+    expect(look.itemIds).toEqual(['i-1', 'i-2']);
+    expect(look.favorite).toBe(true);
+    // The four wears are four days that happened. Nothing about editing a
+    // look's name is allowed to reach them.
+    expect(look.wearCount).toBe(4);
+    expect(look.dateCreated).toBe('2026-06-01T00:00:00.000Z');
+  });
+
+  test('a patch cannot reach the wears, even when a caller types it wider', async () => {
+    await seed(
+      JSON.stringify({
+        items: [piece('i-1', 'A')],
+        outfits: [
+          {
+            id: 'o-1',
+            name: 'Monday',
+            itemIds: ['i-1'],
+            favorite: false,
+            dateCreated: '2026-06-01T00:00:00.000Z',
+            wearCount: 7,
+            lastWorn: '2026-06-10',
+          },
+        ],
+      }),
+    );
+    await openWardrobe();
+
+    // app/src/components/outfits/contract.ts types its own alias as
+    // Partial<Outfit>, which TypeScript will happily pass to the narrower
+    // signature here. The guarantee has to hold at RUNTIME or it is not one.
+    act(() => {
+      (ctx!.updateOutfit as (id: string, patch: Record<string, unknown>) => void)('o-1', {
+        name: 'Tuesday',
+        wearCount: 0,
+        lastWorn: undefined,
+        id: 'o-hijacked',
+        dateCreated: '1999-01-01T00:00:00.000Z',
+      });
+    });
+
+    const look = ctx!.outfits[0];
+    expect(look.name).toBe('Tuesday');
+    expect(look.id).toBe('o-1');
+    expect(look.wearCount).toBe(7);
+    expect(look.lastWorn).toBe('2026-06-10');
+    expect(look.dateCreated).toBe('2026-06-01T00:00:00.000Z');
+  });
+
+  test('removing a look takes the look and NOTHING else (ports deleteOutfit)', async () => {
+    await seed(
+      JSON.stringify({
+        items: [piece('i-1', 'A', { wearCount: 3, lastWorn: '2026-06-10' })],
+        outfits: [
+          {
+            id: 'o-1',
+            name: 'Monday',
+            itemIds: ['i-1'],
+            favorite: false,
+            dateCreated: '2026-06-01T00:00:00.000Z',
+            wearCount: 3,
+          },
+        ],
+        wearLogs: [{ id: 'w-1', date: '2026-06-10', itemIds: ['i-1'], outfitId: 'o-1' }],
+      }),
+    );
+    await openWardrobe();
+
+    act(() => {
+      ctx!.removeOutfit('o-1');
+    });
+
+    expect(ctx!.outfits).toHaveLength(0);
+    // The piece keeps every wear it earned while in that look, and the day it
+    // was worn is still a day that happened.
+    expect(ctx!.items[0].wearCount).toBe(3);
+    expect(ctx!.items[0].lastWorn).toBe('2026-06-10');
+    expect(ctx!.wearLogs).toHaveLength(1);
+    expect(ctx!.wearLogs[0].outfitId).toBe('o-1');
+  });
+
+  test('wearing a look credits every piece in it, and the look', async () => {
+    await seed(
+      JSON.stringify({
+        items: [piece('i-1', 'A'), piece('i-2', 'B')],
+        outfits: [
+          {
+            id: 'o-1',
+            name: 'Monday',
+            itemIds: ['i-1', 'i-2'],
+            favorite: false,
+            dateCreated: '2026-06-01T00:00:00.000Z',
+            wearCount: 0,
+          },
+        ],
+      }),
+    );
+    await openWardrobe();
+
+    act(() => {
+      ctx!.logWear([], 'o-1');
+    });
+
+    expect(ctx!.items.map(i => i.wearCount)).toEqual([1, 1]);
+    expect(ctx!.outfits[0].wearCount).toBe(1);
+  });
+});
+
+describe('furniture — where a piece lives', () => {
+  test('a place is made with its own default compartment names, at the count asked for', async () => {
+    await seed(JSON.stringify({ items: [] }));
+    await openWardrobe();
+
+    let id: string | null = null;
+    act(() => {
+      id = ctx!.addFurniture('Bedroom chest', 'chest', 3);
+    });
+
+    expect(id).toBeTruthy();
+    const made = ctx!.furniture[0];
+    expect(made.name).toBe('Bedroom chest');
+    expect(made.form).toBe('chest');
+    expect(made.slots.map(s => s.label)).toEqual(['Top drawer', 'Second drawer', 'Bottom drawer']);
+    expect(made.slots.map(s => s.id)).toEqual([`${made.id}-s1`, `${made.id}-s2`, `${made.id}-s3`]);
+    expect(made.dateAdded).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+
+  test('every form names its parts the way the web names them', async () => {
+    await seed(JSON.stringify({ items: [] }));
+    await openWardrobe();
+
+    const expected: Array<[FurnitureForm, number, string[]]> = [
+      ['rail', 1, ['The rail']],
+      ['rail', 3, ['Section 1', 'Section 2', 'Section 3']],
+      ['shelves', 2, ['Top shelf', 'Bottom shelf']],
+      ['almirah', 4, ['The hanging side', 'Locker', 'Shelves', 'The drawer']],
+      ['almirah-carved', 6, ['The hanging side', 'Locker', 'Upper', 'Middle', 'Lower', 'The drawer']],
+      ['almirah-fitted', 4, ['Hanging ledge', 'Shelves', 'Jewels', 'Locker']],
+      ['box', 3, ['Top tray', 'Second tray', 'Third tray']],
+      ['hooks', 1, ['The peg']],
+      ['hooks', 2, ['Peg 1', 'Peg 2']],
+      ['stand', 3, ['Top tier', 'Second tier', 'Bottom tier']],
+      ['rack', 1, ['The tier']],
+      [
+        'chest',
+        7,
+        ['Drawer 1', 'Drawer 2', 'Drawer 3', 'Drawer 4', 'Drawer 5', 'Drawer 6', 'Drawer 7'],
+      ],
+    ];
+
+    for (const [form, count, labels] of expected) {
+      let id: string | null = null;
+      act(() => {
+        id = ctx!.addFurniture(`A ${form}`, form, count);
+      });
+      const made = ctx!.furniture.find(f => f.id === id);
+      expect(made?.slots.map(s => s.label)).toEqual(labels);
+    }
+  });
+
+  test('a count above the form ceiling is cut to it, and below one is raised to one', async () => {
+    await seed(JSON.stringify({ items: [] }));
+    await openWardrobe();
+
+    let over: string | null = null;
+    let under: string | null = null;
+    act(() => {
+      over = ctx!.addFurniture('Too many pegs', 'hooks', 40);
+      under = ctx!.addFurniture('No trays at all', 'box', 0);
+    });
+    expect(ctx!.furniture.find(f => f.id === over)?.slots).toHaveLength(FORM_MAX_SLOTS.hooks);
+    expect(ctx!.furniture.find(f => f.id === under)?.slots).toHaveLength(1);
+  });
+
+  test('a nameless place is still a place', async () => {
+    await seed(JSON.stringify({ items: [] }));
+    await openWardrobe();
+    act(() => {
+      ctx!.addFurniture('   ', 'rail', 1);
+    });
+    expect(ctx!.furniture[0].name).toBe('A place');
+  });
+
+  test('plain is the ABSENCE of ornament, and a treatment is stored when asked for', async () => {
+    await seed(JSON.stringify({ items: [] }));
+    await openWardrobe();
+
+    let plain: string | null = null;
+    let carved: string | null = null;
+    act(() => {
+      plain = ctx!.addFurniture('Plain', 'almirah-fitted', 2, 'plain');
+      carved = ctx!.addFurniture('Carved', 'almirah-fitted', 2, 'mughal');
+    });
+    expect('ornament' in ctx!.furniture.find(f => f.id === plain)!).toBe(false);
+    expect(ctx!.furniture.find(f => f.id === carved)!.ornament).toBe('mughal');
+  });
+
+  test('the ceiling governs what may be MADE, and answers null rather than a fake id', async () => {
+    await seed(JSON.stringify({ items: [] }));
+    await openWardrobe();
+
+    act(() => {
+      for (let n = 0; n < MAX_FURNITURE; n++) ctx!.addFurniture(`Place ${n}`, 'rail', 1);
+    });
+    expect(ctx!.furniture).toHaveLength(MAX_FURNITURE);
+
+    let refused: string | null = 'x';
+    act(() => {
+      refused = ctx!.addFurniture('One too many', 'rail', 1);
+    });
+    expect(refused).toBeNull();
+    expect(ctx!.furniture).toHaveLength(MAX_FURNITURE);
+  });
+
+  test('the ceiling never governs what may be READ — a fuller document arrives intact', async () => {
+    const overFull = Array.from({ length: MAX_FURNITURE + 6 }, (_, n) => ({
+      id: `f-${n}`,
+      name: `Place ${n}`,
+      form: 'rail',
+      slots: [{ id: `f-${n}-s1`, label: 'The rail' }],
+      dateAdded: '2026-06-01',
+    }));
+    await seed(JSON.stringify({ items: [], furniture: overFull }));
+    await openWardrobe();
+    expect(ctx!.furniture).toHaveLength(MAX_FURNITURE + 6);
+  });
+
+  test('filing a piece gives it an address; unfiling REMOVES the field rather than blanking it', async () => {
+    await seed(
+      JSON.stringify({
+        items: [piece('i-1', 'The white oxford')],
+        furniture: [
+          {
+            id: 'f-1',
+            name: 'Bedroom chest',
+            form: 'chest',
+            slots: [{ id: 'f-1-s1', label: 'Top drawer' }],
+            dateAdded: '2026-06-01',
+          },
+        ],
+      }),
+    );
+    await openWardrobe();
+
+    act(() => {
+      ctx!.filePiece('i-1', 'f-1', 'f-1-s1');
+    });
+    expect(ctx!.items[0].place).toEqual({ furnitureId: 'f-1', slotId: 'f-1-s1' });
+
+    act(() => {
+      ctx!.filePiece('i-1', null, null);
+    });
+    // Absent, not empty: an unfiled piece is byte-identical to one never filed.
+    expect('place' in ctx!.items[0]).toBe(false);
+  });
+
+  test('unfiling takes the address and nothing else', async () => {
+    await seed(
+      JSON.stringify({
+        items: [
+          piece('i-1', 'The white oxford', {
+            wearCount: 9,
+            lastWorn: '2026-06-10',
+            cost: 350,
+            place: { furnitureId: 'f-1', slotId: 'f-1-s1' },
+          }),
+        ],
+        furniture: [
+          {
+            id: 'f-1',
+            name: 'Bedroom chest',
+            form: 'chest',
+            slots: [{ id: 'f-1-s1', label: 'Top drawer' }],
+            dateAdded: '2026-06-01',
+          },
+        ],
+      }),
+    );
+    await openWardrobe();
+
+    act(() => {
+      ctx!.filePiece('i-1', null, null);
+    });
+    const item = ctx!.items[0];
+    expect(item.wearCount).toBe(9);
+    expect(item.lastWorn).toBe('2026-06-10');
+    expect(item.cost).toBe(350);
+    expect(item.name).toBe('The white oxford');
+  });
+
+  test('REMOVING FURNITURE NEVER REMOVES CLOTHES (mirrors scripts/test-features.mjs)', async () => {
+    await seed(
+      JSON.stringify({
+        items: [
+          piece('i-1', 'The white oxford', {
+            wearCount: 12,
+            lastWorn: '2026-06-10',
+            place: { furnitureId: 'f-1', slotId: 'f-1-s1' },
+          }),
+          piece('i-2', 'The good linen shirt', {
+            wearCount: 3,
+            place: { furnitureId: 'f-1', slotId: 'f-1-s2' },
+          }),
+          piece('i-3', 'Unfiled all along'),
+        ],
+        wearLogs: [{ id: 'w-1', date: '2026-06-10', itemIds: ['i-1'] }],
+        furniture: [
+          {
+            id: 'f-1',
+            name: 'Bedroom chest',
+            form: 'chest',
+            slots: [
+              { id: 'f-1-s1', label: 'Top drawer' },
+              { id: 'f-1-s2', label: 'Bottom drawer' },
+            ],
+            dateAdded: '2026-06-01',
+          },
+        ],
+      }),
+    );
+    await openWardrobe();
+
+    const before = ctx!.items.length;
+    act(() => {
+      ctx!.removeFurniture('f-1');
+    });
+
+    expect(ctx!.furniture).toHaveLength(0);
+    expect(ctx!.items).toHaveLength(before);
+    expect(ctx!.items.map(i => i.wearCount)).toEqual([12, 3, 0]);
+    expect(ctx!.items[0].lastWorn).toBe('2026-06-10');
+    expect(ctx!.wearLogs).toHaveLength(1);
+    // Only the address goes.
+    expect(ctx!.items.every(i => i.place === undefined)).toBe(true);
+  });
+
+  test('the removal hands back a put-it-back that restores the place AND its contents', async () => {
+    await seed(
+      JSON.stringify({
+        items: [piece('i-1', 'The white oxford', { place: { furnitureId: 'f-1', slotId: 'f-1-s1' } })],
+        furniture: [
+          {
+            id: 'f-1',
+            name: 'Bedroom chest',
+            form: 'chest',
+            slots: [{ id: 'f-1-s1', label: 'Top drawer' }],
+            dateAdded: '2026-06-01',
+          },
+        ],
+      }),
+    );
+    await openWardrobe();
+
+    let putBack: (() => void) | undefined;
+    act(() => {
+      putBack = ctx!.removeFurniture('f-1');
+    });
+    expect(ctx!.furniture).toHaveLength(0);
+    expect(ctx!.items[0].place).toBeUndefined();
+
+    act(() => {
+      putBack!();
+    });
+    // The whole previous state, never a field-by-field inverse.
+    expect(ctx!.furniture).toHaveLength(1);
+    expect(ctx!.furniture[0].name).toBe('Bedroom chest');
+    expect(ctx!.items[0].place).toEqual({ furnitureId: 'f-1', slotId: 'f-1-s1' });
+  });
+
+  test('removing a place that is already gone is not an error and loses nothing', async () => {
+    await seed(JSON.stringify({ items: [piece('i-1', 'A')] }));
+    await openWardrobe();
+    act(() => {
+      ctx!.removeFurniture('f-nope');
+    });
+    expect(ctx!.items).toHaveLength(1);
+    expect(ctx!.furniture).toHaveLength(0);
+  });
+});
+
+describe('photographs — the document agrees with the disk', () => {
+  beforeEach(() => {
+    mockDisk.files.clear();
+    mockDisk.dirs.clear();
+  });
+
+  test('a photograph lands as a path, and the document STAMPS photoEncoding file', async () => {
+    await seed(JSON.stringify({ items: [piece('i-1', 'The white oxford')] }));
+    await openWardrobe();
+
+    mockDisk.files.set('file:///cache/pick.jpg', 'JPEGBYTES');
+    await act(async () => {
+      await ctx!.setItemPhoto('i-1', 'file:///cache/pick.jpg');
+    });
+
+    const stored = ctx!.items[0].imageUrl;
+    expect(stored.startsWith('photos/')).toBe(true);
+    expect(stored).not.toMatch(/^data:/);
+    expect(mockDisk.files.get(`file:///documents/${stored}`)).toBe('JPEGBYTES');
+
+    // The document says which kind of string its photographs are — the field
+    // migrate.ts seeded for exactly this (shared/types, schema v8).
+    await waitFor(async () => {
+      const raw = await storage.getItem(wardrobeKey('acct-1'));
+      expect(JSON.parse(raw!).photoEncoding).toBe('file');
+    });
+  });
+
+  test('a document with no file-backed photograph keeps saying inline', async () => {
+    await seed(JSON.stringify({ items: [piece('i-1', 'A')] }));
+    await openWardrobe();
+
+    act(() => {
+      ctx!.addItem({
+        name: 'Typed in, no photograph',
+        category: 'tops',
+        color: '#D9C4A3',
+        season: [],
+        occasion: [],
+        imageUrl: '',
+        favorite: false,
+      });
+    });
+
+    await waitFor(async () => {
+      const raw = await storage.getItem(wardrobeKey('acct-1'));
+      expect(JSON.parse(raw!).photoEncoding).toBe('inline');
+    });
+  });
+
+  test('a piece added WITH a photograph already saved stamps the document too', async () => {
+    await seed(JSON.stringify({ items: [] }));
+    await openWardrobe();
+
+    act(() => {
+      ctx!.addItem({
+        name: 'Photographed on the way in',
+        category: 'tops',
+        color: '#D9C4A3',
+        season: [],
+        occasion: [],
+        imageUrl: 'photos/p-abc.jpg',
+        favorite: false,
+      });
+    });
+
+    await waitFor(async () => {
+      const raw = await storage.getItem(wardrobeKey('acct-1'));
+      expect(JSON.parse(raw!).photoEncoding).toBe('file');
+    });
+  });
+
+  test('replacing a photograph deletes the one it replaced', async () => {
+    await seed(JSON.stringify({ items: [piece('i-1', 'A')] }));
+    await openWardrobe();
+
+    mockDisk.files.set('file:///cache/one.jpg', 'ONE');
+    mockDisk.files.set('file:///cache/two.jpg', 'TWO');
+
+    await act(async () => {
+      await ctx!.setItemPhoto('i-1', 'file:///cache/one.jpg');
+    });
+    const first = ctx!.items[0].imageUrl;
+
+    await act(async () => {
+      await ctx!.setItemPhoto('i-1', 'file:///cache/two.jpg');
+    });
+    const second = ctx!.items[0].imageUrl;
+
+    expect(second).not.toBe(first);
+    expect(mockDisk.files.has(`file:///documents/${first}`)).toBe(false);
+    expect(mockDisk.files.get(`file:///documents/${second}`)).toBe('TWO');
+  });
+
+  test('removing a photograph takes the file with it, and nothing else', async () => {
+    await seed(JSON.stringify({ items: [piece('i-1', 'A', { wearCount: 5, cost: 350 })] }));
+    await openWardrobe();
+
+    mockDisk.files.set('file:///cache/one.jpg', 'ONE');
+    await act(async () => {
+      await ctx!.setItemPhoto('i-1', 'file:///cache/one.jpg');
+    });
+    const path = ctx!.items[0].imageUrl;
+    expect(mockDisk.files.has(`file:///documents/${path}`)).toBe(true);
+
+    await act(async () => {
+      await ctx!.removeItemPhoto('i-1');
+    });
+
+    expect(ctx!.items[0].imageUrl).toBe('');
+    expect(mockDisk.files.has(`file:///documents/${path}`)).toBe(false);
+    expect(ctx!.items[0].wearCount).toBe(5);
+    expect(ctx!.items[0].cost).toBe(350);
+  });
+
+  test('a wardrobe synced down from the web keeps its inline photographs and its inline claim', async () => {
+    const inline = 'data:image/jpeg;base64,QUJDRA==';
+    await seed(
+      JSON.stringify({
+        items: [piece('i-1', 'From the browser', { imageUrl: inline })],
+        photoEncoding: 'inline',
+      }),
+    );
+    await openWardrobe();
+
+    act(() => {
+      ctx!.logWear(['i-1']);
+    });
+
+    await waitFor(async () => {
+      const raw = await storage.getItem(wardrobeKey('acct-1'));
+      const doc = JSON.parse(raw!);
+      expect(doc.photoEncoding).toBe('inline');
+      expect(doc.items[0].imageUrl).toBe(inline);
+    });
+  });
+
+  test('a photograph aimed at a piece that is not there changes nothing', async () => {
+    await seed(JSON.stringify({ items: [piece('i-1', 'A')] }));
+    await openWardrobe();
+    mockDisk.files.set('file:///cache/one.jpg', 'ONE');
+    await act(async () => {
+      await ctx!.setItemPhoto('i-nope', 'file:///cache/one.jpg');
+    });
+    expect(ctx!.items[0].imageUrl).toBe('');
   });
 });

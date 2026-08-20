@@ -16,11 +16,46 @@
  * (brand law 5). `--color-accent` is per-room, so the bead is room-aware by
  * construction and no room needs a special case.
  *
+ * PUNCHED THROUGH THE RULE, NOT HUNG UNDER IT (the artist pass). The 3dp of
+ * air above the bar is the half of the bead that sits ABOVE the hairline, and
+ * it is now carried as a MARGIN on the bar rather than as padding on the
+ * wrapper. That is not a style preference: an absolutely positioned child's
+ * `top` is resolved against its parent's PADDING edge, so with the air held
+ * as padding a bead at `top: 0` lands wholly BELOW the rule and the mark
+ * reads as hanging from the rail instead of punched through it. Held as a
+ * margin the wrapper has no padding to resolve against, the bead's box spans
+ * 0…6, and the rule crosses it at 3 — the bisection is arithmetic rather than
+ * a layout-engine detail.
+ *
  * The bead rides the PAGER OFFSET, interpolated over MEASURED slot centres —
  * measured, not computed, because the geometry law says the bar derives from
  * the visible roster and a measured centre cannot drift from what was drawn.
  * Until the first layout lands, the centres fall back to equal-flex maths so
  * the bead is never stranded at zero.
+ *
+ * ONE SETTLE, NO DRIFT (docs/42 §10, QA 3). The travelled bead is ONE animated
+ * node, built from the pager's offset and the measured centres and from
+ * nothing else — in particular NOT from the active index. The pager re-renders
+ * this bar the moment it selects a page, which is the middle of its own
+ * settle; a node rebuilt on that render is detached and re-attached mid-flight,
+ * and a natively driven node re-attached mid-flight resumes from its stale JS
+ * value — which is exactly the "stranded between stops" QA 3 is written to
+ * catch. Memoised on the offset and the centres, the node survives that render
+ * untouched and the settle stays continuous. The roster's COUNT, not the
+ * roster array, is what the geometry keys on: the shell rebuilds that array on
+ * every render (`state.routes.map(...)`), and geometry that changed identity
+ * every render could not keep one node alive across anything.
+ *
+ * THE SETTLE CURVE IS THE SHEET'S, AND THAT IS THE SPEC. §3 asks for paper
+ * sliding on a rail: 1:1 under the finger, a 180ms settle on release, and a
+ * bead that "arrives as the sheet squares up". The map from offset to x is
+ * therefore strictly LINEAR — no easing of our own is injected between the
+ * stops, or the bead would lead or trail the sheet it is pinned to. The
+ * release curve itself belongs to react-native-pager-view, which exposes no
+ * duration and no easing (checked against the SDK 57 versioned docs this
+ * session); binding the bead to its offset is precisely what makes the bead
+ * honour that curve exactly. Any future "tuning" that eases this map
+ * desynchronises the two, and house-bar.test.tsx fails on it.
  *
  * NAVIGATOR-AGNOSTIC BY CONTRACT (docs/42 §3, the pre-declared retreat).
  * `position` is optional: under Option B — plain bottom `Tabs`, no pager —
@@ -29,9 +64,13 @@
  * the whole cost of the retreat, priced before the wave rather than after.
  *
  * REDUCED MOTION (docs/42 §3): the bead does not travel, it is punched at the
- * new slot. The drag itself still tracks the finger — the user's own hand is
+ * new slot — and the bar DECLINES an offset it has been handed rather than
+ * merely lacking one, so "punched, not travelled" is a decision and not an
+ * accident. The drag itself still tracks the finger — the user's own hand is
  * not motion the system asked for — and that is the navigator's business, not
- * this file's.
+ * this file's. The tap's own 140ms opacity crossfade belongs to the shell
+ * (`(tabs)/_layout.tsx`); the bar's part in it is to punch the bead at the
+ * trough, which it does by being handed the new active index there.
  *
  * NO NOTIFICATION CHROME OF ANY KIND. No dot, no numeral, nothing at whisper
  * weight; the record refuses it three times (toile-social #3, docs/11,
@@ -111,33 +150,48 @@ export function HouseBar({
     });
   }, []);
 
+  /** The VISIBLE roster's size — the only thing the geometry keys on. */
+  const count = slots.length;
+
   const centres = useMemo(
     () =>
-      slots.map((_, i) =>
+      Array.from({ length: count }, (_, i) =>
         typeof measured[i] === 'number'
           ? measured[i]
           : // Equal flex: the bar divided by the VISIBLE roster (geometry law).
-            (barWidth / slots.length) * (i + 0.5),
+            (barWidth / count) * (i + 0.5),
       ),
-    [slots, measured, barWidth],
+    [count, measured, barWidth],
   );
 
-  const active = Math.min(Math.max(activeIndex, 0), Math.max(slots.length - 1, 0));
+  const active = Math.min(Math.max(activeIndex, 0), Math.max(count - 1, 0));
 
   /**
-   * The bead's x. Travelled when the pager offers an offset and the system has
-   * not asked for stillness; punched otherwise. `interpolate` needs at least
-   * two stops, so a one-slot bar (a state no roster produces, but a component
-   * contract should survive) falls through to the punched mark.
+   * The travelled bead: the pager's offset mapped LINEARLY onto the measured
+   * stops, and clamped at both ends so an over-scroll cannot walk it off the
+   * rail. Deliberately independent of `active` — see "one settle, no drift"
+   * above. `interpolate` needs at least two stops, so a one-slot bar (a state
+   * no roster produces, but a component contract should survive) has no
+   * travelled node at all and falls through to the punched mark.
+   */
+  const travelled = useMemo(
+    () =>
+      position && count > 1
+        ? position.interpolate({
+            inputRange: centres.map((_, i) => i),
+            outputRange: centres.map(c => c - EYELET / 2),
+            extrapolate: 'clamp',
+          })
+        : null,
+    [position, centres, count],
+  );
+
+  /**
+   * Travelled when the pager offers an offset and the system has not asked for
+   * stillness; punched at the active slot's own centre otherwise.
    */
   const beadX =
-    position && !reduceMotion && slots.length > 1
-      ? position.interpolate({
-          inputRange: slots.map((_, i) => i),
-          outputRange: centres.map(c => c - EYELET / 2),
-          extrapolate: 'clamp',
-        })
-      : (centres[active] ?? 0) - EYELET / 2;
+    travelled && !reduceMotion ? travelled : (centres[active] ?? 0) - EYELET / 2;
 
   const label = {
     fontFamily: fonts.ui,
@@ -149,15 +203,13 @@ export function HouseBar({
   };
 
   return (
-    // The 3dp gutter is transparent on purpose: it is the half of the eyelet
-    // that sits ABOVE the rule, over the page's own ground, which is what
-    // makes the mark read as punched through the hairline rather than resting
-    // on top of it. Nothing else lives in it, and it clips nothing.
-    <View
-      testID="house-bar"
-      style={styles.wrap}
-      onLayout={e => setBarWidth(e.nativeEvent.layout.width)}
-    >
+    // The 3dp gutter above the bar is transparent on purpose: it is the half
+    // of the eyelet that sits ABOVE the rule, over the page's own ground,
+    // which is what makes the mark read as punched through the hairline
+    // rather than resting on top of it. It is the bar's margin, not this
+    // wrapper's padding, so the bead's `top: 0` is measured from the edge the
+    // arithmetic assumes. Nothing else lives in it, and it clips nothing.
+    <View testID="house-bar" onLayout={e => setBarWidth(e.nativeEvent.layout.width)}>
       <View
         testID="house-bar-rule"
         style={[
@@ -185,7 +237,7 @@ export function HouseBar({
                 accessibilityRole="tab"
                 accessibilityState={{ selected }}
                 // The count is the VISIBLE roster's, never the full one.
-                accessibilityLabel={`${slot.label}, tab ${i + 1} of ${slots.length}`}
+                accessibilityLabel={`${slot.label}, tab ${i + 1} of ${count}`}
                 accessibilityHint={slot.hint}
                 style={({ pressed }) => [styles.slot, pressed && { opacity: 0.7 }]}
               >
@@ -208,7 +260,17 @@ export function HouseBar({
         pointerEvents="none"
         style={[
           styles.eyelet,
-          { backgroundColor: tokens.accent, transform: [{ translateX: beadX }] },
+          {
+            backgroundColor: tokens.accent,
+            // Until the rail has been measured there is no stop to hang from,
+            // and the equal-flex fallback resolves to zero: the mark waits the
+            // one layout pass out rather than flashing at the rail's left end.
+            // Opacity, not a conditional render — the mark is furniture that
+            // is always there, and a bar that dropped it would be a bar whose
+            // shape changed under the reader.
+            opacity: barWidth > 0 ? 1 : 0,
+            transform: [{ translateX: beadX }],
+          },
         ]}
       />
     </View>
@@ -216,11 +278,11 @@ export function HouseBar({
 }
 
 const styles = StyleSheet.create({
-  wrap: {
-    // Room for the top half of the eyelet, and nothing else.
-    paddingTop: EYELET / 2,
-  },
   bar: {
+    // The gutter: room for the top half of the eyelet, and nothing else. Held
+    // here as a margin so the rule sits exactly EYELET/2 below the wrapper's
+    // own edge, which is where the bead's centre is.
+    marginTop: EYELET / 2,
     borderTopWidth: StyleSheet.hairlineWidth,
   },
   row: {
