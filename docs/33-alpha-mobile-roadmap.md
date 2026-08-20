@@ -392,8 +392,8 @@ panel-made spec. Coding squads run on Opus by owner allocation.
 
 | Wave | Owns | Goal |
 |---|---|---|
-| 5 | shell + flag, both apps | docs/42 built: the five-slot bar, swipe grammar, native profile, `FEED_FLAG` hiding feed/explore/stories on main; showcase branch keeps them; deploy.yml grows a `/showcase/` publish. |
-| 6 | `app/**` | Closet depth: photos + intake on native, furniture, export/import round-trip against web, outfits. |
+| 5 — **done 2026-08-20** | shell + flag, both apps | docs/42 built and LIVE: `FEED_ENABLED` in `packages/shared/flags.ts` hides the Look Book, Explore and stories on main (web nav/routes/`known()`, native `Protected` + hook-free redirect gates); the four-room bar TODAY · CLOSET · CHATS · HOUSE swipes on TopTabs with the eyelet bead; the House stands at `/profile`; Settings pushed; rail labels back at the 13px floor; the almirah glyph in both icon sets. Branch `feed-showcase` keeps the full social build and deploys at `/showcase/`. Merged to main at `45026a8`; Pages deploy green. |
+| 6 | `app/**` | Closet depth: photos + intake on native, furniture, export/import round-trip against web, outfits. Plus docs/42's Wave 3 artist polish (crossfade taps, room-change motif) and the nine-point device QA list. |
 | 7 | both | The design pass (Phase 3 visual diff, art moments per design-android), alpha kit, QR distribution. |
 
 `docs/39` phases N1–N8 and `docs/40` S1–S3 interleave when the feed's own
