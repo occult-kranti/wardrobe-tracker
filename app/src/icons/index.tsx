@@ -95,6 +95,25 @@ export const IconChats = (p: IconProps) => (
   </Icon>
 );
 
+export const IconHouse = (p: IconProps) => (
+  <Icon {...p}>
+    {/* THE ALMIRAH — the app's namesake, and the fifth slot's glyph.
+        docs/42 §1 settles this against the direction memo's ported hanger:
+        with the slot labelled HOUSE a hanger mismatches its word, and the bar
+        would carry two hanger-family glyphs in four slots (IconCloset is
+        itself garments on a rail). The memo's operative point — no letterform
+        in the icon row — survives: this is a drawn cupboard, not an A.
+
+        The carcase's own top-right corner IS the 2px 45° NE notch, so no
+        separate <Notch/> is drawn: `h11l2 2` cuts it in the outline itself. */}
+    <Path d="M5.5 4.5h11l2 2v14h-13z" />
+    {/* the two doors meet */}
+    <Path d="M12 4.5v16" />
+    {/* one pull each door */}
+    <Path d="M9.5 11v2.5M14.5 11v2.5" />
+  </Icon>
+);
+
 export const IconSettings = (p: IconProps) => (
   <Icon {...p}>
     {/* spool of thread */}

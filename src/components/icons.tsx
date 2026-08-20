@@ -257,6 +257,23 @@ export const IconChats = (p: IconProps) => (
   </Icon>
 );
 
+export const IconHouse = (p: IconProps) => (
+  <Icon {...p}>
+    {/* THE ALMIRAH — the app's namesake, the House slot's glyph (docs/42 §1).
+        A hanger would mismatch the word HOUSE and double the hanger family in
+        one rail (IconCloset is itself garments on a rail). Drawn cupboard,
+        never a letterform. The native twin cuts the notch into the carcase
+        corner; here it is the house fingerprint tick, chalked on the right
+        door, so the one-notch rule counts it like every other icon's. */}
+    <path d="M5.5 4.5h13v16h-13z" />
+    {/* the two doors meet */}
+    <path d="M12 4.5v16" />
+    {/* one pull each door */}
+    <path d="M9.5 11v2.5M14.5 11v2.5" />
+    <Notch x={15.5} y={7.5} />
+  </Icon>
+);
+
 export const IconProfile = (p: IconProps) => (
   <Icon {...p}>
     {/* The open wardrobe's own hanger, with its name ruled across the bar.

@@ -30,6 +30,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { formatLocalDate } from '@almari/shared/dates';
+import { FEED_ENABLED } from '@almari/shared/flags';
 import type { Account, FeedPost, SharedLook, SharedPiece } from '@almari/shared/types';
 
 import { useCommunity } from '../../components/feed/communityStore';
@@ -109,6 +110,15 @@ function frameOfCommons(b: NativeBufferEntry): StoryFrame {
 }
 
 export default function Story() {
+  // THE FLAG, FIRST LINE (docs/42 §2, native gate 2). The story deck reads
+  // the store the feed writes, so it is seated by the same flag; with the
+  // Look Book out of the house this season a `/story/…` link handed over by
+  // another app lands on Today, silently and without a plaque.
+  //
+  // Before every hook on purpose: FEED_ENABLED is a module constant, so the
+  // branch is fixed for the life of the process.
+  if (!FEED_ENABLED) return <Redirect href="/" />;
+
   const { accountId } = useLocalSearchParams<{ accountId: string }>();
   const { tokens } = useTheme();
   const fonts = useFamilies();

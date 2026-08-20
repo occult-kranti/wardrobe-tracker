@@ -17,7 +17,15 @@
  * defined. If a screen cannot be explained inside that, the screen is asking
  * too much of a first-time visitor and the fix belongs in the screen, not in a
  * longer paragraph here.
+ *
+ * AND THE GUIDES ARE SEATED BY THE SAME FLAG AS THE ROOMS (docs/42 §2). A
+ * guide is a plaque by another name: one that explains a grid the branch does
+ * not render, or a room that answers with Today, teaches a stranger about a
+ * door that is not in the house this season. The record keeps every word; the
+ * flag decides which are on the wall.
  */
+import { FEED_ENABLED } from '@almari/shared/flags';
+
 
 export interface Guide {
   /** What to head the sheet with — the screen's name as the house says it. */
@@ -33,6 +41,39 @@ export interface Guide {
    */
   term?: { word: string; meaning: string };
 }
+
+/**
+ * The Look Book's own guides, held apart so the flag seats them as one.
+ *
+ * Flag off, /feed and /explore answer with Today, so no pathname the router can
+ * settle on ever asks for these. They stay in the record and out of
+ * guidedPaths(), and they walk back in with the rooms.
+ */
+const LOOK_BOOK_GUIDES: Record<string, Guide> = {
+  '/feed': {
+    title: 'The feed',
+    lede: 'Looks that wardrobes have put on show, newest first.',
+    doing: [
+      'Newest first is the whole order. Nothing here is ranked, counted or scored — and the rail up top simply holds what went on show in the last day.',
+      'A look reaches the feed only when its wardrobe shares it, and what arrives is a snapshot taken at that moment — never a window into anyone’s closet.',
+      'The bookmark at the top right of a look sets it aside for later. Set-aside looks stay on this device, and nobody is told.',
+    ],
+  },
+
+  '/explore': {
+    title: 'Explore',
+    lede: 'Everything on show, laid out to browse — the same looks the feed holds, never more.',
+    doing: [
+      'Search what is on show, or narrow it with a chip. A filter is you asking a question; nothing here ranks the answers.',
+      'Tap a tile to see the whole card, with the same verbs the feed offers.',
+      'Cards marked “from the commons” are bundled samples — animals and plants keeping a young feed company. They come from no one’s wardrobe.',
+    ],
+    term: {
+      word: 'On show',
+      meaning: 'Shared by its wardrobe, one look at a time. What is not shared is not here.',
+    },
+  },
+};
 
 const GUIDES: Record<string, Guide> = {
   '/': {
@@ -130,29 +171,7 @@ const GUIDES: Record<string, Guide> = {
     ],
   },
 
-  '/feed': {
-    title: 'The feed',
-    lede: 'Looks that wardrobes have put on show, newest first.',
-    doing: [
-      'Newest first is the whole order. Nothing here is ranked, counted or scored — and the rail up top simply holds what went on show in the last day.',
-      'A look reaches the feed only when its wardrobe shares it, and what arrives is a snapshot taken at that moment — never a window into anyone’s closet.',
-      'The bookmark at the top right of a look sets it aside for later. Set-aside looks stay on this device, and nobody is told.',
-    ],
-  },
-
-  '/explore': {
-    title: 'Explore',
-    lede: 'Everything on show, laid out to browse — the same looks the feed holds, never more.',
-    doing: [
-      'Search what is on show, or narrow it with a chip. A filter is you asking a question; nothing here ranks the answers.',
-      'Tap a tile to see the whole card, with the same verbs the feed offers.',
-      'Cards marked “from the commons” are bundled samples — animals and plants keeping a young feed company. They come from no one’s wardrobe.',
-    ],
-    term: {
-      word: 'On show',
-      meaning: 'Shared by its wardrobe, one look at a time. What is not shared is not here.',
-    },
-  },
+  ...(FEED_ENABLED ? LOOK_BOOK_GUIDES : {}),
 
   '/rail': {
     title: 'The shared rail',
@@ -178,12 +197,25 @@ const GUIDES: Record<string, Guide> = {
     ],
   },
 
-  '/profile': {
+  /**
+   * Two readings of one page, because the page itself has two shapes: with the
+   * Look Book seated it leads with the on-show grid, and without it the page is
+   * the wardrobe alone. The showcase branch restores the first words exactly.
+   */
+  '/profile': FEED_ENABLED ? {
     title: 'A profile',
     lede: 'How a wardrobe looks to the others it shares with: a name, a handle, and the looks it has chosen to show.',
     doing: [
       'Only what has been shared appears here. Nothing reads a closet to fill this page.',
       'Join wardrobes under a roof to share a rail with them and see one another’s looks.',
+    ],
+  } : {
+    title: 'A profile',
+    lede: 'How a wardrobe looks to the others it shares with: a name, a handle, and the way it dresses.',
+    doing: [
+      'Your own page carries the counts — pieces on the rail, wears noted, outfits kept, what it cost.',
+      'Join wardrobes under a roof to share a rail with them.',
+      'Nothing here reads anyone else’s closet. A wardrobe says only what it has chosen to say.',
     ],
   },
 

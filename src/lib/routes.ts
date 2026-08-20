@@ -6,7 +6,23 @@
  * door's line telling you what you were reaching for. One list is what makes
  * it impossible for the guard to honour an address that does not exist.
  */
-export const ROUTES: { path: string; name: string }[] = [
+import { FEED_ENABLED } from '@almari/shared/flags';
+
+interface Route {
+  path: string;
+  name: string;
+  /**
+   * The Look Book's own addresses, seated by FEED_ENABLED (docs/42 §2).
+   * Four rooms of one house: the feed, the grid over it, one look from it, and
+   * a wardrobe's deck read one teller at a time. They are hidden together or
+   * shown together, because a door that opens on a room whose neighbours are
+   * gone is worse than no door.
+   */
+  lookBook?: true;
+}
+
+/** The whole table, flag or no flag — nothing is ever deleted from here. */
+const ROUTE_TABLE: Route[] = [
   { path: '/', name: 'today' },
   { path: '/closet', name: 'the closet' },
   { path: '/outfits', name: 'outfits' },
@@ -20,10 +36,10 @@ export const ROUTES: { path: string; name: string }[] = [
   { path: '/ledger', name: 'the ledger' },
   { path: '/wishlist', name: 'the wishlist' },
   { path: '/compare', name: 'before you buy' },
-  { path: '/feed', name: 'the feed' },
-  { path: '/explore', name: 'explore' },
-  { path: '/explore/:postId', name: 'something on show' },
-  { path: '/story/:accountId', name: 'a story' },
+  { path: '/feed', name: 'the feed', lookBook: true },
+  { path: '/explore', name: 'explore', lookBook: true },
+  { path: '/explore/:postId', name: 'something on show', lookBook: true },
+  { path: '/story/:accountId', name: 'a story', lookBook: true },
   { path: '/chats', name: 'conversations' },
   { path: '/chats/:id', name: 'a conversation' },
   { path: '/profile', name: 'your profile' },
@@ -36,6 +52,28 @@ export const ROUTES: { path: string; name: string }[] = [
   { path: '/open', name: 'wardrobes' },
   { path: '/open/new', name: 'a new wardrobe' },
 ];
+
+/**
+ * The addresses the house actually has this season — ONE flag-aware filter,
+ * and everything downstream inherits it.
+ *
+ * This is the whole of the web gate's teeth. known() refuses the four Look Book
+ * paths while the flag is off, so safeNext will not remember a feed link
+ * through the door, nameFor has no word for one, and the door that could not
+ * serve it says nothing about a room that is not in the house. A deep link to
+ * a hidden address resolves to Today, silently: no plaque, no explainer, no
+ * date. Nothing is deleted — flip FEED_ENABLED and the four walk back in.
+ */
+export const ROUTES: { path: string; name: string }[] =
+  ROUTE_TABLE.filter(r => FEED_ENABLED || !r.lookBook);
+
+/**
+ * The four, for the one caller that must render them at BOTH flag values:
+ * src/App.tsx, where flag-off they answer <Navigate to="/" replace /> rather
+ * than 404. Read from the table so the two lists cannot drift.
+ */
+export const LOOK_BOOK_PATHS: string[] =
+  ROUTE_TABLE.filter(r => r.lookBook).map(r => r.path);
 
 /** Does this address match a route we actually have? */
 export function known(path: string): boolean {
@@ -77,6 +115,9 @@ function hasDotSegment(path: string): boolean {
  * In-app paths only. Never a protocol-relative "//host", never an absolute
  * URL, never back to the door itself, and never an address we do not have —
  * a redirect target read off the URL is an open redirect if you let it be one.
+ * "An address we do not have" now includes an address this branch does not
+ * show: with the flag off, known() refuses the Look Book, so a wardrobe opened
+ * from a feed link lands on Today rather than on a redirect.
  */
 export function safeNext(raw: string | null): string | null {
   if (!raw) return null;

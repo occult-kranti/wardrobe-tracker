@@ -12,10 +12,12 @@
  * snapshots the phone cannot reach, so each renders as its typographic
  * specimen (the asset seam, docs/34 §2.8).
  */
+import { Redirect } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { FEED_ENABLED } from '@almari/shared/flags';
 import type { FeedPost } from '@almari/shared/types';
 
 import { Chip } from '../../components/Chip';
@@ -33,6 +35,17 @@ import { useTheme } from '../../tokens/ThemeContext';
 import { TYPE } from '../../tokens/typography';
 
 export default function FeedScreen() {
+  // THE FLAG, FIRST LINE (docs/42 §2, native gate 2). `TopTabs.Protected`
+  // already takes this room off the bar and out of the pager; this covers the
+  // other way in — a deep link handed over by another app. It lands on Today
+  // SILENTLY: no plaque, no explainer, no date. A door that is not in the
+  // house this season gets no sign saying so.
+  //
+  // Before every hook on purpose. FEED_ENABLED is a module constant, so the
+  // branch is fixed for the life of the process and the hook order below it
+  // can never change between renders.
+  if (!FEED_ENABLED) return <Redirect href="/" />;
+
   const { tokens } = useTheme();
   const fonts = useFamilies();
   const { community, accounts, activeId, setCommunity } = useCommunity();

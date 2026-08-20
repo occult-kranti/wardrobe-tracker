@@ -985,13 +985,15 @@
     text-transform: uppercase;
   }
 
-  /* The rail's own label size. Measured cause: at the house's 13px, OUTFITS
-     rendered 69.7px inside a 69.7px slot at 360px — edge to edge in the
-     fallback face that is on screen until Switzer loads. 11px leaves air. */
+  /* The rail label returns to the house's 13px floor (docs/42 §1 retires the
+     11px exception). Its measured cause left the bar with OUTFITS: the
+     longest word the rail carries now is CLOSET, which sits inside a 360px
+     slot with air to spare even in the fallback face. The floor is the law;
+     the word shrinks, never the type. */
   .type-label-rail {
     font-family: var(--font-ui);
     font-weight: 600;
-    font-size: 11px;
+    font-size: 13px;
     line-height: 1.2;
     letter-spacing: 0.04em;
     text-transform: uppercase;

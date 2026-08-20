@@ -10,6 +10,7 @@ import { createHousehold, joinHousehold, leaveHousehold } from '../lib/household
 import { showToast } from '../components/Toast';
 import { personaById } from '../lib/personaWardrobe';
 import { formatMoney } from '@almari/shared/cost';
+import { FEED_ENABLED } from '@almari/shared/flags';
 
 /**
  * A WARDROBE'S OWN PAGE — who keeps it, how they dress, and what they show.
@@ -55,7 +56,13 @@ export default function Profile() {
             plate={<PlateEmptyCloset />}
             title="No record of this wardrobe."
             body="It may have been removed from this device."
-            action={<LinkButton to="/feed" tone="primary">Back to the feed</LinkButton>}
+            // The way out of a dead end has to be a door that opens. With the
+            // Look Book hidden, /feed answers with Today anyway, and a button
+            // that says "the feed" would be a plaque on a room that is not in
+            // the house this season.
+            action={FEED_ENABLED
+              ? <LinkButton to="/feed" tone="primary">Back to the feed</LinkButton>
+              : <LinkButton to="/" tone="primary">Back to today</LinkButton>}
           />
         </Card>
       </>
@@ -106,38 +113,46 @@ export default function Profile() {
 
       {/* The looks grid leads the page: what this wardrobe has chosen to show,
           newest first, before any words about how they dress. Image-first
-          tiles only — the feed carries the captions. */}
-      <Card>
-        <SectionTitle aside={shared.length > 0 ? `${shared.length} shown` : undefined}>
-          {isMe ? 'What you are showing' : 'On show'}
-        </SectionTitle>
-        {shared.length === 0 ? (
-          <p className="text-[14px] text-text-2 leading-snug">
-            {isMe
-              ? 'None of your looks are on show. Sharing happens one look at a time, from the outfit itself.'
-              : 'This wardrobe has not put anything on show.'}
-          </p>
-        ) : (
-          <ul className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            {shared.filter(post => post.look).map(post => (
-              <li key={post.id} className="border border-border rounded-[2px] overflow-hidden">
-                <LookThumb look={post.look!} />
-                <p className="type-ledger text-[11px] text-text-2 tabular px-2 py-1.5 truncate">
-                  {post.look!.name} · {shortDate(post.date)}
-                </p>
-              </li>
-            ))}
-          </ul>
-        )}
-        {isMe ? (
-          <>
-            <Basting className="my-4" />
-            <Link to="/outfits" className="type-label text-[13px] text-accent underline underline-offset-[3px] min-h-11 inline-flex items-center">
-              Choose what you share
-            </Link>
-          </>
-        ) : null}
-      </Card>
+          tiles only — the feed carries the captions.
+
+          IT READS THE STORE THE FEED WRITES (docs/42 §2), so it is seated by
+          the same flag. In alpha it is ABSENT, not empty: an "on show" heading
+          over an explanation of a room that is not in the house would be the
+          plaque the ruling forbids. Everything below — the counts, the roofs,
+          the philosophy — is about this wardrobe alone and stays. */}
+      {FEED_ENABLED ? (
+        <Card>
+          <SectionTitle aside={shared.length > 0 ? `${shared.length} shown` : undefined}>
+            {isMe ? 'What you are showing' : 'On show'}
+          </SectionTitle>
+          {shared.length === 0 ? (
+            <p className="text-[14px] text-text-2 leading-snug">
+              {isMe
+                ? 'None of your looks are on show. Sharing happens one look at a time, from the outfit itself.'
+                : 'This wardrobe has not put anything on show.'}
+            </p>
+          ) : (
+            <ul className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {shared.filter(post => post.look).map(post => (
+                <li key={post.id} className="border border-border rounded-[2px] overflow-hidden">
+                  <LookThumb look={post.look!} />
+                  <p className="type-ledger text-[11px] text-text-2 tabular px-2 py-1.5 truncate">
+                    {post.look!.name} · {shortDate(post.date)}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          )}
+          {isMe ? (
+            <>
+              <Basting className="my-4" />
+              <Link to="/outfits" className="type-label text-[13px] text-accent underline underline-offset-[3px] min-h-11 inline-flex items-center">
+                Choose what you share
+              </Link>
+            </>
+          ) : null}
+        </Card>
+      ) : null}
 
       {isMe ? (
         <Card>

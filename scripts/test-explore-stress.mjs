@@ -28,6 +28,43 @@ import { sharedAliases } from '../packages/shared/aliases.mjs';
 
 const ORIGIN = process.argv[2] ?? 'http://localhost:4174';
 
+/* --------------------------- the flag comes first ---------------------------
+
+   THIS WHOLE SUITE IS THE LOOK BOOK'S. Every scenario below opens /#/explore
+   and compares the wall it deals against the arithmetic. With FEED_ENABLED
+   false that address answers with Today, so there is no wall — and a suite
+   that went quietly green against a page it never reached would be worse than
+   one that does not run at all.
+
+   Nothing here is deleted and no check is relaxed. The run announces itself,
+   names the flag, and stops with a clean exit; the flag-off truths this suite
+   would otherwise cover are asserted elsewhere — scripts/test-flows.mjs (the
+   address lands on Today, no door in the shell points at it) and
+   scripts/test-routes.mjs (known() refuses it, so safeNext will not remember
+   it through the door).
+
+   The flag is read from the module the app itself compiles against, so the
+   branch feed-showcase flips one line and this file runs again, untouched. */
+const flagDir = mkdtempSync(join(tmpdir(), 'explore-flags-'));
+await build({
+  alias: sharedAliases(),
+  entryPoints: [fileURLToPath(new URL('../packages/shared/flags.ts', import.meta.url))],
+  bundle: true,
+  format: 'esm',
+  outfile: join(flagDir, 'flags.mjs'),
+  logLevel: 'error',
+});
+const { FEED_ENABLED } = await import(pathToFileURL(join(flagDir, 'flags.mjs')).href);
+if (!FEED_ENABLED) {
+  console.log('SKIP - THE SHOWING, STRESSED is not run on this branch.');
+  console.log('       FEED_ENABLED is false in packages/shared/flags.ts, so Explore is hidden:');
+  console.log('       /#/explore answers with Today and there is no wall to stress.');
+  console.log('       The flag-off truths are asserted in scripts/test-flows.mjs and');
+  console.log('       scripts/test-routes.mjs. Branch feed-showcase flips the one line and');
+  console.log('       this suite runs again, unchanged.');
+  process.exit(0);
+}
+
 /* ------------------------------ the oracle ------------------------------ */
 
 const dir = mkdtempSync(join(tmpdir(), 'explore-stress-'));

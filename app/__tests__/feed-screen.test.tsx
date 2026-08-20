@@ -12,6 +12,7 @@ import { fireEvent, waitFor, within } from '@testing-library/react-native';
 import { renderRouter } from 'expo-router/testing-library';
 
 import { todayLocal } from '@almari/shared/dates';
+import { FEED_ENABLED } from '@almari/shared/flags';
 import type { CommunityState } from '@almari/shared/types';
 
 import { ACCOUNTS_KEY, COMMUNITY_KEY, SESSION_KEY, storage, wardrobeKey } from '../src/lib/storage';
@@ -62,9 +63,35 @@ beforeEach(async () => {
   await storage.setItem(wardrobeKey('acct-1'), DOC);
 });
 
+/**
+ * THE FLAG BRANCHES BOTH WAYS (docs/42 §2 and its suite matrix). Nothing here
+ * is skipped or deleted — the Look Book is HIDDEN, not gone, and both halves
+ * of that sentence are assertions.
+ *
+ * Flag OFF (this branch): every one of these addresses must land on Today
+ * SILENTLY. No plaque, no explainer, no trace of the room's own words. That
+ * is the alpha's contract and it is checked on every case below rather than
+ * once in a corner.
+ *
+ * Flag ON (branch feed-showcase, which differs by one line): the original
+ * assertions run unchanged, because the room is in the house again.
+ *
+ * Returns true when the caller should go on to the flag-on assertions.
+ */
+async function lookBookOrToday(shell: ReturnType<typeof renderRouter>): Promise<boolean> {
+  if (FEED_ENABLED) return true;
+  await waitFor(() => expect(shell.getPathname()).toBe('/'));
+  // None of the Look Book's own words survive the redirect.
+  expect(shell.queryByText('Newest first. That is the whole order.')).toBeNull();
+  expect(shell.queryByText('On show in the last day')).toBeNull();
+  expect(shell.queryAllByTestId('specimen-card')).toHaveLength(0);
+  return false;
+}
+
 describe('the Look Book', () => {
   test('sample content resolves, newest first, and says it is a sample', async () => {
     const shell = renderRouter('./src/app', { initialUrl: '/feed' });
+    if (!(await lookBookOrToday(shell))) return;
 
     // The newest sample post (two days back) and the masthead's ledger count —
     // the name sets twice on a specimen card (the plate and the ledger line).
@@ -82,6 +109,7 @@ describe('the Look Book', () => {
 
   test('a web-relative photograph renders the typographic specimen, never a broken image', async () => {
     const shell = renderRouter('./src/app', { initialUrl: '/feed' });
+    if (!(await lookBookOrToday(shell))) return;
     await shell.findByText('11 shared');
 
     const specimens = shell.getAllByTestId('specimen-card');
@@ -95,6 +123,7 @@ describe('the Look Book', () => {
 
   test('no counts anywhere: no likes, followers, views or seen-by ever render', async () => {
     const shell = renderRouter('./src/app', { initialUrl: '/feed' });
+    if (!(await lookBookOrToday(shell))) return;
     await shell.findByText('11 shared');
     for (const banned of [/\blikes?\b/i, /\bfollowers?\b/i, /\bviews?\b/i, /seen by/i, /\bstreak\b/i]) {
       expect(shell.queryByText(banned)).toBeNull();
@@ -113,6 +142,7 @@ describe('the Look Book', () => {
       }),
     );
     const shell = renderRouter('./src/app', { initialUrl: '/feed' });
+    if (!(await lookBookOrToday(shell))) return;
 
     expect(await shell.findByText('The shawl carried the whole evening.')).toBeTruthy();
     expect(shell.getByText('12 shared')).toBeTruthy();
@@ -135,6 +165,7 @@ describe('the Look Book', () => {
 
   test('set aside is private, filterable, and counted nowhere', async () => {
     const shell = renderRouter('./src/app', { initialUrl: '/feed' });
+    if (!(await lookBookOrToday(shell))) return;
     await shell.findByText('11 shared');
 
     fireEvent.press(shell.getByLabelText('Set "Oxblood at Indian Accent" aside'));
@@ -156,6 +187,7 @@ describe('the Look Book', () => {
 
   test('sample posts do not offer the take-down: the verb belongs to the author alone', async () => {
     const shell = renderRouter('./src/app', { initialUrl: '/feed' });
+    if (!(await lookBookOrToday(shell))) return;
     await shell.findByText('11 shared');
     expect(shell.queryByText('Take it off the feed')).toBeNull();
     // A look post that is not yours carries Attach — the Show verb.

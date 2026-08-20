@@ -5,6 +5,7 @@ import { useSession } from '../context/SessionContext';
 import { todayLocal } from '@almari/shared/dates';
 import { nowLocalStamp } from '../components/social';
 import { ShareSheet } from '../components/ShareSheet';
+import { FEED_ENABLED } from '@almari/shared/flags';
 import { categoryLabel, displayTag, type ClothingItem, type Outfit, type ShareScope } from '@almari/shared/types';
 import {
   Button, Card, Chip, EmptyState, Field, IconButton, Masthead, SectionTitle, TagRail, inputClass,
@@ -213,20 +214,29 @@ function OutfitCard({
             </Button>
           </div>
           {/* Sharing is a deliberate act, so it lives where the look is the
-              subject — not as a glyph on a browse tile competing with the photo. */}
-          <div className="flex items-center justify-between gap-3">
-            <p className="type-ledger text-[11px] text-text-2">
-              {shared ? 'On the feed' : 'Not shared'}
-            </p>
-            {/* Tertiary, not a second bordered box: twenty cards each carried
-                two identical secondary buttons, and "Share this look" rendered
-                wider than "Wear today", making the social action the dominant
-                one on the whole browse page. One bordered control per card —
-                the log action. */}
-            <Button tone="tertiary" onClick={onShare}>
-              {shared ? 'Take it off the feed' : 'Share this look'}
-            </Button>
-          </div>
+              subject — not as a glyph on a browse tile competing with the photo.
+
+              THE SHARE VERB IS THE LOOK BOOK'S (docs/42 §2). This row writes to
+              the shared store the feed reads, so while the Look Book is hidden
+              the row goes with it: a Share whose destination is not in the house
+              this season is a promise the app cannot keep, and "On the feed"
+              would name a room nobody can walk to. Show, Ask and Lend stay
+              whole — those are conversation verbs and Chats is on the bar. */}
+          {FEED_ENABLED ? (
+            <div className="flex items-center justify-between gap-3">
+              <p className="type-ledger text-[11px] text-text-2">
+                {shared ? 'On the feed' : 'Not shared'}
+              </p>
+              {/* Tertiary, not a second bordered box: twenty cards each carried
+                  two identical secondary buttons, and "Share this look" rendered
+                  wider than "Wear today", making the social action the dominant
+                  one on the whole browse page. One bordered control per card —
+                  the log action. */}
+              <Button tone="tertiary" onClick={onShare}>
+                {shared ? 'Take it off the feed' : 'Share this look'}
+              </Button>
+            </div>
+          ) : null}
         </div>
       )}
     </Card>
@@ -685,12 +695,16 @@ export default function Outfits() {
         </Card>
       )}
 
-      <ShareSheet
-        open={sharing !== null}
-        look={sharing ? lookOf(sharing) : null}
-        onClose={() => setSharing(null)}
-        onShare={share}
-      />
+      {/* Nothing can open it with the row above gone, but a sheet for a verb
+          the branch does not offer should not be in the tree either. */}
+      {FEED_ENABLED ? (
+        <ShareSheet
+          open={sharing !== null}
+          look={sharing ? lookOf(sharing) : null}
+          onClose={() => setSharing(null)}
+          onShare={share}
+        />
+      ) : null}
     </div>
   );
 }

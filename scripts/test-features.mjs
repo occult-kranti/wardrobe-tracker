@@ -9,8 +9,29 @@
  * Usage: node scripts/test-features.mjs [origin]
  */
 import { chromium } from 'playwright';
+import { build } from 'esbuild';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { mkdtempSync } from 'fs';
+import { tmpdir } from 'os';
+import { join } from 'path';
+import { sharedAliases } from '../packages/shared/aliases.mjs';
 
 const ORIGIN = process.argv[2] ?? 'http://localhost:4174';
+
+/* The flag, read from the module the app compiles against — never restated
+   here, so the branch feed-showcase flips one line in packages/shared/flags.ts
+   and the assertions below change sides on their own. */
+const flagDir = mkdtempSync(join(tmpdir(), 'features-flags-'));
+await build({
+  alias: sharedAliases(),
+  entryPoints: [fileURLToPath(new URL('../packages/shared/flags.ts', import.meta.url))],
+  bundle: true,
+  format: 'esm',
+  outfile: join(flagDir, 'flags.mjs'),
+  logLevel: 'error',
+});
+const { FEED_ENABLED } = await import(pathToFileURL(join(flagDir, 'flags.mjs')).href);
+console.log(`FEED_ENABLED=${FEED_ENABLED} (packages/shared/flags.ts)\n`);
 
 let failed = 0;
 const check = (label, ok, detail = '') => {
@@ -43,18 +64,34 @@ await page.goto(`${ORIGIN}/#/feed`, { waitUntil: 'domcontentloaded' });
 await page.waitForTimeout(700);
 const stranded = await page.evaluate(() => ({
   hash: location.hash,
-  // 600, not 200: the door's lede grew and pushed the deep-link sentence past
-  // a 200-character window, which failed a check about copy that was still
-  // there. The window is the probe, not the contract — keep it wider than the
-  // longest lede the door is likely to carry.
-  text: document.body.innerText.slice(0, 600),
+  // 1200, not 600, not 200: the door's lede has grown twice, and each time it
+  // pushed a sentence past the window and failed a check about copy that was
+  // still on the screen. The window is the probe, not the contract — keep it
+  // wider than the whole door (658 characters as this was written), because
+  // the flag-off check below asserts an ABSENCE, and an absence measured
+  // through too small a window is a check that passes by not looking.
+  text: document.body.innerText.slice(0, 1200),
   theme: document.documentElement.getAttribute('data-theme'),
 }));
 check('a signed-out deep link redirects instead of stranding the URL',
   stranded.hash.startsWith('#/open'), `hash ${stranded.hash}`);
-check('the door says what it is holding for you',
-  /feed is inside a wardrobe/i.test(stranded.text) || /open a wardrobe|start a wardrobe/i.test(stranded.text),
-  '');
+// THE DOOR'S OWN WORDS, BRANCHED ON THE FLAG (docs/42 §2). This used to be one
+// check with an "or" in it, which passed whichever sentence the door showed —
+// so it could not have caught the door naming a room that is not in the house.
+// Each branch now asserts one sentence and refuses the other.
+if (FEED_ENABLED) {
+  check('the door says what it is holding for you',
+    /feed is inside a wardrobe/i.test(stranded.text), '');
+} else {
+  // The positive half is the door's own offer — the honest skip past the
+  // account, which is the first thing a deep-linked stranger can act on. The
+  // negative half is the ruling: no plaque. Both halves matter; asserting only
+  // the absence would pass on a blank screen.
+  check('the door offers itself and names no hidden room',
+    /continue without an account|open a wardrobe|start a wardrobe/i.test(stranded.text)
+      && !/feed/i.test(stranded.text),
+    '');
+}
 check('the door is already in the house theme, not the light room',
   stranded.theme === 'dyehouse', `data-theme=${stranded.theme}`);
 
@@ -291,6 +328,14 @@ check('the weather never asks for your location', !after.asked, '');
   check('the do-it-yourself prompt is still offered', bench.stillOffersPrompt, '');
   check('the feed import declares its own journey, and the solo rule, before its button',
     bench.feedSection && bench.feedHonest && bench.feedInput && bench.feedDeclaredFirst, '');
+
+  // NOT GATED, BY EXPLICIT RULING (docs/42 §2). "From a feed screenshot" is the
+  // PHOTO bench — a picture somebody took of a feed in some other app, read for
+  // garments — and has nothing to do with this app's own feed. It stays in both
+  // branches, and this line asserts it at whatever FEED_ENABLED currently is,
+  // so nobody helpfully gates it along with the Look Book.
+  check(`the photo bench keeps its feed-screenshot import with FEED_ENABLED=${FEED_ENABLED}`,
+    bench.feedSection && bench.feedInput, '');
 
   // The key field left the bench when the relay arrived: the send needs none,
   // and a key of your own is a Settings override, not a toll at the door.

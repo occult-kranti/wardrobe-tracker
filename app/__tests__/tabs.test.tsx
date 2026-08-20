@@ -1,19 +1,26 @@
 /**
- * The tab shell smoke — the shell boots, the four rooms of the shell
- * answer their addresses, and the addresses are the web's own
- * (src/lib/routes.ts: `/` is today, `/closet` the closet, `/feed` the feed,
- * `/settings` settings, `/open` the door).
+ * THE SHELL, ALPHA — the four-room house bar and the addresses behind it.
  *
- * Since the wardrobe opened (wave 4a), the shell only shows its tabs when
- * a wardrobe exists — a device with none walks to the door instead (that
- * path is door.test.tsx's). So this suite seeds one small wardrobe and
- * asserts the same four addresses it always has, now with the real
- * screens' own lines.
+ * docs/42 §1: flag off the bar is TODAY · CLOSET · CHATS · HOUSE, four equal
+ * slots, and the geometry law says the bar derives from the VISIBLE roster —
+ * no spacer, no ghost cell, no disabled slot where the Look Book will sit.
+ * So this suite counts to four on purpose: the accessibility label carries
+ * "of 4", and a fifth slot appearing would fail it rather than pass quietly.
  *
- * Rendered with expo-router's own testing library against the real
- * src/app directory — no fixture copy that could drift from the shipped
- * routes. Fonts and the splash screen are mocked: jest has no device to
- * load a TTF onto, and the smoke test is about the shell, not the faces.
+ * The addresses are still the web's own (src/lib/routes.ts, and now
+ * @almari/shared/nav which both bars read): `/` is today, `/closet` the
+ * closet, `/chats` conversations, `/profile` the House, `/open` the door.
+ * The two that MOVED in this wave are asserted where they moved to:
+ * `/settings` is off the bar and answers as a pushed route, and `/feed` —
+ * hidden, never deleted — lands on Today silently, with no plaque.
+ *
+ * The flag-on half of this bar lives in tabs-showcase.test.tsx, which mocks
+ * FEED_ENABLED true. Both halves are asserted; neither is skipped.
+ *
+ * Rendered with expo-router's own testing library against the real src/app
+ * directory — no fixture copy that could drift from the shipped routes.
+ * Fonts and the splash screen are mocked: jest has no device to load a TTF
+ * onto, and this is about the shell, not the faces.
  *
  * RNTL is pinned at 13.x on purpose: expo-router 57's testing library was
  * built against RNTL 13's synchronous render — RNTL 14 made render async,
@@ -23,8 +30,10 @@
  */
 import { beforeEach, describe, expect, jest, test } from '@jest/globals';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { fireEvent } from '@testing-library/react-native';
+import { fireEvent, waitFor } from '@testing-library/react-native';
 import { renderRouter } from 'expo-router/testing-library';
+
+import { FEED_ENABLED } from '@almari/shared/flags';
 
 import { ACCOUNTS_KEY, SESSION_KEY, storage, wardrobeKey } from '../src/lib/storage';
 
@@ -66,37 +75,136 @@ beforeEach(async () => {
   );
 });
 
-describe('the tab shell', () => {
-  test('boots on Today with all four tabs on the rail', async () => {
+/** The alpha bar, in order, as a screen reader hears it (docs/42 §9). */
+const ALPHA_BAR = [
+  'Today, tab 1 of 4',
+  'Closet, tab 2 of 4',
+  'Chats, tab 3 of 4',
+  'House, tab 4 of 4',
+];
+
+describe('the house bar, alpha', () => {
+  test('boots on Today with four slots — and the fifth is absent, not empty', async () => {
     const shell = renderRouter('./src/app', { initialUrl: '/' });
 
     // The day's page, blank until something is logged.
     expect(await shell.findByText("Today's page is still blank.")).toBeTruthy();
     expect(shell.getPathname()).toBe('/');
-    expect(shell.getAllByText('Today').length).toBeGreaterThan(0);
-    expect(shell.getByText('Closet')).toBeTruthy();
-    expect(shell.getByText('Look Book')).toBeTruthy();
-    expect(shell.getByText('Settings')).toBeTruthy();
+
+    // Four slots, each announcing its place in the VISIBLE roster.
+    for (const label of ALPHA_BAR) expect(shell.getByLabelText(label)).toBeTruthy();
+    expect(shell.getAllByRole('tab')).toHaveLength(FEED_ENABLED ? 5 : 4);
+
+    // The Look Book's slot is gone rather than disabled: no ghost cell, and
+    // nothing on the bar says the word.
+    expect(shell.queryByText('Look Book')).toBeNull();
+    expect(shell.queryByText('Looks')).toBeNull();
+    // Settings has left the bar for a pushed route (docs/42 §6).
+    expect(shell.queryByText('Settings')).toBeNull();
+    // No notification chrome of any kind rides the bar (docs/42 §1).
+    for (const banned of [/unread/i, /\bnew\b/i, /\bbadge\b/i]) {
+      expect(shell.queryByText(banned)).toBeNull();
+    }
   });
 
-  test('the Closet tab answers /closet with the pieces on their tiles', async () => {
+  test('the House slot says it can be held, and holding it opens the switcher', async () => {
     const shell = renderRouter('./src/app', { initialUrl: '/' });
     await shell.findByText("Today's page is still blank.");
 
-    fireEvent.press(shell.getByText('Closet'));
+    const house = shell.getByLabelText('House, tab 4 of 4');
+    // Instagram's account-switch gesture, translated — and announced.
+    expect(house.props.accessibilityHint).toBe('Hold to switch wardrobes.');
+    // Only the House carries one; a hint on every slot would be noise.
+    expect(shell.getByLabelText('Today, tab 1 of 4').props.accessibilityHint).toBeUndefined();
+
+    fireEvent(house, 'longPress');
+    await waitFor(() => expect(shell.getPathname()).toBe('/profile'));
+    // The sheet is up, not merely the hall: "Open now" marks the open
+    // wardrobe's row and appears nowhere else in the house.
+    expect(await shell.findByText('Open now')).toBeTruthy();
+    // Named on the nameplate AND on its row in the sheet.
+    expect(shell.getAllByText('Test wardrobe').length).toBeGreaterThan(1);
+  });
+
+  test('the Closet slot answers /closet with the pieces on their tiles', async () => {
+    const shell = renderRouter('./src/app', { initialUrl: '/' });
+    await shell.findByText("Today's page is still blank.");
+
+    fireEvent.press(shell.getByLabelText('Closet, tab 2 of 4'));
     expect(await shell.findByText('The linen shirt')).toBeTruthy();
     expect(shell.getPathname()).toBe('/closet');
   });
 
-  test('the Look Book tab answers /feed — the web route keeps its address', async () => {
+  test('the Chats slot answers /chats — the address the web keeps', async () => {
     const shell = renderRouter('./src/app', { initialUrl: '/' });
     await shell.findByText("Today's page is still blank.");
 
-    fireEvent.press(shell.getByText('Look Book'));
-    // The placeholder's empty line gave way to the living feed (FEED wave):
-    // the route now answers with the feed's own order sentence.
-    expect(await shell.findByText('Newest first. That is the whole order.')).toBeTruthy();
-    expect(shell.getPathname()).toBe('/feed');
+    fireEvent.press(shell.getByLabelText('Chats, tab 3 of 4'));
+    await waitFor(() => expect(shell.getPathname()).toBe('/chats'));
+  });
+
+  test('the House slot answers /profile — the address does not move with the word', async () => {
+    const shell = renderRouter('./src/app', { initialUrl: '/' });
+    await shell.findByText("Today's page is still blank.");
+
+    fireEvent.press(shell.getByLabelText('House, tab 4 of 4'));
+    // The slot and the masthead say House; the address stays /profile, so a
+    // deep link is the same sentence on both apps.
+    expect(await shell.findByText('The House')).toBeTruthy();
+    expect(shell.getPathname()).toBe('/profile');
+  });
+
+  test("the Look Book's address lands on Today, silently and without a plaque", async () => {
+    const shell = renderRouter('./src/app', { initialUrl: '/feed' });
+
+    if (FEED_ENABLED) {
+      // The showcase branch: the room is in the house and answers for itself.
+      expect(await shell.findByText('Newest first. That is the whole order.')).toBeTruthy();
+      expect(shell.getPathname()).toBe('/feed');
+      return;
+    }
+
+    await waitFor(() => expect(shell.getPathname()).toBe('/'));
+    expect(await shell.findByText("Today's page is still blank.")).toBeTruthy();
+    // A door that is not in the house this season gets no plaque: nothing
+    // explains, apologises for, or names the room that is not here.
+    expect(shell.queryByText('Newest first. That is the whole order.')).toBeNull();
+    for (const banned of [/look book/i, /coming soon/i, /not available/i, /\bfeed\b/i]) {
+      expect(shell.queryByText(banned)).toBeNull();
+    }
+  });
+
+  test('a story deck sent from another app lands on Today the same way', async () => {
+    const shell = renderRouter('./src/app', { initialUrl: '/story/acct-1' });
+
+    if (FEED_ENABLED) {
+      await waitFor(() => expect(shell.getPathname()).not.toBe('/'));
+      return;
+    }
+    await waitFor(() => expect(shell.getPathname()).toBe('/'));
+    expect(await shell.findByText("Today's page is still blank.")).toBeTruthy();
+  });
+
+  test('Settings is off the bar and answers as a pushed route at /settings', async () => {
+    const shell = renderRouter('./src/app', { initialUrl: '/settings' });
+
+    expect(shell.getPathname()).toBe('/settings');
+    // Every setting survived the move (docs/42 §6: verbatim).
+    expect(await shell.findByText('Where the record lives')).toBeTruthy();
+    expect(shell.getByText('The account')).toBeTruthy();
+    // Pushed OVER the tabs, so the bar is not under it — and the route owes
+    // the reader a door out, since the root stack shows no header.
+    expect(shell.queryByLabelText('Today, tab 1 of 4')).toBeNull();
+    expect(shell.getByText('Back to the house')).toBeTruthy();
+  });
+
+  test('the House masthead spool is the one door into Settings', async () => {
+    const shell = renderRouter('./src/app', { initialUrl: '/profile' });
+    await shell.findByText('The House');
+
+    fireEvent.press(shell.getByLabelText('Settings'));
+    await waitFor(() => expect(shell.getPathname()).toBe('/settings'));
+    expect(await shell.findByText('Where the record lives')).toBeTruthy();
   });
 
   test('the door answers /open outside the tabs and names the open wardrobe', async () => {

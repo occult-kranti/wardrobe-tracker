@@ -4,6 +4,14 @@
  * lives" (docs/34 §2.2). Theme, storage, and export are still to come; the
  * screen says so rather than pretending the list is finished.
  *
+ * SETTINGS HAS LEFT THE BAR (docs/42 §6). It moved from `(tabs)/settings.tsx`
+ * to this pushed route outside the tabs so the fifth slot could be the House;
+ * `/settings` survives verbatim, every setting with it, and the House's
+ * masthead spool is the door. Nothing about the screen below changed in the
+ * move except the depth of its imports and the way back added here — a
+ * pushed route under a header-less stack owes the reader a door out that is
+ * not a system gesture.
+ *
  * The laws this screen carries:
  *   - sync is OPT-IN per wardrobe, off by default; a sample never gets the
  *     choice at all (a worked example belongs to the device);
@@ -11,21 +19,24 @@
  *     until E2E encryption lands, the copy says who can read a synced copy);
  *   - signing out deletes nothing, and the copy says so where the button is.
  */
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Masthead } from '../../components/Masthead';
-import { AccountPanel, Choice, TRUST_SENTENCE, useSession } from '../../lib/session';
-import { useWardrobe } from '../../lib/wardrobe';
-import { useFamilies } from '../../tokens/FontsContext';
-import { RADIUS } from '../../tokens/themes';
-import { useTheme } from '../../tokens/ThemeContext';
-import { TYPE } from '../../tokens/typography';
+import { Button } from '../components/Button';
+import { Masthead } from '../components/Masthead';
+import { AccountPanel, Choice, TRUST_SENTENCE, useSession } from '../lib/session';
+import { useWardrobe } from '../lib/wardrobe';
+import { useFamilies } from '../tokens/FontsContext';
+import { RADIUS } from '../tokens/themes';
+import { useTheme } from '../tokens/ThemeContext';
+import { TYPE } from '../tokens/typography';
 
 export default function SettingsScreen() {
   const { tokens } = useTheme();
   const fonts = useFamilies();
+  const router = useRouter();
   const { authUser, authReady } = useSession();
   const { wardrobeName, isSample, syncMode, setSyncMode } = useWardrobe();
   // Chose "Synced to my account" while signed out: the choice cannot hold, so
@@ -67,6 +78,22 @@ export default function SettingsScreen() {
   return (
     <SafeAreaView edges={['top']} style={[styles.screen, { backgroundColor: tokens.bg }]}>
       <ScrollView contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
+        {/* The way back. The one door into this room is the House's spool, so
+            `back` is nearly always right; a settings link opened cold has
+            nothing to pop and lands on Today, which is where every stranded
+            address in this house lands. */}
+        <View style={styles.leave}>
+          <Button
+            tone="tertiary"
+            onPress={() => {
+              if (router.canGoBack()) router.back();
+              else router.replace('/');
+            }}
+          >
+            Back to the house
+          </Button>
+        </View>
+
         <Masthead title="Settings" meta="The house choices" />
 
         {/* The account — wholly optional, and the copy says what it is for. */}
@@ -159,6 +186,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 24,
     paddingBottom: 40,
+  },
+  leave: {
+    alignSelf: 'flex-start',
+    marginBottom: 16,
   },
   plate: {
     borderWidth: StyleSheet.hairlineWidth,

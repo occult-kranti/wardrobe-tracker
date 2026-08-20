@@ -42,13 +42,15 @@ const check = (label, ok, detail = '') => {
 const { sharedAliases, SHARED_PACKAGE, packageRoot } = await import(
   pathToFileURL(path.join(ROOT, 'packages/shared/aliases.mjs')).href
 );
-const EXPECTED_MODULES = ['cost', 'dates', 'intake', 'migrate', 'similarity', 'types'];
+// The six lifted modules plus the two shell modules of docs/42 (flags, nav).
+// Sorted — the check compares element-wise against a sorted directory read.
+const EXPECTED_MODULES = ['cost', 'dates', 'flags', 'intake', 'migrate', 'nav', 'similarity', 'types'];
 const actualModules = readdirSync(packageRoot)
   .filter((f) => f.endsWith('.ts') && !f.endsWith('.d.ts') && !f.endsWith('.d.mts'))
   .map((f) => f.replace(/\.ts$/, ''))
   .sort();
 check(
-  'the shared package holds exactly the six lifted modules',
+  'the shared package holds exactly the modules the manifest names',
   actualModules.length === EXPECTED_MODULES.length &&
     actualModules.every((m, i) => m === EXPECTED_MODULES[i]),
   `found [${actualModules.join(', ')}]`

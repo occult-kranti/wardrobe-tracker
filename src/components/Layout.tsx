@@ -4,7 +4,7 @@ import { nextTheme } from '../lib/accounts';
 import {
   IconToday, IconCloset, IconOutfits, IconCalendar, IconLedger,
   IconWishlist, IconCompare, IconRail, IconSettings, IconPlus, IconTheme, IconMenu, IconClose,
-  IconEvents, IconFeed, IconChats, IconProfile, IconSearch,
+  IconEvents, IconFeed, IconChats, IconHouse, IconSearch,
 } from './icons';
 import { GroundFrieze, HangingRail, GutterFigure, ScatterField, Wordmark, TagMark } from './art';
 import { useWardrobe } from '../context/WardrobeContext';
@@ -13,6 +13,9 @@ import AddItemModal from './AddItemModal';
 import { PageGuide } from './Tutorial';
 import { ToastContainer } from './Toast';
 import { Button, IconButton } from './ui';
+import { FEED_ENABLED } from '@almari/shared/flags';
+import { barSlots, slotFor } from '@almari/shared/nav';
+import { LOOK_BOOK_PATHS } from '../lib/routes';
 
 interface NavItem {
   path: string;
@@ -22,9 +25,25 @@ interface NavItem {
   icon: typeof IconToday;
 }
 
-const navItems: NavItem[] = [
-  { path: '/', label: 'Today', icon: IconToday },
-  { path: '/closet', label: 'Closet', icon: IconCloset },
+/**
+ * The five bar addresses take their WORDS from the shared roster
+ * (packages/shared/nav.ts, docs/42 §7) rather than from here, so the phone
+ * rail and the native house bar cannot drift apart in a rename. The roster
+ * carries no icons — each app binds its own by key — so the drawing still
+ * lives in this file. Every entry that seats no bar slot names itself.
+ *
+ * A path the roster does not know falls back to itself, which is an obviously
+ * wrong label rather than a plausible one: it would read "/closet" on the rail
+ * the first time it rendered.
+ */
+const words = (path: string): { label: string; shortLabel?: string } => {
+  const slot = slotFor(path);
+  return { label: slot?.label ?? path, shortLabel: slot?.shortLabel };
+};
+
+const ALL_NAV: NavItem[] = [
+  { path: '/', ...words('/'), icon: IconToday },
+  { path: '/closet', ...words('/closet'), icon: IconCloset },
   { path: '/outfits', label: 'Outfits', icon: IconOutfits },
   { path: '/calendar', label: 'Calendar', icon: IconCalendar },
   { path: '/ledger', label: 'Ledger', icon: IconLedger },
@@ -33,18 +52,35 @@ const navItems: NavItem[] = [
   // lines and shoved its icon out of the icon column.
   { path: '/compare', label: 'Before you buy', shortLabel: 'Compare', icon: IconCompare },
   { path: '/events', label: 'Events', icon: IconEvents },
-  { path: '/feed', label: 'Feed', icon: IconFeed },
+  // The Look Book. Its words are the roster's — "Look Book" at full width,
+  // "Looks" on the rail — and the flag decides whether it is here at all.
+  { path: '/feed', ...words('/feed'), icon: IconFeed },
   // Explore lives here (the More sheet) and behind the Feed's masthead action —
   // never in the five mobile slots, which stay five.
   { path: '/explore', label: 'Explore', icon: IconSearch },
-  { path: '/chats', label: 'Conversations', shortLabel: 'Chats', icon: IconChats },
-  { path: '/profile', label: 'Profile', icon: IconProfile },
+  { path: '/chats', ...words('/chats'), icon: IconChats },
+  // HOUSE. The slot label and the masthead were rehung; the address did not
+  // move, so every link anyone ever sent to /profile still lands. The glyph
+  // is the almirah (docs/42 §1) — the app's namesake wears its own name.
+  { path: '/profile', ...words('/profile'), icon: IconHouse },
   { path: '/rail', label: 'Shared rail', shortLabel: 'Rail', icon: IconRail },
   { path: '/settings', label: 'Settings', icon: IconSettings },
   // Its only other entry is the desktop rail's footer, which is `hidden lg:flex`
   // — so below 1024px switching wardrobes meant typing the address.
   { path: '/open', label: 'Wardrobes', icon: IconCloset },
 ];
+
+/**
+ * What the navigation offers this season.
+ *
+ * Flag off, the Look Book's addresses leave every list at once — the desktop
+ * rail, the phone rail and the More sheet all read this one array, so no
+ * sheet-only door is left pointing at a room that answers with Today. Hidden,
+ * not deleted: the entries are above, and the filter is the whole diff.
+ */
+const navItems: NavItem[] = ALL_NAV.filter(
+  n => FEED_ENABLED || !LOOK_BOOK_PATHS.includes(n.path)
+);
 
 /**
  * Furniture is NOT in here, and that is the point.
@@ -57,8 +93,21 @@ const navItems: NavItem[] = [
  * standing invitation goes.
  */
 
-// Five slots in the thumb zone; the rest live behind "More".
-const mobilePrimary = ['/', '/closet', '/outfits', '/feed'];
+/**
+ * Five cells in the thumb zone: four addresses and the More sheet.
+ *
+ * The four come off the roster in the roster's order, so the phone rail and the
+ * native house bar are the same bar read twice (docs/42 §7). Flag off the
+ * roster is four long and the rail reads TODAY · CLOSET · CHATS · HOUSE ·
+ * MORE; flag on it is five, the Look Book takes the centre, and the House
+ * moves to the sheet — because the web's fifth cell is More, and six cells at
+ * 320px is a wall we do not build. The slice is that decision, and it is the
+ * ONLY place the web bar differs from the native one, which has no More.
+ *
+ * Outfits leaves the rail for the sheet here. That is the single declared cost
+ * of the whole plan — one extra tap — spent to seat the owner's roster.
+ */
+const mobilePrimary = barSlots().slice(0, 4).map(s => s.path);
 
 /**
  * Does this nav entry own the address we are at?
@@ -80,8 +129,11 @@ const mobilePrimary = ['/', '/closet', '/outfits', '/feed'];
  */
 const HELD_BY: Record<string, string[]> = {
   '/closet': ['/furniture', '/intake'],
-  // A story deck is the feed being read one teller at a time.
-  '/feed': ['/story'],
+  // A story deck is the feed being read one teller at a time — so it lights the
+  // feed's tab, and only while there is a feed tab to light. Flag off, /story
+  // answers with Today anyway; a held-by entry pointing at an absent tab would
+  // be a rule with nothing left to apply it to.
+  ...(FEED_ENABLED ? { '/feed': ['/story'] } : {}),
 };
 
 function owns(path: string, here: string): boolean {

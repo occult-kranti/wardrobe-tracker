@@ -43,6 +43,30 @@ import { join } from 'path';
 /** A host that cannot exist, so an origin escape is unmistakable in the output. */
 const BASE = 'https://almari.invalid';
 
+async function loadModules() {
+  const dir = mkdtempSync(join(tmpdir(), 'routes-'));
+  await build({ alias: sharedAliases(),
+    entryPoints: {
+      routes: fileURLToPath(new URL('../src/lib/routes.ts', import.meta.url)),
+      // The flag is read from the module the app itself compiles against
+      // (packages/shared/flags.ts) rather than restated here, so the showcase
+      // branch flips the rows below back to 'allow' without this file being
+      // edited at all. A suite that carries its own copy of a constant is a
+      // suite that goes green against the wrong build.
+      flags: fileURLToPath(new URL('../packages/shared/flags.ts', import.meta.url)),
+    },
+    bundle: true,
+    format: 'esm',
+    outdir: dir,
+    logLevel: 'error',
+  });
+  const routes = await import(pathToFileURL(join(dir, 'routes.js')).href);
+  const flags = await import(pathToFileURL(join(dir, 'flags.js')).href);
+  return { ...routes, ...flags };
+}
+
+const { safeNext, known, ROUTES, FEED_ENABLED } = await loadModules();
+
 /* ---------- the input table ----------
    `reject` means safeNext must return null. `allow` means it must return a
    usable in-app path. Every row says why it is in the table, because a threat
@@ -116,7 +140,6 @@ const INPUTS = [
   // --- the happy path. These MUST come back. ---
   ['/', 'allow', 'today, the default landing'],
   ['/closet', 'allow', 'the closet'],
-  ['/feed', 'allow', 'the feed'],
   ['/intake', 'allow', 'photo intake, the route a share-sheet deep link wants'],
   ['/settings', 'allow', 'settings'],
   ['/rail/abc', 'allow', "a neighbour's rail, by id"],
@@ -125,10 +148,6 @@ const INPUTS = [
   ['/furniture/f-1', 'allow', 'a place in the dressing room, by id'],
   ['/closet?filter=tops', 'allow', 'a route with a query it is allowed to carry'],
   ['/closet#swatches', 'allow', 'a route with a fragment'],
-  ['/explore', 'allow', 'explore, the browsable grid over what is on show'],
-  ['/explore/post-1', 'allow', 'something on show, by id — the tile tap target'],
-  ['/story/w-abc', 'allow', 'a story deck, by wardrobe id — the rail tap target'],
-  ['/story/commons', 'allow', 'the guests from the commons, the rail\'s last slot'],
 
   // --- traversal and doubled slashes inside an :id segment. These are the
   //     rows that catch the finding: known() treats everything after the stem
@@ -143,6 +162,30 @@ const INPUTS = [
   ['/story//evil.com', 'reject', 'an empty story-id segment hiding a host'],
 ];
 
+/* --- THE LOOK BOOK'S FOUR ADDRESSES, whose verdict is the flag's (docs/42 §2).
+       Nothing is deleted here and no row is relaxed: each one is asserted at
+       BOTH flag values, and which assertion applies is read off
+       packages/shared/flags.ts.
+
+       Flag ON they are ordinary in-app routes and must come back, exactly as
+       before. Flag OFF known() refuses them, and this table's job is to prove
+       the refusal reaches the guard: safeNext must not remember a feed link
+       through the door, or opening a wardrobe would land you on a redirect
+       back to Today with the door's promise broken on the way. */
+const LOOK_BOOK = [
+  ['/feed', 'the feed'],
+  ['/explore', 'explore, the browsable grid over what is on show'],
+  ['/explore/post-1', 'something on show, by id — the tile tap target'],
+  ['/story/w-abc', 'a story deck, by wardrobe id — the rail tap target'],
+  ['/story/commons', "the guests from the commons, the rail's last slot"],
+];
+
+for (const [path, why] of LOOK_BOOK) {
+  INPUTS.push(FEED_ENABLED
+    ? [path, 'allow', why]
+    : [path, 'reject', `${why} — hidden on this branch, so the guard must not remember it`]);
+}
+
 /**
  * What a router, a WebView or a browser makes of the string safeNext returned.
  * This is the WHATWG URL algorithm, not a reimplementation of it.
@@ -154,18 +197,6 @@ function normalise(raw) {
   } catch {
     return { ok: false, pathname: null, origin: null };
   }
-}
-
-async function loadRoutes() {
-  const dir = mkdtempSync(join(tmpdir(), 'routes-'));
-  await build({ alias: sharedAliases(),
-    entryPoints: [fileURLToPath(new URL('../src/lib/routes.ts', import.meta.url))],
-    bundle: true,
-    format: 'esm',
-    outfile: join(dir, 'routes.mjs'),
-    logLevel: 'error',
-  });
-  return import(pathToFileURL(join(dir, 'routes.mjs')).href);
 }
 
 function runTable(safeNext, known, ROUTES, { quiet = false } = {}) {
@@ -257,7 +288,8 @@ const WEAKENED = [
 ];
 
 async function main() {
-  const { safeNext, known, ROUTES } = await loadRoutes();
+  console.log(`FEED_ENABLED=${FEED_ENABLED} — the Look Book's four addresses are ${
+    FEED_ENABLED ? 'ADMITTED' : 'REFUSED'} in the table below.\n`);
 
   if (process.argv.includes('--red-proof')) {
     let bad = 0;

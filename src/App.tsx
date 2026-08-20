@@ -22,9 +22,17 @@ import Admin from './pages/Admin';
 import Intake from './pages/Intake';
 import Furniture, { FurniturePiece } from './pages/Furniture';
 import { LinkButton, Masthead } from './components/ui';
-import { ROUTES, safeNext } from './lib/routes';
+import { ROUTES, LOOK_BOOK_PATHS, safeNext } from './lib/routes';
+import { FEED_ENABLED } from '@almari/shared/flags';
 
-/** The one route table, paired to the list of addresses by path. */
+/**
+ * The one route table, paired to the list of addresses by path.
+ *
+ * The Look Book's four — /feed, /explore, /explore/:postId, /story/:accountId —
+ * keep their entries here whatever FEED_ENABLED says. Nothing is deleted; while
+ * the flag is off they are simply not the elements those addresses render (see
+ * Session below). That is what makes the showcase branch a one-line diff.
+ */
 const ELEMENTS: Record<string, React.ReactElement> = {
   '/': <Dashboard />,
   '/closet': <Closet />,
@@ -122,6 +130,19 @@ function Session() {
         <Route element={<Layout />}>
           {ROUTES.map(r => (
             <Route key={r.path} path={r.path} element={ELEMENTS[r.path]} />
+          ))}
+          {/* THE LOOK BOOK, WHILE IT IS HIDDEN (docs/42 §2).
+
+              ROUTES no longer carries these four, so without this block they
+              would fall through to NotFound — and a 404 is a plaque: it tells
+              a stranger's deep link that there is a room here, closed. The
+              house answers with Today instead, silently, and `replace` keeps
+              the dead address from stacking its own history entry behind you.
+
+              Flag on, this renders nothing and the four come back through
+              ROUTES above with their real pages. */}
+          {FEED_ENABLED ? null : LOOK_BOOK_PATHS.map(path => (
+            <Route key={path} path={path} element={<Navigate to="/" replace />} />
           ))}
           {/* The old /stats path stays reachable for anyone with a bookmark. */}
           <Route path="/stats" element={<Navigate to="/ledger" replace />} />
