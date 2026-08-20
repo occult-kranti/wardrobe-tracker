@@ -190,11 +190,18 @@ export default function Profile() {
             </div>
           ))}
 
+          {/* The share scope is real in the data and unreachable in the UI:
+              Outfits gates the share row and the ShareSheet on FEED_ENABLED, so
+              a roof raised for that stated benefit opens onto a room that is not
+              in the house this season. The flag's silence extends to what the
+              copy promises. */}
           {joinedHouseholds.length === 0 && invitations.length === 0 ? (
             <p className="text-[14px] text-text-2 leading-relaxed">
               Wardrobes on this device can be joined as housemates, partners, or family —
-              one person can be under all three roofs at once. Each kind opens one door:
-              a shared thread, a share scope for just the household, or pieces passed on.
+              one person can be under all three roofs at once.{' '}
+              {FEED_ENABLED
+                ? 'Each kind opens one door: a shared thread, a share scope for just the household, or pieces passed on.'
+                : 'This season a roof opens two doors: a shared thread for housemates, and pieces passed on within a family.'}
             </p>
           ) : null}
 
@@ -237,7 +244,9 @@ export default function Profile() {
                 {roofKind === 'roommates'
                   ? 'You share the space, and sometimes the rail. A thread opens when the second person joins.'
                   : roofKind === 'partners'
-                    ? 'You dress for the same evenings. Looks can be shared to just the household.'
+                    ? FEED_ENABLED
+                      ? 'You dress for the same evenings. Looks can be shared to just the household.'
+                      : 'You dress for the same evenings. This season that roof is a label and nothing else.'
                     : 'Pieces get passed on, with their story attached.'}
               </p>
             </Field>

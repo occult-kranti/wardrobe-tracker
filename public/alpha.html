@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Almari &mdash; the alpha</title>
+<meta name="description" content="A private wardrobe ledger: what you own, what you wear, what each piece really costs per wear. The alpha door.">
+<style>
+  /* The house tokens, stated locally — this page ships beside the app and
+     must stand alone. Pattern-cutting paper, iron-gall ink, washing blue.
+     The values are src/index.css's :root, copied; check-brand.mjs walks src
+     and packages/shared only, so this sheet is checked against that one by
+     hand whenever a token moves. */
+  @font-face {
+    font-family: 'Fraunces';
+    src: url('fonts/fraunces-normal-400-700-latin.woff2') format('woff2');
+    font-weight: 400 700; font-display: swap;
+  }
+  @font-face {
+    font-family: 'Fraunces';
+    src: url('fonts/fraunces-italic-400-600-latin.woff2') format('woff2');
+    font-weight: 400 600; font-style: italic; font-display: swap;
+  }
+  @font-face {
+    font-family: 'IBM Plex Mono';
+    src: url('fonts/ibm-plex-mono-normal-400-latin.woff2') format('woff2');
+    font-weight: 400; font-display: swap;
+  }
+  :root {
+    --bg: #F4EFE2; --surface: #FBF8F0; --text: #201D18; --text-2: #5C554A;
+    --border: #D8CFBA; --accent: #105F7D; --accent-hover: #0D4F68;
+    --on-accent: #FFFDF6;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg); color: var(--text);
+    font: 16px/1.55 system-ui, -apple-system, 'Segoe UI', sans-serif;
+    padding: 24px 20px 64px;
+  }
+  main { max-width: 640px; margin: 0 auto; }
+  h1 {
+    font-family: 'Fraunces', Georgia, serif; font-weight: 600;
+    font-size: 34px; line-height: 1.15; letter-spacing: -0.01em;
+  }
+  .rule { border: 0; border-top: 2px solid var(--text); margin: 10px 0 2px; }
+  .rule-2 { border: 0; border-top: 1px solid var(--text); margin: 0 0 28px; }
+  .ledger {
+    font-family: 'IBM Plex Mono', Menlo, Consolas, monospace;
+    font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--text-2); margin-top: 6px;
+  }
+  h2 {
+    font-family: 'IBM Plex Mono', Menlo, Consolas, monospace;
+    font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase;
+    font-weight: 400; color: var(--text-2); margin: 34px 0 10px;
+  }
+  p { margin-bottom: 12px; }
+  .lede { font-family: 'Fraunces', Georgia, serif; font-style: italic; font-size: 21px; line-height: 1.4; margin: 18px 0 8px; }
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 2px; padding: 16px 18px; margin-bottom: 12px;
+  }
+  .card > p:last-child, .card > ol:last-child, .card > ul:last-child { margin-bottom: 0; }
+  .card > ul li:last-child { margin-bottom: 0; }
+  .door {
+    display: block; text-align: center; background: var(--accent);
+    color: var(--on-accent); text-decoration: none; border-radius: 2px;
+    padding: 16px 24px; margin: 22px 0 8px;
+    font-family: 'IBM Plex Mono', Menlo, Consolas, monospace;
+    font-size: 14px; letter-spacing: 0.1em; text-transform: uppercase;
+  }
+  .door:hover { background: var(--accent-hover); }
+  .aside { font-size: 13px; color: var(--text-2); text-align: center; margin-bottom: 26px; }
+  ol { padding-left: 22px; }
+  ol li { margin-bottom: 8px; }
+  ul { list-style: none; }
+  ul li { padding-left: 18px; position: relative; margin-bottom: 9px; }
+  ul li::before { content: '\00B7'; position: absolute; left: 4px; color: var(--text-2); }
+  a { color: var(--accent); }
+  .quiet { color: var(--text-2); font-size: 14px; }
+  footer { margin-top: 44px; padding-top: 14px; border-top: 1px solid var(--border); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Almari</h1>
+  <hr class="rule"><hr class="rule-2">
+  <p class="ledger">The alpha &middot; a private wardrobe ledger</p>
+
+  <p class="lede">What you own, what you actually wear, and what each piece really costs per wear &mdash; kept on your phone, and nowhere else unless you say so.</p>
+
+  <!-- Step zero sits ABOVE the door on purpose. WhatsApp's built-in browser
+       cannot install anything, and a tester who taps the door from inside it
+       lands in a tab that can never become an app — then adds pieces to a
+       record the installed app will not inherit. The escape has to be read
+       before the button, not after it. -->
+  <h2>Step zero, if you came from WhatsApp</h2>
+  <div class="card">
+    <p>If you tapped a link in WhatsApp to get here, you are inside its own browser, which cannot install anything. Tap the <strong>&#8942;</strong> menu and choose <strong>Open in Chrome</strong> (Android), or tap <strong>Share</strong> and choose <strong>Open in Safari</strong> (iPhone). Everything below assumes a real browser; if you are already in one, carry straight on.</p>
+  </div>
+
+  <a class="door" href="./">Open Almari</a>
+  <p class="aside">It opens in a browser tab. Nothing to install from a store, and no account needed.</p>
+
+  <h2>Then install it, before you hang anything</h2>
+  <div class="card">
+    <p><strong>Install first, catalogue second.</strong> On iPhone especially, the installed app keeps its own record &mdash; pieces added in the browser tab do not follow it home. One minute now saves starting over.</p>
+    <ol>
+      <li><strong>Android, Chrome</strong> &mdash; open Almari, tap the <strong>&#8942;</strong> menu, then <strong>Add to Home screen</strong>.</li>
+      <li><strong>iPhone, Safari</strong> &mdash; open Almari, tap <strong>Share</strong>, then <strong>Add to Home Screen</strong>.</li>
+      <li>Open it again <strong>from the new tile</strong>, not from the tab, and start your closet there.</li>
+    </ol>
+    <p class="quiet" style="margin-top:10px">Done looks like this: the Almari mark sitting on your home screen, and an app that fills the screen with no address bar across the top.</p>
+    <p class="quiet" style="margin-top:8px">After that it opens with no signal at all &mdash; on a plane, in a basement, in the metro. Only the very first load needs a network.</p>
+  </div>
+
+  <h2>Where your record lives</h2>
+  <div class="card">
+    <p>Almari keeps everything in your browser&rsquo;s own storage, on your device. There is no feed of strangers, no follower counts, and no analytics: the app reports nothing about you to anyone.</p>
+    <p>An account is optional, and the whole app works with no account at all. What an account does is one thing &mdash; it keeps a copy of a wardrobe you choose to sync, so another device can open it. Signing out ends that and deletes nothing.</p>
+    <p class="quiet">Until end-to-end encryption ships, a synced copy &mdash; photographs included &mdash; sits readably on the maker&rsquo;s server, which means the maker could technically open it. Encryption is the committed next step, not a thing already done. Sync only what you are comfortable with, or nothing at all.</p>
+    <p class="quiet">When you ask for a photograph to be read, that photograph goes to Claude Fable by Anthropic, through Almari&rsquo;s relay, and comes back as words. It is not stored along the way, no key sits on your device, and nothing else from your closet travels with it.</p>
+    <p class="quiet">Both of those run on the maker&rsquo;s Supabase free tier and model key, so they cost you nothing; if that ever changes, the app will say so before it asks for anything. There are no shop links, affiliate codes or sponsored pieces, and there never will be.</p>
+    <p class="quiet">Because the record lives here first, keeping a copy is on you. Clearing this browser&rsquo;s site data, removing the app, or wiping the device takes the wardrobe with it. <strong>Export from Settings</strong> is the copy you file away yourself &mdash; do it in the first week, not the last.</p>
+  </div>
+
+  <h2>What to try first</h2>
+  <div class="card">
+    <ul>
+      <li>Hang your first piece. A name is enough &mdash; the photograph is optional.</li>
+      <li>Say you wore it: open Today, tap the pieces, and it is on the record. Then again tomorrow.</li>
+      <li>Let the model read a piece from a photograph on the intake bench &mdash; nothing is saved until you press add.</li>
+      <li>Put an outfit together, and wear it as one gesture.</li>
+      <li>Draw your almirah in the dressing room and file pieces into its drawers.</li>
+      <li>Give a piece its price and watch the ledger work out what a wear costs.</li>
+      <li>If a second wardrobe is open on this device, ask after a piece of theirs, or lend one of yours. It happens inside a conversation, not on a feed.</li>
+      <li>Open a sample wardrobe to see a full closet at work. Samples are rebuilt when the app updates, so keep nothing of your own inside one.</li>
+    </ul>
+  </div>
+
+  <h2>What it does not do</h2>
+  <div class="card">
+    <ul>
+      <li>It sends you nothing &mdash; no notifications, no reminders, nothing that buzzes in your pocket. Every nudge in this alpha comes from a person.</li>
+      <li>The Look Book &mdash; the shared feed and Explore &mdash; is switched off this season. What is shared happens inside a conversation, or not at all.</li>
+      <li>There is no store listing. For this alpha the app is the web app, kept on your home screen.</li>
+      <li>A browser gives an app a small, fixed amount of room, and photographs fill it fastest. A closet of names costs almost nothing; a closet of photographs has a ceiling. Export often.</li>
+    </ul>
+  </div>
+
+  <h2>When something breaks, or just feels wrong</h2>
+  <div class="card">
+    <p>Write to <a href="mailto:whatswrong.inc@gmail.com?subject=Almari%20alpha">whatswrong.inc@gmail.com</a>. A screenshot and one sentence is plenty &mdash; what you pressed, and what you expected instead.</p>
+    <p class="quiet" style="margin-bottom:0">You must be 18 or older to take part. What you send is kept apart from everything else, used only to improve Almari, and deleted at the end of the study. You can leave at any time, for any reason, by telling us.</p>
+  </div>
+
+  <footer>
+    <p class="ledger">Almari &middot; alpha &middot; your closet, on record</p>
+  </footer>
+</main>
+</body>
+</html>

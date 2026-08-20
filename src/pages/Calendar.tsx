@@ -4,6 +4,7 @@ import { useWardrobe } from '../context/WardrobeContext';
 import { addDays, formatLocalDate, isFutureDate, todayLocal } from '@almari/shared/dates';
 import { isPlannedLog, type ClothingItem, type Outfit, type WearLog } from '@almari/shared/types';
 import { Button, Card, EmptyState, IconButton, Masthead, Modal, SectionTitle, TagRail } from '../components/ui';
+import ConfirmDialog from '../components/ConfirmDialog';
 import {
   IconArrowRight, IconChevronLeft, IconChevronRight, IconEyelet, IconPlus,
 } from '../components/icons';
@@ -99,13 +100,15 @@ function Thumb({ item, className = '' }: { item: ClothingItem; className?: strin
 /* ---------- the page ---------- */
 
 export default function Calendar() {
-  const { items, outfits, wearLogs, logWear, removeWearLog } = useWardrobe();
+  const { items, outfits, wearLogs, logWear, removeWearLog, confirmPlan } = useWardrobe();
   const navigate = useNavigate();
 
   const today = todayLocal();
   const [weekStart, setWeekStart] = useState(() => startOfWeek(today));
   /** The day the scheduling sheet is open for, or null. */
   const [planFor, setPlanFor] = useState<string | null>(null);
+  /** The one entry a removal cannot put back, held for the gate. See canPutBack. */
+  const [gating, setGating] = useState<WearLog | null>(null);
 
   const days = useMemo(
     () => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)),
@@ -185,13 +188,41 @@ export default function Calendar() {
     setPlanFor(null);
   };
 
+  /**
+   * Can this entry be put back exactly as it was?
+   *
+   * The only tool for putting one back is logWear, and logWear decides the KIND
+   * of entry from the date alone: a future date writes a plan, any other date
+   * writes a counted wear. So a put-back is faithful exactly when the entry's
+   * kind already agrees with its date. The single case that disagrees is a plan
+   * whose day has arrived — restoring that would invent a wear nobody confirmed
+   * — and that one gets the house gate before the removal instead of an Undo
+   * after it. Everything else, an ad-hoc day of loose pieces most of all, is
+   * reversible, so it is offered back rather than guarded against.
+   */
+  const canPutBack = (log: WearLog) => isPlannedLog(log) === isFutureDate(log.date);
+
   const remove = (log: WearLog) => {
     const planned = isPlannedLog(log);
     removeWearLog(log.id);
     showToast(
       planned ? 'Removed. That plan is off the page.' : 'Undone. That wear is off the record.',
-      'info'
+      'info',
+      canPutBack(log)
+        ? { label: 'Undo', run: () => logWear(log.itemIds, log.outfitId, log.date) }
+        : undefined,
     );
+  };
+
+  /**
+   * A plan whose day has come is a question, and this is the yes — answered
+   * where the plan is, so the person is not sent to Today to answer it. Without
+   * it the nearest control is "+ Log", which writes a SECOND entry and leaves
+   * the plan standing: one physical wear, counted twice.
+   */
+  const wore = (log: WearLog) => {
+    confirmPlan(log.id);
+    showToast('Sealed. It happened.', 'seal');
   };
 
   /* ---------- nothing to show at all ---------- */
@@ -334,18 +365,34 @@ export default function Calendar() {
                           ))}
                         </div>
                       ) : null}
-                      <button
-                        type="button"
-                        onClick={() => remove(log)}
-                        aria-label={
-                          planned
-                            ? `Remove the plan for ${longDate(date)}`
-                            : `Remove the wear logged on ${longDate(date)}`
-                        }
-                        className="type-label text-[13px] text-text-2 hover:text-text transition-colors duration-150 h-11 w-full text-left"
-                      >
-                        {planned ? 'Remove' : 'Undo'}
-                      </button>
+                      {/* The labels sit in a row, and the row is inset from the
+                          thumbnails above it: a full-width text button starting
+                          directly under the pictures is a boundary the eye
+                          cannot see, and the thumbnails are the natural tap. */}
+                      <div className="flex flex-wrap items-center gap-x-3 mt-0.5">
+                        {planned && !isFutureDate(log.date) ? (
+                          <button
+                            type="button"
+                            onClick={() => wore(log)}
+                            aria-label={`The plan for ${longDate(date)} was worn`}
+                            className="type-label text-[13px] text-text hover:text-accent transition-colors duration-150 h-11 px-1 -ml-1 text-left"
+                          >
+                            Wore it
+                          </button>
+                        ) : null}
+                        <button
+                          type="button"
+                          onClick={() => (canPutBack(log) ? remove(log) : setGating(log))}
+                          aria-label={
+                            planned
+                              ? `Remove the plan for ${longDate(date)}`
+                              : `Remove the wear logged on ${longDate(date)}`
+                          }
+                          className="type-label text-[13px] text-text-2 hover:text-text transition-colors duration-150 h-11 px-1 -ml-1 text-left"
+                        >
+                          {planned ? 'Remove' : 'Undo'}
+                        </button>
+                      </div>
                     </div>
                   );
                 })}
@@ -501,6 +548,35 @@ export default function Calendar() {
           </div>
         ) : null}
       </Modal>
+
+      {/* THE ONE REMOVAL WITH NO UNDO. Every other entry on this page comes
+          back from the toast; a plan whose day has arrived cannot, because
+          logWear would write a counted wear on that date rather than another
+          intention. The warning therefore stands before the act, and says so
+          plainly — the gate's own rule: "there is no undo" only where none
+          exists.
+
+          It is always a matured plan and never a wear dated ahead: migrate
+          (packages/shared/migrate.ts) flags any future-dated log arriving
+          without the flag as planned, so the other half of canPutBack's
+          disagreement cannot reach a screen, and this copy has no untestable
+          second branch. */}
+      <ConfirmDialog
+        open={gating !== null}
+        title="Remove this plan"
+        body={
+          gating
+            ? `This takes "${describe(gating)}" off ${longDate(gating.date)}. No wear was ever counted for a plan, so no count moves. There is no undo: the day has arrived, and the calendar can only write a wear on it now, not another plan. If it was worn, say so instead and it counts once.`
+            : ''
+        }
+        confirmLabel="Remove it"
+        cancelLabel="Keep it"
+        onConfirm={() => {
+          if (gating) remove(gating);
+          setGating(null);
+        }}
+        onClose={() => setGating(null)}
+      />
     </div>
   );
 }

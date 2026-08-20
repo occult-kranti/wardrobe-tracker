@@ -37,11 +37,34 @@ function loadImage(src: string): Promise<HTMLImageElement> {
   });
 }
 
+/**
+ * The longest edge of a crop that is KEPT.
+ *
+ * This is a storage decision, and it was the one path that had never made it.
+ * Every other stored picture in the house caps: the feed and gallery crops at
+ * 520 (`src/pages/Intake.tsx`), the cut-out at 512 (`src/lib/cutout.ts`). A
+ * crop taken here from the 1400px frame that was sent had no ceiling at all,
+ * so whenever the lift was judged bad and the plain crop was the one kept, a
+ * single piece could arrive at three to six times what its neighbours cost —
+ * for a picture that is only ever a tile and a detail sheet, never a print.
+ */
+const KEEP_EDGE = 520;
+
+/**
+ * The longest edge of the roomier crop that exists only to be lifted.
+ *
+ * That crop is thrown away and only the cut-out is kept, so it is capped where
+ * the lift itself stops looking (cutout's own MAX_EDGE): every pixel above
+ * that line is decoded, drawn, and discarded.
+ */
+const LIFT_EDGE = 1000;
+
 /** Crop a fractional box out of an image, returning a JPEG data URL. */
 export async function cropBox(
   src: string,
   box: [number, number, number, number],
   bleed: number = BLEED,
+  maxEdge: number = KEEP_EDGE,
 ): Promise<string> {
   const img = await loadImage(src);
   const W = img.naturalWidth;
@@ -54,13 +77,19 @@ export async function cropBox(
   const h = Math.min(H - y, Math.round((bh + bleed * 2) * H));
   if (w < 8 || h < 8) throw new Error('That box is too small to crop.');
 
+  // Cut at the box, hand back at the cap. Drawing straight from source pixels
+  // to the smaller surface is one resample, not two.
+  const scale = Math.min(1, maxEdge / Math.max(w, h));
+  const cw = Math.max(1, Math.round(w * scale));
+  const ch = Math.max(1, Math.round(h * scale));
+
   const canvas = document.createElement('canvas');
-  canvas.width = w;
-  canvas.height = h;
+  canvas.width = cw;
+  canvas.height = ch;
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('This browser will not open a drawing surface.');
-  ctx.drawImage(img, x, y, w, h, 0, 0, w, h);
-  return canvas.toDataURL('image/jpeg', 0.9);
+  ctx.drawImage(img, x, y, w, h, 0, 0, cw, ch);
+  return canvas.toDataURL('image/jpeg', 0.88);
 }
 
 export interface Harvested {
@@ -117,7 +146,7 @@ export async function harvest(
         try {
           // Cut from a roomier crop, then keep the result — which is already
           // trimmed back to the garment's own bounds by the pass itself.
-          const roomy = await cropBox(photo, draft.box!, LIFT_BLEED);
+          const roomy = await cropBox(photo, draft.box!, LIFT_BLEED, LIFT_EDGE);
           const cut = await cutOut(roomy);
           if (cut.good) lifted = cut.url;
           else note = 'kept as photographed — the background would not lift cleanly';

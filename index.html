@@ -17,14 +17,38 @@
          Screen was a screenshot of the page. Rasterized from icon.svg by
          scripts/build-icons.mjs — opaque seal ground, no halo. -->
     <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
-    <link rel="preconnect" href="https://api.fontshare.com" crossorigin>
     <!-- THE TYPE IS SELF-HOSTED, and it took an outage to make it so. The app
          promises to work with no signal and made exactly one exception nobody
-         had noticed: its own typefaces came from Google, whose file hashes
+         had noticed: its own typefaces came from a CDN whose file hashes
          rotate — so a cached stylesheet pointed at a font that had ceased to
-         exist, and the flow suite caught the 404 in production. Both faces are
-         OFL-licensed; 344KB of woff2 buys the last external dependency. -->
+         exist, and the flow suite caught the 404 in production. Fraunces and
+         Plex Mono came home that day, both OFL-licensed.
+
+         SWITZER CAME HOME ON 2026-08-20, long after the other two. It is the
+         face of nearly all body text (--font-ui), and it was still arriving
+         through a render-blocking stylesheet on api.fontshare.com that fetched
+         hash-named woff2s from cdn.fontshare.com: two third-party round trips
+         in front of the first paint on a congested 4G cell, the app's only
+         outbound request of any kind, and the same rotating-hash trap that had
+         already cost an outage. Fontshare's licence (ITF Free Font Licence
+         §01) permits self-hosting in as many words and recommends it, so the
+         variable face sits in ./fonts with the others: 43KB for weights 400
+         to 600, and metrically identical to the statics the CDN was serving
+         (advance widths compared glyph by glyph before the swap, so the
+         'Switzer Fallback' overrides in index.css still state the truth).
+         387KB of woff2 buys the last external dependency — there is now no
+         third-party request in this app at all. -->
     <style>
+@font-face {
+  font-family: 'Switzer';
+  font-style: normal;
+  /* The variable face, held to the three weights the interface uses. Stating
+     the range the CDN's three statics covered keeps a `font-bold` somewhere in
+     the tree from suddenly rendering a real 700 that nothing was drawn against. */
+  font-weight: 400 600;
+  font-display: swap;
+  src: url('./fonts/switzer-normal-400-600.woff2') format('woff2');
+}
 @font-face {
   font-family: 'Fraunces';
   font-style: italic;
@@ -89,11 +113,88 @@
   src: url('./fonts/ibm-plex-mono-normal-500-latin.woff2') format('woff2');
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
+/* THE FIRST FRAME.
+   The body used to be an empty <div id="root">, so nothing at all was painted
+   until the whole script had downloaded, parsed and mounted: 3.4 seconds of
+   white on a slow-4G phone, measured, at the one moment a tester decides the
+   WhatsApp link is broken. The HTML and the stylesheet arrive in a fraction of
+   that, and this spends them.
+
+   It is the mark and the line the door itself opens with, so the splash does
+   not introduce a screen the app then contradicts. Colours are read from the
+   token sheet, which is loaded by the time anything here paints; the hexes are
+   fallbacks for a stylesheet that failed, and are the paper, the ink and the
+   wax, which is all check-brand allows this file to name.
+
+   React clears #root when it mounts, which is what removes this. */
+#almari-splash {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px;
+  text-align: center;
+  background: var(--color-bg, #F4EFE2);
+  color: var(--color-text, #201D18);
+}
+#almari-splash .mark { display: inline-flex; flex-direction: column; }
+#almari-splash .word {
+  font-family: var(--font-display, Georgia, 'Times New Roman', serif);
+  font-weight: 700;
+  font-size: 26px;
+  line-height: 1.1;
+  letter-spacing: 0.18em;
+}
+#almari-splash .rule { display: block; width: 100%; height: 4px; margin-top: 3px; }
+#almari-splash .line {
+  font-family: var(--font-display, Georgia, 'Times New Roman', serif);
+  font-style: italic;
+  font-size: 14px;
+  color: var(--color-text-2, #201D18);
+}
     </style>
-    <link href="https://api.fontshare.com/v2/css?f[]=switzer@400,500,600&display=swap" rel="stylesheet">
+    <!-- THE ROOM IS CHOSEN BEFORE THE FIRST PIXEL.
+         main.tsx calls applyTheme() before it mounts React, which is early
+         enough for the app and too late for the mark below: a module script is
+         deferred, and the browser is free to paint before it runs. Without
+         these six lines the splash lands in the pattern room and flips to the
+         dye house a frame later, on every cold start.
+         THE ROOMS ARE NAMED IN src/lib/accounts.ts (THEME_ORDER, DEFAULT_THEME
+         and THEME_KEY are the source of truth). Add one there and forget this
+         list and the only cost is that its first frame is the default room,
+         which applyTheme corrects on the same load. -->
+    <script>
+      (function () {
+        try {
+          var stored = JSON.parse(localStorage.getItem('toile-theme') || '{}').theme;
+          var rooms = ['dyehouse', 'obsidian', 'dark', 'salon', 'gilt', 'light'];
+          if (stored === 'system') return;
+          var room = rooms.indexOf(stored) >= 0 ? stored : 'dyehouse';
+          document.documentElement.setAttribute('data-theme', room);
+        } catch (e) {
+          document.documentElement.setAttribute('data-theme', 'dyehouse');
+        }
+      })();
+    </script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Replaced whole by the app on mount. Nothing here is interactive, and
+           the whole block is hidden from assistive technology: it is a held
+           frame, not a screen a reader should be told about. -->
+      <div id="almari-splash" aria-hidden="true">
+        <span class="mark">
+          <span class="word">ALMARI</span>
+          <svg class="rule" viewBox="0 0 64 5" aria-hidden="true">
+            <path d="M1 3.2C10 1.6 20 3.8 32 2.6s22 1.4 31-.4" fill="none" stroke="var(--color-seal, #BE1231)" stroke-width="1.6" stroke-linecap="butt"/>
+          </svg>
+        </span>
+        <p class="line">Your wardrobe, on record.</p>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

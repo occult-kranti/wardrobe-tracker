@@ -173,10 +173,14 @@ for (const f of readdirSync(path.join(ROOT, 'scripts'))) {
   const text = readFileSync(path.join(ROOT, 'scripts', f), 'utf8');
   if (!/from ['"]esbuild['"]/.test(text)) continue;
   esbuildScripts++;
+  // bundle:false calls are transforms — esbuild refuses `alias` on them and
+  // nothing resolves, so they cannot diverge and are exempt from the law.
   const buildCalls = (text.match(/\bbuild\(\{/g) ?? []).length;
+  const transforms = (text.match(/\bbundle:\s*false/g) ?? []).length;
+  const mustAlias = buildCalls - transforms;
   const aliased = (text.match(/alias:\s*sharedAliases\(\)/g) ?? []).length;
-  if (buildCalls === 0 || aliased < buildCalls) {
-    offenders.push(`${f}: ${aliased} of ${buildCalls} build calls aliased`);
+  if (buildCalls === 0 || aliased < mustAlias) {
+    offenders.push(`${f}: ${aliased} of ${mustAlias} bundling build calls aliased`);
   }
   if (/['"]@almari[^'"]*['"]\s*:/.test(text)) handRolled.push(f);
 }

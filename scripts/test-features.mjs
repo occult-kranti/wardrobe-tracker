@@ -95,6 +95,57 @@ if (FEED_ENABLED) {
 check('the door is already in the house theme, not the light room',
   stranded.theme === 'dyehouse', `data-theme=${stranded.theme}`);
 
+/* THE FIRST VIEWPORT OF THE FIRST SCREEN.
+
+   RE-PINNED to the amended door (finding rev:arrival, "the account skip sits
+   below the fold; the door reads as a sign-up wall"). Measured at 390x844
+   before the fix: "Continue without an account" had its top at y=812.6 and its
+   bottom at 856 — sliced by the fold on this probe and gone entirely under a
+   real phone's browser chrome, because the account panel's paragraph and both
+   credential fields rendered above it. What a stranger arriving from a
+   WhatsApp link actually saw was EMAIL, PASSWORD, SIGN IN: structurally a
+   sign-up wall on the one screen whose whole job is to say an account is
+   optional.
+
+   Two halves, both required. The skip must be WHOLLY inside the first
+   viewport — bottom, not top, because a button you can see the top of is a
+   button you cannot press. And no credential field may exist before somebody
+   asks for one, which is what stops the wall from growing back a sentence at
+   a time. The third check is the other side of the same contract: asking for
+   an account must still bring the fields, or the fix has made a gate of the
+   opposite kind. */
+{
+  const firstView = await page.evaluate(() => {
+    const btn = [...document.querySelectorAll('button')]
+      .find(b => /continue without an account/i.test(b.textContent || ''));
+    const r = btn?.getBoundingClientRect();
+    return {
+      found: !!btn,
+      bottom: r ? Math.round(r.bottom) : null,
+      vh: Math.round(window.visualViewport?.height ?? window.innerHeight),
+      credentials: document.querySelectorAll('input[type="email"], input[type="password"]').length,
+      wayIn: [...document.querySelectorAll('button')]
+        .some(b => /sign in, or make an account/i.test(b.textContent || '')),
+    };
+  });
+  check('the skip is inside the first viewport, whole',
+    firstView.found && firstView.bottom !== null && firstView.bottom <= firstView.vh,
+    `bottom ${firstView.bottom} of ${firstView.vh}`);
+  check('and no credential field stands between a stranger and their wardrobe',
+    firstView.credentials === 0 && firstView.wayIn, `${firstView.credentials} fields on screen`);
+
+  await page.getByRole('button', { name: /sign in, or make an account/i }).first().click();
+  await page.waitForTimeout(400);
+  const revealed = await page.evaluate(() => ({
+    email: !!document.querySelector('input[type="email"]'),
+    password: !!document.querySelector('input[type="password"]'),
+    skipStands: [...document.querySelectorAll('button')]
+      .some(b => /continue without an account/i.test(b.textContent || '')),
+  }));
+  check('and asking for an account brings the fields, with the skip still standing',
+    revealed.email && revealed.password && revealed.skipStands, '');
+}
+
 /* ============ starting a wardrobe with nothing typed ============ */
 await page.goto(`${ORIGIN}/#/open/new`, { waitUntil: 'domcontentloaded' });
 await page.waitForTimeout(600);
@@ -130,6 +181,138 @@ check('a blank name still opens a wardrobe', landed.hash === '#/' || landed.hash
     [...document.querySelectorAll('nav a')].map(a => a.getAttribute('href')));
   check('furniture is not a tab of its own', !nav.includes('#/furniture'),
     nav.filter(Boolean).join(' ').slice(0, 60));
+}
+
+/* ============ the first mile: a week-one closet with no outfits ============
+
+   THE WALK THIS BLOCK IS: start a wardrobe, catalogue two pieces, log one, and
+   come back tomorrow — which is every alpha tester's first week, and which no
+   suite walked. It is run against the blank wardrobe started above, before the
+   samples arrive, because a sample wardrobe has saved outfits and a year of
+   wear and therefore cannot show either of the two defects below.
+
+   ONE — the sheet used to open on 'choices' unconditionally, so a closet with
+   no saved outfits met a paragraph about outfits and a row to press to get
+   past it: hero -> "Pick pieces instead" -> piece -> "Log this" is four taps,
+   every day, under a hero that promised two (finding rev:arrival, "first-week
+   logging is four taps through an empty outfits interstitial").
+
+   TWO — logWear stamps every logged piece 'worn' and the wearable pool
+   admitted only 'clean', so each day's clothes silently left the next day's
+   picker; nothing but a manual laundry chip ever put them back (finding
+   rev:arrival, "logged pieces silently vanish from the next day's picker
+   pool"). Two pieces and one log is the smallest closet in which that
+   disappearance is visible at all. */
+{
+  const addPiece = async (name) => {
+    await page.goto(`${ORIGIN}/#/closet`, { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(600);
+    await page.getByRole('button', { name: /add a piece/i }).first().click();
+    await page.waitForTimeout(500);
+    await page.fill('#add-item-name', name);
+    await page.getByRole('button', { name: /add to the closet/i }).first().click();
+    await page.waitForTimeout(700);
+  };
+  await addPiece('Probe kurta');
+  await addPiece('Probe trousers');
+
+  await page.goto(`${ORIGIN}/#/`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(900);
+  // A wardrobe started today and still empty gets the tour; it opened before
+  // the second piece was catalogued and is closed here rather than fought.
+  if (await page.locator('[role="dialog"]').count()) {
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(400);
+  }
+
+  const hero = page.getByRole('button', { name: /log today's wear|log another/i }).first();
+  check('a week-one wardrobe can answer the day from Today', await hero.count() === 1, '');
+  await hero.click();
+  await page.waitForTimeout(700);
+
+  const landing = await page.evaluate(() => {
+    const dialog = document.querySelector('[role="dialog"]');
+    const text = dialog?.textContent ?? '';
+    return {
+      title: (dialog?.querySelector('h2')?.textContent ?? '').trim(),
+      interstitial: /pick pieces instead|no saved outfits yet/i.test(text),
+      tiles: dialog?.querySelectorAll('ul button[aria-pressed]').length ?? 0,
+    };
+  });
+  check('with no outfits saved, the sheet opens on the pieces themselves',
+    /pick the pieces/i.test(landing.title) && !landing.interstitial,
+    `titled "${landing.title}"`);
+  check('and the pieces are there to press', landing.tiles === 2, `${landing.tiles} tiles`);
+
+  // THE SHEET MUST MEET THE BOTTOM OF THE WINDOW (finding rev:arrival, "route
+  // entry animation permanently captures every fixed modal sheet"). `.v2-route`
+  // retained its keyframes' final translateY under animation-fill-mode: both,
+  // and an element carrying any transform becomes the containing block for
+  // every position:fixed descendant — so the bottom sheet was fixed to the
+  // PAGE COLUMN, not the window. Measured at 390x844 on a worked closet:
+  // top=362, bottom=1015, the list and both buttons under the fold with window
+  // scrolling locked by the overlay's body overflow:hidden.
+  //
+  // This measures the CONSEQUENCE rather than the stylesheet, so any future
+  // ancestor transform fails here too; the second check is the structural
+  // half — the overlay hangs off <body> through a portal, where no ancestor of
+  // the routed page can reach it.
+  const box = await page.evaluate(() => {
+    const sheet = document.querySelector('.modal-sheet');
+    const overlay = document.querySelector('.modal-overlay');
+    if (!sheet || !overlay) return null;
+    const r = sheet.getBoundingClientRect();
+    const o = overlay.getBoundingClientRect();
+    return {
+      top: Math.round(r.top),
+      bottom: Math.round(r.bottom),
+      vh: Math.round(window.visualViewport?.height ?? window.innerHeight),
+      overlayTop: Math.round(o.top),
+      parent: overlay.parentElement?.tagName ?? '',
+    };
+  });
+  check('the log sheet meets the bottom of the window',
+    !!box && Math.abs(box.bottom - box.vh) <= 1 && box.top >= 0,
+    box ? `top ${box.top}, bottom ${box.bottom} of ${box.vh}` : 'no sheet found');
+  check('and it hangs off the document, out of reach of any page transform',
+    box?.parent === 'BODY' && box?.overlayTop === 0,
+    box ? `parent ${box.parent}, overlay top ${box.overlayTop}` : '');
+
+  // The last tap. Three in total from Today with no outfit saved, which is what
+  // the hero now says out loud.
+  await page.evaluate(() => {
+    document.querySelector('[role="dialog"] ul button[aria-pressed]')?.click();
+  });
+  await page.waitForTimeout(400);
+  await page.getByRole('button', { name: /^log this$/i }).first().click();
+  await page.waitForTimeout(900);
+  const logged = await page.evaluate(key => {
+    const st = JSON.parse(localStorage.getItem(key));
+    return { logs: st.wearLogs.length, worn: st.items.filter(i => i.laundryStatus === 'worn').length };
+  }, await activeKey());
+  check('and the day goes on the record', logged.logs === 1 && logged.worn === 1,
+    `${logged.logs} logs, ${logged.worn} worn`);
+
+  // TOMORROW. The piece worn today is still in today's rotation — it is on a
+  // body, not in the wash, and nobody said otherwise.
+  await page.getByRole('button', { name: /log another/i }).first().click();
+  await page.waitForTimeout(700);
+  const again = await page.evaluate(() => {
+    const dialog = document.querySelector('[role="dialog"]');
+    const text = dialog?.textContent ?? '';
+    return {
+      kurta: /Probe kurta/.test(text),
+      trousers: /Probe trousers/.test(text),
+      widen: /show everything in the closet/i.test(text),
+    };
+  });
+  check('a piece logged today is still in the picker afterwards',
+    again.kurta && again.trousers,
+    `kurta ${again.kurta}, trousers ${again.trousers}`);
+  check('and nothing is held back, so nothing asks to be widened',
+    !again.widen, '');
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(400);
 }
 
 /* ============ what it is like out ============ */
@@ -172,8 +355,43 @@ await page.evaluate(() => {
 // document, not against the page's own column.
 const dayButton = page.getByRole('button', { name: /log another|what are you wearing|log a wear/i }).first();
 check('the day is answerable from Today', await dayButton.count() === 1, '');
+const scrollBefore = await page.evaluate(() => Math.round(window.scrollY));
 await dayButton.click();
 await page.waitForTimeout(900);
+
+/* THE SAME SHEET, ON THE WARDROBE THE DEFECT WAS MEASURED ON (finding
+   rev:arrival, "route entry animation permanently captures every fixed modal
+   sheet"). A worked closet is the hard case: the page behind is long, so a
+   sheet fixed to the PAGE rather than the window lands wherever the column
+   happens to be. Measured here at 390x844 before the fix: top=362,
+   bottom=1015 — the outfit list and "Pick pieces instead" under the fold,
+   window scrolling locked by the overlay's body overflow:hidden, and the
+   sheet's own focus() call teleporting the page to scrollY=644 on the way in.
+   Both halves are asserted: the sheet meets the window, and opening it moves
+   nothing behind it. */
+const worked = await page.evaluate(() => {
+  const sheet = document.querySelector('.modal-sheet');
+  if (!sheet) return null;
+  const r = sheet.getBoundingClientRect();
+  return {
+    top: Math.round(r.top), bottom: Math.round(r.bottom),
+    vh: Math.round(window.visualViewport?.height ?? window.innerHeight),
+    scrollY: Math.round(window.scrollY),
+    reachable: [...sheet.querySelectorAll('button')]
+      .filter(b => {
+        const q = b.getBoundingClientRect();
+        return q.height > 0 && (q.bottom > window.innerHeight || q.top < 0);
+      }).length,
+  };
+});
+check('on a worked closet the sheet still meets the bottom of the window',
+  !!worked && Math.abs(worked.bottom - worked.vh) <= 1 && worked.top >= 0,
+  worked ? `top ${worked.top}, bottom ${worked.bottom} of ${worked.vh}` : 'no sheet found');
+check('no control in the sheet lands off the screen',
+  worked?.reachable === 0, `${worked?.reachable} off-screen controls`);
+check('and opening it does not teleport the page behind it',
+  worked?.scrollY === scrollBefore, `scrollY ${scrollBefore} → ${worked?.scrollY}`);
+
 const pickPieces = page.getByRole('button', { name: /pick pieces instead/i }).first();
 await pickPieces.click();
 await page.waitForTimeout(900);

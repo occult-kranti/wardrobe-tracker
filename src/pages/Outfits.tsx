@@ -20,9 +20,10 @@ import { showToast } from '../components/Toast';
  * OUTFITS — sets of pieces that already work together.
  *
  * Three surfaces, in order of how often they get used:
- *   1. The draw — deals only from getWearablePool() (clean, unbenched, unretired,
- *      non-quiet), optionally narrowed to one occasion. An empty pool is a state
- *      with a plate, not an error.
+ *   1. The draw — deals only from getWearablePool() (in rotation: not in the
+ *      wash, unbenched, unretired, unpacked, non-quiet — a worn piece stays in
+ *      the pool since the 2026-08-20 review fix), optionally narrowed to one
+ *      occasion. An empty pool is a state with a plate, not an error.
  *   2. The builder — groups by settings.categories and takes any number of pieces
  *      from any category. No one-slot-per-category assumption: two coats and three
  *      necklaces is a valid outfit.

@@ -168,6 +168,36 @@ const survey = page => page.evaluate(() => {
   const first = await survey(page);
   check('signed out: the door is a real screen', !first.empty, first.text.slice(0, 60));
 
+  /* WHAT THE FIRST SCREEN ASKS FOR.
+
+     RE-PINNED to the amended door (finding rev:arrival, "the account skip sits
+     below the fold; the door reads as a sign-up wall"). At this exact viewport
+     the skip used to measure y=812.6 with its bottom at 856, under an account
+     panel that rendered its paragraph and both credential fields first — so
+     the visible screen was EMAIL, PASSWORD, SIGN IN however the copy read.
+     The door now leads with the skip and reveals the fields only when asked.
+
+     Asserted here as well as in test-features because this is the suite that
+     stands at the door on a phone: the two halves are the one action the
+     alpha wants being reachable without a scroll, and no credential field
+     existing before anybody asked for one. */
+  const door = await page.evaluate(() => {
+    const btn = [...document.querySelectorAll('button')]
+      .find(b => /continue without an account/i.test(b.textContent || ''));
+    const r = btn?.getBoundingClientRect();
+    return {
+      bottom: r ? Math.round(r.bottom) : null,
+      vh: Math.round(window.visualViewport?.height ?? window.innerHeight),
+      credentials: document.querySelectorAll('input[type="email"], input[type="password"]').length,
+      wayIn: [...document.querySelectorAll('button')]
+        .some(b => /sign in, or make an account/i.test(b.textContent || '')),
+    };
+  });
+  check('signed out: the way in sits in the first viewport, whole',
+    door.bottom !== null && door.bottom <= door.vh, `bottom ${door.bottom} of ${door.vh}`);
+  check('signed out: the door asks for no credential until it is asked to',
+    door.credentials === 0 && door.wayIn, `${door.credentials} fields on screen`);
+
   // The heart of the "back three times" report: a deep link while signed out
   // must not push history entries that all render the same door.
   //

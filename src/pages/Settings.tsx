@@ -341,7 +341,7 @@ export default function Settings() {
   const fileRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
 
-  const { theme, setTheme, active, authUser, signOutAccount } = useSession();
+  const { theme, setTheme, active, authUser, signOutAccount, updateAccount } = useSession();
   const synced = active ? syncModeOf(active) === 'cloud' : false;
   const records = items.length + outfits.length + wearLogs.length + wishlist.length;
 
@@ -439,10 +439,21 @@ export default function Settings() {
   const hasRecords = records > 0;
 
   const handleLoadDemo = () => {
+    /* A sample never syncs (lib/sync.ts, rule 1) — but that rule is enforced on
+       the ACCOUNT's isSample flag, and this button loads sample data into a
+       wardrobe of your own. Left alone, the push effect would ship a worked
+       example to the account 800ms later and overwrite the real record there.
+       Setting the wardrobe back to this device first keeps the rule and keeps
+       the account copy: both are stated in the dialog before the tap, and the
+       order matters — this and replaceState batch into one render, so sync is
+       already off by the time the new state could be pushed. */
+    if (synced && active) updateAccount(active.id, { sync: 'device' });
     replaceState(buildDemoState());
     setShowDemo(false);
     showToast(
-      `Loaded. ${DEMO_SUMMARY.items} pieces, ${DEMO_SUMMARY.outfits} outfits.`,
+      synced
+        ? `Loaded. ${DEMO_SUMMARY.items} pieces, ${DEMO_SUMMARY.outfits} outfits — and this wardrobe now keeps its record on this device.`
+        : `Loaded. ${DEMO_SUMMARY.items} pieces, ${DEMO_SUMMARY.outfits} outfits.`,
       'success'
     );
   };
@@ -748,9 +759,11 @@ export default function Settings() {
                     That file holds {pending.state.items.length} pieces,{' '}
                     {pending.state.outfits.length} outfits, {pending.state.wearLogs.length} wear
                     logs and {pending.state.wishlist.length} wishlist entries.{' '}
-                    {records > 0
-                      ? `Bringing it in replaces the ${records} records on this device now. There is no undo, and no other copy of them unless you exported one.`
-                      : 'Nothing is on this device yet, so nothing is replaced.'}
+                    {records === 0
+                      ? 'Nothing is on this device yet, so nothing is replaced.'
+                      : synced
+                        ? `Bringing it in replaces the ${records} records on this device, and the copy on your account the next time this device reaches it — any other device signed in will pull the replacement. There is no undo. Export a backup first if there is any doubt.`
+                        : `Bringing it in replaces the ${records} records on this device now. There is no undo, and no other copy of them unless you exported one.`}
                   </p>
                 </>
               }
@@ -776,9 +789,22 @@ export default function Settings() {
             title="Load the sample"
             danger={hasRecords}
             body={
-              hasRecords
-                ? `This replaces the ${records} records on this device — every piece, outfit, wear log and wishlist entry — with the sample wardrobe. There is no undo, and no other copy of them unless you exported one.`
-                : 'Nothing is on this device yet, so nothing is lost. Reset from here whenever you want to start your own.'
+              <>
+                <p>
+                  {!hasRecords
+                    ? 'Nothing is on this device yet, so nothing is lost. Reset from here whenever you want to start your own.'
+                    : synced
+                      ? `This replaces the ${records} records on this device — every piece, outfit, wear log and wishlist entry — with the sample wardrobe. There is no undo on this device.`
+                      : `This replaces the ${records} records on this device — every piece, outfit, wear log and wishlist entry — with the sample wardrobe. There is no undo, and no other copy of them unless you exported one.`}
+                </p>
+                {synced ? (
+                  <p className="mt-2">
+                    A sample never syncs, so loading it also sets this wardrobe back to keeping its
+                    record on this device. The copy already on your account is left as it stands,
+                    and stops updating.
+                  </p>
+                ) : null}
+              </>
             }
             confirmLabel={hasRecords ? 'Replace with the sample' : 'Load it'}
             cancelLabel="Cancel"
@@ -802,7 +828,11 @@ export default function Settings() {
             open={showReset}
             title="Reset everything"
             danger
-            body={`This clears ${items.length} pieces, ${outfits.length} outfits, ${wearLogs.length} wear logs and ${wishlist.length} wishlist entries, along with every category and occasion tag you have added. There is no undo, and no copy anywhere unless you exported one.`}
+            body={
+              synced
+                ? `This clears ${items.length} pieces, ${outfits.length} outfits, ${wearLogs.length} wear logs and ${wishlist.length} wishlist entries, along with every category and occasion tag you have added. The copy on your account goes with them the next time this device reaches it, and any other device signed in will pull the cleared record. There is no undo. Export a backup first if there is any doubt.`
+                : `This clears ${items.length} pieces, ${outfits.length} outfits, ${wearLogs.length} wear logs and ${wishlist.length} wishlist entries, along with every category and occasion tag you have added. There is no undo, and no copy anywhere unless you exported one.`
+            }
             confirmLabel="Reset everything"
             cancelLabel="Keep it"
             onConfirm={handleReset}
@@ -825,7 +855,10 @@ export default function Settings() {
           as synced keeps a copy on your account so another device can open it, and a photograph
           goes to the AI provider only when you ask it to be catalogued. Both run on the owner's
           Supabase free tier and model key, so they cost you nothing; if that ever changes, the
-          app will say so before it asks for anything. There are no analytics,
+          app will say so before it asks for anything. Until end-to-end encryption arrives, a
+          synced copy is stored readable: the person running Almari and the company hosting the
+          database could open it. A wardrobe kept on this device is read by no one.
+          There are no analytics,
           no shop links, affiliate codes or sponsored pieces, and there never will be. Because the
           data lives here first, keeping a copy is on you.
         </p>

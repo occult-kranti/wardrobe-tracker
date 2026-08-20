@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSession } from '../context/SessionContext';
 import { Button, Card, Field, LinkButton, Masthead, SectionTitle, inputClass } from '../components/ui';
@@ -6,6 +6,7 @@ import { Basting } from '../components/art';
 import { IconPlus } from '../components/icons';
 import { PERSONAS } from '../lib/personaWardrobe';
 import { syncModeOf } from '../lib/sync';
+import { showToast } from '../components/Toast';
 import { AccountPanel, Choice, WardrobeList, StartWardrobeForm, START_LEDE } from './Door';
 
 /**
@@ -31,7 +32,8 @@ export default function SwitchWardrobe() {
     <div className="space-y-6">
       <Masthead title="Wardrobes" meta={`${accounts.length} on this device`} />
       <p className="type-ledger text-[11px] text-text-2 -mt-2">
-        Kept in this browser, one record each. Nothing here is an account.
+        Kept in this browser, one record each. A wardrobe is not an account — an account only
+        keeps a copy of the wardrobes you ask it to.
       </p>
 
       <Card>
@@ -85,6 +87,26 @@ function WardrobeDetails() {
   const { active, updateAccount, removeAccount, authUser } = useSession();
   const [confirming, setConfirming] = useState(false);
   const [wantSync, setWantSync] = useState(false);
+
+  /* The choice made while signed out has to survive the sign-in it asked for.
+     Pressing "Synced to my account" with no account parked the intent in
+     wantSync and showed the panel; when the account landed the panel simply
+     disappeared — which reads as success — and the wardrobe was still kept on
+     the device. A tester who came here to switch sync on left with no copy
+     anywhere and no sentence saying so. The Door's start form always completed
+     the choice; this variant is the one that dropped it. It completes here,
+     and says so. */
+  useEffect(() => {
+    if (!wantSync || !authUser || !active || active.isSample) return;
+    setWantSync(false);
+    if (syncModeOf(active) === 'cloud') return;
+    updateAccount(active.id, {
+      sync: 'cloud',
+      syncId: active.syncId ?? crypto.randomUUID(),
+    });
+    showToast('Synced from now on. A copy is kept on your account.', 'success');
+  }, [wantSync, authUser, active, updateAccount]);
+
   if (!active) return null;
 
   const mode = syncModeOf(active);
@@ -160,6 +182,20 @@ function WardrobeDetails() {
               {mode === 'device'
                 ? 'Kept in this browser only. If a copy was ever synced, it is left on the account as it was, and is no longer updated.'
                 : 'A copy is kept on your account, updated as you work, so another device can open it.'}
+            </p>
+            {/* WHO CAN READ IT — stated where the choice is made, not in a
+                policy page nobody opens. The synced record is plaintext in the
+                database today (lib/sync.ts ships envelope alg 'none'), and
+                row-level security keeps other users out while doing nothing
+                about the operator or the host. End-to-end encryption is the
+                committed target (docs/35, owner decision 2026-08-19); this
+                sentence comes out the day it ships and not before. No alarm
+                styling — it is a fact about where cloth is kept, in the same
+                grey as the line above it. */}
+            <p className="text-[13px] text-text-2 leading-snug mt-2">
+              Until end-to-end encryption arrives, a synced copy is stored readable: the person
+              running Almari and the company hosting the database could open it. Keep the record on
+              this device if that is not acceptable.
             </p>
             {wantSync && !authUser ? (
               <div className="rounded-[2px] border border-border bg-sunken p-4 mt-3">

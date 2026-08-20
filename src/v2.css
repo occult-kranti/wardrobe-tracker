@@ -115,13 +115,28 @@
   backdrop-filter: blur(5px);
 }
 
-/* ---- Route transitions: the page arrives like a plate set on the table. */
+/* ---- Route transitions: the page arrives like a plate set on the table.
+
+   THE FILL MODE IS LOAD-BEARING. `both` retains the keyframes' final
+   `transform: translateY(0)` for the life of the element, and an element with
+   ANY transform other than `none` becomes the containing block for every
+   `position: fixed` descendant. Layout renders the whole routed page inside
+   this div, and every Modal in the app renders inside the page — so the log
+   sheet, Add a piece, the tutorial and every confirm were re-rooted to the
+   page column instead of the window. Measured at 390x844 on a worked closet:
+   the log sheet sat top=362 / bottom=1015, its outfit list and its buttons
+   under the fold, with window scrolling locked by the overlay. `backwards`
+   plays exactly the same arrival and leaves NO transform behind at rest.
+
+   The Modal is also portaled to document.body (components/ui.tsx), so no
+   future ancestor can capture it again. Both halves, on purpose: this one
+   keeps the route element honest, that one takes the sheet out of its reach. */
 @keyframes v2-route {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
 .v2 .v2-route {
-  animation: v2-route 300ms cubic-bezier(0.22, 1.2, 0.36, 1) both;
+  animation: v2-route 300ms cubic-bezier(0.22, 1.2, 0.36, 1) backwards;
 }
 
 /* ---- Parallax at the wall: the artwork drifts a breath against the pointer.
@@ -169,8 +184,11 @@
   60% { transform: scale(1.015); opacity: 1; }
   100% { transform: scale(1); opacity: 1; }
 }
+/* `backwards`, not `both`, for the same reason the route transition carries it:
+   a retained `transform: scale(1)` is still a transform, and it would make the
+   sheet the containing block for anything fixed inside it. */
 .v2 [role='dialog'] {
-  animation: v2-pop 260ms cubic-bezier(0.22, 1.2, 0.36, 1) both;
+  animation: v2-pop 260ms cubic-bezier(0.22, 1.2, 0.36, 1) backwards;
 }
 
 /* Lists rise into place, staggered by index. */

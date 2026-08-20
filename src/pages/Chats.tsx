@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useSession } from '../context/SessionContext';
 import { useWardrobe } from '../context/WardrobeContext';
-import { Button, Card, EmptyState, Field, LinkButton, Masthead, Modal, SectionTitle, inputClass, selectClass } from '../components/ui';
+import { Button, Card, Chip, EmptyState, Field, LinkButton, Masthead, Modal, SectionTitle, inputClass, selectClass } from '../components/ui';
 import { Basting, PlateEmptyWishlist } from '../components/art';
 import { IconChevronLeft, IconPlus } from '../components/icons';
 import { AccountMark, LookCard, PieceCard, shortDate, oldestFirst, nowLocalStamp } from '../components/social';
@@ -60,7 +60,7 @@ function readArrival(state: unknown): ChatArrival | null {
 }
 
 export default function Chats() {
-  const { accounts, community, setCommunity, activeId } = useSession();
+  const { accounts, community, setCommunity, activeId, installSamples } = useSession();
   const navigate = useNavigate();
   const location = useLocation();
   // A verb from the feed lands here first; the thing it carries rides along
@@ -155,13 +155,30 @@ export default function Chats() {
           <EmptyState
             plate={<PlateEmptyWishlist />}
             title="No conversations yet."
-            body="Threads between the wardrobes on this device: ask after a piece, send a look, say when something came home. None of it leaves."
+            /* Alone on the device there is no one to write to — and the old way
+               out sent the tester to /profile, whose roof modal has no chips to
+               tick and a permanently disabled button, with nothing saying why.
+               Three pages to a dead control. A thread needs a second wardrobe,
+               so the empty state says that and offers the two things that make
+               one: start another, or install the samples. */
+            body={
+              others.length > 0
+                ? 'Threads between the wardrobes on this device: ask after a piece, send a look, say when something came home. None of it leaves.'
+                : 'A thread runs between two wardrobes on this device, and this device holds one. Start another, or add the sample wardrobes to see how a thread reads.'
+            }
             action={
-              // Alone on the device there is no one to write to; the way in is a household.
               others.length > 0 ? (
                 <Button tone="primary" onClick={() => setStarting(true)}>Start one</Button>
               ) : (
-                <LinkButton to="/profile" tone="primary" wrap>Join wardrobes under a roof</LinkButton>
+                <span className="flex flex-wrap items-center justify-center gap-3">
+                  <LinkButton to="/open/new" tone="primary" wrap>Start another wardrobe</LinkButton>
+                  {/* The count is deliberately not printed: reading it means
+                      importing the persona seeds, and this is a thumb-bar
+                      route whose chunk should not carry them. */}
+                  {accounts.some(a => a.isSample) ? null : (
+                    <Button wrap onClick={installSamples}>Add the sample wardrobes</Button>
+                  )}
+                </span>
               )
             }
           />
@@ -172,9 +189,14 @@ export default function Chats() {
         <ul>
           {threads.map(({ conversation, last, count }) => {
             const others = conversation.memberIds.filter(id => id !== activeId).map(id => byId.get(id));
+            /* 'Someone' was a wardrobe deleted out from under its threads. The
+               portal now prunes its own removals (lib/admin.ts), but a retired
+               wardrobe still leaves its threads behind, and a thread must never
+               name a person who is not there. */
             const title = conversation.isGroup
               ? conversation.name ?? 'The group'
-              : others[0]?.name ?? 'Someone';
+              : others[0]?.name ?? 'A removed wardrobe';
+            const sampleThread = !conversation.isGroup && others[0]?.isSample === true;
             return (
               <li key={conversation.id}>
                 <Link to={`/chats/${conversation.id}`} state={arrival ?? undefined} className="flex items-center gap-3 min-h-[64px] py-2 group">
@@ -182,8 +204,13 @@ export default function Chats() {
                     {others.slice(0, 2).map(a => a ? <AccountMark key={a.id} account={a} size={28} /> : null)}
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block text-[15px] text-text truncate group-hover:underline underline-offset-[3px]">
-                      {title}
+                    <span className="flex items-center gap-2 min-w-0">
+                      <span className="text-[15px] text-text truncate group-hover:underline underline-offset-[3px]">
+                        {title}
+                      </span>
+                      {/* docs/35: a sample says it is a sample everywhere it
+                          appears, not only on the feed cards. */}
+                      {sampleThread ? <Chip as="span">sample</Chip> : null}
                     </span>
                     {/* Prose stays prose — mono caps is for the ledger, and the
                         hard slice(0,60) cut words mid-letter with no ellipsis
@@ -206,6 +233,9 @@ export default function Chats() {
       <Modal open={starting} onClose={() => setStarting(false)} title="New conversation">
         <p className="text-[13px] text-text-2 leading-relaxed">
           Pick one wardrobe for a direct thread, or several for a group.
+          {others.some(a => a.isSample)
+            ? ' A sample wardrobe answers only when you open it yourself — nothing writes back on its own.'
+            : ''}
         </p>
         <ul className="mt-4">
           {others.map(account => {
@@ -222,7 +252,10 @@ export default function Chats() {
                 >
                   <AccountMark account={account} size={28} />
                   <span className="min-w-0 flex-1">
-                    <span className="block text-[15px] text-text truncate">{account.name}</span>
+                    <span className="flex items-center gap-2 min-w-0">
+                      <span className="text-[15px] text-text truncate">{account.name}</span>
+                      {account.isSample ? <Chip as="span">sample</Chip> : null}
+                    </span>
                     <span className="type-ledger text-[11px] text-text-2">{account.handle}</span>
                   </span>
                   {on ? <span className="type-ledger text-[11px] text-text-2">in</span> : null}
@@ -320,7 +353,11 @@ export function ChatThread() {
   // also called `others`, and this was shadowing it.
   const withYou = conversation.memberIds.filter(m => m !== activeId).map(m => byId.get(m));
   const present = withYou.filter(Boolean);
-  const title = conversation.isGroup ? conversation.name ?? 'The group' : withYou[0]?.name ?? 'Someone';
+  const title = conversation.isGroup ? conversation.name ?? 'The group' : withYou[0]?.name ?? 'A removed wardrobe';
+  /* A sample answers when someone opens it and writes back, which on this device
+     means the tester themselves. Left unsaid, a request sits on "Asked" forever
+     and reads as a person ignoring you. */
+  const withSample = withYou.some(a => a?.isSample === true);
 
   const send = () => {
     if (!draft.trim() && !attached.look && !attached.piece) return;
@@ -357,7 +394,9 @@ export function ChatThread() {
           authorId: activeId,
           date: todayLocal(),
           at: nowLocalStamp(),
-          text: askNote.trim() || `Asking after the ${askPiece.trim()}${owner ? `, ${owner.name}` : ''}.`,
+          // The placeholder teaches "The ivory bandhgala", so the template's
+          // own article stuttered. The piece's name carries whatever it carries.
+          text: askNote.trim() || `Asking after ${askPiece.trim()}${owner ? `, ${owner.name}` : ''}.`,
           request: { pieceName: askPiece.trim(), status: 'asked' as const, ownerId: askOwner },
         },
       ],
@@ -400,6 +439,11 @@ export function ChatThread() {
       {conversation.about ? (
         <p className="type-editorial text-[19px] leading-snug text-balance -mt-2">{conversation.about}</p>
       ) : null}
+      {withSample ? (
+        <p className="type-ledger text-[11px] text-text-2 -mt-2">
+          A sample wardrobe. It answers only when you open it yourself.
+        </p>
+      ) : null}
 
       <Card>
         <ul className="space-y-5">
@@ -410,7 +454,7 @@ export function ChatThread() {
                 {author ? <AccountMark account={author} size={26} /> : null}
                 <div className="min-w-0 flex-1">
                   <p className="type-ledger text-[11px] text-text-2">
-                    {author?.name ?? 'Someone'}
+                    {author?.name ?? 'A removed wardrobe'}
                     <span className="mx-1.5">·</span>
                     <span className="tabular">{shortDate(message.date)}</span>
                   </p>

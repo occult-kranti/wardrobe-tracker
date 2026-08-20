@@ -19,6 +19,16 @@ import type { Account, SyncMode } from '@almari/shared/types';
  *      own rather than a footnote — the one thing this screen must never
  *      imply is that the clothes are going somewhere they were not asked to
  *      go.
+ *
+ *      WHAT IS ON THE FIRST SCREEN IS THE WHOLE OF THAT PROMISE. The panel
+ *      used to render its paragraph and both credential fields above the
+ *      skip, which put "Continue without an account" at y=812 of an 844pt
+ *      window — sliced by the fold, and gone entirely under real browser
+ *      chrome. What a stranger from a WhatsApp link actually saw was EMAIL,
+ *      PASSWORD, SIGN IN: an email gate, whatever the copy said. So the skip
+ *      is the first viewport's primary, and the credential fields do not
+ *      exist in the document until somebody asks for them by pressing "Sign
+ *      in, or make an account".
  *   STEP 2 · THE WARDROBE, reached after sign-in, sign-up, or the skip:
  *      which of the wardrobes stored in this browser to open, or the form to
  *      start one. Opening a wardrobe authenticates no one; it never did.
@@ -78,7 +88,13 @@ function openedPhrase(id: string): string | null {
  * Used on the Door, in Settings, and inline where a synced wardrobe is chosen
  * while signed out.
  */
-export function AccountPanel({ idPrefix = 'acct' }: { idPrefix?: string }) {
+export function AccountPanel({
+  idPrefix = 'acct',
+  // Off by default, so Settings and Wardrobes are unchanged: only a caller
+  // that REVEALED this panel on purpose — the Door's disclosure — hands it the
+  // caret, because there the person has just asked for exactly this field.
+  autoFocus = false,
+}: { idPrefix?: string; autoFocus?: boolean }) {
   const { authUser, authReady, signInEmail, signUpEmail, signOutAccount } = useSession();
   const [mode, setMode] = useState<'in' | 'up'>('in');
   const [email, setEmail] = useState('');
@@ -144,6 +160,7 @@ export function AccountPanel({ idPrefix = 'acct' }: { idPrefix?: string }) {
             value={email}
             onChange={e => setEmail(e.target.value)}
             placeholder="you@wherever.com"
+            autoFocus={autoFocus}
           />
         </Field>
         <Field
@@ -353,6 +370,10 @@ export default function Door({ starting = false }: { starting?: boolean }) {
   // Step 1 is the account; step 2 is the wardrobe. Local state, never a URL —
   // the door holds exactly two addresses and the back button owes it nothing.
   const [pastAccount, setPastAccount] = useState(false);
+  // Whether the credential fields have been asked for. Signing in is a thing
+  // you come here to do, not a toll — so it is a disclosure, and until it is
+  // opened there is no email field on the screen to mistake for a gate.
+  const [wantAccount, setWantAccount] = useState(false);
 
   // replace, so the door does not stay behind you in history.
   const land = () => navigate(next ?? '/', { replace: true });
@@ -384,7 +405,7 @@ export default function Door({ starting = false }: { starting?: boolean }) {
         {!pastAccount ? (
           <Card>
             <h1 className="type-masthead text-[24px] pb-2 rule-double">
-              {authReady && authUser ? 'The account' : 'An account, if you want one'}
+              {authReady && authUser ? 'The account' : 'An account is optional'}
             </h1>
             <NextNote next={next} />
             {!authReady ? (
@@ -392,26 +413,38 @@ export default function Door({ starting = false }: { starting?: boolean }) {
               // checked once; a card with nothing in it reads as broken, so
               // one calm line holds the space.
               <p className="text-[14px] text-text-2 mt-4">One moment — checking the account.</p>
-            ) : (
+            ) : authUser ? (
               <>
                 <div className="mt-4">
                   <AccountPanel />
                 </div>
                 <Basting className="my-5" />
-                {authUser ? (
-                  <Button tone="primary" onClick={() => setPastAccount(true)}>Continue</Button>
+                <Button tone="primary" onClick={() => setPastAccount(true)}>Continue</Button>
+              </>
+            ) : (
+              <>
+                {/* One line, then the way in. Everything the account is for is
+                    said again in full inside the panel below, for whoever
+                    opens it — nobody has to read it to get through the door. */}
+                <p className="text-[14px] text-text-2 mt-4 leading-relaxed">
+                  An account is only a copy of a wardrobe you choose, kept so another device can
+                  open the same record.
+                </p>
+                {/* THE PRIMARY OF THE FIRST VIEWPORT is the one action this
+                    alpha wants: start a wardrobe and keep the clothes here. */}
+                <div className="mt-5">
+                  <Button tone="primary" onClick={() => setPastAccount(true)}>
+                    Continue without an account
+                  </Button>
+                </div>
+                <p className="type-ledger text-[11px] text-text-2 mt-4">
+                  Everything stays on this device, and the app works fully without one.
+                </p>
+                <Basting className="my-5" />
+                {wantAccount ? (
+                  <AccountPanel autoFocus />
                 ) : (
-                  <>
-                    {/* The skip is a first-class button beside sign-in, not a
-                        footnote: the app works fully without an account, and
-                        the copy says so rather than merely allowing it. */}
-                    <Button tone="primary" onClick={() => setPastAccount(true)}>
-                      Continue without an account
-                    </Button>
-                    <p className="type-ledger text-[11px] text-text-2 mt-4">
-                      Everything stays on this device, and the app works fully without one.
-                    </p>
-                  </>
+                  <Button onClick={() => setWantAccount(true)}>Sign in, or make an account</Button>
                 )}
               </>
             )}

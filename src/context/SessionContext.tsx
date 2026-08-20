@@ -30,6 +30,7 @@ import {
   hasLegacyWardrobe,
   THEME_KEY,
 } from '../lib/accounts';
+import { pruneCommunity } from '../lib/admin';
 import { buildPersonaState, PERSONAS, PERSONA_SEED_VERSION } from '../lib/personaWardrobe';
 import { mergeCommunity, normalizeCommunity, seedCommunity } from '../lib/communitySeed';
 import { mergeSchedule } from '../lib/feedEngine';
@@ -361,6 +362,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     const next = accounts.filter(a => a.id !== id);
     persist(next);
     if (activeId === id) signOut();
+    // The retired wardrobe's community rows go with it — the portal's two
+    // deletion paths already prune, and a thread of ghosts named "Someone"
+    // is the review finding this call closes for the tester-facing path.
+    pruneCommunity([id]);
     // A synced wardrobe's remote copy goes with it — "retired" must not leave
     // the closet standing on the account. Best-effort; offline it outlives
     // this device, never the reverse.

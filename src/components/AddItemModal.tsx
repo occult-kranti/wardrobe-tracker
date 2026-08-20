@@ -12,6 +12,7 @@ import {
   type Season,
 } from '@almari/shared/types';
 import { Button, Chip, Field, Modal, inputClass, selectClass } from './ui';
+import { confirmWrite } from '../hooks/useLocalStorage';
 import { prepareImage, readPhotograph } from '../lib/anthropic';
 import { readIntake } from '@almari/shared/intake';
 import { INTAKE_PROMPT } from '../lib/intakePrompt';
@@ -41,6 +42,74 @@ const SEASON_ORDER: Season[] = ['spring', 'summer', 'fall', 'winter'];
 const SOURCE_ORDER: ItemSource[] = [
   'new', 'secondhand', 'swapped', 'gifted', 'inherited', 'self-made',
 ];
+
+/**
+ * THE LONG EDGE A STORED PHOTOGRAPH IS KEPT AT.
+ *
+ * A phone hands over 4032x3024 and five megabytes of it, and that used to go
+ * into the record verbatim: one photographed piece measured 7.5M characters as
+ * a data URL against a device holding about 4.9M for the entire closet, so the
+ * first add filled the wardrobe and every write after it was refused. Every
+ * other image path in the house already shrank — the frame sent to be read
+ * caps at 1400, an intake crop at 520, a cut-out at 512 — and this, the
+ * ordinary way a piece is added, was the only one that did not.
+ *
+ * 640 is chosen for what the stored picture is FOR: a tile in the closet grid
+ * and the picture on a detail sheet, on a phone. It is not a print. At this
+ * edge a photographed piece costs on the order of a hundred kilobytes rather
+ * than seven megabytes, which is the difference between a sixty-piece walk
+ * fitting on the device and not fitting at all.
+ *
+ * The photograph as it arrived is still held in memory for the one journey out
+ * to the model, which wants every pixel it can get. It is only the RECORD that
+ * is a tile.
+ */
+const STORE_EDGE = 640;
+const STORE_QUALITY = 0.85;
+
+/**
+ * A picture already small enough to keep exactly as it came.
+ *
+ * The re-encode is a JPEG, which has no alpha, so a small PNG — a cut-out, a
+ * flat lay sold on a transparent ground — is left alone rather than having its
+ * transparency filled in with black. Anything above this is re-encoded whatever
+ * it is: the point of the cap is that no single piece can cost the closet.
+ */
+const KEEP_AS_IS = 300_000;
+
+/** Draw a chosen photograph down to the size the record keeps. Never grows one. */
+function toStoredSize(src: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onerror = () => reject(new Error('That photo would not open.'));
+    img.onload = () => {
+      const scale = Math.min(1, STORE_EDGE / Math.max(img.naturalWidth, img.naturalHeight));
+      if (scale === 1 && src.length <= KEEP_AS_IS) return resolve(src);
+      const w = Math.max(1, Math.round(img.naturalWidth * scale));
+      const h = Math.max(1, Math.round(img.naturalHeight * scale));
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return reject(new Error('This browser will not open a drawing surface.'));
+      ctx.drawImage(img, 0, 0, w, h);
+      resolve(canvas.toDataURL('image/jpeg', STORE_QUALITY));
+    };
+    img.src = src;
+  });
+}
+
+/**
+ * Said when the device refused the write and nothing else has said so.
+ *
+ * It names the remedy, because "full" on its own is news a person cannot act
+ * on, and the backup is the part that has to happen first.
+ */
+const sayRefused = () =>
+  showToast(
+    'Not written — this device has no room left. Export a backup from Settings, then keep fewer photographs.',
+    'error',
+  );
 
 interface Props {
   open: boolean;
@@ -92,7 +161,9 @@ export default function AddItemModal({ open, onClose, editItem }: Props) {
     if (!imageUrl) return;
     try {
       setReading(true);
-      const image = await prepareImage(imageUrl);
+      // Read from the photograph as it arrived where we still have it: the
+      // stored tile is sized for a closet grid, and the model wants the print.
+      const image = await prepareImage(fullPhoto.current || imageUrl);
       const { text } = await readPhotograph(image, INTAKE_PROMPT);
       const read = readIntake(text);
       if (read.error || read.drafts.length === 0) {
@@ -125,6 +196,13 @@ export default function AddItemModal({ open, onClose, editItem }: Props) {
   const [dragOver, setDragOver] = useState(false);
 
   const fileRef = useRef<HTMLInputElement>(null);
+  /**
+   * The photograph exactly as it arrived — held for the one journey out to the
+   * model, and never written down. `imageUrl` is the tile that goes in the
+   * record; this is the print it was drawn from, and it lives as long as the
+   * form is open and not a moment longer.
+   */
+  const fullPhoto = useRef('');
 
   // Prefill on open. Keyed on open+id so reopening the same piece rereads it,
   // and switching pieces never leaks state across records.
@@ -139,6 +217,8 @@ export default function AddItemModal({ open, onClose, editItem }: Props) {
     setSeason([...editItem.season]);
     setOccasion([...editItem.occasion]);
     setImageUrl(editItem.imageUrl ?? '');
+    // What is on the record IS the tile; there is no print behind it.
+    fullPhoto.current = '';
     setCost(editItem.cost !== undefined ? String(editItem.cost) : '');
     setNotes(editItem.notes ?? '');
   }, [open, editItem]);
@@ -151,9 +231,22 @@ export default function AddItemModal({ open, onClose, editItem }: Props) {
       return;
     }
     const reader = new FileReader();
-    reader.onload = e => {
-      setImageUrl((e.target?.result as string) ?? '');
-      setCutting(false);
+    reader.onload = async e => {
+      const arrived = (e.target?.result as string) ?? '';
+      if (!arrived) {
+        showToast('That photo would not open. Try another.', 'error');
+        return;
+      }
+      try {
+        const stored = await toStoredSize(arrived);
+        // The record gets the tile; the model, if it is ever asked, gets the
+        // photograph as it came. Only the first of the two is written down.
+        fullPhoto.current = arrived;
+        setImageUrl(stored);
+        setCutting(false);
+      } catch {
+        showToast('That photo would not open. Try another.', 'error');
+      }
     };
     reader.onerror = () => showToast('That photo would not open. Try another.', 'error');
     reader.readAsDataURL(file);
@@ -185,6 +278,7 @@ export default function AddItemModal({ open, onClose, editItem }: Props) {
     setSource('');
     setFitsLike('');
     setImageUrl('');
+    fullPhoto.current = '';
     setCost('');
     setNotes('');
     setSeason([...SEASON_ORDER]);
@@ -214,14 +308,26 @@ export default function AddItemModal({ open, onClose, editItem }: Props) {
       notes: notes.trim() || undefined,
     };
 
+    /*
+     * The news waits for the device.
+     *
+     * The store coalesces its write, so the confirmation used to be printed
+     * before the disk had ever been asked: "Added. It starts at 0 wears."
+     * stood directly above "This device would not take the write — its storage
+     * is full", with the piece rendering happily from memory and a refresh
+     * about to throw it away. A ledger that says a thing is on the record when
+     * it is not has spent the only thing it has. So the confirmation is held
+     * for the length of one settle window, and if the write was refused the
+     * truthful line is the only one said.
+     */
     if (editItem) {
       // The wear history, pin and bench state belong to the piece, not the form.
       updateItem(editItem.id, record);
-      showToast('Amended.', 'success');
+      confirmWrite(() => showToast('Amended.', 'success'), sayRefused);
     } else {
       addItem({ ...record, favorite: false });
       // Graceful on the way out. Never a lecture.
-      showToast('Added. It starts at 0 wears.', 'success');
+      confirmWrite(() => showToast('Added. It starts at 0 wears.', 'success'), sayRefused);
     }
     reset();
     onClose();
@@ -283,6 +389,7 @@ export default function AddItemModal({ open, onClose, editItem }: Props) {
                       icon={<IconClose size={14} />}
                       onClick={() => {
                         setImageUrl('');
+                        fullPhoto.current = '';
                         setCutting(false);
                         if (fileRef.current) fileRef.current.value = '';
                       }}

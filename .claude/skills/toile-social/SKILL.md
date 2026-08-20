@@ -24,7 +24,11 @@ Attaching shows a piece; it does not lend it. Only the owner may lend.
 
 ## Non-negotiables
 
-1. **There is no server.** Never write copy implying an account, a login, sync,
+1. **The account is optional, admitted 2026-08-18.** (This rule read "there is
+   no server" before the PLAN.md amendment and docs/35; the amendment
+   supersedes it — copy about the optional account and per-wardrobe sync is
+   lawful where it tells the whole truth, docs/35's plain sentence included.)
+   Never write copy implying an account is REQUIRED, nor imply a login, sync,
    or that anything leaves the device. "Open a wardrobe", not "sign in". If a
    passphrase is ever added it is a **curtain, not a safe** — localStorage is
    plaintext and the UI must say so.

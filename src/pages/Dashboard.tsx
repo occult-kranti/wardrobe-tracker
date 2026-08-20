@@ -294,8 +294,19 @@ export default function Dashboard() {
 
   /* ---------- logging ---------- */
 
+  /**
+   * The sheet opens on whichever screen has something on it.
+   *
+   * It always opened on 'choices', so a wardrobe with no saved outfits — which
+   * is every wardrobe in week one — was shown a paragraph about a feature it
+   * had not used, plus a row to press to get past it: hero → "Pick pieces
+   * instead" → piece → "Log this" is FOUR taps, every day, against a hero that
+   * promised two. `choices` rather than `outfits.length` on purpose: an outfit
+   * whose pieces are retired or packed away is not offered either, and an
+   * empty interstitial is an empty interstitial however it got that way.
+   */
   const openSheet = () => {
-    setMode('choices');
+    setMode(choices.length === 0 ? 'pieces' : 'choices');
     setPicked([]);
     setShowAll(false);
     setSheetOpen(true);
@@ -486,8 +497,13 @@ export default function Dashboard() {
               <p className="type-editorial text-[22px] sm:text-[26px] mt-2 leading-tight">
                 Today's page is still blank.
               </p>
+              {/* The true count, not the aspirational one. With a saved
+                  outfit to press it really is two; with none the sheet opens
+                  straight onto the pieces and the last tap is "Log this". */}
               <p className="text-[14px] text-text-2 mt-1">
-                Two taps and it's on the record for good.
+                {choices.length > 0
+                  ? "Two taps and it's on the record for good."
+                  : "A tap, the pieces you wore, and it's on the record for good."}
               </p>
             </div>
             <div className="flex flex-col sm:items-end gap-1 w-full sm:w-auto shrink-0">
@@ -664,7 +680,7 @@ export default function Dashboard() {
               <span className="text-left">
                 <span className="block text-[15px] text-text">Pick pieces instead</span>
                 <span className="type-ledger text-[10px] text-text-2 block mt-0.5">
-                  {pool.length > 0 ? `${pool.length} ready to wear` : 'From the whole closet'}
+                  {pool.length > 0 ? `${pool.length} in rotation` : 'From the whole closet'}
                 </span>
               </span>
               <IconArrowRight size={16} className="text-text-2 shrink-0" />
@@ -735,10 +751,22 @@ export default function Dashboard() {
                   </ul>
                 </div>
 
-                {pool.length > 0 && !showAll ? (
-                  <Button tone="tertiary" className="mt-3" onClick={() => setShowAll(true)}>
-                    Show everything in the closet
-                  </Button>
+                {/* Offered only when there is something more to show, and it
+                    says how much. It used to appear whenever the pool had
+                    anything in it at all — including when the pool WAS the
+                    closet, where pressing it changed nothing — and it never
+                    said what it was hiding. Nothing leaves this picker
+                    silently: what the pool holds back is in the wash, benched
+                    for a repair, packed away, or in a quiet category. */}
+                {pool.length > 0 && !showAll && everything.length > pool.length ? (
+                  <>
+                    <Button tone="tertiary" className="mt-3" onClick={() => setShowAll(true)}>
+                      Show everything in the closet
+                    </Button>
+                    <p className="type-ledger text-[10px] text-text-2 mt-1">
+                      {everything.length - pool.length} more in the closet, out of rotation today.
+                    </p>
+                  </>
                 ) : null}
               </>
             )}

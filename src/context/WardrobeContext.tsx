@@ -972,9 +972,28 @@ export function WardrobeProvider({ accountId, children }: { accountId: string; c
     return ids;
   }, [state.items, packedSlots]);
 
+  /**
+   * THE POOL — what the picker offers before anybody asks for more.
+   *
+   * 'worn' is a LEDGER FACT ("this came off the chair today"), never a
+   * statement of availability, and the rule used to confuse the two: logWear
+   * stamps every logged piece 'worn', nothing but a manual laundry chip ever
+   * stamps it back 'clean', and admitting only 'clean' therefore deleted each
+   * day's clothes from the next day's default pool. One log flipped the
+   * sheet's note from "1 ready to wear" to the whole closet; a person logging
+   * daily watched the picker shrink toward the things they never wear, with
+   * their favourites missing and no line anywhere saying where they went.
+   * Re-wearing yesterday's jeans is ordinary practice, not an exception.
+   *
+   * Out of the pool, and only these: in the wash, benched for a repair or the
+   * tailor, packed away in a compartment, or in a category the person asked to
+   * keep quiet. That is exactly what Today's guide already tells them — "out
+   * of rotation while a piece is in the wash or waiting on a repair" — so the
+   * code now says what the copy always said.
+   */
   const getWearablePool = useCallback(() =>
     activeItems.filter(i =>
-      i.laundryStatus === 'clean'
+      i.laundryStatus !== 'washing'
       && !isBenched(i)
       && !isQuietCategory(state.settings, i.category)
       // In the trunk under the bed is not "available today".

@@ -25,8 +25,8 @@ const BEATS: Beat[] = [
     body: 'A photograph is welcome but never asked for. A piece without one is drawn as a flat, so a closet with no photographs still looks intentional. A name is enough to start.',
   },
   {
-    title: 'The two-tap log.',
-    body: 'Today asks one question — what went on. One tap on "Log today\'s wear", one on the pieces, and the day is on the record for good.',
+    title: 'The daily log.',
+    body: 'Today asks one question — what went on. A tap on "Log today\'s wear", then the outfit or the pieces themselves, and the day is on the record for good.',
   },
   {
     title: 'Before you buy.',

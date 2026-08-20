@@ -1,20 +1,29 @@
 import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useWardrobe } from '../context/WardrobeContext';
+import { useSession } from '../context/SessionContext';
 import { categoryLabel, type BorrowStatus, type CircleMessage, type CircleProfile } from '@almari/shared/types';
 import { Button, Card, Chip, EmptyState, LinkButton, Masthead, SectionTitle, inputClass } from '../components/ui';
 import { Basting, GarmentPlate, PlateEmptyWishlist, TagPortrait } from '../components/art';
 import { IconChevronLeft } from '../components/icons';
 import { oldestFirst, shortDate } from '../components/social';
+import { syncModeOf } from '../lib/sync';
 
 /**
  * THE SHARED RAIL — borrowing between people who already know each other.
  *
- * Everything on this page is local data: profiles are records this closet keeps,
- * the way a contact book is, and the page says so out loud. There is no server,
- * no account, and nothing syncs — the owner chose to ship the full flow as a
- * working local preview (docs/11-shared-rail.md). No feed, no followers, no
- * unread counts: one group, one thread, chronological.
+ * Everything on this page belongs to the open wardrobe: profiles are records this
+ * closet keeps, the way a contact book is, and the page says so out loud. The
+ * flow shipped as a working local preview (docs/11-shared-rail.md) — no server
+ * of its own, no directory, nobody to look anyone up in.
+ *
+ * What it is NOT is unsyncable. `circle` is a field of AppState, so it travels
+ * exactly as far as the wardrobe holding it: nowhere for a wardrobe kept on this
+ * device, and up to the account for one set to sync (the 2026-08-18 PLAN
+ * amendment). These are other people's names, handles and bios, so the line
+ * under the masthead says which of the two is true rather than promising the
+ * quieter one. No feed, no followers, no unread counts: one group, one thread,
+ * chronological.
  *
  * A declined request reads as a neutral fact. A piece staying home is not a
  * verdict on anyone.
@@ -46,7 +55,9 @@ function RequestSlip({
   return (
     <div className="border border-border rounded-[2px] px-3 py-2.5 mt-2 flex flex-wrap items-center gap-x-3 gap-y-2">
       <span className="text-[14px] text-text">{request.pieceName}</span>
-      <Chip as="span">{STATUS_LABELS[request.status]}</Chip>
+      {/* A status outside the four is written as it stands. The same gap was
+          patched in Chats and not here, so this slip rendered an empty chip. */}
+      <Chip as="span">{STATUS_LABELS[request.status] ?? request.status}</Chip>
       {/* Only requests aimed at this closet carry actions, and both read as
           plain facts — no alarm styling on a piece staying home. */}
       {!mine && request.status === 'asked' ? (
@@ -66,7 +77,11 @@ function RequestSlip({
 
 export function Rail() {
   const { circle, getItem, sendRailMessage, setRequestStatus, returnLoan } = useWardrobe();
+  const { active } = useSession();
   const [draft, setDraft] = useState('');
+
+  /** Whether this wardrobe's record leaves the device — and the rail with it. */
+  const railTravels = active ? syncModeOf(active) === 'cloud' && active.isSample !== true : false;
 
   const me = circle.profiles.find(p => p.isMe);
   const group = circle.groups[0];
@@ -125,8 +140,13 @@ export function Rail() {
         meta={circle.profiles.length > 0 ? `${circle.profiles.length} closets` : undefined}
       />
 
+      {/* A privacy sentence about other people's names has to match what the
+          code does with them. It said "Nothing syncs anywhere" from inside a
+          record that syncs whenever the wardrobe does. */}
       <p className="type-ledger text-[11px] text-text-2 -mt-2">
-        Kept on this device, like a contact book. Nothing syncs anywhere.
+        {railTravels
+          ? "Kept in this wardrobe's record, like a contact book. It travels only where this wardrobe does — to your account, because this one is synced."
+          : 'Kept on this device, like a contact book. Nothing syncs anywhere.'}
       </p>
 
       {group ? (

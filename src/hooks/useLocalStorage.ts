@@ -28,6 +28,60 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 /** Long enough to swallow a burst of keystrokes, short enough to feel instant. */
 const SETTLE_MS = 250;
 
+/* ---------- the write ledger: nothing may say "saved" over a refusal ----------
+
+   The write is coalesced, so it lands a beat AFTER the action that caused it.
+   That beat is how "Added. It starts at 0 wears." came to stand directly above
+   "This device would not take the write — its storage is full": the
+   confirmation was written before the device had ever been asked.
+
+   So the confirmation waits for the answer. Three counters are the whole
+   mechanism, and they are module-level because there is one localStorage and
+   every store on this device shares its ceiling. */
+
+/** Every refused write, counted — including ones only said out loud once. */
+let refusals = 0;
+/** Where `refusals` stood when a store last announced trouble to the person. */
+let announced = 0;
+/** Stores holding a scheduled-but-unwritten job. */
+let inFlight = 0;
+
+/**
+ * A write kept somewhere other than this hook — lib/accounts.ts holds the
+ * registry, the session and the community store — reports its refusals here,
+ * so a confirmation waiting on the ledger sees those too.
+ */
+export function noteWriteRefused(): void {
+  refusals++;
+}
+
+/**
+ * Confirm an action only once the device has taken the write it caused.
+ *
+ * `landed` says the good news. `refused` is called ONLY when nothing else has
+ * already said it: the store's own onError speaks once per run of trouble, and
+ * two truthful toasts about one full disk is one too many.
+ */
+export function confirmWrite(landed: () => void, refused: () => void): void {
+  const before = refusals;
+  const giveUpAt = Date.now() + 4000;
+  const look = () => {
+    if (refusals !== before) {
+      if (announced <= before) refused();
+      return;
+    }
+    if (inFlight > 0 && Date.now() < giveUpAt) {
+      window.setTimeout(look, 60);
+      return;
+    }
+    landed();
+  };
+  // One settle window and a beat: long enough for the effect to schedule the
+  // write and for the timer to run it, short enough that the news still reads
+  // as the answer to the thing just pressed.
+  window.setTimeout(look, SETTLE_MS + 80);
+}
+
 export function useLocalStorage<T>(
   key: string,
   initialValue: T,
@@ -72,13 +126,18 @@ export function useLocalStorage<T>(
     const job = pending.current;
     if (!job) return;
     pending.current = null;
+    inFlight--;
     try {
       window.localStorage.setItem(job.key, JSON.stringify(job.value));
       errored.current = false;
     } catch (e) {
+      // Counted every time. A confirmation waiting on the ledger needs the
+      // fact, not the announcement.
+      refusals++;
       // Said once per run of trouble, not once per keystroke.
       if (!errored.current) {
         errored.current = true;
+        announced = refusals;
         report.current?.(e);
       }
     }
@@ -97,6 +156,7 @@ export function useLocalStorage<T>(
       mounted.current = true;
       return;
     }
+    if (!pending.current) inFlight++;
     pending.current = { key, value: storedValue };
     if (timer.current !== null) clearTimeout(timer.current);
     timer.current = window.setTimeout(flush, SETTLE_MS);

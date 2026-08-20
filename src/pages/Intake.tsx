@@ -14,6 +14,7 @@ import { INTAKE_PROMPT, OUTFIT_PROMPT } from '../lib/intakePrompt';
 import { INTAKE_SAMPLES, type IntakeSample } from '../lib/intakeSamples';
 import { prepareImage, readPhotograph, type Prepared } from '../lib/anthropic';
 import { harvest, type Harvested } from '../lib/harvest';
+import { confirmWrite } from '../hooks/useLocalStorage';
 import {
   buildGridPrompt, parseGridResponse, soloDetections, toDrafts,
   buildPhotoPrompt, galleryDrafts, photoCropPixels,
@@ -93,7 +94,7 @@ type Working =
   | { at: 'cutting'; done: number; total: number };
 
 export default function Intake() {
-  const { addItem, addOutfit, activeItems, settings } = useWardrobe();
+  const { addItem, addOutfit, logWear, activeItems, settings } = useWardrobe();
   const navigate = useNavigate();
   const [params] = useSearchParams();
   // Arriving from "Today's outfit" in the closet.
@@ -116,6 +117,8 @@ export default function Intake() {
   /** One picture per piece, cut from that photograph on this device. */
   const [pictures, setPictures] = useState<Map<string, Harvested>>(new Map());
   const [saveLook, setSaveLook] = useState(true);
+  /** Worn flow only: the wear the photograph is evidence of, offered as a tick. */
+  const [logToday, setLogToday] = useState(true);
 
   /* ---------- a feed screenshot: a whole grid at once ---------- */
   const [feed, setFeed] = useState<FeedWork>({ at: 'idle' });
@@ -132,6 +135,15 @@ export default function Intake() {
   const [galleryMode, setGalleryMode] = useState(false);
   const galleryRef = useRef<HTMLInputElement>(null);
   const galleryCardRef = useRef<HTMLDivElement>(null);
+
+  /**
+   * A worn read, and only a worn read.
+   *
+   * `worn` is a URL parameter, so it outlives a Start over and stays true
+   * through a feed or gallery import begun on the same page — and neither of
+   * those is a photograph of what you have on.
+   */
+  const wornRead = worn && !feedMode && !galleryMode;
 
   // The closet's "From a feed" and "From photos" links land here, on their cards.
   useEffect(() => {
@@ -160,6 +172,14 @@ export default function Intake() {
     setEdited({});
     setFeedMode(false);
     setGalleryMode(false);
+    // THE CROPS BELONG TO THE PHOTOGRAPH THEY CAME FROM, AND TO NOTHING ELSE.
+    // Draft refs are p1, p2, p3 — the parser's own numbering, and the bundled
+    // samples use exactly those — so a read that begins while the last read's
+    // pictures are still here would hand a photograph of your jacket to
+    // somebody else's sample trousers, and commit it. Cleared where every new
+    // read begins, which is here.
+    setPictures(new Map());
+    setSource(null);
     if (r.error) {
       setTicked(new Set());
       return;
@@ -563,15 +583,66 @@ export default function Intake() {
       });
     }
 
-    showToast(
-      `Catalogued. ${chosen.length} ${chosen.length === 1 ? 'piece is' : 'pieces are'} on record.`,
-      'seal'
+    /*
+     * PHOTOGRAPHED WEARING THEM, THEN FILED AT NEVER WORN.
+     *
+     * The worn flow's entire premise is that these are on your body right now,
+     * and the record used to open by contradicting it: every piece the model
+     * had just seen you in read NEVER WORN, with no last-worn date and no
+     * cost per wear, and the only way out was opening four to six pieces and
+     * logging each by hand. One call fixes it, and the tick above means the
+     * wear is offered rather than assumed — nothing here is written unsaid.
+     */
+    const logged = wornRead && logToday && written.length > 0;
+    if (logged) logWear(written);
+
+    /*
+     * The news waits for the device. A coalesced write lands a beat after the
+     * button, so "Catalogued." used to be printed before the disk had been
+     * asked — and on a full device it stood directly above the refusal, with
+     * sixty pieces living only in memory until the next refresh threw them
+     * away. If the write was refused, the truthful line is the only one said.
+     */
+    confirmWrite(
+      () => showToast(
+        logged
+          ? `Catalogued. ${chosen.length} ${chosen.length === 1 ? 'piece is' : 'pieces are'} on record, worn today.`
+          : `Catalogued. ${chosen.length} ${chosen.length === 1 ? 'piece is' : 'pieces are'} on record.`,
+        'seal'
+      ),
+      () => showToast(
+        'Not written — this device has no room left. Export a backup from Settings, then keep fewer photographs.',
+        'error'
+      ),
     );
     navigate('/closet');
   };
 
   const drafts = result?.drafts ?? [];
   const chosenCount = drafts.filter(d => ticked.has(d.ref)).length;
+
+  /**
+   * The wear the worn flow is evidence of, offered rather than assumed.
+   *
+   * Written once and shown wherever the bench has room for it — beside the
+   * outfit tick when a photograph is on screen, on its own above the commit
+   * row when the read came from pasted text. It has to be VISIBLE on every
+   * road that can log it: a wear written without being offered is a wear
+   * written unsaid, which is the one thing this bench does not do.
+   */
+  const wearTick = wornRead && drafts.length > 0 ? (
+    <label className="flex items-center gap-2.5 min-h-11 cursor-pointer">
+      <input
+        type="checkbox"
+        checked={logToday}
+        onChange={e => setLogToday(e.target.checked)}
+        className="w-4 h-4 accent-[var(--color-accent)]"
+      />
+      <span className="text-[14px] text-text-2">
+        Log today&rsquo;s wear for these pieces
+      </span>
+    </label>
+  ) : null;
 
   return (
     <div className="space-y-6">
@@ -864,7 +935,7 @@ export default function Intake() {
             plate={<PlateEmptyCloset />}
             title={feedMode ? 'Nothing wearable in those screenshots.' : galleryMode ? 'Nothing wearable in those photographs.' : 'Nothing wearable in that photograph.'}
             body="The model was asked to say so rather than guess. What it looked at, and why it left each thing alone, is below."
-            action={<Button onClick={() => { setResult(null); setText(''); setTried(null); setFeedMode(false); setFeedFailure(null); setGalleryMode(false); setGalFailure(null); }}>Try another</Button>}
+            action={<Button onClick={() => { setResult(null); setText(''); setTried(null); setFeedMode(false); setFeedFailure(null); setGalleryMode(false); setGalFailure(null); setPictures(new Map()); setSource(null); }}>Try another</Button>}
           />
           {result.skipped.length ? (
             <div className="bg-surface plate p-4 rounded-[2px]">
@@ -910,18 +981,23 @@ export default function Intake() {
                   {drafts.length} {drafts.length === 1 ? 'piece' : 'pieces'} found and cut out on this
                   device. {feedMode ? 'The screenshots themselves stay here.' : galleryMode ? 'The photographs themselves stay here.' : 'The photograph itself stays here.'}
                 </p>
-                {result.outfit && drafts.length > 1 ? (
-                  <label className="flex items-center gap-2.5 mt-3 min-h-11 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={saveLook}
-                      onChange={e => setSaveLook(e.target.checked)}
-                      className="w-4 h-4 accent-[var(--color-accent)]"
-                    />
-                    <span className="text-[14px] text-text-2">
-                      Keep these together as an outfit, &ldquo;{result.outfit.name}&rdquo;
-                    </span>
-                  </label>
+                {(result.outfit && drafts.length > 1) || wearTick ? (
+                  <div className="mt-2">
+                    {result.outfit && drafts.length > 1 ? (
+                      <label className="flex items-center gap-2.5 min-h-11 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={saveLook}
+                          onChange={e => setSaveLook(e.target.checked)}
+                          className="w-4 h-4 accent-[var(--color-accent)]"
+                        />
+                        <span className="text-[14px] text-text-2">
+                          Keep these together as an outfit, &ldquo;{result.outfit.name}&rdquo;
+                        </span>
+                      </label>
+                    ) : null}
+                    {wearTick}
+                  </div>
                 ) : null}
               </div>
             </div>
@@ -1084,11 +1160,17 @@ export default function Intake() {
             </p>
           ) : null}
 
+          {/* No photograph on the bench means no card to hang it from, and the
+              tick may not go missing just because the read was pasted. */}
+          {!source && wearTick ? (
+            <div className="bg-surface plate p-4 rounded-[2px]">{wearTick}</div>
+          ) : null}
+
           <div className="flex flex-wrap items-center gap-3 pt-1">
             <Button tone="hero" disabled={chosenCount === 0} onClick={commit}>
               {chosenCount === 1 ? 'Add 1 piece to the closet' : `Add ${chosenCount} pieces to the closet`}
             </Button>
-            <Button onClick={() => { setResult(null); setText(''); setTried(null); setFeedMode(false); setFeedFailure(null); setGalleryMode(false); setGalFailure(null); }}>Start over</Button>
+            <Button onClick={() => { setResult(null); setText(''); setTried(null); setFeedMode(false); setFeedFailure(null); setGalleryMode(false); setGalFailure(null); setPictures(new Map()); setSource(null); }}>Start over</Button>
           </div>
         </div>
       )}

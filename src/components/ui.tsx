@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ButtonHTMLAttributes, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { IconClose, IconEyelet, IconEyeletFilled } from './icons';
 import { tick, thock } from '../lib/sound';
@@ -391,6 +392,18 @@ export const selectClass = `${inputClass} appearance-none cursor-pointer`;
  * is needed. iOS leaves the layout viewport alone, so the sheet's --kb
  * variable carries how much of the window the keyboard covers (0 everywhere
  * else) and the overlay's padding lifts the sheet clear of it.
+ *
+ * WHY IT IS PORTALED TO document.body. `position: fixed` is only fixed to the
+ * window while no ancestor carries a transform, a filter or a containing-block
+ * `will-change`; one that does becomes the containing block instead, and the
+ * sheet silently re-roots to the page column. That is exactly what happened
+ * when the v2 route transition retained its final translateY: on a phone the
+ * log sheet landed with its buttons under the fold and the window scroll
+ * locked, on every first log. The stylesheet has been fixed (src/v2.css), and
+ * the portal makes it structural — the overlay is a child of <body>, so no
+ * ancestor of the page can capture it again. `.v2` sits on <html>, so the
+ * glass rules still reach it, and React still routes events through the tree
+ * the sheet was written in.
  */
 export function Modal({
   open,
@@ -474,7 +487,7 @@ export function Modal({
 
   if (!open) return null;
 
-  return (
+  return createPortal(
     // Padding lives in .modal-overlay (index.css), not in utilities: below lg it
     // is `0 0 var(--kb)`, which is what lifts the sheet clear of the keyboard,
     // and a p-4 utility would silently override it from the later layer.
@@ -508,7 +521,8 @@ export function Modal({
             field clear of the home indicator. */}
         <div className="modal-sheet-body p-5 pt-6 max-lg:pb-[calc(1.25rem_+_var(--safe-b))]">{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

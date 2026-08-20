@@ -6,6 +6,7 @@ import {
   THEME_KEY,
   loadAccounts,
   loadActiveId,
+  loadCommunity,
   loadWardrobe,
   saveAccounts,
   saveActiveId,
@@ -329,11 +330,58 @@ function scrubAccountTraces(account: Account): void {
 }
 
 /**
+ * The shared store outlives the accounts it names, and used to keep naming
+ * them. A removed wardrobe stayed in every conversation it had ever been in,
+ * so Conversations — one of the four thumb-bar slots — listed a thread titled
+ * for a wardrobe that is not on the device, with messages by the same ghost,
+ * and there is no delete-conversation control anywhere to clear it. The likely
+ * alpha operation is exactly this: a lead clearing the samples off a tester's
+ * device after they chatted with them.
+ *
+ * The rules follow the shapes household.ts already uses for leaving: a departed
+ * id leaves every member list, a household with no joined member left folds, a
+ * conversation that drops below two present members goes with its messages, and
+ * a departed author's messages and posts go too — this is the portal's
+ * trace-removal contract, not an edit of what anyone said.
+ *
+ * Unknown fields (removedPostIds, and whatever a later schema adds) are carried
+ * through untouched: loadCommunity normalises five arrays and would silently
+ * drop the rest on the way back out.
+ */
+export function pruneCommunity(ids: string[]): void {
+  // Never CREATE the key on a device that has never had a shared store.
+  if (ids.length === 0 || readRaw(COMMUNITY_KEY) === null) return;
+  const gone = new Set(ids);
+  const raw = readJson<Record<string, unknown>>(COMMUNITY_KEY, {});
+  const before = loadCommunity();
+
+  const households = before.households
+    .map(h => ({ ...h, members: h.members.filter(m => !gone.has(m.accountId)) }))
+    .filter(h => h.members.some(m => m.joined));
+  const standing = new Set(households.map(h => h.id));
+
+  const conversations = before.conversations
+    .map(c => ({ ...c, memberIds: c.memberIds.filter(id => !gone.has(id)) }))
+    .filter(c => c.memberIds.length >= 2 && (!c.householdId || standing.has(c.householdId)));
+  const kept = new Set(conversations.map(c => c.id));
+
+  writeJson(COMMUNITY_KEY, {
+    ...raw,
+    households,
+    conversations,
+    messages: before.messages.filter(m => kept.has(m.conversationId) && !gone.has(m.authorId)),
+    posts: before.posts.filter(p => !gone.has(p.authorId)),
+    passes: before.passes.filter(p => !gone.has(p.fromId) && !gone.has(p.toId)),
+  });
+}
+
+/**
  * Remove accounts and every localStorage trace that belongs to them: the
- * registry entry, the wardrobe store, the last-opened stamp, the sync stamp
- * and any parked push. The shared device stores — community, theme, sound —
- * are not an account's and stay. The account's remote copy, where one exists,
- * is left exactly as it is: this portal administers the device only.
+ * registry entry, the wardrobe store, the last-opened stamp, the sync stamp,
+ * any parked push, and their rows in the shared store. The device-wide
+ * settings — theme, sound — are nobody's account and stay. The account's
+ * remote copy, where one exists, is left exactly as it is: this portal
+ * administers the device only.
  */
 export function deleteAccounts(ids: string[]): { removed: Account[]; activeRemoved: boolean } {
   const wanted = new Set(ids);
@@ -344,6 +392,7 @@ export function deleteAccounts(ids: string[]): { removed: Account[]; activeRemov
     scrubAccountTraces(account);
   }
   saveAccounts(registry.filter(a => !wanted.has(a.id)));
+  pruneCommunity(removed.map(a => a.id));
   const activeRemoved = loadActiveId() !== null && wanted.has(loadActiveId() as string);
   if (activeRemoved) saveActiveId(null);
   return { removed, activeRemoved };
@@ -357,6 +406,11 @@ export function deleteAllAccounts(): { removed: Account[]; activeRemoved: boolea
   writeJson(OPENED_KEY, {});
   writeJson(SYNC_META_KEY, {});
   writeJson(SYNC_QUEUE_KEY, []);
+  // "Every trace on this device" has to include the shared store: with every
+  // account gone, every conversation, post, household and pass in it names
+  // nobody. pruneCommunity has already emptied it row by row; this removes the
+  // husk so the device reads as new.
+  removeKey(COMMUNITY_KEY);
   return result;
 }
 

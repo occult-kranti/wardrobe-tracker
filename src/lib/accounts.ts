@@ -6,6 +6,7 @@ import {
   type Theme,
 } from '@almari/shared/types';
 import { todayLocal } from '@almari/shared/dates';
+import { noteWriteRefused } from '../hooks/useLocalStorage';
 
 /**
  * Where each wardrobe lives.
@@ -54,7 +55,11 @@ function write(key: string, value: unknown): void {
   try {
     window.localStorage.setItem(key, JSON.stringify(value));
   } catch {
-    // Quota exceeded or storage disabled — the in-memory state stays usable.
+    // Quota exceeded or storage disabled — the in-memory state stays usable,
+    // and this used to be the end of it. The refusal now goes on the write
+    // ledger instead of being swallowed, so an action still waiting to
+    // confirm itself can never say "saved" over a device that said no.
+    noteWriteRefused();
   }
 }
 

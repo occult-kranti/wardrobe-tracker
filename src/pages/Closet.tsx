@@ -407,6 +407,15 @@ export default function Closet() {
     setRetiring(null);
     setRetireReason('');
     setConfirmDelete(false);
+    // A RECIPIENT IS CHOSEN FOR ONE PIECE AND NO OTHER.
+    // The one thing "Keep it" used to leave behind: choose someone under the
+    // roof, keep the piece, retire a different one a week later, and the sheet
+    // opened with them still chosen and the primary reading "Pass it to —"
+    // exactly where "Retire it" sits. One habitual thumb-tap then offers a
+    // garment across a wardrobe boundary nobody asked about, in a house whose
+    // whole social contract is consent per piece. The sheet opens neutral and
+    // closes neutral.
+    setPassTo('');
   };
 
   const closetEmpty = activeItems.length === 0 && retiredItems.length === 0;
@@ -791,6 +800,7 @@ export default function Closet() {
                     setRetiring(item);
                     setRetireReason('');
                     setConfirmDelete(false);
+                    setPassTo('');
                   }}
                 />
               ))}

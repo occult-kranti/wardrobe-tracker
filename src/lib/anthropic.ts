@@ -247,7 +247,10 @@ function explainProvider(status: number, body: string, own: boolean): string {
   }
   if (status === 429) return `${provider} is rate-limiting. Wait a minute and try again.`;
   if (status === 400 && /credit|billing/i.test(body)) return 'That account has no credit left for the API.';
+  if (status === 400 && /not offered|allowlist|model/i.test(body))
+    return 'The relay does not offer that model. The default one still answers.';
   if (status === 400) return 'The provider refused the request. The photograph may be too large.';
+  if (status === 413) return 'The photograph is too large to send. A smaller one goes through fine.';
   if (status === 503 && /not configured/i.test(body))
     return 'The relay has no key yet — whoever runs this house has not set one. See supabase/README-SETUP.md.';
   if (status >= 500) return `${provider} is having trouble. Nothing was catalogued; try again shortly.`;

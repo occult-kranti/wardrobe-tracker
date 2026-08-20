@@ -127,3 +127,15 @@ synced wardrobe removes its row.
 | Wardrobe does not appear on device two | RLS not applied, or sync set to "on this device" | rerun setup.sql; check Wardrobes → Details |
 | Relay `503` | `KIMI_KEY` unset | step 4 |
 | Relay `401` from browser only | JWT enforced | `--no-verify-jwt` deploy |
+
+## The relay's clamps (added 2026-08-20)
+
+`ai-proxy` is no longer a pure pass-through. Four clamps stand, each commented
+in the function: a model allowlist (`ALLOWED_MODELS` — adding a model to the
+app now means adding it there and redeploying, or the new model answers with
+a calm 400), a `max_tokens` ceiling of 16000 (larger asks are rewritten down),
+a body-size cap sized for a prepared photograph (over it, 413), and an Origin
+check (the Pages origin and localhost pass; other browser origins get 403;
+requests with no Origin — servers, the test suite — pass). A hosting move to
+any new origin must extend the Origin list first. Belt-and-braces: keep spend
+caps set in the Anthropic and Google consoles.
