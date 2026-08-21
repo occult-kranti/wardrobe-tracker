@@ -5,6 +5,7 @@ import { defaultSlotLabels, maxSlotsFor } from '../lib/furnitureArt';
 import { todayLocal, isFutureDate, addDays } from '@almari/shared/dates';
 import { migrate } from '@almari/shared/migrate';
 import { wardrobeKey } from '../lib/accounts';
+import { sweepPhotos } from '../lib/photoStore';
 import { useSession } from './SessionContext';
 import {
   SYNC_ADOPTED_EVENT,
@@ -143,6 +144,57 @@ function upsertProfile(profiles: CircleProfile[], account: Account, isMe = false
   ];
 }
 
+/* ==================== the photograph store's housekeeping ==================== */
+
+/**
+ * HOW LONG A PICTURE NOTHING NAMES IS KEPT ANYWAY.
+ *
+ * Every removal in this app comes with an offer to put it back, and that offer
+ * stands for nine seconds (src/components/Toast.tsx). A sweep that ran the
+ * instant a piece was deleted would collect the photograph out from under its
+ * own Undo — the record would come back and the picture would not. The same
+ * applies to the cut-out bench, whose Undo restores the photograph that was on
+ * the record before the lift. So the sweep waits longer than the offer lives.
+ */
+const SWEEP_GRACE_MS = 12_000;
+
+/**
+ * EVERY DOCUMENT ON THIS DEVICE — what the sweep must be marked against.
+ *
+ * `sweepPhotos` deletes what the document it is handed does not mention, and
+ * the photograph store is ONE room shared by the whole origin. Handed only the
+ * open wardrobe it would delete the other wardrobes' photographs, the community
+ * store's snapshots, and the pictures inside an offline sync push still waiting
+ * for a signal — three ways to lose somebody's clothes in order to tidy up.
+ *
+ * So it is handed the lot: every key this origin holds, parsed where it is JSON
+ * and kept as a string where it is not.
+ *
+ * Returns null rather than a short list if storage refuses to be read part-way
+ * through. A partial list is exactly the input that makes a sweep destructive,
+ * so there is no best-effort answer here — there is an answer or there is no
+ * sweep, and no sweep only ever costs bytes.
+ */
+function everythingOnThisDevice(): unknown[] | null {
+  const held: unknown[] = [];
+  try {
+    for (let i = 0; i < window.localStorage.length; i++) {
+      const key = window.localStorage.key(i);
+      if (key === null) continue;
+      const raw = window.localStorage.getItem(key);
+      if (raw === null) continue;
+      try {
+        held.push(JSON.parse(raw));
+      } catch {
+        held.push(raw);
+      }
+    }
+  } catch {
+    return null;
+  }
+  return held;
+}
+
 export function WardrobeProvider({ accountId, children }: { accountId: string; children: ReactNode }) {
   // One store per wardrobe. App keys this provider by accountId so switching
   // wardrobes remounts it — useLocalStorage reads storage only in its useState
@@ -162,6 +214,43 @@ export function WardrobeProvider({ accountId, children }: { accountId: string; c
   );
 
   const activeItems = useMemo(() => state.items.filter(isActive), [state.items]);
+
+  /* ---------- the photograph store, kept tidy ----------
+
+     A sweep rather than a delete-on-delete hook: a picture stops being named
+     six different ways (a piece deleted, an outfit removed, a wish released, a
+     photograph replaced by a cut-out, a whole wardrobe replaced by an import, a
+     wardrobe removed from another tab), and a hook on each is six chances to
+     miss one and leak a picture forever. */
+  const latestState = useRef(state);
+  useEffect(() => { latestState.current = state; }, [state]);
+  const sweepTimer = useRef<number | null>(null);
+
+  /** Ask for a sweep. Debounced past the Undo offer, and coalesced — clearing
+   *  out six pieces in a row is one pass over the room, not six. */
+  const scheduleSweep = useCallback(() => {
+    if (sweepTimer.current !== null) window.clearTimeout(sweepTimer.current);
+    sweepTimer.current = window.setTimeout(() => {
+      sweepTimer.current = null;
+      const device = everythingOnThisDevice();
+      if (device === null) return;
+      // The open wardrobe goes in from memory as well as from storage: a
+      // picture filed a moment ago can be on the record before the store has
+      // coalesced its write, and the sweep must never be what loses it.
+      void sweepPhotos({ device, open: latestState.current });
+    }, SWEEP_GRACE_MS);
+  }, []);
+
+  /* One pass after every arrival. This is what collects what nobody was here to
+     collect: a wardrobe removed while this provider was not mounted, a deletion
+     whose page closed inside the grace period, a photograph filed by a build
+     that was then rolled back. */
+  useEffect(() => {
+    scheduleSweep();
+    return () => {
+      if (sweepTimer.current !== null) window.clearTimeout(sweepTimer.current);
+    };
+  }, [scheduleSweep]);
 
   /* ---------- cloud sync: this wardrobe only, and only if its owner chose it ----------
 
@@ -273,7 +362,11 @@ export function WardrobeProvider({ accountId, children }: { accountId: string; c
       ...prev,
       items: prev.items.map(item => item.id === id ? { ...item, ...updates } : item),
     }));
-  }, [setState]);
+    // A photograph REPLACED — the cut-out bench — leaves the old one named by
+    // nothing. It is collected on the same grace period as a deletion, which is
+    // exactly what lets the bench's Undo put the original back.
+    if (updates.imageUrl !== undefined) scheduleSweep();
+  }, [setState, scheduleSweep]);
 
   /**
    * "Delete for good" — and it means every trace, not just the row.
@@ -309,8 +402,9 @@ export function WardrobeProvider({ accountId, children }: { accountId: string; c
         },
       };
     });
+    scheduleSweep();
     return () => { if (before) setState(before); };
-  }, [setState]);
+  }, [setState, scheduleSweep]);
 
   // Retiring keeps every wear the piece ever earned — the history is the point.
   const retireItem = useCallback((id: string, reason?: string) => {
@@ -376,7 +470,8 @@ export function WardrobeProvider({ accountId, children }: { accountId: string; c
 
   const deleteOutfit = useCallback((id: string) => {
     setState(prev => ({ ...prev, outfits: prev.outfits.filter(o => o.id !== id) }));
-  }, [setState]);
+    scheduleSweep();
+  }, [setState, scheduleSweep]);
 
   const toggleFavoriteOutfit = useCallback((id: string) => {
     setState(prev => ({
@@ -514,7 +609,8 @@ export function WardrobeProvider({ accountId, children }: { accountId: string; c
 
   const deleteWishlistItem = useCallback((id: string) => {
     setState(prev => ({ ...prev, wishlist: prev.wishlist.filter(item => item.id !== id) }));
-  }, [setState]);
+    scheduleSweep();
+  }, [setState, scheduleSweep]);
 
   const releaseWishlistItem = useCallback((id: string) => {
     setState(prev => ({
@@ -939,7 +1035,14 @@ export function WardrobeProvider({ accountId, children }: { accountId: string; c
     );
   }, [setState]);
 
-  const replaceState = useCallback((next: AppState) => setState(migrate(next)), [setState]);
+  /* An import replaces the whole wardrobe, so every photograph the OLD one
+     named is now named by nothing. The pictures arriving are inline — a backup
+     file is inlined on the way out (see exportDoc) — so nothing here needs to
+     resolve; only the room needs tidying afterwards. */
+  const replaceState = useCallback((next: AppState) => {
+    setState(migrate(next));
+    scheduleSweep();
+  }, [setState, scheduleSweep]);
 
   const markExported = useCallback(() => {
     setState(prev => ({ ...prev, settings: { ...prev.settings, lastExportAt: new Date().toISOString() } }));

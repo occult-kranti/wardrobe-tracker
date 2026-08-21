@@ -20,6 +20,7 @@ import { IconPin } from './icons';
 import { showToast } from './Toast';
 import { CutoutBench } from './Cutout';
 import ConfirmDialog from './ConfirmDialog';
+import { photoSrc, storePhoto } from '../lib/photoStore';
 
 /**
  * ONE PIECE — its record.
@@ -50,11 +51,14 @@ function shortDate(dateStr: string): string {
 
 /** Photo tile, or the drawn flat. The no-photo state is first-class, not broken. */
 function Thumb({ item, className = '' }: { item: ClothingItem; className?: string }) {
+  // A photograph may be a reference into this device's store: resolve once, and
+  // test the RESOLVED value, so an unanswerable one falls through to the flat.
+  const photo = photoSrc(item.imageUrl);
   return (
     <div className={`bg-mat rounded-[2px] overflow-hidden ${className}`}>
-      {item.imageUrl ? (
+      {photo ? (
         <img
-          src={item.imageUrl}
+          src={photo}
           alt={item.name}
          
           className="w-full h-full object-cover"
@@ -119,6 +123,11 @@ export default function ItemDetail({ itemId, onClose, onAmend }: Props) {
 
   if (!item) return null;
 
+  // The piece's photograph as this device can actually draw it. The bench
+  // below is handed THIS and not the record's string: a reference is not an
+  // image, and the cut-out reads pixels.
+  const photo = photoSrc(item.imageUrl);
+
   const days = item.lastWorn ? daysSince(item.lastWorn.slice(0, 10)) : null;
   const cpw = costPerWear(item);
   const recent = [...history].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 10);
@@ -168,7 +177,7 @@ export default function ItemDetail({ itemId, onClose, onAmend }: Props) {
                 have to amend every record one at a time to use it. The
                 photograph is replaced only when they say so, and the
                 original is one press of Undo away. */}
-            {item.imageUrl ? (
+            {photo ? (
               <div className="mt-3">
                 <Button compact onClick={() => setLifting(v => !v)}>
                   {lifting ? 'Close the bench' : 'Lift the background'}
@@ -257,15 +266,22 @@ export default function ItemDetail({ itemId, onClose, onAmend }: Props) {
           </div>
         </div>
 
-        {lifting && item.imageUrl ? (
+        {lifting && photo ? (
           <CutoutBench
-            source={item.imageUrl}
-            onUse={url => {
+            source={photo}
+            onUse={async url => {
               const before = item.imageUrl;
-              updateItem(item.id, { imageUrl: url });
+              // The lifted picture is filed the way the intake form files one:
+              // a reference when there is somewhere for it to point, the data
+              // URL itself when there is not. Never throws.
+              const filed = await storePhoto(url);
+              updateItem(item.id, { imageUrl: filed });
               setLifting(false);
               showToast('Lifted. The photograph never left this device.', 'success', {
                 label: 'Undo',
+                // The picture that WAS on the record is deliberately left in
+                // the store — undo has to be able to put it back. What nothing
+                // names once the offer has gone, the sweep collects.
                 run: () => updateItem(item.id, { imageUrl: before }),
               });
             }}

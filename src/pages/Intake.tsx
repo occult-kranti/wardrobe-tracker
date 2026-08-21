@@ -15,6 +15,7 @@ import { INTAKE_SAMPLES, type IntakeSample } from '../lib/intakeSamples';
 import { prepareImage, readPhotograph, type Prepared } from '../lib/anthropic';
 import { harvest, type Harvested } from '../lib/harvest';
 import { confirmWrite } from '../hooks/useLocalStorage';
+import { storePhoto } from '../lib/photoStore';
 import {
   buildGridPrompt, parseGridResponse, soloDetections, toDrafts,
   buildPhotoPrompt, galleryDrafts, photoCropPixels,
@@ -555,15 +556,61 @@ export default function Intake() {
 
   const view = (d: IntakeDraft): IntakeDraft => ({ ...d, ...edited[d.ref] });
 
-  const commit = () => {
+  /**
+   * One catalogue at a time.
+   *
+   * Filing a dozen photographs is seconds of work on a phone, and this button
+   * used to write its rows synchronously — there was no window for a second
+   * press. There is now, and a second press inside it would catalogue the whole
+   * bench twice. A ref, because guarding a write should not cost a render.
+   */
+  const cataloguing = useRef(false);
+
+  const commit = async () => {
     if (!result) return;
+    if (cataloguing.current) return;
+    cataloguing.current = true;
+    try {
+      await writeChosen(result);
+    } finally {
+      cataloguing.current = false;
+    }
+  };
+
+  const writeChosen = async (result: IntakeRead) => {
     const chosen = result.drafts.filter(d => ticked.has(d.ref)).map(view);
+
+    /*
+     * FILE THE PICTURES FIRST, THEN WRITE THE ROWS.
+     *
+     * This is the heaviest write in the app — a dozen pieces at a hundred
+     * kilobytes apiece is where a device runs out of purse — so every picture
+     * goes to the photograph store before a single row is composed.
+     *
+     * Two separate passes rather than one interleaved loop, and the reason is
+     * React rather than storage: the addItem loop below lands inside one
+     * render, and putting an `await` between its iterations would break it
+     * into a dozen. So the awaiting happens here, once, and the loop that
+     * follows is exactly the loop that was always there.
+     *
+     * storePhoto never throws and never blocks a piece: when references are
+     * off, or the browser will not open the database, it hands the data URL
+     * straight back and the row keeps its picture inline as before.
+     */
+    const filed = new Map<string, string>();
+    for (const d of chosen) {
+      filed.set(d.ref, await storePhoto(pictures.get(d.ref)?.picture ?? ''));
+    }
+    // The mirror shot is one photograph for the whole look, and it is the
+    // biggest single picture this page can write, so it is filed too.
+    const lookPicture = source ? await storePhoto(source) : undefined;
+
     const written: string[] = [];
     for (const d of chosen) {
       written.push(addItem({
         ...draftToItem(d),
         // The picture cut from the photograph, when there is one.
-        imageUrl: pictures.get(d.ref)?.picture ?? '',
+        imageUrl: filed.get(d.ref) ?? '',
         favorite: false,
       }));
     }
@@ -578,7 +625,7 @@ export default function Intake() {
         occasion: look.occasion[0],
         favorite: false,
         // The mirror shot itself, kept as the look's own picture.
-        imageUrl: source ?? undefined,
+        imageUrl: lookPicture,
         notes: 'Read from a photograph.',
       });
     }

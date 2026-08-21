@@ -3,10 +3,13 @@ import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useSession } from '../context/SessionContext';
 import { useWardrobe } from '../context/WardrobeContext';
 import { Button, Card, Chip, EmptyState, Field, LinkButton, Masthead, Modal, SectionTitle, inputClass, selectClass } from '../components/ui';
+import ConfirmDialog from '../components/ConfirmDialog';
+import { showToast } from '../components/Toast';
 import { Basting, PlateEmptyWishlist } from '../components/art';
 import { IconChevronLeft, IconPlus } from '../components/icons';
 import { AccountMark, LookCard, PieceCard, shortDate, oldestFirst, nowLocalStamp } from '../components/social';
 import { todayLocal } from '@almari/shared/dates';
+import { photoSrc } from '../lib/photoStore';
 import type { BorrowStatus, ChatMessage, SharedLook, SharedPiece } from '@almari/shared/types';
 
 /**
@@ -122,8 +125,18 @@ export default function Chats() {
       })
       // Sub-day stamp first: two threads active on the same day used to fall
       // through to whichever message id sorted first, and the list reshuffled.
-      .sort((a, b) =>
-        (b.last?.at ?? b.last?.date ?? '').localeCompare(a.last?.at ?? a.last?.date ?? ''));
+      //
+      // A thread with nothing in it goes to the TOP, not the bottom: it was
+      // just made, and it is the most recent thing that happened. Falling back
+      // to '' sorted it last under a caption promising the opposite — on a
+      // phone that is below the fold, which reads as the new group having
+      // vanished. Ranked explicitly rather than with a sentinel string, because
+      // localeCompare's collation is not the code-point order a sentinel
+      // assumes.
+      .sort((a, b) => {
+        if (!a.last !== !b.last) return a.last ? 1 : -1;
+        return (b.last?.at ?? b.last?.date ?? '').localeCompare(a.last?.at ?? a.last?.date ?? '');
+      });
   }, [community, activeId]);
 
   // The new-conversation modal has to be reachable from the empty screen too —
@@ -292,6 +305,7 @@ export function ChatThread() {
   const [attaching, setAttaching] = useState<null | 'look' | 'piece'>(null);
   const [attached, setAttached] = useState<{ look?: SharedLook; piece?: SharedPiece }>({});
   const [asking, setAsking] = useState(false);
+  const [removing, setRemoving] = useState(false);
   const [askPiece, setAskPiece] = useState('');
   const [askOwner, setAskOwner] = useState('');
   const [askNote, setAskNote] = useState('');
@@ -426,6 +440,48 @@ export function ChatThread() {
     if (status === 'returned') closeLoan(message.request.pieceName, other.id);
   };
 
+  /**
+   * Clearing a thread off the device.
+   *
+   * There was no way to do this anywhere in the app, and the threads that most
+   * need clearing are the ones nobody chose: a wardrobe deleted out from under
+   * its conversation, a sample chatted with and then removed, a group started
+   * by a mis-tap. What is actually being removed is ROWS ON THIS DEVICE — the
+   * conversation and its messages, which is all a conversation ever was; there
+   * is no other copy to reach and nothing is sent to anyone. The one thing it
+   * is not allowed to touch is membership: the household's own room follows
+   * the roof (lib/household.ts), so it is not offered here — leaving the roof
+   * is the honest way out of that one, and a locally-removed room would come
+   * back the next time somebody joined.
+   *
+   * The put-back follows the dressing room's pattern: the rows are held and
+   * offered straight back while the notice stands.
+   */
+  const removeConversation = () => {
+    const gone = conversation;
+    const carried = community.messages.filter(m => m.conversationId === gone.id);
+    setCommunity(prev => ({
+      ...prev,
+      conversations: prev.conversations.filter(c => c.id !== gone.id),
+      messages: prev.messages.filter(m => m.conversationId !== gone.id),
+    }));
+    setRemoving(false);
+    showToast('Removed. That conversation is off this device.', 'info', {
+      label: 'Undo',
+      run: () =>
+        setCommunity(prev =>
+          prev.conversations.some(c => c.id === gone.id)
+            ? prev
+            : {
+                ...prev,
+                conversations: [...prev.conversations, gone],
+                messages: [...prev.messages, ...carried],
+              }
+        ),
+    });
+    navigate('/chats', { replace: true });
+  };
+
   return (
     <div className="space-y-6">
       <Masthead
@@ -444,6 +500,24 @@ export function ChatThread() {
           A sample wardrobe. It answers only when you open it yourself.
         </p>
       ) : null}
+
+      {/* At the head, with the title it names — a thread forty messages long
+          should not have to be scrolled to its foot to be cleared. Drawn as
+          the calendar draws its own removals: a quiet label at the 44px floor,
+          not a bordered box competing with Send, which is this page's one
+          primary. The gate behind it is where the weight belongs. */}
+      {conversation.householdId ? null : (
+        <div className="flex justify-end -mt-2">
+          <button
+            type="button"
+            aria-label={`Remove the conversation with ${title}`}
+            onClick={() => setRemoving(true)}
+            className="type-label text-[13px] text-text-2 hover:text-text transition-colors duration-150 h-11 px-1 -mr-1"
+          >
+            Remove this conversation
+          </button>
+        </div>
+      )}
 
       <Card>
         <ul className="space-y-5">
@@ -574,7 +648,9 @@ export function ChatThread() {
                     look: {
                       outfitId: outfit.id,
                       name: outfit.name,
-                      imageUrl: outfit.imageUrl,
+                      // THE THIRD DOOR: what is sent is a snapshot, and it
+                      // carries the picture itself. See src/lib/photoStore.ts.
+                      imageUrl: photoSrc(outfit.imageUrl),
                       occasion: outfit.occasion,
                       pieces: outfit.itemIds.map(i => getItem(i)?.name).filter((n): n is string => Boolean(n)),
                     },
@@ -603,7 +679,8 @@ export function ChatThread() {
                 className="block w-full text-left"
                 onClick={() => {
                   setAttached({
-                    piece: { itemId: item.id, name: item.name, imageUrl: item.imageUrl, category: item.category, color: item.color },
+                    // The same door: a piece sent into a thread is a snapshot.
+                    piece: { itemId: item.id, name: item.name, imageUrl: photoSrc(item.imageUrl), category: item.category, color: item.color },
                   });
                   setAttaching(null);
                 }}
@@ -621,6 +698,24 @@ export function ChatThread() {
           </p>
         ) : null}
       </Modal>
+
+      {/* The gate. What is lost is stated from the code's own truth: the rows
+          removed are this device's conversation and its messages, and nothing
+          in any wardrobe's own record is reached. */}
+      <ConfirmDialog
+        open={removing}
+        title="Remove this conversation"
+        danger
+        body={`This clears “${title}”${
+          messages.length === 0
+            ? ', which has nothing written in it yet'
+            : ` and the ${messages.length} ${messages.length === 1 ? 'message' : 'messages'} in it`
+        }. A conversation is rows kept on this device and read by the wardrobes on it, so it goes for the other side of the thread here too — nothing is sent to anyone, and there was never a copy elsewhere. Pieces, wear counts and the rail's own records stand as they are. Undo is offered for a moment after; once the notice fades, it is gone for good.`}
+        confirmLabel="Remove it"
+        cancelLabel="Keep it"
+        onConfirm={removeConversation}
+        onClose={() => setRemoving(false)}
+      />
 
       <p>
         <Link to="/chats" className="type-label text-[13px] text-text-2 hover:text-text inline-flex items-center gap-1.5 min-h-11">

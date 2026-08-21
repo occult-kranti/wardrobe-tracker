@@ -7,6 +7,7 @@ import { formatLocalDate } from '@almari/shared/dates';
 import { Basting, GarmentPlate, TagPortrait } from './art';
 import { Button, Card, Chip, IconButton } from './ui';
 import { IconBookmark, IconPlus } from './icons';
+import { photoSrc } from '../lib/photoStore';
 
 /**
  * The pieces every social surface shares, so a look shown in the feed, in a
@@ -58,6 +59,10 @@ export function LookCard({ look, compact }: { look: SharedLook; compact?: boolea
   // else's record must never be able to do that.
   const pieces = look.pieces ?? [];
   const name = look.name || 'A look';
+  // A shared look is a frozen snapshot and holds its picture INLINE (see the
+  // third door in src/lib/photoStore.ts). It is resolved anyway, so a snapshot
+  // an older build took by reference still draws on the device that took it.
+  const photo = photoSrc(look.imageUrl);
   return (
     <div className={`border border-border rounded-[2px] overflow-hidden ${compact ? 'flex gap-3' : ''}`}>
       {/* Capped: uncapped w-full inside the max-w-5xl column rendered each post
@@ -67,8 +72,8 @@ export function LookCard({ look, compact }: { look: SharedLook; compact?: boolea
         className={`block bg-mat overflow-hidden shrink-0 ${compact ? 'w-16' : 'w-full max-w-[380px] mx-auto'}`}
         style={{ aspectRatio: '4 / 5' }}
       >
-        {look.imageUrl ? (
-          <img src={look.imageUrl} alt={name} className="w-full h-full object-cover" />
+        {photo ? (
+          <img src={photo} alt={name} className="w-full h-full object-cover" />
         ) : (
           <GarmentPlate categoryId="dresses" />
         )}
@@ -96,10 +101,11 @@ export function LookCard({ look, compact }: { look: SharedLook; compact?: boolea
  * nothing decorative goes behind a photo.
  */
 export function LookThumb({ look, alt }: { look: SharedLook; alt?: string }) {
+  const photo = photoSrc(look.imageUrl);
   return (
     <span className="block w-full bg-mat overflow-hidden" style={{ aspectRatio: '4 / 5' }}>
-      {look.imageUrl ? (
-        <img src={look.imageUrl} alt={alt ?? look.name} className="w-full h-full object-cover" loading="lazy" />
+      {photo ? (
+        <img src={photo} alt={alt ?? look.name} className="w-full h-full object-cover" loading="lazy" />
       ) : (
         <GarmentPlate categoryId="dresses" />
       )}
@@ -108,11 +114,12 @@ export function LookThumb({ look, alt }: { look: SharedLook; alt?: string }) {
 }
 
 export function PieceCard({ piece }: { piece: SharedPiece }) {
+  const photo = photoSrc(piece.imageUrl);
   return (
     <div className="border border-border rounded-[2px] flex gap-3 items-center overflow-hidden">
       <span className="block w-14 bg-mat overflow-hidden shrink-0" style={{ aspectRatio: '4 / 5' }}>
-        {piece.imageUrl ? (
-          <img src={piece.imageUrl} alt="" className="w-full h-full object-cover" />
+        {photo ? (
+          <img src={photo} alt="" className="w-full h-full object-cover" />
         ) : (
           <GarmentPlate categoryId={piece.category ?? 'accessories'} color={piece.color} name={piece.name} />
         )}

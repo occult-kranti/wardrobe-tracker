@@ -31,9 +31,16 @@ writeFileSync(supabaseStub, 'export function getSupabase() { return globalThis._
 await build({ alias: sharedAliases(),
   entryPoints: {
     'lib/sync': fileURLToPath(new URL('../src/lib/sync.ts', import.meta.url)),
+    // The photograph store, because a push has to inline what it holds. It is
+    // named as an entry point AND imported by sync.ts, so the build SPLITS:
+    // one copy of the module, shared. Two separate bundles would hand the test
+    // a second store with its own empty maps, and every inlining assertion
+    // below would be asserting against a picture sync.ts had never seen.
+    'lib/photoStore': fileURLToPath(new URL('../src/lib/photoStore.ts', import.meta.url)),
     types: fileURLToPath(new URL('../packages/shared/types.ts', import.meta.url)),
   },
   bundle: true,
+  splitting: true,
   format: 'esm',
   outdir: dir,
   jsx: 'automatic',
@@ -48,6 +55,7 @@ await build({ alias: sharedAliases(),
 });
 
 const sync = await import(pathToFileURL(join(dir, 'lib', 'sync.js')).href);
+const photos = await import(pathToFileURL(join(dir, 'lib', 'photoStore.js')).href);
 const types = await import(pathToFileURL(join(dir, 'types.js')).href);
 
 const {
@@ -63,6 +71,8 @@ const {
   accountFromRow,
   flushQueue,
   lastSyncedAt,
+  pushNow,
+  pullAccount,
   ENVELOPE_VERSION,
 } = sync;
 const { initialState } = types;
@@ -392,6 +402,155 @@ await flushQueue('user-uuid-1');
 check(
   'a push queued by an older build still drains, unstamped and uncomplaining',
   JSON.parse(store.get('toile-sync-queue')).length === 0 && upserted.length === 2
+);
+
+/* ---------- THE SECOND DOOR OFF THE DEVICE: a push inlines ----------
+
+ * A photograph kept in this browser's IndexedDB leaves `idb:<id>` in the
+ * record. That id names a row in a database on THIS device: the second phone
+ * that pulls this wardrobe has the same app, the same schema, and no such
+ * picture. Push a reference and the piece arrives over there with a broken
+ * photograph and no way to ever get it back — the exact hole the native app
+ * still has with its file paths (see the report for this wave).
+ *
+ * So the push resolves first. Bare Node has no IndexedDB, so photoStore falls
+ * back to its in-memory store: real putPhoto, real reference, real walker.
+ * Because photoStore is bundled as a shared chunk, the picture this test files
+ * is the picture sync.ts is able to find.
+ */
+
+const picture = 'data:image/jpeg;base64,' + Buffer.from('a wax jacket, photographed').toString('base64');
+const pieceRef = await photos.putPhoto(picture);
+const photographed = {
+  ...structuredClone(state),
+  items: [{ ...state.items[0], imageUrl: pieceRef }],
+};
+
+// Red proof: the door is the only thing standing between that reference and
+// the wire. Without it, this is what would be sent.
+check(
+  'RED PROOF — the bare mapping would put the reference itself on the wire',
+  toRow(account, photographed, 'user-uuid-1', now).state.payload.items[0].imageUrl === pieceRef,
+);
+
+const cloudAccount = {
+  id: 'w-photographed',
+  name: 'Photographed wardrobe',
+  handle: '@photographed',
+  monogram: 'PW',
+  color: 'var(--color-accent)',
+  createdAt: '2026-08-20',
+  sync: 'cloud',
+  syncId: '4b7d1c2e-0000-4000-8000-dddddddddddd',
+};
+
+upserted.length = 0;
+const pushed = await pushNow(cloudAccount, photographed, 'user-uuid-1');
+check('the push was sent', pushed === 'sent', pushed);
+check(
+  'A PUSH INLINES — what goes up is the photograph, never a name for a row on this device',
+  upserted[0]?.payload?.state?.payload?.items[0]?.imageUrl === picture,
+  String(upserted[0]?.payload?.state?.payload?.items[0]?.imageUrl).slice(0, 32),
+);
+check(
+  'and the LOCAL record is not rewritten by the sending of it',
+  photographed.items[0].imageUrl === pieceRef,
+);
+check(
+  'a reference the device cannot resolve goes up as it is, and takes the rest of the wardrobe with it',
+  await (async () => {
+    upserted.length = 0;
+    const orphaned = { ...structuredClone(state), items: [{ ...state.items[0], imageUrl: 'idb:long-gone' }] };
+    await pushNow(cloudAccount, orphaned, 'user-uuid-1');
+    const sentUp = upserted[0]?.payload?.state?.payload;
+    return sentUp?.items[0]?.imageUrl === 'idb:long-gone' && sentUp?.items[0]?.name === 'Wax jacket';
+  })(),
+);
+
+/* ---------- the queue keeps REFERENCES, because the queue is the purse ----------
+   An offline push is parked in localStorage — the very five megabytes this
+   whole wave exists to empty. Inlining on the way IN would put every
+   photograph straight back into it at the moment the device can least spare
+   the room, so the queue holds references and the drain resolves them. */
+
+const offlineSupabase = {
+  from() {
+    return {
+      upsert() {
+        const result = Promise.reject(new Error('offline'));
+        const builder = {
+          select: () => builder,
+          single: () => result,
+          then: (res, rej) => result.then(res, rej),
+        };
+        return builder;
+      },
+    };
+  },
+};
+
+const working = globalThis.__fakeSupabase;
+globalThis.__fakeSupabase = offlineSupabase;
+store.set('toile-sync-queue', JSON.stringify([]));
+const queuedResult = await pushNow(cloudAccount, photographed, 'user-uuid-1');
+const parked = store.get('toile-sync-queue');
+check('a refused push is queued rather than lost', queuedResult === 'queued', queuedResult);
+check(
+  'THE QUEUE HOLDS THE REFERENCE, not the photograph — an offline push must not refill the purse',
+  parked.includes(pieceRef) && !parked.includes(picture),
+  `${parked.length} bytes parked`,
+);
+
+globalThis.__fakeSupabase = working;
+upserted.length = 0;
+await flushQueue('user-uuid-1');
+check(
+  'and the DRAIN inlines, so the bytes are spent on the wire instead of on the disk',
+  JSON.parse(store.get('toile-sync-queue')).length === 0 &&
+    upserted[0]?.payload?.state?.payload?.items[0]?.imageUrl === picture,
+);
+
+/* ---------- a pull PASSES THROUGH: inline works everywhere, so nothing is done to it ---------- */
+
+const remotePicture = 'data:image/jpeg;base64,' + Buffer.from('sent from the other phone').toString('base64');
+const remoteState = { ...structuredClone(state), items: [{ ...state.items[0], imageUrl: remotePicture }] };
+
+check(
+  'a row arriving with its photographs in it opens with them still in it',
+  openRow({
+    id: cloudAccount.syncId, user_id: 'user-uuid-1', name: 'Photographed wardrobe',
+    state: { v: ENVELOPE_VERSION, alg: 'none', payload: remoteState }, updated_at: '2026-08-19T10:00:00.000Z',
+  }).state.items[0].imageUrl === remotePicture,
+);
+
+globalThis.__fakeSupabase = {
+  from() {
+    const result = Promise.resolve({
+      data: {
+        id: cloudAccount.syncId, user_id: 'user-uuid-1', name: 'Photographed wardrobe',
+        state: { v: ENVELOPE_VERSION, alg: 'none', payload: remoteState },
+        updated_at: '2026-08-19T10:00:00.000Z',
+      },
+      error: null,
+    });
+    const builder = {
+      select: () => builder,
+      eq: () => builder,
+      maybeSingle: () => result,
+      then: (res, rej) => result.then(res, rej),
+    };
+    return builder;
+  },
+};
+store.set('toile-sync-meta', JSON.stringify({}));
+const pulled = await pullAccount(cloudAccount);
+const written = store.get(`wardrobe-tracker:${cloudAccount.id}`);
+check('the newer row is adopted', pulled === 'adopted', pulled);
+check(
+  'A PULL STORES WHAT IT RECEIVED, AS IT RECEIVED IT — inline reads on every device, so nothing is filed away behind a name',
+  typeof written === 'string' &&
+    JSON.parse(written).items[0].imageUrl === remotePicture &&
+    !written.includes('idb:'),
 );
 
 console.log(fail === 0 ? '\nALL SYNC CHECKS PASSED' : `\n${fail} SYNC CHECKS FAILED`);

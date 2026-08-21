@@ -1,7 +1,10 @@
-import { useState } from 'react';
-import { Button, Modal } from './ui';
-import { guideSeen, markGuideSeen, markTourDone } from '../lib/tutorial';
+import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { Button, IconButton, Modal } from './ui';
+import { IconClose } from './icons';
+import { guideSeen, markGuideSeen, markTourDone, markWalkthroughSeen } from '../lib/tutorial';
 import { guideFor, guideKeyFor } from '../lib/pageGuides';
+import { tutorialFor, type StepTarget, type Tutorial as StepScript } from '../lib/tutorials';
 
 /**
  * THE SHORT TOUR — four cards, shown once, on a new wardrobe's first Today.
@@ -109,10 +112,15 @@ export default function Tutorial({ open, onClose }: { open: boolean; onClose: ()
 export function PageGuide({ path }: { path: string }) {
   const guide = guideFor(path);
   const key = guideKeyFor(path);
+  const script = tutorialFor(path);
   const [open, setOpen] = useState(false);
   // Read once per mount. Layout keys this by pathname, so walking to another
   // screen remounts it and the mark is re-read for the screen you arrived at.
   const [seen, setSeen] = useState(() => (key ? guideSeen(key) : true));
+  // The walkthrough's whole lifecycle, inherited rather than written: this
+  // component is mounted inside Layout's route-keyed div, so walking to another
+  // screen remounts it and a walkthrough ends with the page it belonged to.
+  const [walking, setWalking] = useState(false);
 
   if (!guide || !key) return null;
 
@@ -123,6 +131,15 @@ export function PageGuide({ path }: { path: string }) {
     markGuideSeen(key);
     setSeen(true);
     setOpen(true);
+  };
+
+  // Two doors deep, both pulled by the reader — the sheet never opens itself,
+  // and this control inside it is the only way to the steps. Marked on START,
+  // never on completion (docs/43 §5): a mark for finishing is a score.
+  const walk = () => {
+    markWalkthroughSeen(key);
+    setOpen(false);
+    setWalking(true);
   };
 
   return (
@@ -163,10 +180,374 @@ export function PageGuide({ path }: { path: string }) {
             <span className="type-label text-text">{guide.term.word}</span> — {guide.term.meaning}
           </p>
         ) : null}
-        <div className="flex justify-end mt-6">
+        {/* The foot carries the second door where a screen has one. Tertiary,
+            never a primary — the sheet already spends its one primary on
+            Close, and brand rule 3 allows exactly one per view. A screen with
+            no tutorial renders the shipped foot, unchanged, which is the
+            additive proof for the seventeen guides that already ship. */}
+        <div className={`flex items-center ${script ? 'justify-between' : 'justify-end'} gap-3 mt-6`}>
+          {script ? (
+            <Button tone="tertiary" onClick={walk}>
+              Walk me through it
+            </Button>
+          ) : null}
           <Button onClick={() => setOpen(false)}>Close</Button>
         </div>
       </Modal>
+
+      {walking && script ? (
+        <Walkthrough script={script} onClose={() => setWalking(false)} />
+      ) : null}
     </div>
+  );
+}
+
+/* ==========================================================================
+   THE WALKTHROUGH — a stepped card that points, and never holds the app.
+
+   docs/43 is the spec. What it is, in one paragraph: a small non-modal card
+   docked at the foot of the viewport above the mobile rail, carrying "2 of 4",
+   one instruction, Back / Next (Done on the last) and a cross. No scrim, no
+   focus trap, role="dialog" WITHOUT aria-modal — the page stays fully operable,
+   because the point of a step is that you can DO it while reading it. A step
+   that names a target gets one ring: an outline and a scroll, nothing more. No
+   mask, no cutout, no clone, no pulse.
+
+   z-[60] for the card and z-[55] for the ring: above the rail's z-50, below the
+   Modal's z-[100], clear of <main>'s z-10.
+   ========================================================================== */
+
+/** The measured box of a target, in viewport coordinates. */
+interface Box {
+  top: number;
+  left: number;
+  width: number;
+  height: number;
+}
+
+/**
+ * The role vocabulary, as selectors. Deliberately small: five roles cover every
+ * control any tutorial in this house has ever wanted to point at, and a sixth
+ * should be argued for rather than assumed.
+ */
+const ROLE_SELECTORS: Record<StepTarget['role'], string> = {
+  button:
+    'button, [role="button"], input[type="button"], input[type="submit"], input[type="reset"]',
+  link: 'a[href], [role="link"]',
+  textbox:
+    'input:not([type]), input[type="text"], input[type="search"], input[type="email"], input[type="url"], input[type="tel"], input[type="number"], input[type="password"], textarea, [role="textbox"]',
+  tab: '[role="tab"]',
+  checkbox: 'input[type="checkbox"], [role="checkbox"]',
+};
+
+/** Case-folded, whitespace-collapsed — the two normalisations a name survives. */
+const norm = (s: string): string => s.replace(/\s+/g, ' ').trim().toLowerCase();
+
+/**
+ * The accessible name, computed far enough for this job and no further.
+ *
+ * aria-label, then aria-labelledby, then — for a field — its <label> and only
+ * then its placeholder, then the text, then title. The label-before-placeholder
+ * order is not decoration: the Closet's search input carries an sr-only <label>
+ * AND a placeholder saying different words, and a computation that read the
+ * placeholder first would ring the right box for the wrong reason and then
+ * drift the day the label changed.
+ */
+function accessibleName(el: HTMLElement): string {
+  const label = el.getAttribute('aria-label');
+  if (label && norm(label)) return norm(label);
+
+  const by = el.getAttribute('aria-labelledby');
+  if (by) {
+    const joined = by
+      .split(/\s+/)
+      .map(id => document.getElementById(id)?.textContent ?? '')
+      .join(' ');
+    if (norm(joined)) return norm(joined);
+  }
+
+  if (
+    el instanceof HTMLInputElement ||
+    el instanceof HTMLTextAreaElement ||
+    el instanceof HTMLSelectElement
+  ) {
+    const labels = el.labels;
+    if (labels && labels.length) {
+      const text = Array.from(labels)
+        .map(l => l.textContent ?? '')
+        .join(' ');
+      if (norm(text)) return norm(text);
+    }
+    const placeholder = el.getAttribute('placeholder');
+    if (placeholder && norm(placeholder)) return norm(placeholder);
+    return norm(el.getAttribute('title') ?? '');
+  }
+
+  const text = norm(el.textContent ?? '');
+  if (text) return text;
+  return norm(el.getAttribute('title') ?? '');
+}
+
+/**
+ * Is this control actually on the screen for somebody?
+ *
+ * The 2px floor is the zero-box rule with a margin: an sr-only control is a
+ * 1x1 clipped box, present to a screen reader and meaningless to a ring, and a
+ * ring drawn around one would sit in the corner pointing at nothing.
+ */
+function onScreen(el: HTMLElement): boolean {
+  // The walkthrough's own card and ring can never be a target — it must not be
+  // possible for a tutorial to point at itself.
+  if (el.closest('[hidden], [aria-hidden="true"], [data-walkthrough]')) return false;
+  const r = el.getBoundingClientRect();
+  if (r.width < 2 || r.height < 2) return false;
+  const style = window.getComputedStyle(el);
+  if (style.visibility === 'hidden' || style.display === 'none' || style.opacity === '0') {
+    return false;
+  }
+  return true;
+}
+
+/**
+ * The two scopes (docs/43 §1.3).
+ *
+ * 'main' is the page's own column. 'chrome' is the shell's persistent controls,
+ * which live in <header> on a phone and <aside> on a desktop, one visible at a
+ * time (`lg:hidden` against `hidden lg:flex`) — so visibility does the viewport
+ * work for free and a chrome anchor never matches twice.
+ *
+ * The <header> the Masthead primitive renders is INSIDE <main>, so it is
+ * filtered out of the chrome scope: a page title is the page's, not the shell's.
+ */
+function scopeRoots(scope: 'main' | 'chrome'): Element[] {
+  const main = document.querySelector('main');
+  if (scope === 'chrome') {
+    return Array.from(document.querySelectorAll('header, aside, nav')).filter(
+      el => !main || !main.contains(el)
+    );
+  }
+  return main ? [main] : [];
+}
+
+/**
+ * A target to an element, or null.
+ *
+ * The hint is checked first where present, then the names in the order the step
+ * lists them — the first alternative that has a visible match wins, and within
+ * one name the first visible match in document order.
+ */
+export function resolveTarget(target: StepTarget): HTMLElement | null {
+  const roots = scopeRoots(target.scope ?? 'main');
+
+  if (target.hint) {
+    for (const root of roots) {
+      const found = Array.from(
+        root.querySelectorAll<HTMLElement>('[data-tutorial]')
+      ).find(el => el.getAttribute('data-tutorial') === target.hint && onScreen(el));
+      if (found) return found;
+    }
+  }
+
+  const candidates: HTMLElement[] = [];
+  for (const root of roots) {
+    for (const el of Array.from(root.querySelectorAll<HTMLElement>(ROLE_SELECTORS[target.role]))) {
+      if (onScreen(el)) candidates.push(el);
+    }
+  }
+
+  const names = (Array.isArray(target.name) ? target.name : [target.name]).map(norm);
+  for (const name of names) {
+    const hit = candidates.find(el => accessibleName(el) === name);
+    if (hit) return hit;
+  }
+  return null;
+}
+
+/** Do two viewport boxes touch at all? The flip rule's whole arithmetic. */
+function overlaps(a: Box, b: DOMRect): boolean {
+  return (
+    a.left < b.right && a.left + a.width > b.left && a.top < b.bottom && a.top + a.height > b.top
+  );
+}
+
+function Walkthrough({ script, onClose }: { script: StepScript; onClose: () => void }) {
+  const [at, setAt] = useState(0);
+  const [ring, setRing] = useState<Box | null>(null);
+  const [dock, setDock] = useState<'bottom' | 'top'>('bottom');
+  const cardRef = useRef<HTMLDivElement>(null);
+  /** The card's measured box at each dock, learned as we go, cleared per step. */
+  const bands = useRef<{ bottom: DOMRect | null; top: DOMRect | null }>({ bottom: null, top: null });
+  const lastStep = useRef(-1);
+
+  const step = script.steps[at];
+  const last = at === script.steps.length - 1;
+
+  // Escape ends it, like every other overlay in the house. Focus is never
+  // trapped and never moved, so this listens on the document rather than on
+  // anything the card owns.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  // Bring the target into view on a step change — and only on a step change,
+  // so a reader who scrolls away is not dragged back.
+  //
+  // A TARGET ALREADY ON SCREEN IS NEVER SCROLLED TO. Two reasons, and the
+  // second is the one that was measured: pointless motion is motion, and
+  // scrollIntoView on a position:fixed element is nonsense the browser answers
+  // with nonsense. The Closet's step 2 points at the masthead's "Add a piece",
+  // which is fixed and therefore cannot be centred by scrolling — Chromium
+  // obliged by throwing the page to y=10256 of an 11307px document, and the
+  // next step then had a ten-thousand-pixel smooth scroll to unwind. Every
+  // chrome-scoped step in the house has this shape.
+  useEffect(() => {
+    const el = step.target ? resolveTarget(step.target) : null;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const showing =
+      r.top >= 0 && r.left >= 0 && r.bottom <= window.innerHeight && r.right <= window.innerWidth;
+    if (showing) return;
+    const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    el.scrollIntoView({ block: 'center', behavior: still ? 'auto' : 'smooth' });
+    // step.target is read through `at`; the target of a given step never changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [at]);
+
+  // ONE rAF-throttled listener for the ring, re-measured on scroll and resize.
+  // The dock decision rides along, because both answers come from the same two
+  // rectangles and measuring them twice is how they end up disagreeing.
+  useEffect(() => {
+    if (lastStep.current !== at) {
+      lastStep.current = at;
+      bands.current = { bottom: null, top: null };
+    }
+
+    let frame = 0;
+    const measure = () => {
+      frame = 0;
+      const el = step.target ? resolveTarget(step.target) : null;
+      if (!el) {
+        setRing(null);
+        return;
+      }
+      const r = el.getBoundingClientRect();
+      const box: Box = { top: r.top, left: r.left, width: r.width, height: r.height };
+      setRing(box);
+
+      const card = cardRef.current?.getBoundingClientRect();
+      if (card) bands.current[dock] = card;
+
+      // THE FLIP RULE (docs/43 §1.6, asserted in §7 check 8). The bottom is
+      // preferred always; the top is the alternative, taken only when the
+      // bottom would cover the very thing the step is pointing at. Converges
+      // in at most two extra renders — each dock is measured once — and never
+      // oscillates, because a dock is only left for one known to be clear.
+      const below = bands.current.bottom;
+      const above = bands.current.top;
+      let want: 'bottom' | 'top' = 'bottom';
+      if (below && overlaps(box, below)) {
+        want = above && overlaps(box, above) ? dock : 'top';
+      }
+      if (want !== dock) setDock(want);
+    };
+
+    measure();
+    const onMove = () => {
+      if (!frame) frame = requestAnimationFrame(measure);
+    };
+    window.addEventListener('scroll', onMove, { passive: true, capture: true });
+    window.addEventListener('resize', onMove);
+    return () => {
+      if (frame) cancelAnimationFrame(frame);
+      window.removeEventListener('scroll', onMove, { capture: true });
+      window.removeEventListener('resize', onMove);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [at, dock]);
+
+  return createPortal(
+    <>
+      {ring ? (
+        // pointer-events: none, so the ring never intercepts the tap the step
+        // is asking for. An outline rather than a border: an outline is drawn
+        // outside the box and moves nothing. It never pulses.
+        <div
+          data-walkthrough="ring"
+          aria-hidden="true"
+          className="z-[55] pointer-events-none rounded-[2px]"
+          style={{
+            // Stated here rather than through the `fixed` utility for the same
+            // reason as the card below — see the note on its style prop.
+            position: 'fixed',
+            top: `${ring.top}px`,
+            left: `${ring.left}px`,
+            width: `${ring.width}px`,
+            height: `${ring.height}px`,
+            outline: '2px solid var(--color-accent)',
+            outlineOffset: '2px',
+          }}
+        />
+      ) : null}
+
+      <div
+        ref={cardRef}
+        data-walkthrough="card"
+        role="dialog"
+        aria-label="Walking through this page"
+        // No aria-modal, and no focus trap: the page underneath stays live.
+        // .above-rail-toast is the toast's own docking — rail height, its
+        // hairline, the safe-area inset and a 12px breath, stated once in
+        // index.css so this cannot drift from the rail it sits on.
+        className={`z-[60] left-3 right-3 lg:left-auto lg:right-6 lg:w-[360px] bg-surface plate rounded-[2px] p-4 animate-fade ${
+          dock === 'top' ? '' : 'above-rail-toast'
+        }`}
+        // POSITION IS STATED HERE, NOT THROUGH THE `fixed` UTILITY, and this is
+        // load-bearing: src/v2.css:39 declares `.v2 .plate { position: relative }`
+        // to root the glass sheen's ::after, and `.v2 .plate` (0,2,0) outranks
+        // Tailwind's `.fixed` (0,1,0). Measured before this line: the card laid
+        // itself out in normal flow at the foot of <body> and read y=9168 on an
+        // 844px viewport, and the ring went with it. Every other .plate in the
+        // house is a static-flow Card, which is why nothing caught it earlier.
+        style={
+          dock === 'top'
+            ? { position: 'fixed', top: 'calc(var(--masthead-total) + 0.75rem)' }
+            : { position: 'fixed' }
+        }
+      >
+        <div className="flex items-start justify-between gap-3">
+          {/* A position in a short list, never a score: 11px mono, and it
+              leaves with the card (docs/43 §4.3). */}
+          <p className="type-ledger text-[11px] text-text-2 tabular pt-2">
+            {at + 1} of {script.steps.length}
+          </p>
+          <IconButton label="Close the walkthrough" onClick={onClose} className="-mr-2 -mt-2">
+            <IconClose size={16} />
+          </IconButton>
+        </div>
+
+        {/* Announced without stealing focus — the reader keeps the caret and
+            the scroll position they had. */}
+        <p aria-live="polite" className="text-[15px] text-text leading-relaxed mt-1">
+          {step.say}
+        </p>
+
+        <div className="flex items-center justify-between gap-3 mt-4">
+          <Button tone="tertiary" onClick={() => setAt(a => Math.max(0, a - 1))} disabled={at === 0}>
+            Back
+          </Button>
+          {/* Secondary, not primary. The page underneath usually already spends
+              its one primary — the sidebar's "Add a piece", Today's hero — and
+              the hero fill stays reserved for log-wear, always. */}
+          <Button onClick={() => (last ? onClose() : setAt(a => a + 1))}>
+            {last ? 'Done' : 'Next'}
+          </Button>
+        </div>
+      </div>
+    </>,
+    document.body
   );
 }

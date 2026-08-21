@@ -13,6 +13,7 @@ import {
 } from '@almari/shared/types';
 import { Button, Chip, Field, Modal, inputClass, selectClass } from './ui';
 import { confirmWrite } from '../hooks/useLocalStorage';
+import { photoSrc, storePhoto } from '../lib/photoStore';
 import { prepareImage, readPhotograph } from '../lib/anthropic';
 import { readIntake } from '@almari/shared/intake';
 import { INTAKE_PROMPT } from '../lib/intakePrompt';
@@ -158,12 +159,12 @@ export default function AddItemModal({ open, onClose, editItem }: Props) {
   const readThisPhoto = async () => {
     setReadFailed(null);
     setReadNote(null);
-    if (!imageUrl) return;
+    if (!photo) return;
     try {
       setReading(true);
       // Read from the photograph as it arrived where we still have it: the
       // stored tile is sized for a closet grid, and the model wants the print.
-      const image = await prepareImage(fullPhoto.current || imageUrl);
+      const image = await prepareImage(fullPhoto.current || photo);
       const { text } = await readPhotograph(image, INTAKE_PROMPT);
       const read = readIntake(text);
       if (read.error || read.drafts.length === 0) {
@@ -203,6 +204,18 @@ export default function AddItemModal({ open, onClose, editItem }: Props) {
    * form is open and not a moment longer.
    */
   const fullPhoto = useRef('');
+
+  /**
+   * THE PICTURE AS THIS DEVICE CAN DRAW IT.
+   *
+   * `imageUrl` holds whatever the record held — a data URL when the file was
+   * just chosen, and a reference into the photograph store when this form was
+   * opened to AMEND a piece that was filed by reference. Everything that needs
+   * PIXELS rather than a string — the preview, the cut-out bench, the journey
+   * out to the model — takes this. The record still gets `imageUrl`, so
+   * amending a piece without touching its photograph re-files nothing.
+   */
+  const photo = photoSrc(imageUrl);
 
   // Prefill on open. Keyed on open+id so reopening the same piece rereads it,
   // and switching pieces never leaks state across records.
@@ -287,11 +300,49 @@ export default function AddItemModal({ open, onClose, editItem }: Props) {
     setColor(PRESET_COLORS[0]);
   };
 
-  const handleSubmit = (e: FormEvent) => {
+  /**
+   * One submission at a time.
+   *
+   * This handler used to be synchronous end to end, so there was no moment
+   * between the press and the record in which a second press could land.
+   * Filing the photograph opens one — small, but real on a slow device — and a
+   * second press inside it would add the same piece twice. A ref rather than
+   * state: this guards a write, and it must not cost a render to do it.
+   */
+  const saving = useRef(false);
+
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     const trimmed = name.trim();
     if (!trimmed) return;
+    if (saving.current) return;
+    saving.current = true;
+    try {
+      await writeRecord(trimmed);
+    } finally {
+      saving.current = false;
+    }
+  };
+
+  const writeRecord = async (trimmed: string) => {
     const parsedCost = cost.trim() === '' ? undefined : Number.parseFloat(cost);
+
+    /*
+     * WHERE THE PHOTOGRAPH GOES, decided here and nowhere earlier.
+     *
+     * The tile has been sitting in `imageUrl` since the file was chosen, and it
+     * has to: everything above this line draws it — the preview, the cut-out
+     * bench, the "read this photograph" button. It is only on the way to the
+     * RECORD that it becomes a question of storage, so that is where it is
+     * asked.
+     *
+     * storePhoto files the picture in IndexedDB and returns `idb:<id>`, or —
+     * when references are switched off, when the browser refuses the database,
+     * or when the write is refused — hands the data URL straight back and the
+     * record keeps it inline exactly as it always has. A photograph that
+     * cannot be filed is never a reason for a piece not to be added.
+     */
+    const filed = await storePhoto(imageUrl || '');
 
     const record = {
       name: trimmed,
@@ -302,8 +353,10 @@ export default function AddItemModal({ open, onClose, editItem }: Props) {
       fitsLike: fitsLike.trim() || undefined,
       season,
       occasion,
-      // Empty means "no photo", and the drawn flat takes over. Never a remote URL.
-      imageUrl: imageUrl || '',
+      // Empty means "no photo", and the drawn flat takes over. Never a remote
+      // URL — a data URL as it always was, or a reference into this device's
+      // own photograph store, and never anything that leaves the machine.
+      imageUrl: filed,
       cost: parsedCost !== undefined && Number.isFinite(parsedCost) ? parsedCost : undefined,
       notes: notes.trim() || undefined,
     };
@@ -358,11 +411,11 @@ export default function AddItemModal({ open, onClose, editItem }: Props) {
               dragOver ? 'bg-sunken plate-ink' : 'bg-sunken plate'
             }`}
           >
-            {imageUrl ? (
+            {photo ? (
               <div className="flex items-start gap-4">
                 <div className="w-[104px] aspect-[4/5] bg-mat rounded-[2px] overflow-hidden shrink-0">
                   <img
-                    src={imageUrl}
+                    src={photo}
                     alt="The photo you chose for this piece"
                    
                     className="w-full h-full object-cover"
@@ -431,7 +484,7 @@ export default function AddItemModal({ open, onClose, editItem }: Props) {
                 relay or the endpoint set in Settings; what comes back lands in
                 the fields as a draft you can still change. Nothing is saved by
                 this. */}
-            {imageUrl ? (
+            {photo ? (
               <div className="mt-3 pt-3 border-t border-border">
                 <div className="flex flex-wrap items-center gap-2">
                   <Button
@@ -468,9 +521,9 @@ export default function AddItemModal({ open, onClose, editItem }: Props) {
               </div>
             ) : null}
 
-            {imageUrl && cutting ? (
+            {photo && cutting ? (
               <CutoutBench
-                source={imageUrl}
+                source={photo}
                 onUse={url => { setImageUrl(url); setCutting(false); }}
                 onClose={() => setCutting(false)}
               />

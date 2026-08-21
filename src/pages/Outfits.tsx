@@ -15,6 +15,7 @@ import {
 } from '../components/icons';
 import { Basting, GarmentPlate, PlateEmptyOutfits, PlateWashline } from '../components/art';
 import { showToast } from '../components/Toast';
+import { photoSrc } from '../lib/photoStore';
 
 /**
  * OUTFITS — sets of pieces that already work together.
@@ -68,10 +69,13 @@ function shuffled<T>(list: T[]): T[] {
 
 /** Photo tile, or the drawn flat when there's no photo. The no-photo state is first-class. */
 function Thumb({ item, className = '', alt = '' }: { item: ClothingItem; className?: string; alt?: string }) {
+  // A photograph may be a reference into this device's store: resolve once, and
+  // test the RESOLVED value, so an unanswerable one falls through to the flat.
+  const photo = photoSrc(item.imageUrl);
   return (
     <span className={`block bg-mat overflow-hidden rounded-[2px] ${className}`}>
-      {item.imageUrl ? (
-        <img src={item.imageUrl} alt={alt} className="w-full h-full object-cover" />
+      {photo ? (
+        <img src={photo} alt={alt} className="w-full h-full object-cover" />
       ) : (
         <GarmentPlate categoryId={item.category} color={item.color} name={item.name} />
       )}
@@ -273,7 +277,11 @@ export default function Outfits() {
   const lookOf = useCallback((outfit: Outfit) => ({
     outfitId: outfit.id,
     name: outfit.name,
-    imageUrl: outfit.imageUrl,
+    // THE THIRD DOOR: a shared look is a SNAPSHOT written into the community
+    // store, and it carries the picture itself. A reference would be a pointer
+    // into this device's IndexedDB — dead on any other device, and dead here
+    // the moment the outfit is deleted and swept.
+    imageUrl: photoSrc(outfit.imageUrl),
     occasion: outfit.occasion,
     pieces: outfit.itemIds.map(id => getItem(id)?.name).filter((n): n is string => Boolean(n)),
   }), [getItem]);

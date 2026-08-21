@@ -1,5 +1,6 @@
 import { getSupabase } from './supabase';
 import { loadWardrobe, saveWardrobe } from './accounts';
+import { hasPhotoRefs, inlinePhotosIn } from './photoStore';
 import type { Account, AppState, SyncMode } from '@almari/shared/types';
 
 /**
@@ -365,6 +366,44 @@ function stampFrom(returned: { updated_at?: unknown } | null, proposed: string):
 }
 
 /**
+ * THE SECOND DOOR OFF THIS DEVICE — and the same rule as the export file.
+ *
+ * A photograph kept in this browser's IndexedDB leaves `idb:<id>` in the
+ * record (src/lib/photoStore.ts). That id is a name for a row in a database
+ * that exists on THIS device and nowhere else: the second phone that pulls
+ * this wardrobe has the same app, the same schema, and no such picture. A
+ * pushed reference is a piece that arrives on the other device with a broken
+ * photograph and no way to ever get it back.
+ *
+ * So a push INLINES: every reference is resolved to the data URL it names
+ * before the envelope is sealed. What goes up is the same document the app
+ * pushed before the store existed, and what comes down needs no rule at all —
+ * a pull stores what it receives as it received it, because inline works
+ * everywhere and is what every other device can read.
+ *
+ * The QUEUE is the deliberate exception. An offline push is parked in
+ * localStorage, which is the purse this whole wave exists to empty; parking an
+ * inlined copy there would put every photograph straight back into it, at the
+ * exact moment the device is least able to spare the room. So the queue holds
+ * references and `flushQueue` inlines on the way out, where the bytes are
+ * spent on the wire instead of on the disk.
+ */
+async function forTheWire(state: AppState): Promise<AppState> {
+  // The walk allocates a copy of the document; a wardrobe with no references
+  // in it — every wardrobe on this build, until the store is switched on —
+  // does not need one.
+  if (!hasPhotoRefs(state)) return state;
+  try {
+    return await inlinePhotosIn(state);
+  } catch {
+    // A store that will not open is not a reason to lose a push. The document
+    // goes up as it stands: the references are dead weight on the other device,
+    // and everything else in the wardrobe still travels.
+    return state;
+  }
+}
+
+/**
  * Push one wardrobe's whole state to its row. `updated_at` is proposed here
  * and confirmed by the row that comes back, so the device's clock and the
  * row's clock are the same statement. Offline or refused: the push joins the
@@ -378,7 +417,7 @@ export async function pushNow(
 ): Promise<'sent' | 'queued'> {
   if (!shouldSync(account) || !account.syncId) return 'sent';
   const now = new Date().toISOString();
-  const row = toRow({ name: account.name, syncId: account.syncId }, state, userId, now);
+  const row = toRow({ name: account.name, syncId: account.syncId }, await forTheWire(state), userId, now);
   try {
     const { data, error } = await getSupabase()
       .from('wardrobes')
@@ -405,7 +444,9 @@ export async function flushQueue(userId: string): Promise<void> {
     const now = new Date().toISOString();
     const { data, error } = await getSupabase()
       .from('wardrobes')
-      .upsert(toRow({ name: push.name, syncId: push.syncId }, push.state, userId, now))
+      // Inlined here rather than when it was queued: the queue lives in
+      // localStorage, and a queue full of photographs is the purse refilled.
+      .upsert(toRow({ name: push.name, syncId: push.syncId }, await forTheWire(push.state), userId, now))
       .select('updated_at')
       .single();
     if (error) throw error;

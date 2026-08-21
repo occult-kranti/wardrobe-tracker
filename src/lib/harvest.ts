@@ -92,6 +92,20 @@ export async function cropBox(
   return canvas.toDataURL('image/jpeg', 0.88);
 }
 
+/**
+ * WHY NOTHING HERE IS FILED IN THE PHOTOGRAPH STORE.
+ *
+ * Every picture below is a data URL held in memory, and it stays one. The
+ * store (src/lib/photoStore.ts) is written to at exactly one moment on this
+ * path — when the bench COMMITS, in src/pages/Intake.tsx — and the reason is
+ * that harvesting and keeping are different acts. A dozen crops are cut here;
+ * the person then unticks half of them, because the model found a cushion and
+ * called it a jumper. Filing at cut time would leave a picture on the device
+ * for every row that was never written, and a store that fills up with pieces
+ * nobody has is worse than the purse it was built to empty.
+ *
+ * So: cut here, decide there, and only what is decided is filed.
+ */
 export interface Harvested {
   ref: string;
   /** The plain crop, always produced. */

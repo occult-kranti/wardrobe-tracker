@@ -398,3 +398,24 @@ panel-made spec. Coding squads run on Opus by owner allocation.
 
 `docs/39` phases N1–N8 and `docs/40` S1–S3 interleave when the feed's own
 release comes; N2 onward still needs the `PLAN.md` amendment named there.
+
+### Post-alpha wave 1 — done (2026-08-20, the alpha already live)
+
+- **The photograph store.** Pictures moved out of the localStorage purse into
+  IndexedDB — no schema change, `idb:` references with inline data URLs valid
+  forever, and THREE doors that inline: export, the sync push, and the
+  community snapshots (the third door the store squad itself discovered — a
+  snapshot is frozen ink, never a reference). A 20-piece photographed closet:
+  1548KB → 7KB of localStorage. The sweep collects unreferenced pictures
+  whole-origin, fails closed, and waits out the Undo window. The native twin
+  (file paths in the app's sync push) is filed for the next app wave.
+- **The rulings.** The portal card left Settings (the door stands by URL);
+  Export keeps the page's one ink fill; conversations can be removed behind
+  the house confirm with Undo; nine review-debt checks now stand permanent.
+- **The tutorials (docs/43).** Fifteen per-page walkthroughs behind "Walk me
+  through it" in the quiet guide sheet — stepped, non-modal, never
+  auto-opening, exact-name anchors drift-netted against two fixtures so a
+  renamed control fails its tutorial by name.
+- **The relay's clamps verified live**: allowlist 400s, token ceiling rewrites
+  down, foreign origins 403. Kimi's key is out of quota for the billing cycle
+  (owner top-up; the path itself is sound).

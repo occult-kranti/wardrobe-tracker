@@ -6,7 +6,8 @@ import { useSession } from '../context/SessionContext';
 import { SCHEMA_VERSION, displayTag, initialState, type AppState, type Theme } from '@almari/shared/types';
 import { daysSince, formatLocalDate, todayLocal } from '@almari/shared/dates';
 import { THEME_ORDER } from '../lib/accounts';
-import { exportDocText, exportFileName, readExportDoc } from '../lib/exportDoc';
+import { exportDocTextAsync, exportFileName, readExportDoc } from '../lib/exportDoc';
+import { inlinePhotosIn } from '../lib/photoStore';
 import { buildDemoState, DEMO_SUMMARY } from '../lib/demoData';
 import { requestTour } from '../lib/tutorial';
 import {
@@ -166,7 +167,12 @@ function InstallRow() {
       }
       control={
         ready ? (
-          <Button tone="primary" onClick={() => { void install(); }}>Add to home screen</Button>
+          /* Default tone, not the ink fill. On Android Chrome — where
+             beforeinstallprompt actually fires — this stood as a second
+             primary beside Export, and brand rule 3 allows one per view.
+             Export keeps it: the backup is this page's stake, and installing
+             is a convenience the browser offers from its own menu anyway. */
+          <Button onClick={() => { void install(); }}>Add to home screen</Button>
         ) : (
           <span className="type-ledger text-[11px] text-text-2">From your browser menu</span>
         )
@@ -347,19 +353,37 @@ export default function Settings() {
 
   /* ---------- export: the whole state, by the allowlist ---------- */
 
-  const handleExport = () => {
-    // What a backup IS lives in lib/exportDoc — an allowlist, shared with the
-    // native app. This function does only the browser's half: a blob, a click.
-    const text = exportDocText(wardrobe, new Date().toISOString());
-    const blob = new Blob([text], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = exportFileName(todayLocal());
-    a.click();
-    URL.revokeObjectURL(url);
-    markExported();
-    showToast(`Exported. ${records} records in one file.`, 'success');
+  /** One export at a time. Making this asynchronous opened a window a second
+   *  press could fit through, and two identical downloads is a person wondering
+   *  which of them is the backup. */
+  const exporting = useRef(false);
+
+  const handleExport = async () => {
+    if (exporting.current) return;
+    exporting.current = true;
+    try {
+      // What a backup IS lives in lib/exportDoc — an allowlist, shared with the
+      // native app. This function does only the browser's half: a blob, a click.
+      //
+      // DOOR ONE. A photograph may sit in this device's IndexedDB with only
+      // `idb:<id>` on the record, and a file on a desktop cannot reach into
+      // this browser's database. So the document is INLINED on its way out —
+      // every reference resolved back to the exact data URL the record used to
+      // hold, byte for byte. That is what "lossless export forever" means once
+      // the pictures live somewhere else.
+      const text = await exportDocTextAsync(wardrobe, new Date().toISOString(), inlinePhotosIn);
+      const blob = new Blob([text], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = exportFileName(todayLocal());
+      a.click();
+      URL.revokeObjectURL(url);
+      markExported();
+      showToast(`Exported. ${records} records in one file.`, 'success');
+    } finally {
+      exporting.current = false;
+    }
   };
 
   /* ---------- import: parse, migrate, then ask ---------- */
@@ -891,15 +915,16 @@ export default function Settings() {
         </p>
       </Card>
 
-      {/* ---------- the alpha's control room ---------- */}
-      <Card>
-        <SectionTitle aside="alpha only">Project lead portal</SectionTitle>
-        <Row
-          title="What is on this device"
-          body="A control room for the person running the alpha: what is stored on this device, whose wardrobes are here, and the means to clear them. It touches this device and nothing else."
-          control={<LinkButton to="/admin">Open the portal</LinkButton>}
-        />
-      </Card>
+      {/* ---------- the alpha's control room ----------
+
+          NOT ADVERTISED HERE. The portal administers the device — it deletes
+          wardrobes, and its nuclear step clears every trace on this browser —
+          and the passcode was retired by owner order (2026-08-19). A labelled
+          door to that, one tap from Settings, is an invitation to fifteen
+          curious testers rather than a control for the one person running the
+          alpha. The route is untouched: /#/admin opens directly for whoever
+          knows the address, which is the lead. Nothing is deleted here except
+          the advertisement. */}
     </div>
   );
 }

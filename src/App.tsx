@@ -1,4 +1,4 @@
-import { Component, Suspense, lazy, type ComponentType, type ReactElement } from 'react';
+import { Component, Suspense, lazy, useEffect, useReducer, type ComponentType, type ReactElement } from 'react';
 import { HashRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { SessionProvider, useSession } from './context/SessionContext';
 import { WardrobeProvider } from './context/WardrobeContext';
@@ -8,6 +8,7 @@ import Dashboard from './pages/Dashboard';
 import { Button, LinkButton, Masthead } from './components/ui';
 import { ROUTES, LOOK_BOOK_PATHS, safeNext } from './lib/routes';
 import { FEED_ENABLED } from '@almari/shared/flags';
+import { PHOTOS_HYDRATED_EVENT, hydratePhotos } from './lib/photoStore';
 
 /**
  * WHAT ARRIVES WITH THE DOOR, AND WHAT ARRIVES WHEN IT IS ASKED FOR.
@@ -249,7 +250,45 @@ function Session() {
   );
 }
 
+/**
+ * THE PHOTOGRAPHS, READ BACK OFF THE DISK.
+ *
+ * A record may hold `idb:<id>` where a picture used to sit, and `photoSrc` —
+ * which every photo tile in this app now goes through — answers those out of a
+ * warm cache, synchronously, because two thirds of those tiles are written
+ * inside `.map()` callbacks where a hook is illegal. The cache starts every
+ * page load EMPTY. Without this, the first paint after every reload draws the
+ * garment flat where a photograph belongs, and then never corrects itself.
+ *
+ * So: read the room into the cache once, and redraw once when it is full. The
+ * listener is attached BEFORE the read starts — on a small closet hydration can
+ * finish in the very next microtask, and an announcement nobody was listening
+ * for is a closet that stays drawn as flats until the next navigation.
+ *
+ * THE REDRAW IS AT THE TOP OF THE TREE, AND IT WAS MEASURED RATHER THAN
+ * ASSUMED — because the split routes above are held in a module-level ELEMENTS
+ * table, and a stable element is exactly the shape React is allowed to bail out
+ * of. It does not: React Router rebuilds its own wrapper for the matched route
+ * on every render, so the subtree re-renders and the grid is told to look
+ * again. Measured on the production build at 390x844, sixty photographs seeded
+ * into the store so hydration would lose the race: the closet painted 254 drawn
+ * flats at 250ms and all sixty photographs at 325ms. If that ever stops being
+ * true, the place to put the listener instead is WardrobeProvider, whose
+ * context value is a fresh object on every render and whose consumers React
+ * marks even through a parent that bailed out — every surface drawing a
+ * wardrobe photograph reads it.
+ */
+function usePhotographs(): void {
+  const [, redraw] = useReducer((n: number) => n + 1, 0);
+  useEffect(() => {
+    window.addEventListener(PHOTOS_HYDRATED_EVENT, redraw);
+    void hydratePhotos();
+    return () => window.removeEventListener(PHOTOS_HYDRATED_EVENT, redraw);
+  }, []);
+}
+
 export default function App() {
+  usePhotographs();
   return (
     <SessionProvider>
       {/* The router sits ABOVE the session gate, so the signed-out screens are

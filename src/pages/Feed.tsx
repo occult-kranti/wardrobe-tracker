@@ -13,6 +13,7 @@ import {
 import { BUFFER_FEED, COMMONS_LABEL, commonsStoriesFor, type BufferEntry } from '../lib/bufferFeed';
 import { formatLocalDate } from '@almari/shared/dates';
 import { IconClose } from '../components/icons';
+import { photoSrc } from '../lib/photoStore';
 import type { Account, FeedPost } from '@almari/shared/types';
 
 /**
@@ -273,7 +274,7 @@ function frameOfPost(post: FeedPost): StoryFrame {
     return {
       key: post.id,
       date: post.date,
-      image: post.look.imageUrl,
+      image: photoSrc(post.look.imageUrl),
       plate: 'dresses',
       caption: post.caption,
       ledger: `${post.look.name}${occasion} · ${when}`,
@@ -283,7 +284,7 @@ function frameOfPost(post: FeedPost): StoryFrame {
     return {
       key: post.id,
       date: post.date,
-      image: post.piece.imageUrl,
+      image: photoSrc(post.piece.imageUrl),
       plate: post.piece.category ?? 'accessories',
       caption: post.caption,
       ledger: `${post.piece.name} · ${when}`,

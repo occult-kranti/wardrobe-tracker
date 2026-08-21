@@ -12,6 +12,7 @@ import {
 } from '../lib/furnitureArt';
 import { FURNITURE_PROMPT, readFurniture, type FurnitureRead } from '../lib/furniturePrompt';
 import { hasKey, keyLooksWrong, prepareImage, readPhotograph, saveKey } from '../lib/anthropic';
+import { photoSrc } from '../lib/photoStore';
 import {
   FURNITURE_FORMS, MAX_FURNITURE, MAX_FURNITURE_NAME, MAX_SLOT_LABEL, ORNAMENTS,
   type ClothingItem, type Furniture as FurniturePiece, type FurnitureForm, type Ornament,
@@ -673,8 +674,8 @@ export function FurniturePiece() {
               {inside.map(item => (
                 <li key={item.id}>
                   <div className="aspect-[4/5] bg-mat rounded-[2px] overflow-hidden">
-                    {item.imageUrl ? (
-                      <img src={item.imageUrl} alt={item.name} loading="lazy" decoding="async" className="w-full h-full object-cover" />
+                    {photoSrc(item.imageUrl) ? (
+                      <img src={photoSrc(item.imageUrl)} alt={item.name} loading="lazy" decoding="async" className="w-full h-full object-cover" />
                     ) : (
                       <GarmentPlate categoryId={item.category} color={item.color} name={item.name} />
                     )}
@@ -702,6 +703,7 @@ export function FurniturePiece() {
         <ul className="grid grid-cols-3 sm:grid-cols-4 gap-x-3 gap-y-5 mt-4 max-h-[52vh] pane -mx-1 px-1">
           {elsewhere.map(item => {
             const on = picked.includes(item.id);
+            const photo = photoSrc(item.imageUrl);
             return (
               <li key={item.id}>
                 <button
@@ -711,8 +713,8 @@ export function FurniturePiece() {
                   className={`block w-full text-left ${on ? '' : 'opacity-70'}`}
                 >
                   <span className={`block aspect-[4/5] bg-mat rounded-[2px] overflow-hidden ${on ? 'plate-ink' : 'border border-border'}`}>
-                    {item.imageUrl ? (
-                      <img src={item.imageUrl} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
+                    {photo ? (
+                      <img src={photo} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
                     ) : (
                       <GarmentPlate categoryId={item.category} color={item.color} name={item.name} />
                     )}

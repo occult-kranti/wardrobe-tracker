@@ -1170,6 +1170,338 @@ check('the weather never asks for your location', !after.asked, '');
     /meher/i.test(await page.evaluate(() => document.body.innerText)), '');
 }
 
+/* ============ the debts the fix squads asked to have written down ============
+
+   Each of these is a permanent check standing under a defect that reached the
+   alpha, asked for by the squad that fixed it and left here so it cannot come
+   back quietly. They run against a wardrobe this block starts for itself: the
+   samples carry a year of history and a hundred photographs, and half of what
+   is measured below — a first photograph, a single wear log, an empty event,
+   one thread — cannot be seen in one. */
+{
+  await page.goto(`${ORIGIN}/#/open/new`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(800);
+  await page.fill('#su-name', 'Polish Probe');
+  await page.getByRole('button', { name: /^start it$/i }).click();
+  await page.waitForTimeout(1000);
+  // A wardrobe started today with nothing in it is offered the tour; it is
+  // closed here rather than fought with for the rest of the block.
+  if (await page.locator('[role="dialog"]').count()) {
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(400);
+  }
+  const probeKey = await activeKey();
+  const probeId = await page.evaluate(() =>
+    JSON.parse(localStorage.getItem('toile-session') || '{}').activeId ?? '');
+  check('a wardrobe of this block’s own opens, so the checks below read state it built',
+    Boolean(probeKey) && probeKey === `wardrobe-tracker:${probeId}`, probeKey ?? 'none');
+
+  /* ---------- ONE: the photograph the add flow writes down ----------
+
+     THE DEFECT (finding rev:closet, "a camera photo is stored at full
+     resolution and can exceed the entire localStorage quota on the first
+     add"): readPhoto wrote FileReader's data URL straight into the record. A
+     5.6MB phone JPEG measured 7.47M characters against ~4.94M of quota — one
+     photographed piece and every subsequent write failed, with "Added. It
+     starts at 0 wears." standing directly above "this device would not take
+     the write".
+
+     The fixture is drawn here rather than committed: noise does not compress,
+     so a few megapixels of it weighs what a phone's own photograph weighs, and
+     nothing in the repo has to carry a five-megabyte binary to prove the cap.
+     The first check is the fixture's own guarantee — a probe quietly feeding a
+     thumbnail through the guard would pass the second check while testing
+     nothing at all. */
+  const dataUrl = await page.evaluate(async () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 2400;
+    canvas.height = 1800;
+    const ctx = canvas.getContext('2d');
+    const frame = ctx.createImageData(canvas.width, canvas.height);
+    const bytes = frame.data;
+    const chunk = 65536; // the most crypto will fill in one call
+    for (let i = 0; i < bytes.length; i += chunk) {
+      crypto.getRandomValues(bytes.subarray(i, Math.min(i + chunk, bytes.length)));
+    }
+    for (let i = 3; i < bytes.length; i += 4) bytes[i] = 255; // opaque, as a photo is
+    ctx.putImageData(frame, 0, 0);
+    return canvas.toDataURL('image/jpeg', 0.85);
+  });
+  const fixture = Buffer.from(dataUrl.slice(dataUrl.indexOf(',') + 1), 'base64');
+  check('the photograph this walks in with is the size a phone actually takes',
+    fixture.length > 1_000_000, `${Math.round(fixture.length / 1024)}KB`);
+
+  await page.goto(`${ORIGIN}/#/closet`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(700);
+  await page.getByRole('button', { name: /add a piece/i }).first().click();
+  await page.waitForTimeout(600);
+  await page.setInputFiles('#add-item-photo', {
+    name: 'phone-photo.jpg', mimeType: 'image/jpeg', buffer: fixture,
+  });
+  await page.waitForTimeout(2500);
+  await page.fill('#add-item-name', 'Probe photograph');
+  await page.getByRole('button', { name: /add to the closet/i }).first().click();
+  await page.waitForTimeout(1200);
+
+  const written = await page.evaluate(async key => {
+    const raw = localStorage.getItem(key) ?? '';
+    const st = JSON.parse(raw || '{}');
+    const piece = (st.items ?? []).find(i => i.name === 'Probe photograph');
+    const onRecord = piece?.imageUrl ?? '';
+    /* WHERE THE PICTURE IS, which is no longer always the record.
+       src/lib/photoStore.ts files a photograph in IndexedDB and leaves
+       `idb:<id>` behind, so the size that matters is read from the room the
+       picture is in. Read with the raw database API rather than the app's own
+       module, so this stays a measurement of what is on the device and not a
+       re-run of the store's own code. */
+    const held = onRecord.startsWith('idb:')
+      ? await new Promise(resolve => {
+          let request;
+          try {
+            request = indexedDB.open('almari-photos', 1);
+          } catch {
+            return resolve(null);
+          }
+          request.onerror = () => resolve(null);
+          request.onblocked = () => resolve(null);
+          request.onsuccess = () => {
+            try {
+              const get = request.result
+                .transaction('photos', 'readonly')
+                .objectStore('photos')
+                .get(onRecord.slice('idb:'.length));
+              get.onsuccess = () => resolve(typeof get.result === 'string' ? get.result : null);
+              get.onerror = () => resolve(null);
+            } catch {
+              resolve(null);
+            }
+          };
+        })
+      : onRecord;
+    return {
+      persisted: Boolean(piece),
+      onRecord: onRecord.length,
+      byReference: onRecord.startsWith('idb:'),
+      bytes: (held ?? '').length,
+      refused: /would not take the write|no room left/i.test(document.body.innerText),
+    };
+  }, probeKey);
+  // PERSISTED, not merely rendered: the failure this stands under kept the
+  // piece on screen from memory and lost it on the next refresh.
+  check('a photograph added through the add flow is on the record after the write',
+    written.persisted && !written.refused,
+    written.refused ? 'the device refused the write' : '');
+  check('and the stored photograph is a tile, not the print the phone took',
+    written.bytes > 1000 && written.bytes < 300_000,
+    `${Math.round(written.bytes / 1024)}KB stored from ${Math.round(fixture.length / 1024)}KB`);
+  // And the point of the photograph store: the RECORD is what localStorage
+  // re-serialises on every keystroke, so what it holds is what the purse pays.
+  check('and the record carries a reference rather than the picture — the purse keeps its room',
+    written.byReference && written.onRecord < 60,
+    `${written.onRecord} bytes on the record, ${Math.round(written.bytes / 1024)}KB in the store`);
+
+  /* ---------- TWO: who can read a synced wardrobe ----------
+
+     THE DEFECT (finding rev:ledger, "sync opt-in omits the who-can-read-it
+     sentence the alpha panel demanded"), which docs/35 records as Robin's
+     issue #2 with the owner's 2026-08-19 decision behind it. The offer and the
+     sentence are checked TOGETHER: asserting the sentence alone would pass on
+     a screen where sync is no longer offered at all, and asserting the offer
+     alone is what shipped. */
+  await page.goto(`${ORIGIN}/#/open`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(800);
+  const opt = await page.evaluate(() => {
+    const text = document.body.innerText;
+    return {
+      offered: [...document.querySelectorAll('button')]
+        .some(b => /synced to my account/i.test(b.textContent || '')),
+      encryption: /end-to-end encryption/i.test(text),
+      readable: /(stored readable|could open it)/i.test(text),
+    };
+  });
+  check('where sync is offered, the screen says who can read the copy',
+    opt.offered && opt.encryption && opt.readable,
+    `offered ${opt.offered}, e2e ${opt.encryption}, readable ${opt.readable}`);
+
+  /* ---------- THREE: what Reset does to the copy on the account ----------
+
+     THE DEFECT (finding rev:ledger, "Reset/Import/Load-sample dialogs say
+     'this device' but sync pushes the wipe to the account"): the dialog denied
+     that any copy existed while sync was keeping one, and said nothing about
+     destroying it. Sync is switched on here through the account record alone —
+     there is no session, so this suite pushes nothing anywhere — because what
+     the dialog must branch on is where this wardrobe keeps its record. */
+  await page.evaluate(id => {
+    const accounts = JSON.parse(localStorage.getItem('toile-accounts') ?? '[]');
+    localStorage.setItem('toile-accounts', JSON.stringify(
+      accounts.map(a => (a.id === id ? { ...a, sync: 'cloud', syncId: 'probe-sync-id' } : a))
+    ));
+  }, probeId);
+  // Reloaded, not merely navigated: the session reads the account registry
+  // once at mount, and a hash change is not a mount.
+  await page.goto(`${ORIGIN}/#/settings`, { waitUntil: 'domcontentloaded' });
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(1000);
+  await page.getByRole('button', { name: /^reset$/i }).first().click();
+  await page.waitForTimeout(500);
+  const dialog = await page.evaluate(() => {
+    const sheet = document.querySelector('.modal-overlay');
+    return sheet ? sheet.innerText : '';
+  });
+  check('a synced wardrobe’s Reset names what becomes of the copy on the account',
+    /copy on your account/i.test(dialog)
+      && /(any other device|pull)/i.test(dialog)
+      && !/no copy anywhere/i.test(dialog),
+    dialog ? '' : 'no dialog opened');
+  await page.getByRole('button', { name: /keep it/i }).first().click();
+  await page.waitForTimeout(400);
+  // Put the wardrobe back on the device: nothing downstream should meet a
+  // cloud wardrobe this suite invented.
+  await page.evaluate(id => {
+    const accounts = JSON.parse(localStorage.getItem('toile-accounts') ?? '[]');
+    localStorage.setItem('toile-accounts', JSON.stringify(
+      accounts.map(a => (a.id === id ? { ...a, sync: 'device' } : a))
+    ));
+  }, probeId);
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(600);
+
+  /* ---------- FOUR: a plan whose day has come ----------
+
+     THE DEFECT (finding rev:rooms, "a matured plan on the calendar offers only
+     'Remove' — the natural next tap creates a duplicate that later
+     double-counts"): the only "yes, I wore it" lived on Today, so the nearest
+     control in the cell was "+ Log", which wrote a SECOND entry and left the
+     plan standing. One physical wear, counted twice, in the ledger whose
+     honesty is the whole product.
+
+     The plan for today is seeded directly: the scheduling sheet writes future
+     days only, so a matured plan cannot be made through the interface inside
+     one run. */
+  await page.evaluate(key => {
+    const st = JSON.parse(localStorage.getItem(key) ?? '{}');
+    const item = st.items[0];
+    const d = new Date();
+    const stamp = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    st.wearLogs = [{ id: 'probe-plan', date: stamp, itemIds: [item.id], planned: true }];
+    localStorage.setItem(key, JSON.stringify(st));
+  }, probeKey);
+  // The wardrobe reads its store at mount, so the seeded plan needs a reload
+  // to exist as far as the page is concerned.
+  await page.goto(`${ORIGIN}/#/calendar`, { waitUntil: 'domcontentloaded' });
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(1200);
+  const woreIt = page.locator('main button', { hasText: /^Wore it$/ }).first();
+  check('a plan whose day has arrived can be answered where the plan is',
+    await woreIt.count() === 1, '');
+  if (await woreIt.count()) {
+    await woreIt.click();
+    await page.waitForTimeout(900);
+  }
+  const sealed = await page.evaluate(key => {
+    const st = JSON.parse(localStorage.getItem(key) ?? '{}');
+    return {
+      logs: (st.wearLogs ?? []).length,
+      planned: (st.wearLogs ?? []).filter(l => l.planned === true).length,
+      wears: (st.items ?? []).reduce((n, i) => n + (i.wearCount ?? 0), 0),
+    };
+  }, probeKey);
+  check('and confirming it leaves exactly one log, counted once',
+    sealed.logs === 1 && sealed.planned === 0 && sealed.wears === 1,
+    `${sealed.logs} logs, ${sealed.planned} still planned, ${sealed.wears} wears`);
+
+  /* ---------- FIVE: an event nobody can remove ----------
+
+     THE DEFECT (finding rev:rooms, "an event can never be removed or edited —
+     removeEvent exists but no UI calls it"): a mistyped name or a
+     fat-fingered year was permanent junk in somebody's own private ledger. The
+     gate is checked as well as the control — a whole event with its held days
+     goes behind a sheet that names it, and cancelling that sheet leaves the
+     event standing. */
+  await page.goto(`${ORIGIN}/#/events`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(800);
+  await page.getByRole('button', { name: /^add( an event)?$/i }).first().click();
+  await page.waitForTimeout(500);
+  await page.fill('#event-name', 'Probe dinner');
+  await page.getByRole('button', { name: /hold these days/i }).first().click();
+  await page.waitForTimeout(900);
+
+  const removeEvent = page.getByRole('button', { name: /remove probe dinner/i }).first();
+  check('an event card offers a way to take the event off the page',
+    await removeEvent.count() === 1, '');
+  await removeEvent.click();
+  await page.waitForTimeout(500);
+  const gate = await page.evaluate(() => {
+    const sheet = document.querySelector('.modal-overlay');
+    return sheet ? sheet.innerText : '';
+  });
+  check('and it stands behind a sheet that names the event',
+    /probe dinner/i.test(gate), gate ? '' : 'no sheet opened');
+  await page.getByRole('button', { name: /keep it/i }).first().click();
+  await page.waitForTimeout(600);
+  const kept = await page.evaluate(key =>
+    (JSON.parse(localStorage.getItem(key) ?? '{}').events ?? []).length, probeKey);
+  check('keeping it keeps it', kept === 1, `${kept} events`);
+
+  await removeEvent.click();
+  await page.waitForTimeout(500);
+  await page.getByRole('button', { name: /^remove it$/i }).first().click();
+  await page.waitForTimeout(900);
+  const after = await page.evaluate(key =>
+    (JSON.parse(localStorage.getItem(key) ?? '{}').events ?? []).length, probeKey);
+  check('and confirming takes it off the record', after === 0, `${after} events`);
+
+  /* ---------- SIX: a conversation that cannot be cleared ----------
+
+     THE DEFECT (finding rev:social-admin, "deleting accounts leaves ghost
+     'Someone' threads and household members forever"): there was no
+     delete-conversation UI anywhere, so a thread with a wardrobe that had been
+     removed — or one started by a mis-tap — sat in a primary thumb-bar tab for
+     good. What is removed is rows on this device; the gate says so, and the
+     thread list has to agree afterwards. */
+  await page.goto(`${ORIGIN}/#/chats`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(900);
+  await page.getByRole('button', { name: /^start one$|^new$/i }).first().click();
+  await page.waitForTimeout(600);
+  await page.evaluate(() => {
+    document.querySelector('[role="dialog"] ul button[aria-pressed]')?.click();
+  });
+  await page.waitForTimeout(400);
+  await page.getByRole('button', { name: /^start it$/i }).first().click();
+  await page.waitForTimeout(900);
+
+  const clearing = page.getByRole('button', { name: /remove the conversation with/i }).first();
+  check('a thread offers to be cleared off the device, at its head',
+    await clearing.count() === 1, '');
+  await clearing.click();
+  await page.waitForTimeout(500);
+  const chatGate = await page.evaluate(() => {
+    const sheet = document.querySelector('.modal-overlay');
+    return sheet ? sheet.innerText : '';
+  });
+  // The sheet has to be honest about the one thing a person fears here: that
+  // removing a conversation writes to somebody else.
+  check('and the sheet says what it touches and what it does not',
+    /kept on this device/i.test(chatGate) && /nothing is sent/i.test(chatGate),
+    chatGate ? '' : 'no sheet opened');
+  await page.getByRole('button', { name: /^remove it$/i }).first().click();
+  await page.waitForTimeout(900);
+  // Scoped to THIS wardrobe: the samples seed threads of their own, and a
+  // count of every conversation on the device would never reach zero.
+  const cleared = await page.evaluate(who => {
+    const community = JSON.parse(localStorage.getItem('toile-community') ?? '{}');
+    return {
+      hash: location.hash,
+      threads: (community.conversations ?? []).filter(c => c.memberIds.includes(who)).length,
+      messages: (community.messages ?? []).length,
+      listed: /no conversations yet/i.test(document.body.innerText),
+    };
+  }, probeId);
+  check('and the thread is gone from the store and from the list',
+    cleared.threads === 0 && cleared.listed && cleared.hash.startsWith('#/chats'),
+    `${cleared.threads} threads, hash ${cleared.hash}`);
+}
+
 /* ============ installable, and offline ============ */
 await page.goto(`${ORIGIN}/#/settings`, { waitUntil: 'domcontentloaded' });
 await page.waitForTimeout(900);
@@ -1188,6 +1520,535 @@ const swReady = await page.evaluate(async () => {
 });
 check('a service worker is registered, so the app survives no signal',
   swReady === 'registered', swReady);
+
+/* ============ the walkthroughs, and the drift net under them ============
+
+   docs/43. A walkthrough is a stepped card reached from a control INSIDE a
+   page's guide sheet — two doors deep, both pulled by the reader. Everything
+   below is §7 of that spec, in its order, plus a negative control at the end
+   that keeps the net honest.
+
+   WHY THE NET IS THE POINT. A step anchors on an accessible name, and the
+   runtime is forgiving by design: a name that no longer resolves loses its ring
+   and keeps its text, so a renamed button breaks a walkthrough in total silence
+   in somebody's hands. This sweep is the only thing that turns that silence
+   into a red line naming the page, the step and the name that went missing. */
+{
+  const walkDir = mkdtempSync(join(tmpdir(), 'features-walkthroughs-'));
+  for (const mod of ['tutorials', 'pageGuides']) {
+    await build({
+      alias: sharedAliases(),
+      entryPoints: [fileURLToPath(new URL(`../src/lib/${mod}.ts`, import.meta.url))],
+      bundle: true,
+      format: 'esm',
+      outfile: join(walkDir, `${mod}.mjs`),
+      logLevel: 'error',
+    });
+  }
+  const { tutorialFor, tutorialPaths } =
+    await import(pathToFileURL(join(walkDir, 'tutorials.mjs')).href);
+  const { guideFor, guidedPaths } =
+    await import(pathToFileURL(join(walkDir, 'pageGuides.mjs')).href);
+
+  const scripted = tutorialPaths();
+  const guided = guidedPaths();
+
+  /* The seating, as data. A tutorial keyed through guideKeyFor can only exist
+     where a guide already stands, which is what stops one being written for a
+     Look Book room that answers with Today while the flag is off. */
+  const unseated = scripted.filter(p => !guided.includes(p));
+  check('no walkthrough stands where no guide does', unseated.length === 0, unseated.join(' '));
+
+  /* THE LENGTH LAW, inherited from pageGuides.ts. A screen that needs six steps
+     is asking too much of a first-timer and the fix belongs in the screen. */
+  const overspent = scripted.filter(p => {
+    const n = tutorialFor(p).steps.length;
+    return n < 1 || n > 5;
+  });
+  check('the length law holds — one to five steps, never six',
+    overspent.length === 0, overspent.join(' '));
+
+  const flat = s => String(s).replace(/\s+/g, ' ').trim();
+  const touches = (a, b) =>
+    a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
+
+  /* The two scopes of docs/43 §1.3. 'chrome' is the shell's persistent
+     controls — the phone masthead and the desktop sidebar, one visible at a
+     time — and the Masthead primitive's own <header> is excluded because it
+     sits inside <main>: a page title is the page's, not the shell's. */
+  const CHROME = ':is(header, aside, nav):not(main *)';
+  const scopeOf = t => (t.scope === 'chrome' ? page.locator(CHROME) : page.locator('main'));
+
+  /* Every VISIBLE control the step's target names, within its scope. The
+     alternatives are summed rather than short-circuited: a control that shows
+     both of its labels at once is a real defect and should fail the ambiguity
+     half below rather than be quietly resolved. */
+  const boxesFor = async t => {
+    const root = scopeOf(t);
+    const names = Array.isArray(t.name) ? t.name : [t.name];
+    const boxes = [];
+    for (const name of names) {
+      const loc = root.getByRole(t.role, { name, exact: true });
+      const n = await loc.count();
+      for (let k = 0; k < n; k++) {
+        const one = loc.nth(k);
+        if (await one.isVisible()) {
+          const box = await one.boundingBox();
+          if (box) boxes.push(box);
+        }
+      }
+    }
+    return boxes;
+  };
+
+  const openSample = async () => {
+    await page.goto(`${ORIGIN}/#/open`, { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(600);
+    const skip = page.getByRole('button', { name: /continue without an account|^continue$/i }).first();
+    if (await skip.count()) { await skip.click(); await page.waitForTimeout(400); }
+    const samples = page.getByRole('button', { name: /sample wardrobes/i }).first();
+    if (await samples.count()) { await samples.click(); await page.waitForTimeout(800); }
+    const meher = page.getByRole('button', { name: /meher/i }).first();
+    if (await meher.count()) { await meher.click(); await page.waitForTimeout(800); }
+  };
+
+  const startBlank = async () => {
+    await page.goto(`${ORIGIN}/#/open/new`, { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(600);
+    const skip = page.getByRole('button', { name: /continue without an account|^continue$/i }).first();
+    if (await skip.count()) { await skip.click(); await page.waitForTimeout(400); }
+    const go = page.getByRole('button', { name: /start it/i }).first();
+    if (await go.count()) { await go.click(); await page.waitForTimeout(900); }
+  };
+
+  const land = async path => {
+    await page.goto(`${ORIGIN}/#${path}`, { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(520);
+    return (await page.evaluate(() => location.hash)).replace(/^#/, '').split('?')[0];
+  };
+
+  const openGuide = async () => {
+    const opener = page.getByRole('button', { name: /what is this page/i }).first();
+    if (!(await opener.count())) return false;
+    await opener.click();
+    await page.waitForTimeout(240);
+    return true;
+  };
+
+  await openSample();
+
+  /* ---- 1 · THE LAW. It never announces itself. ---- */
+  {
+    await land('/closet');
+    const cold = await page.evaluate(() => ({
+      dialogs: document.querySelectorAll('[role="dialog"]').length,
+      card: document.querySelectorAll('[data-walkthrough="card"]').length,
+      ring: document.querySelectorAll('[data-walkthrough="ring"]').length,
+    }));
+    check('a walkthrough never announces itself — the closet opens with nothing up',
+      cold.dialogs === 0 && cold.card === 0 && cold.ring === 0,
+      `${cold.dialogs} dialogs, ${cold.card} cards, ${cold.ring} rings`);
+
+    const chromeRoots = await page.locator(CHROME).count();
+    check('the chrome scope finds the shell it is meant to scope to',
+      chromeRoots > 0, `${chromeRoots} roots`);
+  }
+
+  /* ---- 2 · THE DOOR. One tertiary control, in the foot of the sheet. ---- */
+  {
+    check('the guide sheet opens on the closet', await openGuide(), '');
+    const foot = await page.evaluate(() => {
+      const sheet = document.querySelector('[role="dialog"]');
+      return {
+        walk: [...(sheet?.querySelectorAll('button') ?? [])]
+          .some(b => b.textContent.trim() === 'Walk me through it'),
+        close: [...(sheet?.querySelectorAll('button') ?? [])]
+          .some(b => b.textContent.trim() === 'Close'),
+        // Brand rule 3: the sheet already spends its one primary on Close, so
+        // the new control must be tertiary. bg-ink is primary, bg-accent-fill
+        // is the hero — neither may be worn by "Walk me through it".
+        loud: [...(sheet?.querySelectorAll('button') ?? [])]
+          .filter(b => b.textContent.trim() === 'Walk me through it')
+          .some(b => /bg-ink|bg-accent-fill/.test(b.className)),
+      };
+    });
+    check('"Walk me through it" stands in the sheet foot, beside the shipped Close',
+      foot.walk && foot.close && !foot.loud, '');
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(200);
+
+    // The other half of the seating: a screen with no guide gets no control of
+    // either kind. /admin is an alpha portal, not a room in the product.
+    await land('/admin');
+    const portal = await page.evaluate(() => ({
+      guide: [...document.querySelectorAll('button')]
+        .some(b => /what is this page/i.test(b.textContent)),
+      walk: [...document.querySelectorAll('button')]
+        .some(b => b.textContent.trim() === 'Walk me through it'),
+    }));
+    check('a screen with no guide offers no walkthrough either',
+      !portal.guide && !portal.walk, '');
+  }
+
+  /* ---- 3 · STEPPING, AND THE PAGE STAYS ALIVE. ---- */
+  {
+    await land('/closet');
+    await openGuide();
+    await page.getByRole('button', { name: 'Walk me through it', exact: true }).click();
+    await page.waitForTimeout(400);
+
+    const up = await page.evaluate(() => {
+      const card = document.querySelector('[data-walkthrough="card"]');
+      return {
+        scrim: document.querySelectorAll('.modal-overlay').length,
+        count: (card?.innerText ?? '').replace(/\s+/g, ' ').trim(),
+        locked: document.body.style.overflow,
+        modal: card?.getAttribute('aria-modal'),
+        role: card?.getAttribute('role'),
+        // Never a primary or a hero inside the card (brand rule 3, docs/43 §1.6).
+        loud: [...(card?.querySelectorAll('button') ?? [])]
+          .filter(b => /bg-ink|bg-accent-fill/.test(b.className)).length,
+      };
+    });
+    check('starting it closes the sheet and leaves no scrim behind', up.scrim === 0, '');
+    check('the card reads its position in a short list, and nothing else',
+      // Case-folded: .type-ledger sets text-transform:uppercase, so innerText
+      // reads "1 OF 4". The shouting is the stylesheet's business; the position
+      // in a short list is this check's.
+      /(^|\s)1 of 4(\s|$)/i.test(up.count), up.count.slice(0, 40));
+    check('the page is not held — no lock, no aria-modal, still a dialog by role',
+      up.locked !== 'hidden' && up.modal === null && up.role === 'dialog',
+      `overflow "${up.locked}", aria-modal ${up.modal}`);
+    check('no primary and no hero button inside the card', up.loud === 0, `${up.loud} found`);
+
+    /* A STEP WHOSE TARGET IS ALREADY ON SCREEN MOVES NOTHING.
+
+       Step 2 of the Closet points at the masthead's "Add a piece", which is
+       position:fixed and so can never be centred by scrolling. Before the guard
+       in Tutorial.tsx, scrollIntoView answered that by throwing the page to
+       y=10256 of an 11307px document, and step 3 then opened with a ten-
+       thousand-pixel smooth scroll to unwind. Every chrome-scoped step in the
+       house has that shape, so this is asserted rather than eyeballed — and
+       under NORMAL motion, because the sweep below runs reduced and an instant
+       scroll hides the whole defect. */
+    const restingAt = await page.evaluate(() => Math.round(window.scrollY));
+    await page.locator('[data-walkthrough="card"]')
+      .getByRole('button', { name: 'Next', exact: true }).click();
+    await page.waitForTimeout(600);
+    const stepped = await page.evaluate(() => ({
+      y: Math.round(window.scrollY),
+      ring: (() => {
+        const r = document.querySelector('[data-walkthrough="ring"]')?.getBoundingClientRect();
+        return r ? { top: Math.round(r.top), bottom: Math.round(r.bottom) } : null;
+      })(),
+      vh: window.innerHeight,
+    }));
+    check('a step whose target is already on screen scrolls the page nowhere',
+      stepped.y === restingAt
+        && !!stepped.ring && stepped.ring.top >= 0 && stepped.ring.bottom <= stepped.vh,
+      `scrollY ${restingAt} -> ${stepped.y}, ring ${JSON.stringify(stepped.ring)}`);
+
+    // A page control outside the card still takes a real tap — the whole reason
+    // there is no scrim and no focus trap.
+    const filters = page.locator('main').getByRole('button', { name: 'Filters', exact: true }).first();
+    await filters.click();
+    await page.waitForTimeout(300);
+    const alive = await page.evaluate(() => ({
+      expanded: document.querySelector('main [aria-label="Filters"]')?.getAttribute('aria-expanded'),
+      card: document.querySelectorAll('[data-walkthrough="card"]').length,
+    }));
+    check('the page underneath still takes a real tap, and the card stays up',
+      alive.expanded === 'true' && alive.card === 1, `aria-expanded ${alive.expanded}`);
+
+    // Two more: the scroll check above already stepped 1 -> 2, and the Closet's
+    // script is four steps long.
+    const card = page.locator('[data-walkthrough="card"]');
+    for (let i = 0; i < 2; i++) {
+      await card.getByRole('button', { name: 'Next', exact: true }).click();
+      await page.waitForTimeout(400);
+    }
+    const end = await page.evaluate(() => {
+      const c = document.querySelector('[data-walkthrough="card"]');
+      return {
+        text: (c?.innerText ?? '').replace(/\s+/g, ' ').trim(),
+        done: [...(c?.querySelectorAll('button') ?? [])].some(b => b.textContent.trim() === 'Done'),
+      };
+    });
+    check('the last step says Done, not Next', end.done && /4 of 4/i.test(end.text), end.text.slice(0, 40));
+
+    /* THE FLIP RULE, MADE TO FIRE (docs/43 §1.6, §4.2).
+
+       Check 8 below asserts the card and its target never intersect, but every
+       step it sweeps has its target centred, so it never once exercises the
+       thing that keeps that true. Here the reader scrolls the ringed Filters
+       control down into the docked card's band by hand; the card must get out
+       of its own way and re-dock at the top. Without the rule this reads as a
+       card sitting squarely on the button it is telling you to press. */
+    const docked = await page.evaluate(() => {
+      const c = document.querySelector('[data-walkthrough="card"]')?.getBoundingClientRect();
+      return c ? Math.round(c.y) : null;
+    });
+    await page.evaluate(() => window.scrollBy(0, -120));
+    await page.waitForTimeout(500);
+    const flipped = await page.evaluate(() => {
+      const box = sel => {
+        const e = document.querySelector(sel);
+        if (!e) return null;
+        const { x, y, width, height } = e.getBoundingClientRect();
+        return { x, y, w: width, h: height };
+      };
+      const c = box('[data-walkthrough="card"]');
+      const r = box('[data-walkthrough="ring"]');
+      return {
+        y: c ? Math.round(c.y) : null,
+        hit: !!(c && r && c.x < r.x + r.w && c.x + c.w > r.x && c.y < r.y + r.h && c.y + c.h > r.y),
+      };
+    });
+    check('the card gets out of its own way — it docks to the top rather than cover its target',
+      docked !== null && flipped.y !== null && docked > 400 && flipped.y < 200 && !flipped.hit,
+      `docked at ${docked}, flipped to ${flipped.y}, overlapping ${flipped.hit}`);
+    await card.getByRole('button', { name: 'Done', exact: true }).click();
+    await page.waitForTimeout(260);
+    const shut = await page.evaluate(() => document.querySelectorAll('[data-walkthrough]').length);
+    check('Done closes it and leaves nothing behind', shut === 0, `${shut} left`);
+  }
+
+  /* ---- 5 · PERSISTENCE, AND THE LAW RE-ASSERTED OVER IT. ---- */
+  {
+    const marks = await page.evaluate(() => {
+      try {
+        return JSON.parse(window.localStorage.getItem('toile-walkthroughs') || '[]');
+      } catch { return null; }
+    });
+    check('the walkthrough is marked on start, under its own key',
+      Array.isArray(marks) && marks.includes('/closet'), JSON.stringify(marks));
+
+    // And the mark is a fact about this browser's reader, never about the
+    // wardrobe: it must not have leaked into the exported record.
+    const key = await activeKey();
+    const inState = await page.evaluate(k => {
+      const raw = k ? window.localStorage.getItem(k) : null;
+      return raw ? /walkthrough/i.test(raw) : false;
+    }, key);
+    check('and no walkthrough mark rides in AppState', inState === false, '');
+
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(700);
+    const after = await page.evaluate(() => document.querySelectorAll('[data-walkthrough]').length);
+    check('a marked screen still opens with nothing up — dismissed is dismissed',
+      after === 0, `${after} left`);
+  }
+
+  /* ---- 7 · EXITS. Escape, and walking away. ---- */
+  {
+    await land('/closet');
+    await openGuide();
+    await page.getByRole('button', { name: 'Walk me through it', exact: true }).click();
+    await page.waitForTimeout(360);
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(240);
+    const escaped = await page.evaluate(() => document.querySelectorAll('[data-walkthrough]').length);
+    check('Escape ends it', escaped === 0, `${escaped} left`);
+
+    await openGuide();
+    await page.getByRole('button', { name: 'Walk me through it', exact: true }).click();
+    await page.waitForTimeout(360);
+    const running = await page.evaluate(() => document.querySelectorAll('[data-walkthrough="card"]').length);
+    // A client-side hash change, not a reload: a reload would end the
+    // walkthrough by wiping the document, which proves nothing about the keyed
+    // unmount this check is actually about.
+    await page.evaluate(() => { window.location.hash = '#/outfits'; });
+    await page.waitForTimeout(700);
+    const walked = await page.evaluate(() => ({
+      here: location.hash,
+      left: document.querySelectorAll('[data-walkthrough]').length,
+    }));
+    check('walking to another screen ends it, card and ring both',
+      running === 1 && walked.left === 0 && walked.here.startsWith('#/outfits'),
+      `${walked.left} left at ${walked.here}`);
+  }
+
+  /* ---- 6 · REDUCED MOTION. The ring is present; nothing animates. ---- */
+  {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await land('/closet');
+    await openGuide();
+    await page.getByRole('button', { name: 'Walk me through it', exact: true }).click();
+    await page.waitForTimeout(320);
+    await page.locator('[data-walkthrough="card"]')
+      .getByRole('button', { name: 'Next', exact: true }).click();
+    await page.waitForTimeout(320);
+    const still = await page.evaluate(() => {
+      const card = document.querySelector('[data-walkthrough="card"]');
+      const ring = document.querySelector('[data-walkthrough="ring"]');
+      const ms = el => {
+        const cs = el ? getComputedStyle(el) : null;
+        if (!cs) return null;
+        if (cs.animationName === 'none') return 0;
+        return Math.max(...cs.animationDuration.split(',').map(d => parseFloat(d) * (/ms/.test(d) ? 1 : 1000)));
+      };
+      return { ring: !!ring, ringMotion: ms(ring), cardMotion: ms(card) };
+    });
+    check('under reduced motion the ring is still drawn, and neither it nor the card animates',
+      still.ring && still.cardMotion !== null && still.cardMotion <= 1 && still.ringMotion === 0,
+      `card ${still.cardMotion}ms, ring ${still.ringMotion}ms`);
+
+    // Stepping still brings the target into view — instantly, but it arrives.
+    await page.locator('[data-walkthrough="card"]')
+      .getByRole('button', { name: 'Next', exact: true }).click();
+    await page.waitForTimeout(320);
+    const inView = await page.evaluate(() => {
+      const r = document.querySelector('[data-walkthrough="ring"]')?.getBoundingClientRect();
+      return r ? r.top >= 0 && r.bottom <= window.innerHeight : false;
+    });
+    check('and stepping still brings the target into view', inView, '');
+    await page.goto(`${ORIGIN}/#/closet`, { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(300);
+  }
+
+  /* ---- 4 + 8 · THE DRIFT NET, TWO FIXTURES.
+
+     A page's controls differ between a blank wardrobe and a stocked one, and a
+     net that only sees one of those states is half a net. In EITHER fixture at
+     most one visible match — ambiguity is a spec bug in any state. ACROSS the
+     two, at least one — a name that resolves in neither is dead copy.
+
+     Swept under reduced motion on purpose: scrollIntoView drops to 'auto', so
+     every rectangle below is measured at rest rather than mid-animation. The
+     geometry is the same either way; only the flakiness differs. ---- */
+  const resolutions = new Map();
+  const drift = [];
+  {
+    const sweep = async fixture => {
+      for (const path of scripted) {
+        const landed = await land(path);
+        if (landed !== path) {
+          drift.push(`${path}: does not open in the ${fixture} wardrobe (landed ${landed})`);
+          continue;
+        }
+        if (!(await openGuide())) {
+          drift.push(`${path}: no guide control (${fixture})`);
+          continue;
+        }
+
+        /* THE ADDITIVE PROOF, on every screen and in both fixtures: the shipped
+           guide sheet still says every word it said before — the lede, all of
+           the doings, and its Close. Nothing about the walkthrough is allowed
+           to cost the seventeen guides a syllable. */
+        const guide = guideFor(path);
+        const sheet = flat(await page.evaluate(
+          () => document.querySelector('[role="dialog"]')?.innerText ?? ''));
+        // Case-folded for the same reason as above — the sheet's Close renders
+        // as CLOSE. This check is about the words still being there, not about
+        // which utility shouts them.
+        const said = sheet.toLowerCase();
+        const intact = said.includes(flat(guide.lede).toLowerCase())
+          && guide.doing.every(d => said.includes(flat(d).toLowerCase()))
+          && (!guide.term || said.includes(flat(guide.term.meaning).toLowerCase()))
+          && said.includes('close');
+        if (!intact) drift.push(`${path}: the shipped guide sheet lost a line (${fixture})`);
+
+        const opener = page.getByRole('button', { name: 'Walk me through it', exact: true }).first();
+        if (!(await opener.count())) {
+          drift.push(`${path}: offers no walkthrough (${fixture})`);
+          continue;
+        }
+        await opener.click();
+        await page.waitForTimeout(340);
+
+        const steps = tutorialFor(path).steps;
+        const card = page.locator('[data-walkthrough="card"]');
+        for (let i = 0; i < steps.length; i++) {
+          const t = steps[i].target;
+          if (t) {
+            const id = `${path} step ${i + 1}`;
+            const named = Array.isArray(t.name) ? t.name.join(' / ') : t.name;
+            const seen = resolutions.get(id)
+              ?? { blank: 0, sample: 0, what: `${t.role} "${named}" in ${t.scope ?? 'main'}` };
+            const boxes = await boxesFor(t);
+            seen[fixture] = boxes.length;
+            resolutions.set(id, seen);
+
+            if (boxes.length === 1) {
+              const ring = await page.locator('[data-walkthrough="ring"]').boundingBox();
+              if (!ring || !touches(ring, boxes[0])) {
+                drift.push(`${id}: the ring is not on ${named} (${fixture})`);
+              }
+              // §7 check 8 — it never covers its own target.
+              const box = await card.boundingBox();
+              if (box && touches(box, boxes[0])) {
+                drift.push(`${id}: the card covers ${named} (${fixture})`);
+              }
+            }
+          }
+          if (i < steps.length - 1) {
+            await card.getByRole('button', { name: 'Next', exact: true }).click();
+            await page.waitForTimeout(300);
+          }
+        }
+        // Walking to the next address ends this one — the keyed unmount.
+      }
+    };
+
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await startBlank();
+    await sweep('blank');
+    await openSample();
+    await sweep('sample');
+    await page.emulateMedia({ reducedMotion: null });
+
+    const anchored = [...resolutions.entries()];
+    check('every walkthrough step was reached and measured in both wardrobes',
+      anchored.length > 0 && scripted.length > 0, `${anchored.length} anchors over ${scripted.length} screens`);
+
+    const ambiguous = anchored.filter(([, r]) => r.blank > 1 || r.sample > 1);
+    check('no step points at two controls at once, in either wardrobe',
+      ambiguous.length === 0,
+      ambiguous.map(([id, r]) => `${id} — ${r.what} (blank ${r.blank}, sample ${r.sample})`).join(' | '));
+
+    const dead = anchored.filter(([, r]) => r.blank + r.sample === 0);
+    check('every step anchor resolves in at least one wardrobe — no dead copy',
+      dead.length === 0,
+      dead.map(([id, r]) => `${id} — ${r.what}`).join(' | '));
+
+    check('the ring sits on its target, and the card never covers it',
+      drift.length === 0, drift.slice(0, 4).join(' | '));
+  }
+
+  /* ---- THE NET, PROVEN TO BITE.
+
+     Everything above passes on a tree where the anchors are right, which is
+     also what a net with a broken selector engine does. So: rename the Closet's
+     filter control in the live DOM — exactly what a refactor that drops an
+     aria-label looks like — and the count must fall to nothing. Then hang a
+     second control with the same name on the page and it must rise to two.
+     Both halves of check 4, demonstrated rather than assumed. ---- */
+  {
+    await land('/closet');
+    const anchor = { role: 'button', name: 'Filters' };
+    const before = (await boxesFor(anchor)).length;
+
+    await page.evaluate(() => {
+      document.querySelector('main [aria-label="Filters"]')
+        ?.setAttribute('aria-label', 'Narrow the grid');
+    });
+    const renamed = (await boxesFor(anchor)).length;
+
+    await page.evaluate(() => {
+      document.querySelector('main [aria-label="Narrow the grid"]')
+        ?.setAttribute('aria-label', 'Filters');
+      const one = document.querySelector('main [aria-label="Filters"]');
+      if (one) one.parentElement.appendChild(one.cloneNode(true));
+    });
+    const twinned = (await boxesFor(anchor)).length;
+
+    check('the drift net bites — a renamed anchor falls to nothing, a twinned one reads two',
+      before === 1 && renamed === 0 && twinned === 2,
+      `${before} -> ${renamed} -> ${twinned}`);
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(500);
+  }
+}
 
 check('no errors anywhere in this run', errors.length === 0, errors.slice(0, 2).join(' | '));
 

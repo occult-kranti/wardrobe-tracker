@@ -66,17 +66,23 @@ export function requestTour(): void {
 const GUIDES_KEY = 'toile-guides';
 
 /**
- * The recorded list, or null where storage would not answer at all.
+ * The recorded list under one key, or null where storage would not answer at
+ * all.
  *
  * The two failures are worth keeping apart. Storage that throws means the mark
  * can never be cleared, so it must never be shown; a value that is merely
  * malformed means storage works and this one row is rubbish, which is an empty
  * list and recoverable on the next write.
+ *
+ * Written once and read by both marks below. It used to be readGuides() with
+ * the key baked in; the walkthroughs need the identical discipline down to the
+ * two failure readings, and a second hand-copy of it is exactly how two rows
+ * end up disagreeing about what a throwing localStorage means.
  */
-function readGuides(): string[] | null {
+function readMarks(storageKey: string): string[] | null {
   let raw: string | null;
   try {
-    raw = window.localStorage.getItem(GUIDES_KEY);
+    raw = window.localStorage.getItem(storageKey);
   } catch {
     return null;
   }
@@ -89,19 +95,67 @@ function readGuides(): string[] | null {
   }
 }
 
-/** Has this screen's guide been opened before? Silent-on-failure, as above. */
-export function guideSeen(key: string): boolean {
-  const seen = readGuides();
+/** Silent on failure, in the direction that never nags: unrecordable reads as seen. */
+function marked(storageKey: string, key: string): boolean {
+  const seen = readMarks(storageKey);
   if (seen === null) return true;
   return seen.includes(key);
 }
 
-export function markGuideSeen(key: string): void {
-  const seen = readGuides();
+function mark(storageKey: string, key: string): void {
+  const seen = readMarks(storageKey);
   if (seen === null || seen.includes(key)) return;
   try {
-    window.localStorage.setItem(GUIDES_KEY, JSON.stringify([...seen, key]));
+    window.localStorage.setItem(storageKey, JSON.stringify([...seen, key]));
   } catch {
     /* a mark that cannot be recorded simply never shows */
   }
+}
+
+/** Has this screen's guide been opened before? Silent-on-failure, as above. */
+export function guideSeen(key: string): boolean {
+  return marked(GUIDES_KEY, key);
+}
+
+export function markGuideSeen(key: string): void {
+  mark(GUIDES_KEY, key);
+}
+
+/**
+ * THE WALKTHROUGHS — which screens have had their stepped walkthrough started
+ * at least once (docs/43 §5).
+ *
+ * A third key, not a third value on either of the two above, and deliberately
+ * NOT a field in AppState. Four reasons, in the order they cost:
+ *
+ *   CLAUDE.md binds any AppState change to a migration case in
+ *   scripts/test-migrate.mjs first, and a walkthrough mark is worth zero
+ *   migrations forever.
+ *
+ *   It is a fact about this browser's reader, not about the wardrobe. It must
+ *   not ride the lossless export, must not sync, and a second device is
+ *   entitled to its own first time.
+ *
+ *   It is app-wide, not per-wardrobe, so switching wardrobes must not
+ *   resurrect it.
+ *
+ *   And a separate key clears in one write, which is the argument the guides'
+ *   key above already makes for itself.
+ *
+ * MARKED ON START, NOT ON COMPLETION. The guide precedent is "opening IS
+ * reading"; marking on Done would smuggle in a completion mechanic, which is a
+ * score by the back door and banned outright (docs/43 §4.3). The only readers
+ * are the suite and any future "clear the marks" in Settings — there is no dot,
+ * no badge, and no second affordance. The guide sheet's existing dot already
+ * carries "you have not looked here yet", and one quiet mark per screen is the
+ * ceiling this app will ever have.
+ */
+const WALKTHROUGHS_KEY = 'toile-walkthroughs';
+
+export function walkthroughSeen(key: string): boolean {
+  return marked(WALKTHROUGHS_KEY, key);
+}
+
+export function markWalkthroughSeen(key: string): void {
+  mark(WALKTHROUGHS_KEY, key);
 }

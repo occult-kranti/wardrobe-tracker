@@ -27,6 +27,10 @@ await build({ alias: sharedAliases(),
   entryPoints: {
     'lib/exportDoc': fileURLToPath(new URL('../src/lib/exportDoc.ts', import.meta.url)),
     'lib/migrate': fileURLToPath(new URL('../packages/shared/migrate.ts', import.meta.url)),
+    // The photograph store, for the door below. exportDoc does NOT import it —
+    // that is the point of handing the inliner in — so this is a second,
+    // independent bundle and importing it here proves nothing about the first.
+    'lib/photoStore': fileURLToPath(new URL('../src/lib/photoStore.ts', import.meta.url)),
     types: fileURLToPath(new URL('../packages/shared/types.ts', import.meta.url)),
   },
   bundle: true,
@@ -38,9 +42,13 @@ await build({ alias: sharedAliases(),
 
 const doc = await import(pathToFileURL(join(dir, 'lib', 'exportDoc.js')).href);
 const mig = await import(pathToFileURL(join(dir, 'lib', 'migrate.js')).href);
+const photos = await import(pathToFileURL(join(dir, 'lib', 'photoStore.js')).href);
 const types = await import(pathToFileURL(join(dir, 'types.js')).href);
 
-const { EXPORTED_KEYS, buildExportDoc, exportDocText, readExportDoc, exportFileName } = doc;
+const {
+  EXPORTED_KEYS, buildExportDoc, exportDocText, readExportDoc, exportFileName,
+  buildExportDocAsync, exportDocTextAsync,
+} = doc;
 const { migrate } = mig;
 const { SCHEMA_VERSION, initialState } = types;
 
@@ -166,6 +174,85 @@ check('an empty wardrobe still exports a readable document', readExportDoc(expor
 let threw = false;
 try { readExportDoc('not json'); } catch { threw = true; }
 check('a file that is not JSON throws rather than importing nothing', threw);
+
+/* ---------- THE FIRST DOOR OFF THE DEVICE: an exported file inlines ----------
+
+   A photograph does not have to be in the record to be in the wardrobe. The
+   web app can keep it in IndexedDB and leave `idb:<id>` behind; the native app
+   keeps it as a file and leaves a path. Both are names for something on ONE
+   machine, and a backup file is opened on another one — so the document that
+   goes on disk must have the pictures IN it, or the promise that a web file
+   and a native file are the same file is over.
+
+   There is no mock here. Bare Node has no IndexedDB, so src/lib/photoStore.ts
+   falls back to its in-memory store — which IS the fixture: real putPhoto,
+   real references, real walker, and a resolver that has to actually find them. */
+
+const picture = 'data:image/jpeg;base64,' + Buffer.from('a photographed jacket').toString('base64');
+const outfitPicture = 'data:image/jpeg;base64,' + Buffer.from('a mirror shot').toString('base64');
+const pieceRef = await photos.putPhoto(picture);
+const outfitRef = await photos.putPhoto(outfitPicture);
+const deadRef = 'idb:this-picture-is-gone';
+
+const withRefs = migrate({
+  ...state,
+  items: [
+    { ...state.items[0], imageUrl: pieceRef },
+    { ...state.items[0], id: 'b', name: 'Lost picture', imageUrl: deadRef },
+    { ...state.items[0], id: 'c', name: 'Never photographed', imageUrl: '' },
+  ],
+  outfits: [{
+    id: 'o1', name: 'Monday', itemIds: ['a'], dateCreated: '2026-02-01',
+    wearCount: 0, favorite: false, imageUrl: outfitRef,
+  }],
+});
+
+// Red proof first: every assertion below is worth nothing unless the document
+// WOULD have carried the references out to disk without the door.
+const notInlined = exportDocText(withRefs, STAMP);
+check(
+  'RED PROOF — the plain synchronous export carries a reference straight out to the file',
+  notInlined.includes(pieceRef) && notInlined.includes(outfitRef),
+);
+
+const inline = d => photos.inlinePhotosIn(d);
+const inlinedText = await exportDocTextAsync(withRefs, STAMP, inline);
+const inlinedDoc = JSON.parse(inlinedText);
+
+check(
+  'an exported document holds the PICTURES, not references into this device',
+  inlinedDoc.items[0].imageUrl === picture && inlinedDoc.outfits[0].imageUrl === outfitPicture,
+);
+check(
+  'not one resolvable reference survives in the text — only the one whose picture is gone',
+  (inlinedText.match(/idb:/g) ?? []).length === 1 && inlinedText.includes(deadRef),
+);
+check(
+  'a reference whose picture is gone is LEFT IN THE FILE — nothing is thrown away, including the fact of it',
+  inlinedDoc.items[1].imageUrl === deadRef,
+);
+check('a piece that was never photographed is still an empty string', inlinedDoc.items[2].imageUrl === '');
+
+const readBack = readExportDoc(inlinedText);
+check(
+  'the inlined file reads back as a wardrobe with its photographs in it',
+  readBack.items[0].imageUrl === picture && readBack.outfits[0].imageUrl === outfitPicture &&
+    readBack.items.length === 3,
+);
+check(
+  'the inlined document is still exactly the allowlist, plus exportedAt',
+  same(Object.keys(inlinedDoc).sort(), [...PINNED.filter(k => k in withRefs), 'exportedAt'].sort()),
+  Object.keys(inlinedDoc).join(','),
+);
+check(
+  'the inliner never gets to rewrite what this build says about the file',
+  (await buildExportDocAsync(withRefs, STAMP, async d => ({ ...d, schemaVersion: 999, exportedAt: 'whenever' })))
+    .schemaVersion === SCHEMA_VERSION,
+);
+check(
+  'a wardrobe with no references at all goes through the door byte-identical',
+  (await exportDocTextAsync(context, STAMP, inline)) === exportDocText(context, STAMP),
+);
 
 console.log(fail === 0 ? '\nALL EXPORT CHECKS PASSED' : `\n${fail} EXPORT CHECKS FAILED`);
 process.exit(fail ? 1 : 0);

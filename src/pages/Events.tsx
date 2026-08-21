@@ -19,6 +19,7 @@ import { Basting, GarmentPlate, PlateEmptyOutfits } from '../components/art';
 import { IconPlus } from '../components/icons';
 import { showToast } from '../components/Toast';
 import { shortDate } from '../components/social';
+import { photoSrc } from '../lib/photoStore';
 
 /**
  * EVENTS — outfits held against dated occasions.
@@ -45,12 +46,26 @@ import { shortDate } from '../components/social';
  *    fourth piece — a layer, jewellery — is not forbidden by a three-slot list.
  */
 
-/** The pieces a dressed look usually needs. Missing ones are what to fill. */
+/**
+ * The pieces a dressed look usually needs. Missing ones are what to fill.
+ *
+ * This list is a WESTERN three-slot closet, and it is not the law about what a
+ * person owns. A wardrobe that files sarees under a category it made itself,
+ * and juttis under another, keeps no `tops`, `bottoms` or `shoes` at all — and
+ * the page used to tell it, on every reservation forever, that it was missing
+ * a top and something on the bottom and shoes, with a wishlist nudge for
+ * categories deliberately not kept. A gap is only named where the closet keeps
+ * that kind of piece (see `gapsFor`): what you do not own is not a hole in
+ * what you packed, and this app never suggests acquiring anything.
+ */
 const EXPECTED: Array<{ category: string; label: string; unless?: string[] }> = [
   { category: 'tops', label: 'a top', unless: ['dresses', 'drapes', 'suits'] },
   { category: 'bottoms', label: 'something on the bottom', unless: ['dresses', 'drapes', 'suits'] },
   { category: 'shoes', label: 'shoes' },
 ];
+
+/** A wardrobe event, not a sabbatical: the most days one event holds. */
+const HELD_DAYS_CAP = 30;
 
 /**
  * The composer. One task per screen (§8.7): what it is, when it is, where.
@@ -88,13 +103,34 @@ function EventComposer({
   const endsBeforeItStarts = Boolean(endDate) && endDate < startDate;
   const ready = name.trim().length > 0 && Boolean(startDate) && !endsBeforeItStarts;
 
+  /**
+   * How many days this span will actually hold, and the last of them.
+   *
+   * The cap is real and it used to truncate in silence: a 1 Sept – 1 Dec event
+   * stored its December end date, held thirty days, and printed the full three
+   * months on the card beside "30 days held". The later days simply could not
+   * be dressed, and nothing anywhere said why. The arithmetic lives here so
+   * the composer can say it before the event exists.
+   */
+  const held = (() => {
+    const last = endDate && endDate > startDate ? endDate : startDate;
+    let days = 0;
+    let lastHeld = startDate;
+    for (let day = startDate; day <= last; day = addDays(day, 1)) {
+      lastHeld = day;
+      days += 1;
+      if (days >= HELD_DAYS_CAP) break;
+    }
+    return { lastHeld, capped: lastHeld < last };
+  })();
+
   const submit = () => {
     if (!ready) return;
     const last = endDate && endDate > startDate ? endDate : startDate;
     const reservations: EventReservation[] = [];
     for (let day = startDate; day <= last; day = addDays(day, 1)) {
       reservations.push({ id: `res-${day}-${reservations.length}`, date: day, itemIds: [] });
-      if (reservations.length >= 30) break; // a wardrobe event, not a sabbatical
+      if (reservations.length >= HELD_DAYS_CAP) break; // a wardrobe event, not a sabbatical
     }
     onCreate({
       name: name.trim(),
@@ -157,6 +193,16 @@ function EventComposer({
           </Field>
         </div>
 
+        {/* Said before the event exists, not discovered two months into a
+            trip whose later days cannot be dressed. */}
+        {held.capped ? (
+          <p className="text-[13px] text-text-2 leading-snug -mt-2">
+            A span holds {HELD_DAYS_CAP} days at most. This one holds{' '}
+            {shortDate(startDate)} – {shortDate(held.lastHeld)}; the days after that keep their
+            place on the calendar, but nothing is held against them.
+          </p>
+        ) : null}
+
         <Field label="Where" htmlFor="event-place" hint="Optional.">
           <input
             id="event-place"
@@ -181,10 +227,13 @@ function EventComposer({
 }
 
 function Thumb({ item, className = '' }: { item?: ClothingItem; className?: string }) {
+  // A photograph may be a reference into this device's store: resolve once, and
+  // test the RESOLVED value, so an unanswerable one falls through to the flat.
+  const photo = photoSrc(item?.imageUrl);
   return (
     <span className={`block bg-mat overflow-hidden rounded-[2px] ${className}`}>
-      {item?.imageUrl ? (
-        <img src={item.imageUrl} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
+      {photo ? (
+        <img src={photo} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
       ) : (
         <GarmentPlate categoryId={item?.category ?? 'accessories'} color={item?.color} name={item?.name} />
       )}
@@ -202,6 +251,12 @@ function daysUntil(date: string): number {
 
 function piecesPhrase(n: number): string {
   return `${n} ${n === 1 ? 'piece' : 'pieces'}`;
+}
+
+/** "a top", "a top and shoes", "a top, something on the bottom and shoes". */
+function listPhrase(parts: string[]): string {
+  if (parts.length <= 1) return parts[0] ?? '';
+  return `${parts.slice(0, -1).join(', ')} and ${parts[parts.length - 1]}`;
 }
 
 /**
@@ -271,11 +326,23 @@ export default function Events() {
       .sort((a, b) => b.wearCount - a.wearCount)
       .slice(0, 8);
 
-  /** What a reservation is missing, and what in the closet could fill it. */
+  /** The kinds of piece this closet actually keeps. */
+  const owned = useMemo(() => new Set(activeItems.map(i => i.category)), [activeItems]);
+
+  /**
+   * What a reservation is missing, and what in the closet could fill it.
+   *
+   * `owned` is the guard: a slot the wardrobe has no pieces for is not a gap
+   * in the packing, it is a category this person does not keep — see the note
+   * on EXPECTED. It also means the "Nothing in this category yet" line, and
+   * the wishlist link under it, can only appear about a kind of piece the
+   * closet already holds and has simply run out of for this day.
+   */
   const gapsFor = (reservation: EventReservation) => {
     const pieces = reservation.itemIds.map(id => getItem(id)).filter((i): i is ClothingItem => !!i);
     const held = new Set(pieces.map(p => p.category));
     return EXPECTED
+      .filter(slot => owned.has(slot.category))
       .filter(slot => !held.has(slot.category))
       .filter(slot => !slot.unless?.some(c => held.has(c)))
       .map(slot => ({ ...slot, options: optionsFor(slot.category, reservation) }));
@@ -431,9 +498,9 @@ export default function Events() {
               ) : null}
 
               <div className="flex flex-wrap gap-2 mt-2.5">
-                {outfit?.imageUrl ? (
+                {photoSrc(outfit?.imageUrl) ? (
                   <span className="block w-20 rounded-[2px] overflow-hidden bg-mat" style={{ aspectRatio: '3 / 4' }}>
-                    <img src={outfit.imageUrl} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
+                    <img src={photoSrc(outfit?.imageUrl)} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
                   </span>
                 ) : null}
                 {pieces.slice(0, 8).map(piece => (
@@ -445,14 +512,21 @@ export default function Events() {
                 <div className="mt-3 flex flex-wrap items-center gap-3">
                   {gaps.length > 0 ? (
                     <p className="text-[14px] text-text-2 leading-snug">
-                      Missing {gaps.map(g => g.label).join(' and ')}.
+                      Missing {listPhrase(gaps.map(g => g.label))}.
                     </p>
                   ) : null}
                   <Button
                     compact
                     onClick={() => setCompleting({ eventId: event.id, reservationId: reservation.id })}
                   >
-                    {gaps.length > 0 ? 'Complete the look' : 'Change the pieces'}
+                    {/* A day with nothing on it is not a day whose pieces can
+                        be changed — and with the gap list honouring the closet's
+                        own categories, a bare day can now show no gaps at all. */}
+                    {gaps.length > 0
+                      ? 'Complete the look'
+                      : pieces.length === 0
+                        ? 'Dress this day'
+                        : 'Change the pieces'}
                   </Button>
                   {outfits.length > 0 ? (
                     <Button

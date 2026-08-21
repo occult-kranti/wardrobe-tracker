@@ -8,6 +8,7 @@ import { Basting, GarmentPlate, PlateEmptyWishlist, TagPortrait } from '../compo
 import { IconChevronLeft } from '../components/icons';
 import { oldestFirst, shortDate } from '../components/social';
 import { syncModeOf } from '../lib/sync';
+import { photoSrc } from '../lib/photoStore';
 
 /**
  * THE SHARED RAIL — borrowing between people who already know each other.
@@ -241,11 +242,12 @@ export function Rail() {
               // getItem, not activeItems: a piece retired while it is still out
               // keeps its photograph in the record of where it went.
               const item = loan.itemId ? getItem(loan.itemId) : undefined;
+              const photo = photoSrc(item?.imageUrl);
               return (
                 <li key={loan.id} className="flex items-center gap-3 min-h-[56px] py-2">
                   <span className="block w-11 h-14 shrink-0 bg-mat overflow-hidden rounded-[2px]">
-                    {item?.imageUrl ? (
-                      <img src={item.imageUrl} alt="" className="w-full h-full object-cover" />
+                    {photo ? (
+                      <img src={photo} alt="" className="w-full h-full object-cover" />
                     ) : (
                       <GarmentPlate categoryId={item?.category ?? 'accessories'} color={item?.color} name={item?.name} />
                     )}
@@ -341,11 +343,12 @@ export function RailProfile() {
           <ul className="grid sm:grid-cols-2 gap-x-6">
             {profile.lendable.map(piece => {
               const item = piece.itemId ? getItem(piece.itemId) : undefined;
+              const photo = photoSrc(item?.imageUrl);
               return (
                 <li key={piece.itemId ?? piece.name} className="flex items-center gap-3 h-14">
                   <span className="block w-9 h-11 shrink-0 bg-mat overflow-hidden rounded-[2px]">
-                    {item?.imageUrl ? (
-                      <img src={item.imageUrl} alt="" className="w-full h-full object-cover" />
+                    {photo ? (
+                      <img src={photo} alt="" className="w-full h-full object-cover" />
                     ) : (
                       <GarmentPlate categoryId={piece.category ?? 'accessories'} color={item?.color} name={piece.name ?? item?.name} />
                     )}
@@ -379,13 +382,14 @@ export function RailProfile() {
                   {outfit.itemIds.slice(0, 6).map(itemId => {
                     const item = getItem(itemId);
                     if (!item) return null;
+                    const photo = photoSrc(item.imageUrl);
                     return (
                       <span
                         key={itemId}
                         className="block w-12 h-15 aspect-[4/5] bg-mat overflow-hidden rounded-[2px]"
                       >
-                        {item.imageUrl ? (
-                          <img src={item.imageUrl} alt="" className="w-full h-full object-cover" />
+                        {photo ? (
+                          <img src={photo} alt="" className="w-full h-full object-cover" />
                         ) : (
                           <GarmentPlate categoryId={item.category} color={item.color} name={item.name} />
                         )}

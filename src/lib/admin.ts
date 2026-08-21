@@ -14,6 +14,7 @@ import {
   wardrobeKey,
 } from './accounts';
 import { lastSyncedAt, syncModeOf, type QueuedPush } from './sync';
+import { getPhoto, isPhotoRef, photoIds, photoRef, removePhoto } from './photoStore';
 import { migrate } from '@almari/shared/migrate';
 import { PERSONAS } from './personaWardrobe';
 import {
@@ -133,6 +134,10 @@ export interface AccountLedger {
   images: number;
   dataImages: number;
   refImages: number;
+  /** Photographs held in this device's store, named from the record by `idb:`.
+   *  These cost the localStorage purse forty characters and cost the DISK the
+   *  whole picture, which is why `bytes` below is no longer the whole story. */
+  storeImages: number;
   bytes: number;
   syncMode: SyncMode;
   lastSynced: string | null;
@@ -158,14 +163,19 @@ function readState(accountId: string): AppState | null {
   return migrate(raw);
 }
 
-function imageKind(url: string | undefined): 'data' | 'ref' | null {
+function imageKind(url: string | undefined): 'data' | 'store' | 'ref' | null {
   if (!url) return null;
+  // The order matters: a reference into the photograph store is neither a
+  // picture on the record nor an address off the device, and counting it as
+  // either is how an audit starts under-reporting what a wardrobe weighs.
+  if (isPhotoRef(url)) return 'store';
   return url.startsWith('data:') ? 'data' : 'ref';
 }
 
-function countImages(state: AppState): { images: number; dataImages: number; refImages: number } {
+function countImages(state: AppState): { images: number; dataImages: number; refImages: number; storeImages: number } {
   let dataImages = 0;
   let refImages = 0;
+  let storeImages = 0;
   const urls = [
     ...state.items.map(i => i.imageUrl),
     ...state.outfits.map(o => o.imageUrl),
@@ -175,8 +185,9 @@ function countImages(state: AppState): { images: number; dataImages: number; ref
     const kind = imageKind(url);
     if (kind === 'data') dataImages += 1;
     if (kind === 'ref') refImages += 1;
+    if (kind === 'store') storeImages += 1;
   }
-  return { images: dataImages + refImages, dataImages, refImages };
+  return { images: dataImages + refImages + storeImages, dataImages, refImages, storeImages };
 }
 
 function queuedSyncIds(): Set<string> {
@@ -193,7 +204,7 @@ export function readLedger(): DeviceLedger {
     const state = readState(account.id);
     const counts = state
       ? countImages(state)
-      : { images: 0, dataImages: 0, refImages: 0 };
+      : { images: 0, dataImages: 0, refImages: 0, storeImages: 0 };
     return {
       account,
       present: state !== null,
@@ -262,6 +273,12 @@ export function removePieceImage(accountId: string, itemId: string): string | nu
   const state = readState(accountId);
   const item = state?.items.find(i => i.id === itemId);
   if (!state || !item || !item.imageUrl) return null;
+  // Clearing the record is only half of it. When the record held a REFERENCE,
+  // the picture itself is in this device's IndexedDB, and a strip tool that
+  // left it there would report a photograph removed while the bytes stayed on
+  // the disk. Fire-and-forget: this function's callers are synchronous, and
+  // removePhoto never throws and never blocks the surgery.
+  void removePhoto(item.imageUrl);
   item.imageUrl = '';
   saveWardrobe(accountId, state);
   return item.name;
@@ -588,6 +605,61 @@ function checkBudget(): SmokeCheck {
   };
 }
 
+/**
+ * THE PHOTOGRAPH STORE, WEIGHED.
+ *
+ * `totalStorageBytes` reads localStorage, and once photographs are filed by
+ * reference a wardrobe's purse holds forty characters where it used to hold
+ * eighty thousand. That is the point of the wave — and it means the storage
+ * ledger, read alone, now under-reports what a photographed closet costs this
+ * device by roughly three orders of magnitude. So the room is weighed too, and
+ * said out loud beside the purse.
+ *
+ * `unnamed` is not an alarm: a picture stops being named the moment its piece
+ * is deleted, and the sweep collects it a few seconds later. A number here
+ * larger than nothing usually means somebody deleted something recently.
+ */
+export async function readPhotoStore(): Promise<{
+  held: number;
+  bytes: number;
+  named: number;
+  unnamed: number;
+}> {
+  const ids = await photoIds();
+  let bytes = 0;
+  for (const id of ids) {
+    const picture = await getPhoto(id);
+    // Two bytes a character: the same UTF-16 arithmetic bytesOf uses, so the
+    // two figures on the panel can be added together honestly.
+    if (picture !== null) bytes += picture.length * 2;
+  }
+  const onRecord = new Set(collectImageRefs().map(r => r.url));
+  const named = ids.filter(id => onRecord.has(photoRef(id))).length;
+  return { held: ids.length, bytes, named, unnamed: ids.length - named };
+}
+
+/** What the photographs cost the disk, beside what the records cost the purse. */
+async function checkPhotographs(): Promise<SmokeCheck> {
+  const room = await readPhotoStore();
+  if (room.held === 0) {
+    return {
+      id: 'photographs',
+      label: 'Photograph store',
+      pass: true,
+      detail: 'Nothing filed by reference on this device — every photograph is on its record.',
+    };
+  }
+  const loose = room.unnamed > 0
+    ? ` ${room.unnamed} named by nothing, waiting on the next sweep.`
+    : '';
+  return {
+    id: 'photographs',
+    label: 'Photograph store',
+    pass: true,
+    detail: `${room.held} photographs, about ${formatBytes(room.bytes)} on the disk and off the purse.${loose}`,
+  };
+}
+
 function imageRefsOf(account: Account, state: AppState): ImageRef[] {
   const refs: ImageRef[] = [];
   const base = { accountId: account.id, accountName: account.name };
@@ -622,7 +694,13 @@ async function verifyRef(url: string, cache: Map<string, boolean | null>): Promi
   const held = cache.get(url);
   if (held !== undefined) return held;
   let verdict: boolean | null;
-  if (url.startsWith('data:')) {
+  if (isPhotoRef(url)) {
+    // A reference into the photograph store has a definite answer on this
+    // device: the picture is in the room or it is not. Without this branch it
+    // fell to the fetch() below, which throws on a scheme nothing serves, and
+    // every filed photograph was reported as "could not be verified".
+    verdict = (await getPhoto(url)) !== null;
+  } else if (url.startsWith('data:')) {
     verdict = /^data:image\/[a-z0-9.+-]+[;,]/i.test(url);
   } else if (/^https?:\/\//i.test(url)) {
     verdict = null;
@@ -658,7 +736,9 @@ export async function findOrphanImages(): Promise<OrphanReport> {
           ...ref,
           reason: ref.url.startsWith('data:')
             ? 'the photograph no longer reads as one'
-            : 'the file it names is not there',
+            : isPhotoRef(ref.url)
+              ? 'the photograph is no longer in this device\u2019s store'
+              : 'the file it names is not there',
         });
       } else if (verdicts[i] === null) {
         unverified += 1;
@@ -684,6 +764,11 @@ export function cleanOrphans(orphans: OrphanRef[]): number {
     const strip = <T extends { id: string; imageUrl?: string }>(kind: string) =>
       (entry: T): T => {
         if (!wanted.has(`${kind}:${entry.id}`) || !entry.imageUrl) return entry;
+        // Same rule as the strip tool: the record loses the reference and the
+        // room loses the blob. A condemned reference points at nothing by
+        // definition, so this is a no-op on the picture and a tidy-up of the
+        // cache — but it is the line that keeps the two halves honest.
+        void removePhoto(entry.imageUrl);
         cleared += 1;
         return { ...entry, imageUrl: '' } as T;
       };
@@ -915,6 +1000,7 @@ export async function runSmokeChecks(): Promise<{ checks: SmokeCheck[]; orphans:
     checkSeeds(),
     checkSession(),
     checkBudget(),
+    await checkPhotographs(),
   ];
   const report = await findOrphanImages();
   const unverifiedNote = report.unverified > 0 ? ` ${report.unverified} could not be verified from here.` : '';

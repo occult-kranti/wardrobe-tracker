@@ -7,6 +7,7 @@ import { aggregateCostPerWear, costPerWear, formatMoney, formatPerWear } from '@
 import { Button, Card, EmptyState, Masthead, SectionTitle, Stat, TableRail } from '../components/ui';
 import { Basting, GarmentPlate, LeaderLine, PlateEmptyLedger } from '../components/art';
 import AddItemModal from '../components/AddItemModal';
+import { photoSrc } from '../lib/photoStore';
 
 /**
  * LEDGER — the closet's accounts, set like magazine infographics.
@@ -51,10 +52,13 @@ const NO_LABEL = '\u0000no-label';
 
 /** Photo tile, or the drawn flat when there's no photo. The no-photo state is first-class. */
 function Thumb({ item, className = '' }: { item: ClothingItem; className?: string }) {
+  // A photograph may be a reference into this device's store: resolve once, and
+  // test the RESOLVED value, so an unanswerable one falls through to the flat.
+  const photo = photoSrc(item.imageUrl);
   return (
     <span className={`block bg-mat overflow-hidden rounded-[2px] ${className}`}>
-      {item.imageUrl ? (
-        <img src={item.imageUrl} alt="" loading="lazy" className="w-full h-full object-cover" />
+      {photo ? (
+        <img src={photo} alt="" loading="lazy" className="w-full h-full object-cover" />
       ) : (
         <GarmentPlate categoryId={item.category} color={item.color} name={item.name} />
       )}

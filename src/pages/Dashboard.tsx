@@ -13,6 +13,7 @@ import { showToast } from '../components/Toast';
 import AddItemModal from '../components/AddItemModal';
 import Tutorial from '../components/Tutorial';
 import { tourState } from '../lib/tutorial';
+import { photoSrc } from '../lib/photoStore';
 import { OUTDOORS, loadOutdoors, saveOutdoors, suitsOutdoors, type Outdoors } from '../lib/outdoors';
 
 /**
@@ -68,10 +69,13 @@ function dayOfYear(): number {
 
 /** Photo tile, or the drawn flat when there's no photo. The no-photo state is first-class. */
 function Thumb({ item, className = '' }: { item: ClothingItem; className?: string }) {
+  // A photograph may be a reference into this device's store: resolve once, and
+  // test the RESOLVED value, so an unanswerable one falls through to the flat.
+  const photo = photoSrc(item.imageUrl);
   return (
     <span className={`block bg-mat overflow-hidden rounded-[2px] ${className}`}>
-      {item.imageUrl ? (
-        <img src={item.imageUrl} alt="" className="w-full h-full object-cover" />
+      {photo ? (
+        <img src={photo} alt="" className="w-full h-full object-cover" />
       ) : (
         <GarmentPlate categoryId={item.category} color={item.color} name={item.name} />
       )}

@@ -10,6 +10,7 @@ import {
 } from '../components/icons';
 import { Basting, GarmentPlate, PlateEmptyLedger } from '../components/art';
 import { showToast } from '../components/Toast';
+import { photoSrc } from '../lib/photoStore';
 
 /**
  * CALENDAR — a week of the ledger, laid open.
@@ -86,10 +87,13 @@ function piecesPhrase(n: number): string {
 
 /** Photo tile, or the drawn flat when there's no photo. The no-photo state is first-class. */
 function Thumb({ item, className = '' }: { item: ClothingItem; className?: string }) {
+  // A photograph may be a reference into this device's store: resolve once, and
+  // test the RESOLVED value, so an unanswerable one falls through to the flat.
+  const photo = photoSrc(item.imageUrl);
   return (
     <span className={`block bg-mat overflow-hidden rounded-[2px] ${className}`}>
-      {item.imageUrl ? (
-        <img src={item.imageUrl} alt="" className="w-full h-full object-cover" />
+      {photo ? (
+        <img src={photo} alt="" className="w-full h-full object-cover" />
       ) : (
         <GarmentPlate categoryId={item.category} color={item.color} name={item.name} />
       )}

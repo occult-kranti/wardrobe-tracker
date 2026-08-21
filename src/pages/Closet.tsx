@@ -24,6 +24,7 @@ import { wearContext } from '@almari/shared/similarity';
 import { useSession } from '../context/SessionContext';
 import { offerPass, passRecipients, settlePass } from '../lib/household';
 import { costPerWear } from '@almari/shared/cost';
+import { photoSrc, resolvePhoto, storePhoto } from '../lib/photoStore';
 
 /**
  * Closet — the browse surface. Clothing photos are the hero; everything else is
@@ -85,14 +86,17 @@ function StatusMark({ status }: { status: LaundryStatus }) {
 
 /** The photo tile itself — flat mat, 4:5, nothing decorative behind it. */
 function GarmentTile({ item, className = '' }: { item: ClothingItem; className?: string }) {
+  // A photograph may be a reference into this device's store: resolve once, and
+  // test the RESOLVED value, so an unanswerable one falls through to the flat.
+  const photo = photoSrc(item.imageUrl);
   return (
     <div className={`bg-mat overflow-hidden border border-transparent ${className}`}>
       {/* V2: the tile is OPAQUE, so it is allowed to bend — a gentle lean
           toward the pointer, the one rotation the glass law permits. */}
       <Tilt max={3} className="w-full h-full">
-        {item.imageUrl ? (
+        {photo ? (
           <img
-            src={item.imageUrl}
+            src={photo}
             alt={item.name}
             // A 300-piece closet is 300 photographs. Decoding them all at once
             // is what makes a big wardrobe feel like a slow app in every rival
@@ -519,14 +523,20 @@ export default function Closet() {
               <div className="flex items-center gap-3 mt-3">
                 <Button
                   compact
-                  onClick={() => {
+                  onClick={async () => {
+                    // What arrives is a snapshot, holding its picture inline.
+                    // It is filed into THIS device's store on the way into the
+                    // record — the same journey a photograph chosen here takes.
+                    // resolvePhoto first, so a snapshot an older build wrote by
+                    // reference still becomes a picture rather than a pointer.
+                    const filed = await storePhoto(await resolvePhoto(offer.piece.imageUrl ?? ''));
                     addItem({
                       name: offer.piece.name,
                       category: offer.piece.category ?? settings.categories[0]?.id ?? 'tops',
                       color: offer.piece.color ?? PRESET_COLORS[0],
                       season: [],
                       occasion: [],
-                      imageUrl: offer.piece.imageUrl ?? '',
+                      imageUrl: filed,
                       source: 'inherited',
                       favorite: false,
                       provenance: offer.provenance,
@@ -929,13 +939,19 @@ export default function Closet() {
             <div className="mt-6 flex items-center gap-3">
               <Button
                 tone="primary"
-                onClick={() => {
+                onClick={async () => {
                   if (passTo) {
+                    // THE THIRD DOOR. This crosses into the community store,
+                    // which is a different key that other wardrobes read. The
+                    // snapshot carries the picture itself — a reference here
+                    // would die the moment this piece is swept, which is
+                    // exactly what a snapshot must not do.
+                    const snapshot = await resolvePhoto(retiring.imageUrl);
                     setCommunity(prev =>
                       offerPass(prev, activeId ?? '', active?.name ?? 'A wardrobe', passTo, {
                         itemId: retiring.id,
                         name: retiring.name,
-                        imageUrl: retiring.imageUrl,
+                        imageUrl: snapshot,
                         category: retiring.category,
                         color: retiring.color,
                       }, retiring.wearCount || undefined)

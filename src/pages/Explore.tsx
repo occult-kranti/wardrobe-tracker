@@ -19,6 +19,7 @@ import {
 } from '../lib/showing';
 import { formatLocalDate } from '@almari/shared/dates';
 import { IconClose, IconSearch } from '../components/icons';
+import { photoSrc } from '../lib/photoStore';
 import type { FeedPost } from '@almari/shared/types';
 
 /**
@@ -467,9 +468,9 @@ function PostTileLink({
     </span>
   ) : (
     <span className="block w-full bg-mat overflow-hidden shrink-0" style={{ aspectRatio: '4 / 5' }}>
-      {post.piece?.imageUrl ? (
+      {photoSrc(post.piece?.imageUrl) ? (
         <img
-          src={post.piece.imageUrl}
+          src={photoSrc(post.piece?.imageUrl)}
           alt={name}
           className="w-full h-full object-cover"
           loading="lazy"

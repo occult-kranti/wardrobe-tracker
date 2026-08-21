@@ -28,6 +28,7 @@ import {
 import { Basting, GarmentPlate, PlateEmptyWishlist } from '../components/art';
 import { IconCheck, IconClose, IconPlus } from '../components/icons';
 import { showToast } from '../components/Toast';
+import { photoSrc } from '../lib/photoStore';
 
 /**
  * WISHLIST — the list that cools.
@@ -89,10 +90,13 @@ function Thumb({
   item: Pick<ClothingItem, 'category' | 'color'> & { imageUrl?: string; name?: string };
   className?: string;
 }) {
+  // A photograph may be a reference into this device's store: resolve once, and
+  // test the RESOLVED value, so an unanswerable one falls through to the flat.
+  const photo = photoSrc(item.imageUrl);
   return (
     <span className={`block bg-mat overflow-hidden rounded-[2px] ${className}`}>
-      {item.imageUrl ? (
-        <img src={item.imageUrl} alt="" className="w-full h-full object-cover" />
+      {photo ? (
+        <img src={photo} alt="" className="w-full h-full object-cover" />
       ) : (
         <GarmentPlate categoryId={item.category} color={item.color} name={item.name} />
       )}
