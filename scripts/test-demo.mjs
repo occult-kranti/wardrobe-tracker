@@ -236,9 +236,14 @@ for (const persona of PERSONAS) {
       st.items.length < 30
       || ['worn', 'washing', 'needs-repair', 'at-tailor'].every(x => st.items.some(i => i.laundryStatus === x)),
       ['worn', 'washing', 'needs-repair', 'at-tailor'].map(x => st.items.filter(i => i.laundryStatus === x).length).join('/')],
+    // "Ready" follows the pool law of 2026-08-20: a worn piece is IN ROTATION
+    // (only washing/repair/tailor sit out), so the majority is counted the way
+    // the picker counts it. The old clean-only count sat one piece from the
+    // 60% floor on the cofounder's 22 and flipped with the calendar — CI
+    // caught it the first midnight after the pool change.
     [`${persona.id}: the closet is still mostly ready`,
-      st.items.filter(i => i.laundryStatus === 'clean').length >= st.items.length * 0.6,
-      st.items.filter(i => i.laundryStatus === 'clean').length],
+      st.items.filter(i => ['clean', 'worn'].includes(i.laundryStatus)).length >= st.items.length * 0.6,
+      st.items.filter(i => ['clean', 'worn'].includes(i.laundryStatus)).length],
     [`${persona.id}: nothing unworn queues for the wash`,
       st.items.filter(i => ['worn', 'washing'].includes(i.laundryStatus)).every(i => i.wearCount > 0), ''],
     // The honest ledger: an intention carries its stored flag, a wear never
