@@ -39,6 +39,9 @@ await build({
   entryPoints: {
     flags: fileURLToPath(new URL('../packages/shared/flags.ts', import.meta.url)),
     nav: fileURLToPath(new URL('../packages/shared/nav.ts', import.meta.url)),
+    // The guided addresses, for the seed in open() below — read from the app's
+    // own record so a new screen joins it without an edit here.
+    pageGuides: fileURLToPath(new URL('../src/lib/pageGuides.ts', import.meta.url)),
   },
   bundle: true,
   format: 'esm',
@@ -47,6 +50,7 @@ await build({
 });
 const { FEED_ENABLED } = await import(pathToFileURL(join(flagDir, 'flags.js')).href);
 const { barSlots } = await import(pathToFileURL(join(flagDir, 'nav.js')).href);
+const { guidedPaths } = await import(pathToFileURL(join(flagDir, 'pageGuides.js')).href);
 
 /** The Look Book's addresses on the web. Hidden together or shown together. */
 const LOOK_BOOK = ['/feed', '/explore'];
@@ -79,6 +83,34 @@ async function open(size) {
     deviceScaleFactor: 1,
   });
   const page = await ctx.newPage();
+
+  /* ---- THIS RUN IS A RETURNING READER (owner order 2026-08-21, docs/43 §9).
+
+     The first visit to a guided page now opens that page's guide sheet by
+     itself. That sheet is a scrim over the whole viewport, and this suite
+     walks sixteen routes clicking what a person would click — so without this
+     the route walks would meet a sheet on arrival and, worse, the checks that
+     still passed would be measuring the sheet instead of the page. The
+     `scrollsSideways`, rail and rupee assertions below are about what the
+     PAGE does; they must not be quietly answered by an overlay.
+
+     So every context declares its guided addresses already read, before the
+     first navigation, from the app's own guidedPaths(). What a FIRST-time
+     reader meets is asserted in scripts/test-features.mjs, in the block that
+     arms itself out of the identical seed there — never assumed, and never
+     asserted twice in two suites that could drift.
+
+     A wardrobe the tour will never be offered on now settles the tour flag on
+     its first Today (Dashboard.tsx), which is exactly the state signIn() puts
+     this suite in — so without the seed every route below would pop. ---- */
+  await ctx.addInitScript(paths => {
+    try {
+      window.localStorage.setItem('toile-guides', JSON.stringify(paths));
+    } catch {
+      /* storage that will not write cannot pop either — guideSeen reads true */
+    }
+  }, guidedPaths());
+
   const errors = [];
   page.on('pageerror', e => errors.push(String(e).split('\n')[0].slice(0, 140)));
   // A browser probes /favicon.ico on its own, and a static host answers 404.

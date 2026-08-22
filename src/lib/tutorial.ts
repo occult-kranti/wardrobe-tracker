@@ -159,3 +159,61 @@ export function walkthroughSeen(key: string): boolean {
 export function markWalkthroughSeen(key: string): void {
   mark(WALKTHROUGHS_KEY, key);
 }
+
+/**
+ * THE FIRST-VISIT POP-UP — the owner's order of 2026-08-21, seated on the two
+ * marks above rather than on a fourth key of its own (docs/43 §9).
+ *
+ * The house law was "an unopened guide waits, it does not ask", written into
+ * pageGuides.ts and into PageGuide's own comment block. The law's author has
+ * amended it: on the FIRST visit to a guided screen the guide sheet opens by
+ * itself, once, and then never again. This function is the whole of the
+ * decision — three refusals and a question — so that the component below it
+ * has no policy in it at all and the suite can read the policy without a
+ * browser.
+ *
+ * A DETAIL SCREEN IS NOT A GUIDED PAGE. guideKeyFor falls back to the parent —
+ * /chats/abc reads the Conversations guide, /profile/:id reads A profile — and
+ * that fallback is right for the control the reader presses, which is the only
+ * thing it was written for. It is wrong here twice over: a sheet titled
+ * "Conversations" over one particular conversation explains the wrong screen,
+ * and it would spend /chats's single showing before /chats had ever been
+ * visited. So the pop-up asks for an EXACT address, and a detail screen keeps
+ * the quiet control and the dot it always had.
+ *
+ * THE DOOR IS EXCLUDED. /open is where a stranger arrives, and the arrival is
+ * not the moment: a sheet over the wardrobes on the first screen after the
+ * door is the coach-mark wall this app was built against. Note what the
+ * exclusion actually covers, because it is not quite what it sounds like: the
+ * stranger's door is <Door /> in App.tsx's DoorRoutes, which stands OUTSIDE
+ * the Layout shell and therefore mounts no PageGuide at all — it could never
+ * have popped. What this line silences is the signed-in Wardrobes switcher at
+ * the same address, which is the screen a reader goes to in order to switch
+ * wardrobes and where a sheet is simply in the way. Both readings of "the
+ * door" end up quiet; only one of them needed a rule.
+ *
+ * THE TOUR OUTRANKS IT. While the one-time tour is unseen ('new') or waiting
+ * on a replay ('again'), nothing pops anywhere — the pop-up defers to the NEXT
+ * visit rather than stacking a second sheet on the first. Note the consequence,
+ * because it is a real fact about this build and not an oversight: the tour's
+ * flag only becomes 'done' when the tour sheet itself closes, and the tour is
+ * only offered on a wardrobe started today and still empty. A device that
+ * opens a SAMPLE wardrobe, or imports a record, is never offered the tour, so
+ * its flag stays 'new' and no guide ever pops for it until the tour is asked
+ * for by name in Settings. That is the ruling's letter — "any page while the
+ * tour is unseen" — and settling the flag on the tour's behalf would mean
+ * editing the tour's own decision, which lives in Dashboard.tsx.
+ *
+ * AND STORAGE THAT WILL NOT ANSWER NEVER POPS: tourState() reads 'done' and
+ * guideSeen() reads true when localStorage throws, and the two silences point
+ * opposite ways on purpose — the second one wins here, which is the direction
+ * that never nags.
+ */
+const NEVER_POPS: string[] = ['/open'];
+
+export function guidePops(path: string, key: string): boolean {
+  if (key !== path) return false;
+  if (NEVER_POPS.includes(key)) return false;
+  if (tourState() !== 'done') return false;
+  return !guideSeen(key);
+}

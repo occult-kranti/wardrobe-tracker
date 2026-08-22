@@ -45,6 +45,90 @@ const page = await ctx.newPage();
 const errors = [];
 page.on('pageerror', e => errors.push(String(e).split('\n')[0].slice(0, 140)));
 
+/* ============ the first-visit pop-up, held off the rest of this run ============
+
+   The owner's order of 2026-08-21 (docs/43 §9): the FIRST visit to a guided
+   screen opens that screen's guide sheet by itself, once. Everything below this
+   line was written against the law it amends, and a sheet that lands over the
+   closet on arrival is a scrim across every control the next fifteen hundred
+   lines press — so the run declares itself a RETURNING reader by marking every
+   guided address read before the first navigation, and the one block that is
+   ABOUT the pop-up arms itself out of this by setting 'probe-popups'.
+
+   Seeded rather than patched into forty goto sites, and seeded from the app's
+   own guidedPaths() rather than a list restated here, so a new screen joins the
+   record and this seed in one commit. What it costs is small and stated: the
+   checks below now prove what a returning reader meets — including "the closet
+   opens with nothing up" — and the block at the foot of this file proves what a
+   first-time one does. Both readings are asserted; neither is assumed. */
+const guideDir = mkdtempSync(join(tmpdir(), 'features-guides-'));
+await build({
+  alias: sharedAliases(),
+  entryPoints: [fileURLToPath(new URL('../src/lib/pageGuides.ts', import.meta.url))],
+  bundle: true,
+  format: 'esm',
+  outfile: join(guideDir, 'pageGuides.mjs'),
+  logLevel: 'error',
+});
+const { guideFor: guideRecord, guidedPaths: allGuidedPaths } =
+  await import(pathToFileURL(join(guideDir, 'pageGuides.mjs')).href);
+
+await ctx.addInitScript(paths => {
+  try {
+    if (window.localStorage.getItem('probe-popups') === 'on') return;
+    window.localStorage.setItem('toile-guides', JSON.stringify(paths));
+  } catch {
+    /* a run that cannot write storage cannot pop either — guideSeen reads true */
+  }
+}, allGuidedPaths());
+
+/* The house's voice, made countable — inert until the block at the foot of this
+   file asks for it, so nothing else in this run is measured through a stubbed
+   AudioContext. Every oscillator records the frequency it is STARTED at, which
+   is the one thing that tells the three sounds apart: the thock begins at
+   290 Hz, the press-tick at 1700, and the chime sets .value rather than
+   calling setValueAtTime and so is never counted. */
+await ctx.addInitScript(() => {
+  try {
+    if (window.localStorage.getItem('probe-audio') !== 'on') return;
+  } catch {
+    return;
+  }
+  window.__sounds = [];
+  const node = { connect: () => node };
+  const silentGain = () => ({
+    gain: { setValueAtTime: () => {}, exponentialRampToValueAtTime: () => {}, value: 0 },
+    connect: () => node,
+  });
+  window.AudioContext = class {
+    constructor() {
+      this.currentTime = 0;
+      this.state = 'running';
+      this.destination = node;
+    }
+    resume() {}
+    createOscillator() {
+      return {
+        type: '',
+        frequency: {
+          value: 0,
+          setValueAtTime: v => window.__sounds.push(v),
+          exponentialRampToValueAtTime: () => {},
+        },
+        connect: () => node,
+        start: () => {},
+        stop: () => {},
+      };
+    }
+    createGain() {
+      return silentGain();
+    }
+    createBiquadFilter() {
+      return { type: '', frequency: { value: 0 }, connect: () => node };
+    }
+  };
+});
+
 /**
  * The ACTIVE wardrobe's storage key.
  *
@@ -2049,6 +2133,446 @@ check('a service worker is registered, so the app survives no signal',
     await page.waitForTimeout(500);
   }
 }
+
+/* ============ the first-visit pop-up ============
+
+   THE OWNER'S ORDER, 2026-08-21, and the lead's reconciling ruling under it
+   (docs/43 §9). The house law was that a guide never opens itself; its author
+   has amended it. On the FIRST visit to a guided page the guide sheet opens by
+   itself, once — the shipped card, the shipped way into the walkthrough, and a
+   dismiss. Answering it marks the screen read and it never opens again.
+
+   Four refusals carry the whole of the exclusions, and each is asserted below
+   rather than read off the source: the door never pops, a detail screen never
+   pops its parent's guide, nothing pops while the one-time tour is unseen, and
+   nothing pops on a screen already read.
+
+   This block arms itself out of the seed at the head of this file by writing
+   'probe-popups', and then states the two marks it wants for each check. Every
+   "nothing opened" assertion here also proves the CONTROL is standing — an
+   empty screen would satisfy a dialog count of zero for the wrong reason, and
+   that is exactly the shape a broken PageGuide takes. */
+{
+  await page.evaluate(() => window.localStorage.setItem('probe-popups', 'on'));
+
+  /** The two marks, stated outright. `null` removes the key altogether. */
+  const marks = async (guides, tour) => page.evaluate(state => {
+    window.localStorage.setItem('probe-popups', 'on');
+    if (state.guides === null) window.localStorage.removeItem('toile-guides');
+    else window.localStorage.setItem('toile-guides', JSON.stringify(state.guides));
+    if (state.tour === null) window.localStorage.removeItem('toile-tour');
+    else window.localStorage.setItem('toile-tour', state.tour);
+  }, { guides, tour });
+
+  /**
+   * A VISIT — which has to be a real one.
+   *
+   * page.goto to the URL the browser is already on is a no-op in Chromium, so
+   * the document is never rebuilt, PageGuide never remounts and nothing can
+   * pop. Measured: every check that re-visited the address it was already at
+   * read zero dialogs and passed for the wrong reason. Re-visiting the same
+   * screen is half of what this block is about, so a repeat address reloads.
+   */
+  const go = async path => {
+    const target = `${ORIGIN}/#${path}`;
+    if (page.url() === target) await page.reload({ waitUntil: 'domcontentloaded' });
+    else await page.goto(target, { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(560);
+    return (await page.evaluate(() => location.hash)).replace(/^#/, '').split('?')[0];
+  };
+
+  /** What is up, and whether the quiet control is still where it always was. */
+  const sheet = () => page.evaluate(() => {
+    const d = document.querySelector('[role="dialog"]');
+    return {
+      count: document.querySelectorAll('[role="dialog"]').length,
+      titles: [...document.querySelectorAll('[role="dialog"]')]
+        .map(el => (el.querySelector('h2')?.textContent ?? '').replace(/\s+/g, ' ').trim()),
+      title: (d?.querySelector('h2')?.textContent ?? '').replace(/\s+/g, ' ').trim(),
+      text: (d?.textContent ?? '').replace(/\s+/g, ' ').trim(),
+      walk: [...(d?.querySelectorAll('button') ?? [])]
+        .some(b => b.textContent.trim() === 'Walk me through it'),
+      control: [...document.querySelectorAll('button')]
+        .some(b => /what is this page/i.test(b.textContent ?? '')),
+    };
+  });
+
+  const guidesKey = () => page.evaluate(() => {
+    try { return JSON.parse(window.localStorage.getItem('toile-guides') || '[]'); }
+    catch { return null; }
+  });
+
+  const flat = s => String(s).replace(/\s+/g, ' ').trim();
+
+  /* ---- 1 · IT OPENS, AND IT IS THIS SCREEN'S OWN CARD. ---- */
+  {
+    await marks([], 'done');
+    await go('/closet');
+    const up = await sheet();
+    const guide = guideRecord('/closet');
+    check('a first visit to the closet opens its guide by itself',
+      up.count === 1, `${up.count} dialogs`);
+    // Read off pageGuides.ts, never restated here: a reworded guide must not be
+    // able to pass this by accident, and must not fail it either.
+    check("and the card is the closet's own — its title, its lede, a feature line",
+      up.title === guide.title
+        && up.text.includes(flat(guide.lede))
+        && guide.doing.every(line => up.text.includes(flat(line))),
+      `titled "${up.title}" of "${guide.title}"`);
+  }
+
+  /* ---- 2 · ESCAPE CLOSES IT, AND DISMISSAL IS WHAT MARKS IT. ---- */
+  {
+    // The standing card is read first, so this can never pass for the reason a
+    // card that never opened would give it.
+    const standing = await sheet();
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(320);
+    const shut = await sheet();
+    check('Escape closes the popped card',
+      standing.count === 1 && shut.count === 0 && shut.control,
+      `${standing.count} -> ${shut.count}`);
+
+    const written = await guidesKey();
+    check('dismissing it marks the screen read, under the shipped guides key',
+      Array.isArray(written) && written.includes('/closet'), JSON.stringify(written));
+
+    const back = await go('/closet');
+    const second = await sheet();
+    check('and a second visit opens with nothing up — it never asks twice',
+      back === '/closet' && second.count === 0 && second.control, `${second.count} dialogs`);
+
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(700);
+    const reloaded = await sheet();
+    check('the mark survives a reload — a screen read stays read',
+      reloaded.count === 0 && reloaded.control, `${reloaded.count} dialogs`);
+  }
+
+  /* ---- 3 · WALKING AWAY UNANSWERED DOES NOT SPEND THE SHOWING.
+
+     The one place in the house where opening is NOT reading. A sheet you asked
+     for has been read by the act of asking; a sheet that opened itself has been
+     read only once you have answered it. Marking on open would mean a stray
+     back-gesture a quarter-second after arriving burns the single showing this
+     screen ever gets and the reader never learns there was anything to read. ---- */
+  {
+    await marks([], 'done');
+    const first = await (async () => { await go('/outfits'); return sheet(); })();
+    await go('/calendar');
+    const revisit = await (async () => { await go('/outfits'); return sheet(); })();
+    const title = guideRecord('/outfits').title;
+    check('walking away without answering does not spend the one showing',
+      first.count === 1 && first.title === title
+        && revisit.count === 1 && revisit.title === title,
+      `${first.count} then ${revisit.count}`);
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(260);
+  }
+
+  /* ---- 4 · THE WALKTHROUGH IS REACHABLE FROM THE POPPED CARD. ---- */
+  {
+    await marks([], 'done');
+    await go('/closet');
+    const up = await sheet();
+    check('the popped card carries the shipped way into the walkthrough',
+      up.count === 1 && up.walk, '');
+
+    await page.getByRole('button', { name: 'Walk me through it', exact: true }).click();
+    await page.waitForTimeout(440);
+    const walking = await page.evaluate(() => ({
+      card: document.querySelectorAll('[data-walkthrough="card"]').length,
+      scrim: document.querySelectorAll('.modal-overlay').length,
+    }));
+    check('and it starts the steps, leaving no sheet and no scrim behind',
+      walking.card === 1 && walking.scrim === 0,
+      `${walking.card} cards, ${walking.scrim} scrims`);
+
+    const written = await guidesKey();
+    check('starting the walkthrough settles the guide mark too',
+      Array.isArray(written) && written.includes('/closet'), JSON.stringify(written));
+
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(300);
+    const revisit = await (async () => { await go('/closet'); return sheet(); })();
+    check('and a screen answered that way does not pop again either',
+      revisit.count === 0 && revisit.control, `${revisit.count} dialogs`);
+  }
+
+  /* ---- 5 · A DETAIL SCREEN IS NOT A GUIDED PAGE.
+
+     guideKeyFor falls back to the parent, which is right for the control the
+     reader presses and wrong for a sheet that opens itself: a card titled "A
+     profile" over one particular profile explains the wrong screen, and it
+     would spend /profile's single showing before /profile had been visited. ---- */
+  {
+    await marks([], 'done');
+    const at = await go('/profile/nobody');
+    const detail = await sheet();
+    check("a detail screen does not pop its parent's guide",
+      at === '/profile/nobody' && detail.count === 0 && detail.control,
+      `${detail.count} dialogs at ${at}`);
+
+    const parent = await (async () => { await go('/profile'); return sheet(); })();
+    check('and the parent still has the showing the detail screen did not spend',
+      parent.count === 1 && parent.title === guideRecord('/profile').title,
+      `titled "${parent.title}"`);
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(260);
+  }
+
+  /* ---- 6 · REDUCED MOTION. The card is not animated in; it simply is. ---- */
+  {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await marks([], 'done');
+    await go('/ledger');
+    const still = await page.evaluate(() => {
+      const ms = el => {
+        if (!el) return null;
+        const cs = getComputedStyle(el);
+        if (cs.animationName === 'none') return 0;
+        return Math.max(...cs.animationDuration.split(',')
+          .map(d => parseFloat(d) * (/ms/.test(d) ? 1 : 1000)));
+      };
+      const d = document.querySelector('[role="dialog"]');
+      return { up: !!d, sheet: ms(d), scrim: ms(document.querySelector('.modal-overlay')) };
+    });
+    check('under reduced motion the popped card simply is — no entrance animation',
+      still.up && still.sheet !== null && still.sheet <= 1 && still.scrim <= 1,
+      `sheet ${still.sheet}ms, scrim ${still.scrim}ms`);
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(240);
+    await page.emulateMedia({ reducedMotion: null });
+  }
+
+  /* ---- 7 · THE DOOR NEVER POPS. ---- */
+  {
+    await marks([], 'done');
+    const at = await go('/open');
+    const door = await sheet();
+    check('the door never pops — the wardrobes open with nothing over them',
+      at === '/open' && door.count === 0 && door.control,
+      `${door.count} dialogs at ${at}`);
+  }
+
+  /* ---- 8 · THE TOUR OUTRANKS IT, AND IT DEFERS TO THE NEXT VISIT.
+
+     Run last, because it starts a blank wardrobe: a wardrobe made today and
+     still empty is the one state the four-card tour is offered in, which is the
+     only place two sheets could ever have stacked. ---- */
+  {
+    await marks([], null);
+    await page.goto(`${ORIGIN}/#/open/new`, { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(620);
+    const skip = page.getByRole('button', { name: /continue without an account|^continue$/i }).first();
+    if (await skip.count()) { await skip.click(); await page.waitForTimeout(400); }
+    // Re-stated on the doorstep itself, immediately before the wardrobe is
+    // made. Setting the two marks a navigation earlier was not enough: the
+    // arrival at Today read '/' as already marked and the check passed for the
+    // wrong reason — it read one sheet because only one was ever wanted, not
+    // because the tour had refused the other. Measured against a build with the
+    // gate removed: two sheets stack, "Begin with one piece." and "Today".
+    await marks([], null);
+    const start = page.getByRole('button', { name: /start it/i }).first();
+    if (await start.count()) { await start.click(); await page.waitForTimeout(1100); }
+
+    const stacked = await sheet();
+    check('with the tour unseen, the tour is what is up — no guide stacks on it',
+      stacked.count === 1 && /begin with one piece/i.test(stacked.title),
+      stacked.titles.join(' + ') || 'nothing up');
+
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(400);
+    const settled = await sheet();
+    check('and dismissing the tour does not hand the same visit to the guide',
+      settled.count === 0, `${settled.count} dialogs`);
+
+    const next = await (async () => { await go('/'); return sheet(); })();
+    check("it defers to the NEXT visit — Today's own card, one tour later",
+      next.count === 1 && next.title === guideRecord('/').title,
+      `titled "${next.title}"`);
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(260);
+  }
+
+  /* ---- 9 · THE TEACHING, ON DEMAND (owner order 2026-08-21).
+
+     The tour used to be reachable from Settings alone. Today now carries the
+     same door, quietly, at the foot — and a door that only works the first time
+     is not a door, so this asserts it against a flag that already says 'done'.
+     Run on a stocked wardrobe, because the hero this must not displace only
+     exists once there is something to log. ---- */
+  {
+    await marks(allGuidedPaths(), 'done');
+    await go('/open');
+    const meher = page.getByRole('button', { name: /meher/i }).first();
+    if (await meher.count()) { await meher.click(); await page.waitForTimeout(900); }
+    await go('/');
+
+    const control = page.getByRole('button', { name: 'Show me around', exact: true });
+    check('Today carries a way back into the tour, in the house voice',
+      await control.count() === 1, `${await control.count()} found`);
+
+    const geometry = await page.evaluate(() => {
+      const buttons = [...document.querySelectorAll('main button')];
+      const box = el => {
+        if (!el) return null;
+        const r = el.getBoundingClientRect();
+        return { top: Math.round(r.top + window.scrollY), h: Math.round(r.height) };
+      };
+      return {
+        control: box(buttons.find(b => b.textContent.trim() === 'Show me around')),
+        hero: box(buttons.find(b => /^(log today's wear|log another)$/i.test(b.textContent.trim()))),
+        // Exactly one primary per view, and Today spends it on the hero. The
+        // new control wearing the ink fill or the accent fill would take it.
+        loud: buttons.filter(b => b.textContent.trim() === 'Show me around')
+          .some(b => /bg-ink|bg-accent-fill/.test(b.className)),
+        vh: window.innerHeight,
+      };
+    });
+    check('the day keeps the first viewport — the control sits under it, not in front of it',
+      !!geometry.hero && !!geometry.control
+        && geometry.hero.top + geometry.hero.h <= geometry.vh
+        && geometry.control.top > geometry.hero.top,
+      `hero ${geometry.hero?.top}+${geometry.hero?.h} of ${geometry.vh}, control ${geometry.control?.top}`);
+    check('and it is quiet and tappable — tertiary, never the day’s one primary',
+      !geometry.loud && !!geometry.control && geometry.control.h >= 44,
+      `${geometry.control?.h}px tall`);
+
+    const flagBefore = await page.evaluate(() => window.localStorage.getItem('toile-tour'));
+    await control.click();
+    await page.waitForTimeout(460);
+    const opened = await sheet();
+    check('pressing it opens the tour even though the tour has been seen',
+      flagBefore === 'done' && opened.count === 1 && /begin with one piece/i.test(opened.title),
+      `flag ${flagBefore}, titled "${opened.title}"`);
+
+    await page.getByRole('button', { name: 'Next', exact: true }).first().click();
+    await page.waitForTimeout(320);
+    const stepped = await sheet();
+
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(360);
+    const quiet = await page.evaluate(() => ({
+      dialogs: document.querySelectorAll('[role="dialog"]').length,
+      scrims: document.querySelectorAll('.modal-overlay').length,
+      locked: document.body.style.overflow,
+      control: [...document.querySelectorAll('main button')]
+        .filter(b => b.textContent.trim() === 'Show me around').length,
+    }));
+    check('closing it returns a quiet Today — no sheet, no scrim, nothing held',
+      quiet.dialogs === 0 && quiet.scrims === 0 && quiet.locked !== 'hidden' && quiet.control === 1,
+      `${quiet.dialogs} dialogs, ${quiet.scrims} scrims, overflow "${quiet.locked}"`);
+
+    // A replay asked for by name begins at the beginning. The sheet outlives
+    // its own closing — Today mounts it once and only toggles it — so without
+    // the reset a reader who left at card two is handed card two again.
+    await control.click();
+    await page.waitForTimeout(460);
+    const rerun = await sheet();
+    check('and asking again begins at the first card, not where the last showing stopped',
+      /2 of 4/i.test(stepped.text) && /1 of 4/i.test(rerun.text),
+      `left at "${stepped.text.slice(0, 8)}", reopened at "${rerun.text.slice(0, 8)}"`);
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(260);
+  }
+
+  /* ---- 10 · THE SAMPLE WALKER (lead's ruling, 2026-08-21; docs/43 §9.6).
+
+     The gap this closes: markTourDone() used to be written only when the tour
+     sheet itself closed, and the tour is only ever offered on a wardrobe
+     started today and still empty. Open a SAMPLE and the sheet never appears,
+     the flag stays 'new' for the life of the device, and the pop-up — which
+     defers to an unseen tour — never fired for anybody who walked in that way.
+     Which is most alpha testers' first minutes. The wardrobe that will never be
+     offered the tour now settles the flag on its first Today. ---- */
+  {
+    await marks([], null);
+    await go('/open');
+    const meher = page.getByRole('button', { name: /meher/i }).first();
+    if (await meher.count()) { await meher.click(); await page.waitForTimeout(1100); }
+    // Opening a wardrobe from the switcher leaves you on the switcher. Today is
+    // where the tour's decision is made, so Today is where this has to stand.
+    await go('/');
+
+    const flag = await page.evaluate(() => window.localStorage.getItem('toile-tour'));
+    check('a wardrobe the tour will never be offered on settles the flag on arrival',
+      flag === 'done', `toile-tour ${flag}`);
+
+    // Settled in the initialiser, not an effect, so it is recorded before the
+    // layout's PageGuide reads it in the same commit — Today pops on arrival
+    // rather than making the sample walker come back for it.
+    const today = await sheet();
+    check("and the sample walker's own Today pops on arrival, not a visit later",
+      today.count === 1 && today.title === guideRecord('/').title,
+      today.titles.join(' + ') || 'nothing up');
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(320);
+
+    const closet = await (async () => { await go('/closet'); return sheet(); })();
+    check("a sample wardrobe's first closet visit pops the guide",
+      closet.count === 1 && closet.title === guideRecord('/closet').title,
+      closet.titles.join(' + ') || 'nothing up');
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(260);
+  }
+
+  /* ---- 11 · A SHEET THAT INVITED ITSELF LANDS SILENTLY.
+
+     src/lib/sound.ts states the contract: "The context can only start on a user
+     gesture (autoplay law), which every entry point here already is." A sheet
+     that opens on arrival is the first entry point in the house that is not a
+     gesture, and a thock the reader did not ask for, on fifteen screens in a
+     row, is not this house's voice. Counted rather than taken on trust: the
+     stub at the head of this file records every frequency an oscillator starts
+     at, and the thock is the only sound in the app that begins at 290 Hz (tick
+     begins at 1700; the chime writes .value and is not counted at all). ---- */
+  {
+    await page.evaluate(() => window.localStorage.setItem('probe-audio', 'on'));
+    await marks([], 'done');
+
+    /* A REAL DOCUMENT LOAD, and this is load-bearing. addInitScript re-runs
+       only when a document is built; a hash change is a same-document
+       navigation, so every goto in this file between two app addresses leaves
+       the existing document — and the existing globals — in place. Measured:
+       the stub read its own flag as null through four hash navigations after
+       the flag was written. The guides seed above never noticed because
+       localStorage outlives the document and it only ever needed to run once.
+
+       A reload is also a perfectly good arrival: the guide for wherever we
+       stand pops on it, unpressed, which is exactly the showing to count. */
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(800);
+    const arrival = await page.evaluate(() => ({
+      up: document.querySelectorAll('[role="dialog"]').length,
+      thocks: (window.__sounds ?? []).filter(v => v === 290).length,
+      heard: (window.__sounds ?? []).length,
+      stubbed: Array.isArray(window.__sounds),
+    }));
+    check('the guide sheet that opened itself lands silently — no thock on arrival',
+      arrival.stubbed && arrival.up === 1 && arrival.thocks === 0,
+      `${arrival.thocks} thocks of ${arrival.heard} sounds, stub ${arrival.stubbed}`);
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(300);
+
+    // The same sheet, asked for by name, keeps the sound every sheet in the
+    // house has. This is the half that proves `quiet` is a prop and not a
+    // deletion — and it counts from a stub that has already recorded one
+    // uninvited showing at zero.
+    await page.getByRole('button', { name: /what is this page/i }).first().click();
+    await page.waitForTimeout(400);
+    const invited = await page.evaluate(() => ({
+      up: document.querySelectorAll('[role="dialog"]').length,
+      thocks: (window.__sounds ?? []).filter(v => v === 290).length,
+    }));
+    check('and the same sheet, asked for, still lands with the thock every sheet has',
+      invited.up === 1 && invited.thocks === 1, `${invited.thocks} thocks`);
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(240);
+    await page.evaluate(() => window.localStorage.setItem('probe-audio', 'off'));
+  }
+}
+
 
 check('no errors anywhere in this run', errors.length === 0, errors.slice(0, 2).join(' | '));
 

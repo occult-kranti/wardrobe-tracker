@@ -623,3 +623,168 @@ Waves 2 onward are copy waves against a mechanism that already passes its suite:
 one record entry, one anchor row in check 4, no component change. The marketing
 seat's ranking sets 1–3 and this ruling keeps it — the daily habit, the copy they
 keep, the stocked closet, in that order.
+
+---
+
+## 9 · Amendment, 2026-08-21 — the first-visit pop-up, and Today's own door
+
+**The owner's order.** Tutorial pop-ups on each page, summarizing and showing
+each feature. This **amends the house's never-auto-open law by the law's own
+author** — the rule written into `src/lib/pageGuides.ts` ("an unread guide
+waits, it does not ask") and into `PageGuide`'s comment block. The rule is
+struck where it is overturned rather than left standing over code that
+contradicts it.
+
+**The lead's reconciling ruling, binding.** On the **first** visit to a guided
+page, that page's guide surface opens by itself, **once**: the shipped
+`pageGuides` card — title, lede, the `doing[]` feature list, the house word
+where the screen has one — plus the shipped "Walk me through it" entry into the
+§1 walkthrough, plus a dismiss. Dismissal or starting the walkthrough marks it
+seen; it never opens again.
+
+### 9.1 The four refusals
+
+All of the policy is `guidePops(path, key)` in `src/lib/tutorial.ts`, so the
+component carries none and the suite can read the rule without a browser. In
+order:
+
+1. **An exact address.** `guideKeyFor` falls back to a parent — `/chats/abc`
+   reads Conversations, `/profile/:id` reads A profile — which is right for the
+   control a reader presses and wrong for a sheet that opens itself: a card
+   titled "A profile" over one particular profile explains the wrong screen, and
+   it would spend `/profile`'s single showing before `/profile` had been
+   visited. A detail screen keeps the quiet control and the dot, and pops
+   nothing.
+2. **The door is exempt.** `/open` — a stranger's arrival is not the moment.
+   Note what this covers: the stranger's door is `<Door />` in `App.tsx`'s
+   `DoorRoutes`, which stands **outside** the Layout shell and mounts no
+   `PageGuide` at all, so it could never have popped. The rule silences the
+   signed-in Wardrobes switcher at the same address, which is the screen a
+   reader opens *in order to* switch wardrobes and where a sheet is in the way.
+3. **The tour outranks it.** While the one-time tour is unseen (`'new'`) or
+   waiting on a replay (`'again'`), nothing pops anywhere: the pop-up defers to
+   the **next** visit rather than stacking a second sheet on the first. Measured
+   against a build with this refusal removed, two sheets stack on a new
+   wardrobe's first Today — "Begin with one piece." and "Today".
+4. **Once.** `guideSeen(key)`, the shipped key, unchanged.
+
+### 9.2 Marked on dismissal, not on open
+
+The one place in the house where the two moments come apart, and it is
+deliberate. A sheet you asked for has been read by the act of asking — `show()`
+still marks on open, and the dot still goes out there. A sheet that opened
+itself has been read only once you have **answered** it. Marking an uninvited
+sheet on open would mean a stray back-gesture a quarter-second after arriving
+burns the single showing that screen ever gets, and the reader never learns
+there was anything to read. Left unanswered, the screen simply pops again next
+visit; the dot stays lit meanwhile, so the two states never disagree.
+
+### 9.3 Motion, focus, and the exits
+
+No entrance beyond the Modal's own. `src/index.css` already collapses every
+animation to 0.01 ms under `prefers-reduced-motion`, so under reduced motion the
+card is not animated in — it simply is, measured at 0.01 ms on both sheet and
+scrim. The sheet is decided in a `useState` initialiser rather than an effect,
+so it is open on the first frame: no flash of the page and then a sheet over it.
+Focus is held no harder than the guide sheet already held it — the same `Modal`
+primitive, the same trap, the same restore — and Escape, the scrim and Close all
+close it and all mark it.
+
+### 9.4 Today's own door — "Show me around"
+
+Same wave, same order. The tour was reachable from Settings alone, three taps
+and a page away from the screen it runs on: a fair place to keep it, a poor
+place to find it. Today now carries the same door at its foot, tertiary, after
+the last card in both of Today's branches — brand rule 3 gives a view one
+primary and Today spends it on the log-wear hero, always. It opens the tour
+whatever the flag says; a replay asked for by name is the one thing the
+once-only rule was never meant to refuse.
+
+It does **not** duplicate the page guide. Layout hangs "What is this page?"
+immediately below it on every screen, so the two doors stand side by side and
+plainly — the tour, which is about the app; the guide, which is about this page.
+
+`Tutorial` gained one hook: every showing starts at card one. The sheet is
+mounted for the whole of Today's life and only toggled by `open`, so `beat`
+outlived a closing — harmless while the sheet could open once, and a reader
+handed "3 of 4" with no way back to the first two as soon as it can be asked for
+again.
+
+### 9.5 What this cost the suites
+
+`scripts/test-features.mjs` declares itself a **returning** reader before its
+first navigation — one `addInitScript` seeding `toile-guides` from the app's own
+`guidedPaths()` — because everything written before this amendment was written
+against the law it amends, and a sheet landing on arrival is a scrim across
+every control the run presses. The block at the foot of that file arms itself
+out of the seed (`probe-popups`) and is the only place the pop-up is exercised.
+So: the older checks prove what a returning reader meets, including "the closet
+opens with nothing up"; the new block proves what a first-time one meets. Both
+readings are asserted, neither assumed.
+
+`test-flows` is untouched and unaffected: it only ever opens sample wardrobes,
+where the tour is never offered, so its flag never reaches `'done'` and nothing
+pops across its route walks.
+
+### 9.6 The consequence this build accepts, stated out loud
+
+`markTourDone()` is written **only** when the tour sheet itself closes, and the
+tour is only offered on a wardrobe started today and still empty. A device that
+opens a **sample** wardrobe, or imports a record, is never offered the tour — so
+its flag stays `'new'`, refusal 3 holds, and **no guide ever pops for it** until
+the tour is asked for by name (Settings' "Replay the tour", or Today's "Show me
+around", both of which write `'done'` on close).
+
+**RULED, same day: the gap closes.** A wardrobe on which the tour will *never*
+be offered settles the flag at the moment that decision is made — the
+`tourOpen` initialiser in `src/pages/Dashboard.tsx`, where `offered` is computed
+— so sample walkers get the pop-ups from their first Today onward. In the
+initialiser rather than an effect, so the flag is recorded before Layout's
+`PageGuide` reads it in the same commit: Layout renders `<Outlet />` before
+`<PageGuide />`, so a sample walker's Today pops its own guide on arrival rather
+than making them come back for it.
+
+**What that costs, plainly.** The flag is one fact about the device, not one per
+wardrobe. A device that opens a sample first and starts its own wardrobe later
+will not be offered the tour on that wardrobe's first Today. Two doors remain,
+both one tap: Today's "Show me around" (§9.4) and Settings' "Replay the tour".
+
+**And the blast radius, owned rather than predicted.** `scripts/test-flows.mjs`
+now carries the same seed as `test-features` — `ctx.addInitScript` marking
+`guidedPaths()` read, inside `open()`, so every context has it before its first
+navigation. Without it that suite dies on a blocked click, verified by
+disarming the seed: the pop-up is a full-viewport scrim and the route walks
+click through it. With it, the fifteen `scrollsSideways`, rail and rupee
+assertions stand untouched and keep measuring the page rather than an overlay.
+
+---
+
+## 9.7 The sheet that invites itself lands silently
+
+`src/lib/sound.ts` states the contract the pop-up broke: *"The context can only
+start on a user gesture (autoplay law), which every entry point here already
+is."* A sheet that opens on arrival is the first entry point in the house that
+is not a gesture, and a thock the reader did not ask for, on fifteen screens in
+a row, is not this house's voice.
+
+`Modal` takes a `quiet` prop — off by default, so every shipped sheet keeps its
+sound untouched. The only caller that passes it is the guide sheet, and only for
+the showing it gave itself: the same sheet opened from "What is this page?"
+thocks as it always has. `quiet` is listed in the effect's dependencies; it is
+fixed for the life of any one showing, so it cannot re-run the trap, the lock or
+the focus restore.
+
+Counted, not taken on trust. The suite stubs `AudioContext` and records the
+frequency every oscillator is *started* at — the thock is the only sound in the
+app that begins at 290 Hz (the press-tick begins at 1700; the chime writes
+`.value` and is never counted). An uninvited showing reads zero; the same sheet
+asked for by name reads one. Against a build with `quiet` forced off, the
+uninvited showing reads three.
+
+**One trap for whoever writes the next check here.** `addInitScript` re-runs only
+when a *document* is built. Every `goto` between two app addresses is a hash
+change, which Chromium serves as a same-document navigation — the existing
+document and its globals stay in place, and a stub armed after the first load is
+never installed. The guides seed never noticed, because `localStorage` outlives
+the document and it only needs to run once. The audio block arms itself with a
+real `page.reload()`, which is also a perfectly good arrival to count.

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Button, IconButton, Modal } from './ui';
 import { IconClose } from './icons';
-import { guideSeen, markGuideSeen, markTourDone, markWalkthroughSeen } from '../lib/tutorial';
+import { guidePops, guideSeen, markGuideSeen, markTourDone, markWalkthroughSeen } from '../lib/tutorial';
 import { guideFor, guideKeyFor } from '../lib/pageGuides';
 import { tutorialFor, type StepTarget, type Tutorial as StepScript } from '../lib/tutorials';
 
@@ -52,6 +52,21 @@ export default function Tutorial({ open, onClose }: { open: boolean; onClose: ()
   const current = BEATS[beat];
   const last = beat === BEATS.length - 1;
 
+  /**
+   * EVERY SHOWING STARTS AT CARD ONE.
+   *
+   * This component is mounted for the whole of Today's life and only toggled
+   * by `open`, so `beat` outlives a closing. That never mattered while the
+   * sheet could open once; Today's "Show me around" (owner order 2026-08-21)
+   * can open it whenever it is asked, and without this a reader who left at
+   * card three is handed card three again, with "3 of 4" over it and no way
+   * back to the first two. Card one is the beginning of the tour, every time
+   * somebody asks for the tour.
+   */
+  useEffect(() => {
+    if (open) setBeat(0);
+  }, [open]);
+
   // Every exit is the same exit: dismissed is dismissed, whether it came from
   // the cross, Escape, the scrim, "Not now", or the last card's "Done".
   const close = () => {
@@ -85,11 +100,19 @@ export default function Tutorial({ open, onClose }: { open: boolean; onClose: ()
  * button reading "What is this page?", in the same place on every screen, that
  * opens the guide for the address you are actually at.
  *
- * Three rules it keeps, in order of how expensive breaking them would be:
+ * AMENDED 2026-08-21 BY THE OWNER, WHO WROTE THE LAW IT AMENDS (docs/43 §9).
+ * The rule here used to read "it never opens itself, not on a first visit, not
+ * on a returning one", and the honest thing to do with a rule the house has
+ * overturned is to strike it rather than leave it standing as a comment that
+ * lies about the code beneath it. The rule now is:
  *
- *   It never opens itself. Not on a first visit, not on a returning one. An
- *   unopened guide waits; it does not ask. That is the difference between a
- *   guide and the coach-mark overlay every other app in this category ships.
+ *   It opens itself ONCE, on the first visit to a screen, and never again.
+ *   The tour outranks it and the door is exempt — the whole of that decision
+ *   is guidePops() in src/lib/tutorial.ts, so there is no policy in this file.
+ *   A returning reader still meets the quiet control and nothing else, which
+ *   is the half of the old law that survives intact.
+ *
+ * The other two rules are untouched:
  *
  *   It never blocks. It sits after the page's own content, below a hairline,
  *   so nothing is ever covered and nothing is pushed off the fold.
@@ -113,10 +136,27 @@ export function PageGuide({ path }: { path: string }) {
   const guide = guideFor(path);
   const key = guideKeyFor(path);
   const script = tutorialFor(path);
-  const [open, setOpen] = useState(false);
   // Read once per mount. Layout keys this by pathname, so walking to another
   // screen remounts it and the mark is re-read for the screen you arrived at.
   const [seen, setSeen] = useState(() => (key ? guideSeen(key) : true));
+  /**
+   * Did this showing come uninvited?
+   *
+   * Decided in the same breath as the mark above and by the same route-keyed
+   * remount — an initialiser, not an effect. Two things follow from that, and
+   * both are the behaviour the ruling asks for. The sheet is already open on
+   * the first frame of a first visit, so there is no flash of the page and
+   * then a sheet over it; and there is no entrance to animate beyond the
+   * Modal's own, which index.css collapses to nothing under reduced motion —
+   * the card is not animated in, it simply is.
+   *
+   * It is also the reason the tour cannot be stacked on. On Today the tour
+   * mounts inside <Outlet />, which Layout renders BEFORE this component, but
+   * ordering never has to be reasoned about: guidePops() reads the tour's flag
+   * rather than the tour's presence, and refuses while it is unseen.
+   */
+  const [popped, setPopped] = useState(() => (key ? guidePops(path, key) : false));
+  const [open, setOpen] = useState(popped);
   // The walkthrough's whole lifecycle, inherited rather than written: this
   // component is mounted inside Layout's route-keyed div, so walking to another
   // screen remounts it and a walkthrough ends with the page it belonged to.
@@ -124,19 +164,53 @@ export function PageGuide({ path }: { path: string }) {
 
   if (!guide || !key) return null;
 
-  // Opening IS reading, as far as the mark is concerned. Marking on close
-  // instead would leave the dot standing for anyone who read the sheet and
-  // then hit Escape, which is most people.
+  // Opening IS reading, as far as the mark is concerned — for a sheet the
+  // reader ASKED for. Marking on close instead would leave the dot standing
+  // for anyone who read the sheet and then hit Escape, which is most people.
   const show = () => {
     markGuideSeen(key);
     setSeen(true);
+    setPopped(false);
     setOpen(true);
   };
 
-  // Two doors deep, both pulled by the reader — the sheet never opens itself,
-  // and this control inside it is the only way to the steps. Marked on START,
-  // never on completion (docs/43 §5): a mark for finishing is a score.
+  /**
+   * THE UNINVITED SHEET MARKS ON DISMISSAL, NOT ON OPEN — the one place in the
+   * house where the two moments come apart, and the whole safety of the
+   * amendment.
+   *
+   * A sheet you opened yourself has been read by the act of opening it. A
+   * sheet that opened itself has been read only once you have answered it.
+   * Marking on open would mean a stray tap on the rail a quarter-second after
+   * arriving burns the single showing this screen ever gets, and the reader
+   * never learns there was anything to read — which is the accidental
+   * navigation the ruling asks not to be charged for. Left undismissed, the
+   * screen simply pops again next visit; the dot stays lit meanwhile, so the
+   * two states never disagree.
+   *
+   * Dismissed is dismissed however it came: Modal routes its Close button,
+   * Escape and the scrim all through onClose, so all three arrive here.
+   */
+  const close = () => {
+    if (popped) {
+      markGuideSeen(key);
+      setSeen(true);
+      setPopped(false);
+    }
+    setOpen(false);
+  };
+
+  // Two doors deep where the reader pulled the first one; one door where the
+  // sheet opened itself. Either way this control inside it is the only way to
+  // the steps. Starting them is an answer to the sheet, so it settles the
+  // guide's mark exactly as a dismissal does — mark() is idempotent, so the
+  // invited path, already marked on open, writes nothing a second time. The
+  // walkthrough's own mark is written on START, never on completion (docs/43
+  // §5): a mark for finishing is a score.
   const walk = () => {
+    markGuideSeen(key);
+    setSeen(true);
+    setPopped(false);
     markWalkthroughSeen(key);
     setOpen(false);
     setWalking(true);
@@ -161,7 +235,10 @@ export function PageGuide({ path }: { path: string }) {
       {/* The Modal primitive brings the focus trap, Escape, the restored focus
           on close, and the reduced-motion collapse — the same sheet the tour
           and every other overlay in the house uses. */}
-      <Modal open={open} onClose={() => setOpen(false)} title={guide.title}>
+      {/* quiet only for the showing the sheet gave itself: a reader who
+          pressed "What is this page?" gets the thock every other sheet in the
+          house gives them. See the prop's note in ui.tsx. */}
+      <Modal open={open} onClose={close} title={guide.title} quiet={popped}>
         <p className="text-[15px] text-text leading-relaxed">{guide.lede}</p>
         <ol className="mt-5 space-y-3">
           {guide.doing.map((line, i) => (
@@ -191,7 +268,7 @@ export function PageGuide({ path }: { path: string }) {
               Walk me through it
             </Button>
           ) : null}
-          <Button onClick={() => setOpen(false)}>Close</Button>
+          <Button onClick={close}>Close</Button>
         </div>
       </Modal>
 

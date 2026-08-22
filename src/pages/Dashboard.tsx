@@ -12,7 +12,7 @@ import { Basting, GarmentPlate, PlateEmptyCloset, WaxSeal } from '../components/
 import { showToast } from '../components/Toast';
 import AddItemModal from '../components/AddItemModal';
 import Tutorial from '../components/Tutorial';
-import { tourState } from '../lib/tutorial';
+import { markTourDone, tourState } from '../lib/tutorial';
 import { photoSrc } from '../lib/photoStore';
 import { OUTDOORS, loadOutdoors, saveOutdoors, suitsOutdoors, type Outdoors } from '../lib/outdoors';
 
@@ -109,11 +109,36 @@ export default function Dashboard() {
     const state = tourState();
     if (state === 'again') return true;
     if (state === 'done') return false;
-    return Boolean(
+    const offered = Boolean(
       active && !active.isSample &&
       active.createdAt === todayLocal() &&
       activeItems.length === 0
     );
+    /**
+     * A TOUR THAT WILL NEVER BE OFFERED IS SETTLED HERE, NOT LEFT PENDING
+     * FOREVER (lead's ruling, 2026-08-21; docs/43 §9.6).
+     *
+     * The flag used to become 'done' only when the sheet itself closed. On a
+     * sample wardrobe, an import, or any stocked closet the sheet never opens,
+     * so the flag stayed 'new' for the life of the device — and the first-visit
+     * page guides, which defer to an unseen tour, therefore never popped for
+     * anybody who walked in through a sample. That is most alpha testers' first
+     * minutes. The decision not to show the tour is made right here, so this is
+     * where it is recorded.
+     *
+     * WHAT IT COSTS, PLAINLY: the flag is one fact about this device, not one
+     * per wardrobe. A device that opens a sample first and starts its own
+     * wardrobe later will not be offered the tour on that wardrobe's first
+     * Today. Two doors remain and both are one tap — Today's "Show me around"
+     * at the foot of this page, and Settings' "Replay the tour".
+     *
+     * In the initialiser rather than an effect so it is settled before the
+     * layout's PageGuide reads it in the same commit: Layout renders <Outlet />
+     * before <PageGuide />, so a sample walker's Today pops its own guide on
+     * arrival rather than waiting for a second visit.
+     */
+    if (!offered) markTourDone();
+    return offered;
   });
 
   const today = todayLocal();
@@ -371,6 +396,42 @@ export default function Dashboard() {
     </time>
   );
 
+  /**
+   * THE TEACHING, ON DEMAND — the owner's order of 2026-08-21, alongside the
+   * first-visit pop-up (docs/43 §9).
+   *
+   * The short tour was reachable from exactly one place, Settings, under
+   * "Replay the tour" — three taps and a page away from the screen it runs on,
+   * which is a fair place to KEEP it and a poor place to FIND it. This is the
+   * same door on the screen the tour is about.
+   *
+   * Quiet by construction. Tertiary, at the foot, under everything the day
+   * actually asks for: brand rule 3 gives a view exactly one primary and Today
+   * spends it on the hero — the log-wear fill — always. It is rendered after
+   * the last card in both of Today's branches, so it never moves the hero and
+   * never comes between the day and the tap that answers it.
+   *
+   * IT DOES NOT DUPLICATE THE PAGE GUIDE. Layout hangs "What is this page?"
+   * immediately below this row on every screen, so the two doors stand side by
+   * side and plainly: the tour, which is about the app, and the guide, which is
+   * about this page. A second control here for the guide would be a third way
+   * to the same sheet the reader already met on their first visit.
+   *
+   * Pressing it opens the tour whatever the flag says — a replay asked for by
+   * name is the one thing the once-only rule was never meant to refuse. It
+   * writes nothing: Tutorial's own close() records 'done' as it always has.
+   */
+  const showMeAround = (
+    <div className="mt-8 flex items-center gap-3 flex-wrap">
+      <Button tone="tertiary" onClick={() => setTourOpen(true)}>
+        Show me around
+      </Button>
+      <p className="type-ledger text-[10px] text-text-2">
+        The four cards from a wardrobe&rsquo;s first day
+      </p>
+    </div>
+  );
+
   if (activeItems.length === 0) {
     return (
       <>
@@ -387,6 +448,7 @@ export default function Dashboard() {
             }
           />
         </Card>
+        {showMeAround}
         <AddItemModal open={addOpen} onClose={() => setAddOpen(false)} />
         {/* The tour sits over this exact state — a new wardrobe's first Today
             is an empty rail with the sheet above it, which is also the whole
@@ -623,6 +685,8 @@ export default function Dashboard() {
           </div>
         </Card>
       ) : null}
+
+      {showMeAround}
 
       {/* ---------- the quick log sheet ---------- */}
       <Modal

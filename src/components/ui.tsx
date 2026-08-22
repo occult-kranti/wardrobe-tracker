@@ -411,12 +411,30 @@ export function Modal({
   title,
   children,
   wide,
+  quiet,
 }: {
   open: boolean;
   onClose: () => void;
   title: string;
   children: ReactNode;
   wide?: boolean;
+  /**
+   * A SHEET THAT INVITED ITSELF LANDS SILENTLY.
+   *
+   * The thock below is the sound of a sheet landing, and src/lib/sound.ts
+   * states the contract it keeps: "The context can only start on a user
+   * gesture (autoplay law), which every entry point here already is." That
+   * held while every Modal in the house was opened by somebody pressing
+   * something. The first-visit page guide (owner order 2026-08-21, docs/43 §9)
+   * opens by itself on arrival, and a sound the reader did not ask for, on
+   * fifteen screens in a row, is not the voice this house has.
+   *
+   * Off by default, so every shipped sheet keeps its sound untouched: the one
+   * caller that passes it is the guide sheet, and only for the showing it gave
+   * itself. The same sheet opened from "What is this page?" thocks as it
+   * always has.
+   */
+  quiet?: boolean;
 }) {
   const overlayRef = useRef<HTMLDivElement>(null);
   const sheetRef = useRef<HTMLDivElement>(null);
@@ -476,14 +494,19 @@ export function Modal({
     document.addEventListener('keydown', onKey);
     const { overflow } = document.body.style;
     document.body.style.overflow = 'hidden';
-    // The sheet lands with a low thock — E3 glass has weight.
-    thock();
+    // The sheet lands with a low thock — E3 glass has weight. Unless it let
+    // itself in, in which case it lands the way a page does: silently.
+    if (!quiet) thock();
     return () => {
       document.removeEventListener('keydown', onKey);
       document.body.style.overflow = overflow;
       previous?.focus();
     };
-  }, [open, onClose]);
+    // `quiet` is fixed for the life of any one showing — a sheet does not
+    // change its mind about how it was opened — so listing it here cannot
+    // re-run the trap, the lock or the focus restore. It is listed because a
+    // dependency read and not declared is how the next edit gets a stale one.
+  }, [open, onClose, quiet]);
 
   if (!open) return null;
 
