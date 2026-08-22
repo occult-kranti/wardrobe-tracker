@@ -1,0 +1,445 @@
+/* ============================================================
+   TOILE MOBILE — the atelier pack.
+   Foundation for every screen in this collection: the ground,
+   the chamfered hairline plates, tag chips with punched eyelets,
+   the wax seal, type registers, and the shell (top bar + tabs).
+
+   House law (foundation/design-system.md): letterpress stationery,
+   line work only — no fills, no gradients, no shadows, radius 2.
+   Two line metals per room. Artwork surrounds content, never sits
+   behind a garment photograph. No bodies, ever.
+   ============================================================ */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: #0B0A08;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 26px;
+  font-family: Georgia, 'Times New Roman', serif;
+}
+
+/* ---------------- the rooms ---------------- */
+
+/* ATELIER — near-black; the room the renders are dressed in. */
+.phone,
+.phone[data-room='atelier'] {
+  --ground: #100E0B;
+  --ground-2: #16130E;         /* plate interior, a hair lifted */
+  --ink: #EAE2D0;              /* cream, the display ink */
+  --ink-2: #9C9179;            /* mono labels */
+  --ink-3: #6E6656;            /* faintest ledger rule */
+  --line: #7E6531;             /* metal 1 — brass hairline */
+  --line-2: #C0A062;           /* metal 2 — brighter gold, emphasis */
+  --gold: #C79B4A;
+  --seal: #9E3B2E;
+  --grid: rgba(199, 155, 74, 0.055);
+}
+
+/* PATTERN ROOM — cream pattern-cutting paper. */
+.phone[data-room='pattern'] {
+  --ground: #F4EFE2;
+  --ground-2: #FBF7EC;
+  --ink: #241E16;
+  --ink-2: #6B6252;
+  --ink-3: #9A9081;
+  --line: #B49458;
+  --line-2: #8A6E33;
+  --gold: #A98431;
+  --seal: #BE1231;
+  --grid: rgba(90, 74, 40, 0.07);
+}
+
+/* GILDING ROOM — rose and gold. */
+.phone[data-room='gilding'] {
+  --ground: #1B1114;
+  --ground-2: #241619;
+  --ink: #F2E3DC;
+  --ink-2: #B9A096;
+  --ink-3: #826C63;
+  --line: #9A6E4A;
+  --line-2: #D6A96E;
+  --gold: #D6A96E;
+  --seal: #C0392B;
+  --grid: rgba(214, 169, 110, 0.06);
+}
+
+/* DYE HOUSE — dark plum-rose. */
+.phone[data-room='dyehouse'] {
+  --ground: #2A0F18;
+  --ground-2: #34141F;
+  --ink: #FBE6DF;
+  --ink-2: #C39A93;
+  --ink-3: #8E6A65;
+  --line: #9A6236;
+  --line-2: #D69652;
+  --gold: #D69652;
+  --seal: #D6183B;
+  --grid: rgba(214, 150, 82, 0.055);
+}
+
+/* ---------------- the phone ---------------- */
+
+.phone {
+  width: 412px;
+  height: 915px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  color: var(--ink);
+  border-radius: 22px;
+  background-color: var(--ground);
+  /* the pattern-cutting ground: a grid of small crosses */
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 9px 44px, 44px 9px;
+  background-position: 22px 0, 0 22px;
+  box-shadow: 0 0 0 8px #1A1510, 0 0 0 9px #2E271D;
+}
+
+/* the outer hairline frame that rules every render's edge */
+.phone::after {
+  content: '';
+  position: absolute;
+  inset: 9px;
+  border: 1px solid var(--line);
+  opacity: 0.55;
+  pointer-events: none;
+  z-index: 40;
+  clip-path: polygon(14px 0, calc(100% - 14px) 0, 100% 14px, 100% calc(100% - 14px),
+    calc(100% - 14px) 100%, 14px 100%, 0 calc(100% - 14px), 0 14px);
+}
+
+.screen {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 18px 0;
+  position: relative;
+  z-index: 2;
+}
+
+/* ---------------- type registers ---------------- */
+
+.t-display   { font: 400 34px/1.02 Georgia, serif; letter-spacing: -0.01em; color: var(--ink); }
+.t-display-s { font: 400 24px/1.05 Georgia, serif; color: var(--ink); }
+.t-serif     { font: 400 19px/1.25 Georgia, serif; color: var(--ink); }
+.t-italic    { font: italic 400 15px/1.4 Georgia, serif; color: var(--ink); }
+.t-figure    { font: 400 33px/1 Georgia, serif; color: var(--ink); }
+.t-figure-s  { font: 400 22px/1 Georgia, serif; color: var(--ink); }
+.t-label     { font: 500 11px 'Courier New', monospace; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-2); }
+.t-mono      { font: 500 12px/1.5 'Courier New', monospace; letter-spacing: 0.06em; color: var(--ink-2); }
+.t-mono-s    { font: 500 10px 'Courier New', monospace; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-2); }
+.gold        { color: var(--gold); }
+.cream       { color: var(--ink); }
+
+/* ---------------- the chamfered plate ----------------
+   A hairline frame whose corners are cut at 45°, drawn as two
+   stacked clipped layers: the metal, then the ground inset by 1px.
+   Line only — the clip does the mitre no border-radius can. */
+
+.plate {
+  position: relative;
+  padding: 15px 16px;
+  --ch: 11px;
+}
+.plate > * { position: relative; z-index: 1; }
+.plate::before,
+.plate::after {
+  content: '';
+  position: absolute;
+  clip-path: polygon(var(--ch) 0, calc(100% - var(--ch)) 0, 100% var(--ch),
+    100% calc(100% - var(--ch)), calc(100% - var(--ch)) 100%, var(--ch) 100%,
+    0 calc(100% - var(--ch)), 0 var(--ch));
+}
+.plate::before { inset: 0; background: var(--line); }
+.plate::after  { inset: 1px; background: var(--ground); }
+
+/* the emphatic variant: a second rule floated inside the first */
+.plate.double { padding: 20px 19px; }
+.plate.double > .inner-rule {
+  position: absolute;
+  inset: 5px;
+  border: 1px solid var(--line);
+  opacity: 0.5;
+  z-index: 0;
+  clip-path: polygon(7px 0, calc(100% - 7px) 0, 100% 7px, 100% calc(100% - 7px),
+    calc(100% - 7px) 100%, 7px 100%, 0 calc(100% - 7px), 0 7px);
+}
+/* brighter metal on a plate that carries the page's argument */
+.plate.bright::before { background: var(--line-2); }
+
+/* .quiet — a plate that holds numbers or a list. It keeps its frame and
+   drops everything else, including any bracket a builder leaves on it. */
+.plate.quiet .brk { display: none; }
+.plate.quiet::before { background: color-mix(in srgb, var(--line) 72%, transparent); }
+
+/* ---------------- the ornament law ----------------
+
+   Every plate carrying brackets, every rule wearing a tick, and a second
+   frame inside the first: each was handsome alone and the sum was noise —
+   the eye had nowhere to rest and the content had to argue for attention.
+   The law now, and the reason for it:
+
+     ONE hero drawing per screen.        The room is named once, not repeated.
+     ONE plate may wear corner brackets. Whichever plate carries the page's
+                                         argument. The rest go bare.
+     ONE ticked rule per screen at most, and it belongs under the title.
+     NO ornament inside data.            Stat grids, bars, tables and lists
+                                         are read, not admired.
+     The double frame is reserved for a plate that is genuinely the hero.
+
+   Everything below still exists; what changed is how often it may be used.
+   Restraint is the design, not a subtraction from it. */
+
+/* corner brackets — the little engraved ticks in the render's plates */
+.brk { position: absolute; width: 13px; height: 13px; z-index: 1; opacity: 0.6; }
+.brk::before, .brk::after { content: ''; position: absolute; background: var(--line-2); }
+.brk::before { width: 100%; height: 1px; }
+.brk::after  { width: 1px; height: 100%; }
+.brk.tl { top: 5px; left: 5px; }
+.brk.tr { top: 5px; right: 5px; }
+.brk.tr::before { right: 0; } .brk.tr::after { right: 0; }
+.brk.bl { bottom: 5px; left: 5px; }
+.brk.bl::before { bottom: 0; } .brk.bl::after { bottom: 0; }
+.brk.br { bottom: 5px; right: 5px; }
+.brk.br::before { bottom: 0; right: 0; } .brk.br::after { bottom: 0; right: 0; }
+
+/* ---------------- rules ---------------- */
+
+/* the ruled headline under a card kicker */
+.rule      { height: 1px; background: var(--line); opacity: 0.6; }
+.rule-dash { height: 0; border-top: 1px dashed var(--line); opacity: 0.55; }
+.rule-dot  { height: 0; border-top: 1px dotted var(--line); opacity: 0.5; }
+/* a rule with the house's small cross tick at its centre */
+.rule-tick { position: relative; height: 1px; background: var(--line); opacity: 0.6; }
+.rule-tick::after {
+  content: '✧';
+  position: absolute; left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--ground);
+  color: var(--line-2);
+  font-size: 8px;
+  padding: 0 5px;
+  opacity: 0.7;
+}
+/* the title rule: heavy over hair, the masthead's double stroke */
+.rule-double { position: relative; height: 2px; background: var(--ink); opacity: 0.85; }
+.rule-double::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: -3px;
+  height: 1px; background: var(--line-2); opacity: 0.8;
+}
+
+/* the leader: a dotted run between a label and its figure */
+.leader { flex: 1; border-bottom: 1px dotted var(--line); opacity: 0.55; margin: 0 8px 4px; }
+
+/* ---------------- tag chips (punched eyelet) ---------------- */
+
+.tag {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 34px;
+  padding: 0 13px 0 11px;
+  font: 500 10.5px 'Courier New', monospace;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+.tag::before, .tag::after {
+  content: '';
+  position: absolute;
+  clip-path: polygon(9px 0, calc(100% - 9px) 0, 100% 50%, calc(100% - 9px) 100%,
+    9px 100%, 0 50%);
+}
+.tag::before { inset: 0; background: var(--line); }
+.tag::after  { inset: 1px; background: var(--ground); }
+.tag > * { position: relative; z-index: 1; }
+/* the punched eyelet: a ring, drawn not filled */
+.tag .eyelet {
+  width: 8px; height: 8px; border-radius: 50%;
+  border: 1.5px solid var(--line-2);
+  flex: none;
+}
+.tag.on { color: var(--gold); }
+.tag.on::before { background: var(--line-2); }
+.tag.on .eyelet { border-color: var(--gold); background: radial-gradient(circle, var(--gold) 34%, transparent 35%); }
+/* a tag hung on thread — the cord runs off its left ear */
+.tag.strung::marker { content: none; }
+.tag-strung-wrap { display: inline-flex; align-items: center; }
+.tag-strung-wrap svg { display: block; margin-right: -3px; }
+
+/* the button register: same tag geometry, tap-sized */
+.btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 20px;
+  font: 500 11px 'Courier New', monospace;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink);
+  white-space: nowrap;
+  cursor: default;
+}
+.btn::before, .btn::after {
+  content: '';
+  position: absolute;
+  clip-path: polygon(10px 0, calc(100% - 10px) 0, 100% 10px, 100% calc(100% - 10px),
+    calc(100% - 10px) 100%, 10px 100%, 0 calc(100% - 10px), 0 10px);
+}
+.btn::before { inset: 0; background: var(--line-2); }
+.btn::after  { inset: 1px; background: var(--ground); }
+.btn > * { position: relative; z-index: 1; }
+.btn .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--gold); flex: none; }
+/* the filled register — one per screen, the page's single primary */
+.btn.solid::after { background: color-mix(in srgb, var(--gold) 16%, var(--ground)); }
+.btn.solid { color: var(--ink); }
+
+/* ---------------- the wax seal (line-drawn, never filled) ---------------- */
+
+.seal { position: absolute; width: 62px; height: 74px; pointer-events: none; }
+.seal svg { width: 100%; height: 100%; display: block; }
+
+/* ---------------- stats grid ---------------- */
+
+.stats { display: grid; grid-template-columns: 1fr 1fr; }
+.stats > div { padding: 10px 6px 9px; text-align: center; position: relative; }
+.stats > div + div::before { /* the hairline gutter between cells */ }
+.stats .cap { margin-top: 6px; }
+.stats .capline { width: 62%; margin: 5px auto 0; height: 1px; background: var(--line); opacity: 0.5; }
+
+/* ---------------- bars ---------------- */
+
+.bar-row { display: flex; align-items: center; gap: 10px; padding: 4px 0; }
+.bar-track { flex: 1; height: 7px; position: relative; }
+/* the ruled bar: stacked hairlines, the render's hatched fill */
+.bar-fill {
+  height: 100%;
+  background-image: repeating-linear-gradient(
+    to bottom, var(--line-2) 0 1px, transparent 1px 2.4px);
+}
+
+/* ---------------- the shell ---------------- */
+
+.topbar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 18px 0;
+  position: relative;
+  z-index: 3;
+}
+.topbar .wordmark {
+  font: 700 14px Georgia, serif;
+  letter-spacing: 0.34em;
+  color: var(--ink);
+}
+.topbar .spacer { flex: 1; }
+.topbar .themedot {
+  width: 17px; height: 17px; border-radius: 50%;
+  border: 1.2px solid var(--ink-2);
+  background: linear-gradient(90deg, var(--ink-2) 0 50%, transparent 50% 100%);
+}
+.topbar .plus {
+  width: 30px; height: 26px;
+  border: 1px solid var(--line-2);
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--ink); font: 400 17px Georgia, serif;
+  clip-path: polygon(6px 0, calc(100% - 6px) 0, 100% 6px, 100% calc(100% - 6px),
+    calc(100% - 6px) 100%, 6px 100%, 0 calc(100% - 6px), 0 6px);
+}
+
+.tabs {
+  flex: none;
+  height: 76px;
+  margin-top: auto;
+  padding: 0 10px 12px;
+  display: flex;
+  border-top: 1px solid var(--line);
+  position: relative;
+  z-index: 3;
+}
+.tabs .tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  font: 500 9.5px 'Courier New', monospace;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  position: relative;
+}
+.tabs .tab + .tab::before {
+  content: ''; position: absolute; left: 0; top: 18px; bottom: 18px;
+  width: 1px; background: var(--line); opacity: 0.5;
+}
+.tabs .tab svg { width: 25px; height: 25px; fill: none; stroke: currentColor; stroke-width: 1.4; }
+.tabs .tab.on { color: var(--gold); }
+.tabs .tab.on::after {
+  content: ''; position: absolute; bottom: 6px; width: 26px; height: 1.5px;
+  background: var(--gold);
+}
+
+/* ---------------- artwork layer ----------------
+   Line art that surrounds content. Strokes name only the two
+   metals; nothing here may sit behind a garment photograph. */
+.art { display: block; }
+.art svg { display: block; width: 100%; height: auto; fill: none; stroke-linecap: butt; stroke-linejoin: miter; }
+.m1 { stroke: var(--line); }
+.m2 { stroke: var(--line-2); }
+
+/* the pop-up artwork moment: line art that draws itself ON ACTION */
+.moment {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  background: color-mix(in srgb, var(--ground) 62%, transparent);
+}
+.moment .caption {
+  position: absolute;
+  bottom: 96px; left: 0; right: 0;
+  padding: 0 26px;
+  line-height: 1.5;
+  text-align: center;
+  font: 500 10px 'Courier New', monospace;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+/* photographs: a garment tile, matted, never with art behind it */
+.photo { display: block; width: 100%; background: #E8E2D4; overflow: hidden; }
+.photo img { display: block; width: 100%; height: 100%; object-fit: cover; }
+
+/* ---------------- gallery furniture ---------------- */
+
+.stage { display: flex; flex-direction: column; align-items: center; }
+.caption-note {
+  margin-top: 15px;
+  max-width: 412px;
+  color: #A99C86;
+  font: 400 13px/1.55 Georgia, serif;
+  text-align: center;
+}

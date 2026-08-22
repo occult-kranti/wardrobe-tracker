@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Workroom — Almari</title>
+<meta name="description" content="Almari's project tracking portal: the launch plan as assignable work, with owners, dates, tags and notes.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%23BE1231'/%3E%3Ctext x='16' y='22' text-anchor='middle' font-family='Georgia,serif' font-size='17' fill='%23FFFDF6'%3EA%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://api.fontshare.com">
+<link href="https://api.fontshare.com/v2/css?f[]=switzer@400,500,600,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="almari.css">
+<link rel="stylesheet" href="board.css">
+</head>
+<body>
+<button class="theme-toggle" id="themeToggle" aria-label="Switch theme">Atelier</button>
+
+<div class="shell">
+  <header class="top">
+    <div>
+      <h1>The Workroom</h1>
+      <p class="sub">Almari's launch plan, as work with owners.</p>
+    </div>
+    <div class="top-right">
+      <span id="stats"></span>
+      <span id="syncState"></span>
+      <span id="who"></span>
+    </div>
+  </header>
+
+  <div class="bar">
+    <div class="modes">
+      <button id="modeNow" class="on">Now</button>
+      <button id="modeBoard">Board</button>
+      <button id="modeList">List</button>
+      <button id="modeTimeline">Timeline</button>
+      <button id="modePeople">People</button>
+    </div>
+    <div class="search-wrap">
+      <input id="search" placeholder="Search tasks…" aria-label="Search tasks">
+      <span class="search-key" aria-hidden="true">/</span>
+    </div>
+    <button class="btn small" id="foldBtn">Fold all</button>
+    <button class="btn small" id="newTaskBtn" disabled>New task</button>
+    <button class="btn small primary" id="planBtn" hidden>Current plan</button>
+    <button class="btn small" id="resetBtn" hidden>Reset to meetings</button>
+    <button class="btn small warn" id="undoBtn" hidden>Undo</button>
+    <button class="btn small" id="exportBtn">Export</button>
+    <button class="btn small" id="keysBtn" title="Keyboard shortcuts" aria-label="Keyboard shortcuts">?</button>
+  </div>
+
+  <nav id="filters" aria-label="Filters and grouping"></nav>
+  <main id="main"></main>
+
+  <section class="setup" id="setup">
+    <h2>Making this shared</h2>
+    <p class="phase-note" style="margin-top:8px">
+      Right now this portal saves to whichever browser you opened it in. GitHub Pages
+      serves files; it cannot hold state, so a shared board needs one small database
+      behind it. Supabase's free tier is enough for a team of four, and the setup is
+      five minutes. Until then the Export button gives you the whole board as a file.
+    </p>
+    <ol>
+      <li>Make a free project at <a href="https://supabase.com">supabase.com</a>.</li>
+      <li>In the SQL editor, run the block below. It makes one table with one row.
+        The three policies as written let <b>anyone holding the key</b> read and write
+        it, so read the warning under the block before you use them as they are.</li>
+      <li>Open <b>Project Settings → API</b> and copy the <b>Project URL</b> and the
+        <b>anon</b> key.</li>
+      <li>Paste both into the <code>SYNC</code> block at the top of
+        <code>company/tracker.js</code>, commit, and push. The header will read
+        <b>Shared</b> instead of <b>This device only</b>.</li>
+    </ol>
+    <pre>create table almari_workroom (
+  id int primary key,
+  doc jsonb not null,
+  updated_at timestamptz default now()
+);
+alter table almari_workroom enable row level security;
+
+-- Open to anyone with the key. Fine on a private host, NOT on a public URL:
+create policy "team read"  on almari_workroom for select using (true);
+create policy "team write" on almari_workroom for insert with check (true);
+create policy "team edit"  on almari_workroom for update using (true);
+
+-- Safe on a public URL. Turn on Supabase Auth, invite the team, then use these
+-- instead of the three above:
+-- create policy "team read"  on almari_workroom for select using (auth.uid() is not null);
+-- create policy "team write" on almari_workroom for insert with check (auth.uid() is not null);
+-- create policy "team edit"  on almari_workroom for update using (auth.uid() is not null);</pre>
+    <p class="phase-note" style="margin-top:16px"><b>The key cannot go in a public
+      repository.</b> This site is served from a public repo, so committing the anon
+      key alongside the open policies above publishes read <em>and write</em> access to
+      this board to everyone. For task titles that is untidy; the moment the board holds
+      anything about a real person, a tester's email or a journalist's number, it is a
+      personal-data breach and the company answers for it under the DPDP Act. Either
+      serve the board from a private host, or turn on Supabase Auth and use the
+      commented policies. Never put passwords, bank details, or anything about a person
+      who has not consented into this board.</p>
+  </section>
+
+  <footer>
+    <span class="seal-mark" aria-hidden="true">A</span>
+    <p><b>The Workroom</b> · the business board · the plan behind it is in the repository at
+      <code>docs/28-the-company.md</code> · <a href="build.html">the technical plan</a> · <a href="ship.html">the runbook</a> ·
+      <a href="../">the app</a></p>
+    <p style="margin-top:8px">Signing in here is a name badge, not a password: anyone with
+      the link can pick any name. Keep the link inside the team.</p>
+  </footer>
+</div>
+
+<aside id="drawer" hidden></aside>
+<div id="modal" hidden></div>
+<div id="bulkbar" hidden>
+  <span id="bulkcount"></span>
+  <button class="btn small" id="bulkNext">Next</button>
+  <button class="btn small" id="bulkOngoing">On now</button>
+  <button class="btn small" id="bulkDone">Done</button>
+  <button class="btn small" id="bulkCurrent">Pin current</button>
+  <button class="btn small" id="bulkMine">Assign me</button>
+  <button class="link" id="bulkClear">Clear</button>
+</div>
+
+<script>
+  (function () {
+    var root = document.documentElement, t = document.getElementById('themeToggle');
+    var stored = localStorage.getItem('almari-site-theme');
+    if (stored) root.dataset.theme = stored;
+    function isDark() {
+      return root.dataset.theme === 'dark' ||
+        (!root.dataset.theme && matchMedia('(prefers-color-scheme: dark)').matches);
+    }
+    function label() { t.textContent = isDark() ? 'Pattern room' : 'Atelier'; }
+    label();
+    t.addEventListener('click', function () {
+      root.dataset.theme = isDark() ? 'light' : 'dark';
+      localStorage.setItem('almari-site-theme', root.dataset.theme);
+      label();
+    });
+  })();
+</script>
+<!-- Data first, then the engine that reads it. -->
+<script src="tracker.js"></script>
+<script src="board.js"></script>
+</body>
+</html>

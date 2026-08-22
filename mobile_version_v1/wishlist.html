@@ -1,0 +1,271 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Toile mobile — Wishlist</title>
+<link rel="stylesheet" href="foundation.css">
+<body>
+<div style="display:flex;gap:30px;flex-wrap:wrap;justify-content:center">
+
+<!-- ========== at rest — the empty list ========== -->
+<div class="stage">
+  <div class="phone" data-room="atelier">
+
+    <div class="topbar">
+      <!-- the tally glyph: a hung tag with its punched eyelet -->
+      <svg viewBox="0 0 20 30" style="width:15px;height:23px;fill:none;stroke:var(--line-2);stroke-width:1.1">
+        <path d="M4 3h12v20l-6 5-6-5z"/><circle cx="10" cy="9" r="2.2"/><path d="M10 14v6M7 17h6"/>
+      </svg>
+      <span class="wordmark">TOILE</span>
+      <span class="spacer"></span>
+      <span class="themedot"></span>
+      <span class="plus">+</span>
+    </div>
+
+    <div class="screen" style="gap:13px;padding-top:12px">
+
+      <!-- title row: the page's own + ADD means "add to the wishlist";
+           the top bar's tile means "add a piece to the closet" -->
+      <div>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <span class="t-display">Wishlist</span>
+          <span class="tag" style="height:40px;padding:0 15px 0 12px;font-size:11px;--line:var(--line-2);color:var(--ink)">
+            <span class="eyelet"></span><span>+ Add</span>
+          </span>
+        </div>
+        <div class="rule-double" style="margin-top:8px"></div>
+      </div>
+
+      <!-- THE YIGUI — the hero, standing on bare paper. It had been boxed in a
+           full-height plate whose frame ran a second gold hairline 18px inside
+           the phone's own: two rules down the whole screen and nowhere to
+           rest. The empty state needs no box; the drawing is the page. -->
+      <div style="flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center;padding:16px 14px 22px">
+
+        <div class="art" style="width:78%;margin:0 auto">
+          <svg viewBox="0 0 300 336" aria-hidden="true">
+            <!-- carcase: the round top, splayed tapered sides, plinth -->
+            <g class="m1" stroke-width="1.3">
+              <path d="M46 34C46 22 53 16 64 16H236C247 16 254 22 254 34"/>
+              <path d="M46 34H254"/>
+              <path d="M52 27C52 21 57 22 63 22H237C243 22 248 21 248 27" stroke-opacity=".6"/>
+              <path d="M54 34 44 272H256L246 34"/>
+              <path d="M44 272H256"/><path d="M42 282H258"/>
+              <!-- the door opening: stiles, top rail, bottom rail -->
+              <path d="M66 46 58 258H242L234 46Z"/>
+              <path d="M60 246H240" stroke-opacity=".7"/>
+            </g>
+            <!-- the two leaves, swung open on their pintle hinges -->
+            <g class="m2" stroke-width="1.2">
+              <path d="M66 48 106 68 102 236 59 254Z"/>
+              <path d="M74 59 100 73 97 227 68 240Z" stroke-opacity=".7"/>
+              <path d="M64 78 69 81 68 99 63 96ZM61 206 66 209 65 227 60 224Z"/>
+              <path d="M234 48 194 68 198 236 241 254Z"/>
+              <path d="M226 59 200 73 203 227 232 240Z" stroke-opacity=".7"/>
+              <path d="M236 78 231 81 232 99 237 96ZM239 206 234 209 235 227 240 224Z"/>
+              <!-- the lobed lock plates that the centre stile used to join -->
+              <path d="M87 145c0-7 4-11 8-11s8 4 8 11v17c0 7-4 11-8 11s-8-4-8-11z"/>
+              <circle cx="95" cy="152" r="2.4"/><path d="M95 155v8"/>
+              <path d="M213 145c0-7-4-11-8-11s-8 4-8 11v17c0 7 4 11 8 11s8-4 8-11z"/>
+              <circle cx="205" cy="152" r="2.4"/><path d="M205 155v8"/>
+            </g>
+            <!-- the interior, seen through the gap the lifted stile has left -->
+            <g class="m1" stroke-width="1" stroke-opacity=".85">
+              <path d="M114 76H186V232H114Z"/>
+              <path d="M108 122H192M114 114H186M108 122 114 114M192 122 186 114"/>
+            </g>
+            <!-- the wrapped parcel, tied, its tag strung from the bow -->
+            <g class="m2" stroke-width="1.2">
+              <path d="M126 176H174V212H126Z"/>
+              <path d="M126 176 138 164H186L174 176M174 176 186 164V200L174 212"/>
+              <path d="M150 176V212M150 176 162 164M174 194 186 182"/>
+              <path d="M147 164c-8-7-16-4-13 4 2 5 9 4 13-4ZM153 164c8-7 16-4 13 4-2 5-9 4-13-4Z"/>
+              <path d="M147 167 141 176M153 167 158 177"/>
+              <path d="M148 169c-14 8-24 16-28 26"/>
+              <path d="M112 194h16v20l-8 8-8-8z"/>
+              <circle cx="120" cy="200" r="2.2"/><path d="M117 208h6M120 205v6"/>
+            </g>
+            <!-- the removable centre stile, lifted out and parked at the side:
+                 tenon at its head, two mortise pins down its face -->
+            <g class="m2" stroke-width="1.2">
+              <path d="M262 100 274 96 296 268 284 272Z"/>
+              <path d="M268 98 290 270" stroke-opacity=".55"/>
+              <path d="M262 100 264 90 276 86 274 96"/>
+              <circle cx="276" cy="160" r="3"/><circle cx="284" cy="222" r="3"/>
+            </g>
+            <!-- hoof feet and the shaped apron between them -->
+            <g class="m1" stroke-width="1.3">
+              <path d="M50 282C45 294 48 308 57 312H73C66 305 63 294 65 282"/>
+              <path d="M250 282c5 12 2 26-7 30h-16c7-7 10-18 8-30"/>
+              <path d="M65 284c26 12 56 14 85 14s59-2 85-14"/>
+              <path d="M65 282c8 3 13 8 15 15M235 282c-8 3-13 8-15 15"/>
+            </g>
+          </svg>
+        </div>
+
+        <p class="t-display-s" style="font-style:italic;text-align:center;margin-top:14px">Nothing on the list.</p>
+        <p class="t-mono" style="text-align:center;margin:12px auto 0;max-width:33ch;font-size:11.5px;line-height:1.75;text-transform:none;letter-spacing:.02em">
+          Pieces you're thinking about wait here. Give one a few days of silence and see
+          whether it's still on your mind at the end.
+        </p>
+      </div>
+
+      <!-- the single primary action, in the thumb zone -->
+      <span class="tag" style="display:flex;height:52px;padding:0 18px;font-size:11.5px;letter-spacing:.19em;--line:var(--line-2);color:var(--ink)">
+        <span class="eyelet"></span>
+        <span style="flex:1;text-align:center;margin-left:-9px">Add something you're considering</span>
+      </span>
+
+      <!-- the ritual, stated quietly: an hourglass ruled like a ledger line,
+           and the seven ticks a piece must survive -->
+      <div class="plate quiet" style="padding:11px 13px">
+        <div style="display:flex;align-items:center;gap:12px">
+          <svg viewBox="0 0 26 40" style="width:22px;height:34px;fill:none;stroke:var(--line-2);stroke-width:1.2;flex:none">
+            <path d="M4 3h18M4 37h18"/>
+            <path d="M6 3v5l7 12 7-12V3M6 37v-5l7-12 7 12v5"/>
+            <path d="M1 20h24" stroke="var(--line)"/>
+          </svg>
+          <span style="width:1px;align-self:stretch;background:var(--line);opacity:.6"></span>
+          <div style="flex:1">
+            <p class="t-label">Cooling off · 7 days</p>
+            <p class="t-italic" style="font-size:13px;margin-top:4px">Nothing is bought from this screen. It waits, or it leaves.</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="tabs">
+      <div class="tab">
+        <svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15"/><path d="M4 10h16M9 3v4M15 3v4"/><text x="12" y="18" text-anchor="middle" style="font:400 7px 'Courier New';fill:currentColor;stroke:none">11</text></svg>
+        Today
+      </div>
+      <div class="tab">
+        <svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17"/><path d="M12 4v17M8.5 11h1M14.5 11h1M5 4h14"/></svg>
+        Closet
+      </div>
+      <div class="tab">
+        <svg viewBox="0 0 24 24"><path d="M11 7a1 1 0 0 1 2 0M12 9v2M12 11 5 17h14z"/></svg>
+        Outfits
+      </div>
+      <div class="tab">
+        <svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14"/><path d="M4 9h16M8 13h8M8 16h5"/></svg>
+        Feed
+      </div>
+      <div class="tab on">
+        <svg viewBox="0 0 24 24"><circle cx="6" cy="8" r="1"/><circle cx="6" cy="12" r="1"/><circle cx="6" cy="16" r="1"/><path d="M10 8h9M10 12h9M10 16h9"/></svg>
+        More
+      </div>
+    </div>
+  </div>
+  <p class="caption-note"><b>Wishlist — the empty state, which is the page.</b> The yigui
+  stands ajar on bare paper, unboxed, with its centre stile lifted out and parked at its
+  side; one wrapped parcel waits on the shelf with its tag strung from the bow. Header + ADD
+  and the full-width CTA both open the same considering flow; the one framed strip on the
+  page states the seven-day rule. The cabinet draws itself on once per visit — doors, then
+  the stile gap, then the parcel.</p>
+</div>
+
+<!-- ========== the moment: a parcel is wrapped and tied ========== -->
+<div class="stage">
+  <div class="phone" data-room="atelier">
+
+    <div class="topbar" style="opacity:.4">
+      <svg viewBox="0 0 20 30" style="width:15px;height:23px;fill:none;stroke:var(--line-2);stroke-width:1.1">
+        <path d="M4 3h12v20l-6 5-6-5z"/><circle cx="10" cy="9" r="2.2"/><path d="M10 14v6M7 17h6"/>
+      </svg>
+      <span class="wordmark">TOILE</span>
+      <span class="spacer"></span>
+      <span class="themedot"></span>
+      <span class="plus">+</span>
+    </div>
+
+    <div class="screen" style="gap:13px;padding-top:12px">
+      <div style="opacity:.4">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <span class="t-display">Wishlist</span>
+          <span class="tag" style="height:40px;padding:0 15px 0 12px;font-size:11px;--line:var(--line-2);color:var(--ink)">
+            <span class="eyelet"></span><span>+ Add</span>
+          </span>
+        </div>
+        <div class="rule-double" style="margin-top:8px"></div>
+      </div>
+
+      <div style="flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center;padding:16px 14px 22px;opacity:.26">
+        <div class="art" style="width:78%;margin:0 auto">
+          <svg viewBox="0 0 300 336" aria-hidden="true">
+            <g class="m1" stroke-width="1.3">
+              <path d="M46 34C46 22 53 16 64 16H236C247 16 254 22 254 34"/>
+              <path d="M46 34H254"/><path d="M54 34 44 272H256L246 34"/>
+              <path d="M44 272H256"/><path d="M42 282H258"/>
+              <path d="M66 46 58 258H242L234 46Z"/>
+            </g>
+            <g class="m2" stroke-width="1.2">
+              <path d="M66 48 106 68 102 236 59 254Z"/>
+              <path d="M234 48 194 68 198 236 241 254Z"/>
+              <path d="M262 100 274 96 296 268 284 272Z"/>
+            </g>
+            <g class="m1" stroke-width="1.3">
+              <path d="M50 282C45 294 48 308 57 312H73C66 305 63 294 65 282"/>
+              <path d="M250 282c5 12 2 26-7 30h-16c7-7 10-18 8-30"/>
+              <path d="M65 284c26 12 56 14 85 14s59-2 85-14"/>
+            </g>
+          </svg>
+        </div>
+        <p class="t-display-s" style="font-style:italic;text-align:center;margin-top:14px">Nothing on the list.</p>
+      </div>
+    </div>
+
+    <!-- 700ms: the paper folds in line strokes, the thread ties a bow, the
+         tag is punched — and the cabinet door is left ajar behind it -->
+    <div class="moment">
+      <svg viewBox="0 0 220 220" style="width:246px;height:246px;fill:none">
+        <!-- the yigui's leaf, left ajar at the edge of the frame: hinge
+             plates, panel, and the socket the centre stile came out of -->
+        <g class="m1" stroke-width="1.3" stroke-opacity=".6">
+          <path d="M4 24 34 40 31 184 2 200Z"/>
+          <path d="M10 36 30 47 28 176 8 188Z" stroke-opacity=".5"/>
+          <path d="M3 52 8 55 7 71 2 68ZM2 156 7 159 6 175 1 172Z"/>
+          <path d="M34 40H52M34 184H52" stroke-dasharray="4 6"/>
+        </g>
+        <!-- the parcel: the paper folded along its creases -->
+        <g class="m2" stroke-width="1.9">
+          <path d="M62 108H152V174H62Z"/>
+          <path d="M62 108 84 86H174L152 108M152 108 174 86V152L152 174"/>
+          <path d="M107 108V174M107 108 129 86M152 140 174 118"/>
+        </g>
+        <!-- the bow, tied on the crown -->
+        <g class="m2" stroke-width="1.8">
+          <path d="M105 86c-13-11-25-6-21 6 3 8 15 6 21-6ZM110 86c13-11 25-6 21 6-3 8-15 6-21-6Z"/>
+          <path d="M105 90 92 108M111 90 120 110"/>
+        </g>
+        <!-- the tag: punched, strung, still swinging -->
+        <g class="m2" stroke-width="1.7">
+          <path d="M107 92c-19 12-31 24-35 38"/>
+          <path d="M54 132h30v36l-15 14-15-14z"/>
+          <circle cx="69" cy="143" r="4"/>
+          <path d="M62 158h14M69 151v14"/>
+        </g>
+        <!-- the thread's slack, still spooling off frame -->
+        <g class="m1" stroke-width="1.2" stroke-dasharray="120" stroke-dashoffset="26" stroke-opacity=".7">
+          <path d="M110 92c26-12 56-8 82 8"/>
+        </g>
+      </svg>
+      <p class="caption">A parcel is wrapped and tied · day 1 of 7</p>
+    </div>
+
+    <div class="tabs">
+      <div class="tab"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>Today</div>
+      <div class="tab"><svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17"/><path d="M12 4v17M8.5 11h1M14.5 11h1"/></svg>Closet</div>
+      <div class="tab"><svg viewBox="0 0 24 24"><path d="M11 7a1 1 0 0 1 2 0M12 9v2M12 11 5 17h14z"/></svg>Outfits</div>
+      <div class="tab"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14"/><path d="M4 9h16M8 13h8M8 16h5"/></svg>Feed</div>
+      <div class="tab on"><svg viewBox="0 0 24 24"><circle cx="6" cy="8" r="1"/><circle cx="6" cy="12" r="1"/><circle cx="6" cy="16" r="1"/><path d="M10 8h9M10 12h9M10 16h9"/></svg>More</div>
+    </div>
+  </div>
+  <p class="caption-note"><b>Add to the wishlist — the parcel moment.</b> 700ms: the paper
+  folds along its creases, the thread ties a bow, the tag is punched and strung, and the
+  parcel settles onto the yigui's shelf with the door left ajar. The native shell answers
+  with a soft two-beat haptic and a strung-tag snackbar reading ON THE LIST · DAY 1 OF 7.
+  Reduce Motion settles the strokes instantly.</p>
+</div>
+
+</div>
+</body>

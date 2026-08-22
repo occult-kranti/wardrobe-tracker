@@ -1,0 +1,317 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Toile mobile — Closet</title>
+<link rel="stylesheet" href="foundation.css">
+<body>
+<div style="display:flex;gap:30px;flex-wrap:wrap;justify-content:center">
+
+<!-- ========== at rest ========== -->
+<div class="stage">
+  <div class="phone" data-room="atelier">
+
+    <div class="screen" style="gap:9px">
+
+      <!-- title row: the count hangs off the corner on a thread — a UI tag,
+           never lettering baked into the artwork below -->
+      <div>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <span class="t-display">Closet</span>
+          <span style="display:inline-flex;align-items:center">
+            <span class="tag" style="height:30px;font-size:10px"><span class="eyelet"></span><span>61 pieces</span></span>
+            <!-- the thread, twisted, running off to the frame's corner -->
+            <svg viewBox="0 0 22 30" style="width:20px;height:30px;fill:none;stroke:var(--line-2);stroke-width:1;margin-left:-3px">
+              <path d="M1 16C7 15 12 10 15 1"/>
+              <path d="M2 18C9 17 13 12 16 3" opacity=".5"/>
+            </svg>
+          </span>
+        </div>
+        <div class="rule-double" style="margin-top:7px"></div>
+      </div>
+
+      <!-- THE WARDROBE HEADER: panelled doors parted on a hanging rail.
+           Drawn small and centred — a bookplate vignette, not an illustration.
+           This is a browse screen: the garments must reach the eye first, so
+           the drawing keeps its whole character at two thirds the width. -->
+      <div class="art" style="width:248px;margin:2px auto 0">
+        <svg viewBox="0 0 380 180">
+          <!-- cornice -->
+          <g class="m2" stroke-width="1.3">
+            <path d="M92 6h196l-6 12H98z"/>
+            <path d="M92 6h196"/>
+          </g>
+          <!-- carcase -->
+          <g class="m1" stroke-width="1.2">
+            <path d="M98 18h184v148H98z"/>
+            <path d="M104 25h172"/>
+            <path d="M106 166v8M274 166v8"/>
+          </g>
+          <!-- the hanging rail, with its end brackets -->
+          <g class="m2" stroke-width="1.2">
+            <path d="M108 46h164"/>
+            <path d="M108 39v14M272 39v14"/>
+            <circle cx="108" cy="46" r="2.4"/><circle cx="272" cy="46" r="2.4"/>
+          </g>
+          <!-- ten hangers on the rail -->
+          <g class="m2" stroke-width="1" stroke-opacity=".9">
+            <path d="M117 46.5a3.2 3.2 0 0 1 6.4 0M120 50v4M120 54l-11 13h22z"/>
+            <path d="M133 46.5a3.2 3.2 0 0 1 6.4 0M136 50v4M136 54l-11 13h22z"/>
+            <path d="M149 46.5a3.2 3.2 0 0 1 6.4 0M152 50v4M152 54l-11 13h22z"/>
+            <path d="M165 46.5a3.2 3.2 0 0 1 6.4 0M168 50v4M168 54l-11 13h22z"/>
+            <path d="M181 46.5a3.2 3.2 0 0 1 6.4 0M184 50v4M184 54l-11 13h22z"/>
+            <path d="M197 46.5a3.2 3.2 0 0 1 6.4 0M200 50v4M200 54l-11 13h22z"/>
+            <path d="M213 46.5a3.2 3.2 0 0 1 6.4 0M216 50v4M216 54l-11 13h22z"/>
+            <path d="M229 46.5a3.2 3.2 0 0 1 6.4 0M232 50v4M232 54l-11 13h22z"/>
+            <path d="M245 46.5a3.2 3.2 0 0 1 6.4 0M248 50v4M248 54l-11 13h22z"/>
+            <path d="M261 46.5a3.2 3.2 0 0 1 6.4 0M264 50v4M264 54l-11 13h22z"/>
+          </g>
+          <!-- three drawers under the rail, with turned pulls -->
+          <g class="m1" stroke-width="1.1">
+            <path d="M104 132h56v28h-56zM162 132h56v28h-56zM220 132h56v28h-56z"/>
+            <circle cx="132" cy="146" r="2.6"/><circle cx="190" cy="146" r="2.6"/><circle cx="248" cy="146" r="2.6"/>
+          </g>
+          <!-- the doors, swung open: outer edges drawn taller than the hinges -->
+          <g class="m2" stroke-width="1.2">
+            <path d="M98 20 40 9v163l58-9z"/>
+            <path d="M92 28 47 19v145l45-8z"/>
+            <path d="M87 35 52 27v130l35-6z" stroke-opacity=".7"/>
+            <circle cx="93" cy="92" r="2.4"/>
+            <path d="M282 20l58-11v163l-58-9z"/>
+            <path d="M288 28l45-9v145l-45-8z"/>
+            <path d="M293 35l35-8v130l-35-6z" stroke-opacity=".7"/>
+            <circle cx="287" cy="92" r="2.4"/>
+          </g>
+        </svg>
+      </div>
+
+      <!-- search + FILTERS -->
+      <div class="plate" style="padding:0 12px 0 13px;height:42px;display:flex;align-items:center;gap:10px">
+        <svg viewBox="0 0 24 24" style="width:17px;height:17px;fill:none;stroke:var(--line-2);stroke-width:1.4;flex:none">
+          <circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/>
+        </svg>
+        <span class="t-mono" style="flex:1;color:var(--ink-3)">Search by name</span>
+        <span class="tag" style="height:28px;font-size:9.5px;letter-spacing:.12em"><span class="eyelet" style="width:7px;height:7px"></span><span>Filters</span></span>
+      </div>
+
+      <!-- one filter rail, sectioned: KIND, then STATE. Scrolls sideways,
+           sticky under the header — the chips stay in the thumb's sweep.
+           The thread twists that hung between the chips are gone: the
+           conceit is stated once, on the count at the title. -->
+      <div style="display:flex;align-items:center;gap:6px;height:32px;overflow:hidden">
+        <span class="t-mono-s" style="flex:none">Kind</span>
+        <span style="flex:none;width:1px;height:15px;background:var(--line)"></span>
+        <span class="tag on" style="flex:none;height:31px"><span class="eyelet"></span><span>Everything</span></span>
+        <span class="tag" style="flex:none;height:31px"><span class="eyelet"></span><span>Tops</span></span>
+        <span class="tag" style="flex:none;height:31px"><span class="eyelet"></span><span>Bottoms</span></span>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:6px;height:32px;overflow:hidden">
+        <span class="t-mono-s" style="flex:none">State</span>
+        <span style="flex:none;width:1px;height:15px;background:var(--line)"></span>
+        <span class="tag on" style="flex:none;height:31px"><span class="eyelet"></span><span>All 61</span></span>
+        <span class="tag" style="flex:none;height:31px"><span class="eyelet"></span><span>Ready 51</span></span>
+        <span class="tag" style="flex:none;height:31px"><span class="eyelet"></span><span>Needs wash 8</span></span>
+      </div>
+
+      <!-- THE GRID — two columns of quiet plates. A card is read, not
+           admired: no brackets, no ticks. Nothing decorative sits on or
+           behind the photographs; the state tag hangs outside. -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+
+        <!-- 01 -->
+        <div class="plate quiet" style="padding:0">
+          <div style="height:26px"></div>
+          <span class="photo" style="margin:0 8px;width:calc(100% - 16px);aspect-ratio:13/25"><img src="photos/hm-shirt.webp" alt=""></span>
+          <div style="padding:9px 10px 10px">
+            <p class="t-serif" style="font-size:15.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Poplin shirt</p>
+            <p class="t-mono-s" style="margin-top:5px;font-size:9px">Worn 11× · $2.55/wear</p>
+            <div style="margin-top:5px;height:4px;position:relative">
+              <div style="position:absolute;inset:auto 0 0 0;height:1px;background:var(--line);opacity:.5"></div>
+              <div class="bar-fill" style="width:22%;height:4px"></div>
+            </div>
+            <div class="rule-dash" style="margin:9px 0 8px"></div>
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <svg viewBox="0 0 24 24" style="width:21px;height:21px;fill:none;stroke:var(--gold);stroke-width:1.5"><path d="M4 13l5 5L20 6"/></svg>
+              <svg viewBox="0 0 24 24" style="width:21px;height:21px;fill:none;stroke:var(--line-2);stroke-width:1.5"><path d="M11 7a1 1 0 0 1 2 0M12 9v2M12 11 4 18h16z"/></svg>
+              <svg viewBox="0 0 24 24" style="width:21px;height:21px;fill:none;stroke:var(--line-2);stroke-width:1.5"><rect x="4" y="6" width="16" height="14"/><path d="M4 10h16M9 4v4M15 4v4"/></svg>
+              <svg viewBox="0 0 24 24" style="width:21px;height:21px;fill:none;stroke:var(--line-2);stroke-width:1.5"><path d="M5 9h14M5 13h14M5 17h9"/></svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- 02 — the state tag sits above the photograph, never on it -->
+        <div class="plate quiet" style="padding:0">
+          <div style="height:26px;display:flex;align-items:center;padding-left:6px">
+            <span class="tag" style="height:22px;font-size:8px;letter-spacing:.1em;padding:0 8px"><span class="eyelet" style="width:6px;height:6px;border-width:1.2px"></span><span>Never worn yet</span></span>
+          </div>
+          <span class="photo" style="margin:0 8px;width:calc(100% - 16px);aspect-ratio:13/25"><img src="photos/in-anarkali-gown.webp" alt=""></span>
+          <div style="padding:9px 10px 10px">
+            <p class="t-serif" style="font-size:15.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Bandhani silk kurta</p>
+            <p class="t-mono-s" style="margin-top:5px;font-size:9px">Worn 0× · resting</p>
+            <div style="margin-top:5px;height:4px;position:relative">
+              <div style="position:absolute;inset:auto 0 0 0;height:1px;background:var(--line);opacity:.5"></div>
+            </div>
+            <div class="rule-dash" style="margin:9px 0 8px"></div>
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <svg viewBox="0 0 24 24" style="width:21px;height:21px;fill:none;stroke:var(--gold);stroke-width:1.5"><path d="M4 13l5 5L20 6"/></svg>
+              <svg viewBox="0 0 24 24" style="width:21px;height:21px;fill:none;stroke:var(--line-2);stroke-width:1.5"><path d="M11 7a1 1 0 0 1 2 0M12 9v2M12 11 4 18h16z"/></svg>
+              <svg viewBox="0 0 24 24" style="width:21px;height:21px;fill:none;stroke:var(--line-2);stroke-width:1.5"><rect x="4" y="6" width="16" height="14"/><path d="M4 10h16M9 4v4M15 4v4"/></svg>
+              <svg viewBox="0 0 24 24" style="width:21px;height:21px;fill:none;stroke:var(--line-2);stroke-width:1.5"><path d="M5 9h14M5 13h14M5 17h9"/></svg>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- the end of the rail -->
+      <div>
+        <div class="rule-dash"></div>
+        <p class="t-mono-s" style="text-align:center;margin-top:7px">61 of 61 on the record</p>
+      </div>
+
+    </div>
+
+    <!-- the shell's tab bar -->
+    <div class="tabs">
+      <div class="tab">
+        <svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15"/><path d="M4 10h16M9 3v4M15 3v4"/><text x="12" y="18" text-anchor="middle" style="font:400 7px 'Courier New';fill:currentColor;stroke:none">11</text></svg>
+        Today
+      </div>
+      <div class="tab on">
+        <svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17"/><path d="M12 4v17M8.5 11h1M14.5 11h1M5 4h14"/></svg>
+        Closet
+      </div>
+      <div class="tab">
+        <svg viewBox="0 0 24 24"><path d="M11 7a1 1 0 0 1 2 0M12 9v2M12 11 5 17h14z"/></svg>
+        Outfits
+      </div>
+      <div class="tab">
+        <svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14"/><path d="M4 9h16M8 13h8M8 16h5"/></svg>
+        Feed
+      </div>
+      <div class="tab">
+        <svg viewBox="0 0 24 24"><circle cx="6" cy="8" r="1"/><circle cx="6" cy="12" r="1"/><circle cx="6" cy="16" r="1"/><path d="M10 8h9M10 12h9M10 16h9"/></svg>
+        More
+      </div>
+    </div>
+  </div>
+  <p class="caption-note"><b>Closet — at rest.</b> The count hangs off the title on a thread;
+  under it the wardrobe stands small and centred, doors parted on a rail of ten hangers — a
+  bookplate, not an illustration, so the garments reach the eye first. Search and the
+  FILTERS chip share one row; KIND and STATE are a single sideways rail, sectioned by a tick and
+  sticky under the header. Cards are quiet plates: photograph, serif name, a mono
+  wear line over a hairline bar, and a 48dp action row — log wear, assign, plan, more. The state
+  tag hangs outside the photo plate, never on it.</p>
+</div>
+
+<!-- ========== the doors part ========== -->
+<div class="stage">
+  <div class="phone" data-room="atelier">
+    <div class="screen" style="gap:9px">
+      <div style="opacity:.4">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <span class="t-display">Closet</span>
+          <span class="tag" style="height:30px;font-size:10px"><span class="eyelet"></span><span>61 pieces</span></span>
+        </div>
+        <div class="rule-double" style="margin-top:7px"></div>
+      </div>
+      <!-- the header band stands empty: its wardrobe is out on the overlay, drawing -->
+      <div style="height:178px"></div>
+      <div class="plate" style="padding:0 13px;height:42px;display:flex;align-items:center;gap:10px;opacity:.3">
+        <span class="t-mono" style="flex:1;color:var(--ink-3)">Search by name</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;height:32px;overflow:hidden;opacity:.3">
+        <span class="t-mono-s" style="flex:none">Kind</span>
+        <span style="flex:none;width:1px;height:15px;background:var(--line)"></span>
+        <span class="tag" style="flex:none;height:31px"><span class="eyelet"></span><span>Everything</span></span>
+        <span class="tag" style="flex:none;height:31px"><span class="eyelet"></span><span>Tops</span></span>
+        <span class="tag" style="flex:none;height:31px"><span class="eyelet"></span><span>Bottoms</span></span>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;height:32px;overflow:hidden;opacity:.3">
+        <span class="t-mono-s" style="flex:none">State</span>
+        <span style="flex:none;width:1px;height:15px;background:var(--line)"></span>
+        <span class="tag" style="flex:none;height:31px"><span class="eyelet"></span><span>All 61</span></span>
+        <span class="tag" style="flex:none;height:31px"><span class="eyelet"></span><span>Ready 51</span></span>
+        <span class="tag" style="flex:none;height:31px"><span class="eyelet"></span><span>Needs wash 8</span></span>
+      </div>
+      <!-- the grid is still fading up under the doors: hairline skeletons only -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;opacity:.32">
+        <div class="plate quiet" style="padding:0;height:450px">
+          <div style="height:26px"></div>
+          <div style="margin:0 8px;aspect-ratio:2/3;border:1px dashed var(--line)"></div>
+        </div>
+        <div class="plate quiet" style="padding:0;height:450px">
+          <div style="height:26px"></div>
+          <div style="margin:0 8px;aspect-ratio:2/3;border:1px dashed var(--line)"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- the signature moment: the doors draw on shut, then swing apart and the
+         rail comes forward with its hangers -->
+    <div class="moment" style="align-items:flex-start;padding-top:118px">
+      <svg viewBox="0 0 240 214" style="width:322px;height:287px;fill:none">
+        <!-- cornice + carcase, drawn first -->
+        <g class="m2" stroke-width="1.8">
+          <path d="M64 26h112l-7 11H71z"/>
+          <path d="M64 26h112"/>
+        </g>
+        <g class="m1" stroke-width="1.6">
+          <path d="M70 37h100v146H70z"/>
+          <path d="M78 45h84"/>
+          <path d="M80 183v9M160 183v9"/>
+        </g>
+        <!-- the rail and its hangers, revealed -->
+        <g class="m2" stroke-width="1.5">
+          <path d="M80 66h80"/><path d="M80 58v16M160 58v16"/>
+          <circle cx="80" cy="66" r="2.6"/><circle cx="160" cy="66" r="2.6"/>
+        </g>
+        <g class="m2" stroke-width="1.3">
+          <path d="M94 66.5a3.5 3.5 0 0 1 7 0M97.5 71v4M97.5 75l-12 14h24z"/>
+          <path d="M116 66.5a3.5 3.5 0 0 1 7 0M119.5 71v4M119.5 75l-12 14h24z"/>
+          <path d="M138 66.5a3.5 3.5 0 0 1 7 0M141.5 71v4M141.5 75l-12 14h24z"/>
+        </g>
+        <!-- drawers -->
+        <g class="m1" stroke-width="1.3">
+          <path d="M78 150h84v28H78z"/><path d="M120 150v28"/>
+          <circle cx="99" cy="164" r="2.6"/><circle cx="141" cy="164" r="2.6"/>
+        </g>
+        <!-- the doors mid-swing: the leading edges still drawing on -->
+        <g class="m2" stroke-width="1.7">
+          <path d="M70 40 26 30v160l44-10z"/>
+          <path d="M64 48 33 40v140l31-8z"/>
+          <circle cx="65" cy="110" r="2.6"/>
+          <path d="M170 40l44-10v160l-44-10z"/>
+          <path d="M176 48l31-8v140l-31-8z"/>
+          <circle cx="175" cy="110" r="2.6"/>
+        </g>
+        <!-- the closed position, ghosted: the doors drew themselves here first -->
+        <g class="m1" stroke-width="1" stroke-dasharray="4 4" stroke-opacity=".5">
+          <path d="M120 40v150"/>
+        </g>
+        <!-- the swing arcs the leading edges travelled, still drawing -->
+        <g class="m2" stroke-width="1.1" stroke-dasharray="5 5" stroke-opacity=".75">
+          <path d="M118 198C92 206 56 202 28 194"/>
+          <path d="M122 198c26 8 62 12 90 4"/>
+        </g>
+      </svg>
+      <p class="caption">The doors draw shut · then part on the rail</p>
+    </div>
+
+    <div class="tabs">
+      <div class="tab"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>Today</div>
+      <div class="tab on"><svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17"/><path d="M12 4v17M8.5 11h1M14.5 11h1"/></svg>Closet</div>
+      <div class="tab"><svg viewBox="0 0 24 24"><path d="M11 7a1 1 0 0 1 2 0M12 9v2M12 11 5 17h14z"/></svg>Outfits</div>
+      <div class="tab"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14"/><path d="M4 9h16M8 13h8M8 16h5"/></svg>Feed</div>
+      <div class="tab"><svg viewBox="0 0 24 24"><circle cx="6" cy="8" r="1"/><circle cx="6" cy="12" r="1"/><circle cx="6" cy="16" r="1"/><path d="M10 8h9M10 12h9M10 16h9"/></svg>More</div>
+    </div>
+  </div>
+  <p class="caption-note"><b>Opening the closet — the signature moment.</b> 600ms: the wardrobe
+  draws itself closed, then the panelled doors swing apart on their dashed arcs and the rail and
+  hangers ink in behind them while the grid fades up underneath. Applying a KIND or STATE filter
+  replays the rail alone — hangers slide off until only the matching ones remain. Reduce Motion
+  shows the doors already open; the native shell adds a soft door-close thunk when the grid
+  re-deals.</p>
+</div>
+
+</div>
+</body>

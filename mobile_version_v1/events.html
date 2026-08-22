@@ -1,0 +1,385 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Toile mobile — Events</title>
+<link rel="stylesheet" href="foundation.css">
+<body>
+<div style="display:flex;gap:30px;flex-wrap:wrap;justify-content:center">
+
+<!-- ========== at rest ========== -->
+<div class="stage">
+  <div class="phone" data-room="atelier">
+
+    <!-- the frieze is gone: its cornice, crown and sprigs only repeated, in
+         miniature, the armoire standing open below — this page's one drawing. -->
+
+    <div class="screen" style="gap:9px">
+
+      <!-- header band -->
+      <div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span class="t-display" style="flex:none">Events</span>
+          <span class="t-mono-s" style="flex:1;text-align:right">2 coming up</span>
+          <span class="tag" style="flex:none;height:36px;padding:0 15px 0 12px"><span class="eyelet"></span><span>+ Add</span></span>
+        </div>
+        <div class="rule-double" style="margin-top:8px"></div>
+      </div>
+
+      <!-- ===== EVENT 1 — the next one up: the armoire stands open ===== -->
+      <div id="c1" style="position:relative;height:612px">
+
+        <!-- the armoire elevation: cornice with cusped crown, both leaves
+             swung open on their hinges, the cusped arch of the opening,
+             the carcase stiles, the plinth on bracket feet. -->
+        <div class="art" style="position:absolute;inset:0">
+          <svg viewBox="0 0 376 612" style="width:376px;height:612px">
+            <!-- cornice, with its cusped crown -->
+            <g class="m2" stroke-width="1.3">
+              <path d="M4 24h368"/>
+              <path d="M14 16h348"/>
+              <path d="M4 24l10-8M372 24l-10-8"/>
+            </g>
+            <g class="m1" stroke-width="1" stroke-opacity=".85">
+              <path d="M170 16c0-6 5-8 8-12 4-4 7-7 10-11 3 4 6 7 10 11 3 4 8 6 8 12"/>
+            </g>
+
+            <!-- LEFT LEAF, swung open: the board and its knob. The panel
+                 mouldings and hinge leaves are gone — at this size they only
+                 read as noise flanking the days. -->
+            <g class="m1" stroke-width="1.2" stroke-opacity=".95">
+              <path d="M6 30v544M30 40v524"/>
+              <path d="M6 30l24 10M6 574l24-10"/>
+            </g>
+            <g class="m2" stroke-width="1" stroke-opacity=".8">
+              <circle cx="27" cy="317" r="2.4"/>
+            </g>
+            <!-- RIGHT LEAF, swung open -->
+            <g class="m1" stroke-width="1.2" stroke-opacity=".95">
+              <path d="M370 30v544M346 40v524"/>
+              <path d="M370 30l-24 10M370 574l-24-10"/>
+            </g>
+            <g class="m2" stroke-width="1" stroke-opacity=".8">
+              <circle cx="349" cy="317" r="2.4"/>
+            </g>
+
+            <!-- THE CUSPED ARCH of the opening, doubled -->
+            <g class="m2" stroke-width="1.4">
+              <path d="M36.0 96.0Q50.8 85.9 47.6 74.6Q72.8 67.6 80.5 56.4Q113.1 54.7 129.8 44.3Q163.2 50.1 188.0 40.0Q212.8 50.1 246.2 44.3Q262.9 54.7 295.5 56.4Q303.2 67.6 328.4 74.6Q325.2 85.9 340.0 96.0"/>
+            </g>
+            <g class="m1" stroke-width="1" stroke-opacity=".9">
+              <path d="M28.0 96.0Q44.1 84.2 40.2 70.7Q67.2 62.7 74.9 49.3Q109.3 47.4 126.8 35.0Q161.7 41.5 188.0 30.0Q214.3 41.5 249.2 35.0Q266.7 47.4 301.1 49.3Q308.8 62.7 335.8 70.7Q331.9 84.2 348.0 96.0"/>
+            </g>
+            <!-- the carcase stiles, springing to the plinth -->
+            <g class="m1" stroke-width="1.1" stroke-opacity=".9">
+              <path d="M36 96v480M340 96v480"/>
+            </g>
+
+            <!-- plinth on bracket feet, with a cusped apron -->
+            <g class="m2" stroke-width="1.3">
+              <path d="M20 582h336"/>
+              <path d="M14 596h348"/>
+              <path d="M20 582l-6 14M356 582l6 14"/>
+            </g>
+            <g class="m1" stroke-width="1" stroke-opacity=".85">
+              <path d="M30 596v-6c0-5 5-8 11-8M346 596v-6c0-5-5-8-11-8"/>
+            </g>
+          </svg>
+        </div>
+
+        <!-- the card's content, standing inside the opening -->
+        <div style="position:relative;z-index:1;padding:104px 44px 0">
+
+          <div style="display:flex;align-items:flex-start;gap:10px">
+            <p class="t-serif" style="flex:1;text-transform:uppercase;font-size:16.5px;line-height:1.14;letter-spacing:.03em">Jaipur, block-<br>print sourcing</p>
+            <div style="flex:none;text-align:right">
+              <p class="t-mono-s">AUG 20 – AUG 22</p>
+              <p class="t-mono-s gold" style="margin-top:4px">· IN 9 DAYS</p>
+            </div>
+          </div>
+          <p class="t-mono-s" style="margin-top:6px">TRIP · JAIPUR · 3 DAYS HELD</p>
+
+          <div class="rule-tick" style="margin:8px 0"></div>
+          <p class="t-italic" style="font:italic 400 13.5px/1.36 Georgia,serif">Workshops are dusty.<br>Nothing white on the first two days.</p>
+          <div class="rule" style="margin:10px 0 0"></div>
+
+          <!-- day-rail 1 -->
+          <div style="margin-top:7px">
+            <div style="display:flex;align-items:baseline;gap:8px">
+              <span class="t-serif" style="flex:1;font-size:16px">Workshop visits</span>
+              <span class="t-mono-s" style="flex:none">AUG 20</span>
+            </div>
+            <p class="t-mono-s" style="margin-top:2px;color:var(--ink-3)">DIWALI CRAFT MAXIMAL</p>
+            <!-- the rail, ruled plain: eyelets and threads drawn over every
+                 photograph were ornament inside data, three times over -->
+            <div style="height:1px;background:var(--line-2);opacity:.5;margin:7px 0 5px"></div>
+            <div style="display:flex;gap:5px;align-items:stretch">
+              <span class="photo" style="width:46px;height:50px;border:1px solid var(--line-2)"><img src="photos/in-anarkali-gown.webp" alt=""></span>
+              <span class="photo" style="width:46px;height:50px;border:1px solid var(--line-2)"><img src="photos/pashmina-shawl.webp" alt=""></span>
+              <span class="photo" style="width:46px;height:50px;border:1px solid var(--line-2)"><img src="photos/hm-shirt.webp" alt=""></span>
+              <span class="photo" style="width:46px;height:50px;border:1px solid var(--line-2)"><img src="photos/loafer-penny.webp" alt=""></span>
+              <span class="photo" style="width:46px;height:50px;border:1px solid var(--line-2)"><img src="photos/necklace-chain.webp" alt=""></span>
+              <!-- the half-cut tag: three more hang off the end of the rail -->
+              <span class="art" style="width:31px;flex:none">
+                <svg viewBox="0 0 31 50" style="width:31px;height:50px">
+                  <g class="m1" stroke-width="1.1" stroke-opacity=".9">
+                    <path d="M31 2H12L2 12v26l10 10h19"/>
+                    <circle cx="13" cy="25" r="3.4"/>
+                  </g>
+                  <text x="22" y="29" text-anchor="middle" style="font:500 10px 'Courier New',monospace;fill:var(--ink-2);stroke:none">+3</text>
+                </svg>
+              </span>
+            </div>
+          </div>
+
+          <div class="rule-dot" style="margin:7px 0"></div>
+
+          <!-- day-rail 2 -->
+          <div>
+            <div style="display:flex;align-items:baseline;gap:8px">
+              <span class="t-serif" style="flex:1;font-size:16px">Dyers, then dinner</span>
+              <span class="t-mono-s" style="flex:none">AUG 21</span>
+            </div>
+            <p class="t-mono-s" style="margin-top:2px;color:var(--ink-3)">OXBLOOD AT INDIAN ACCENT</p>
+            <!-- the rail, ruled plain: eyelets and threads drawn over every
+                 photograph were ornament inside data, three times over -->
+            <div style="height:1px;background:var(--line-2);opacity:.5;margin:7px 0 5px"></div>
+            <div style="display:flex;gap:5px;align-items:stretch">
+              <span class="photo" style="width:46px;height:50px;border:1px solid var(--line-2)"><img src="photos/pashmina-shawl.webp" alt=""></span>
+              <span class="photo" style="width:46px;height:50px;border:1px solid var(--line-2)"><img src="photos/in-anarkali-gown.webp" alt=""></span>
+              <span class="photo" style="width:46px;height:50px;border:1px solid var(--line-2)"><img src="photos/boot-chelsea.webp" alt=""></span>
+              <span class="photo" style="width:46px;height:50px;border:1px solid var(--line-2)"><img src="photos/necklace-chain.webp" alt=""></span>
+              <span class="photo" style="width:46px;height:50px;border:1px solid var(--line-2)"><img src="photos/watch-dress-steel.webp" alt=""></span>
+              <span class="art" style="width:31px;flex:none">
+                <svg viewBox="0 0 31 50" style="width:31px;height:50px">
+                  <g class="m1" stroke-width="1.1" stroke-opacity=".9">
+                    <path d="M31 2H12L2 12v26l10 10h19"/>
+                    <circle cx="13" cy="25" r="3.4"/>
+                  </g>
+                  <text x="22" y="29" text-anchor="middle" style="font:500 10px 'Courier New',monospace;fill:var(--ink-2);stroke:none">+1</text>
+                </svg>
+              </span>
+            </div>
+          </div>
+
+          <div class="rule-dot" style="margin:7px 0"></div>
+
+          <!-- day-rail 3 -->
+          <div>
+            <div style="display:flex;align-items:baseline;gap:8px">
+              <span class="t-serif" style="flex:1;font-size:16px">Market, then train</span>
+              <span class="t-mono-s" style="flex:none">AUG 22</span>
+            </div>
+            <p class="t-mono-s" style="margin-top:2px;color:var(--ink-3)">STUDIO-TO-STREET</p>
+            <!-- the rail, ruled plain: eyelets and threads drawn over every
+                 photograph were ornament inside data, three times over -->
+            <div style="height:1px;background:var(--line-2);opacity:.5;margin:7px 0 5px"></div>
+            <div style="display:flex;gap:5px;align-items:stretch">
+              <span class="photo" style="width:46px;height:50px;border:1px solid var(--line-2)"><img src="photos/hm-shirt.webp" alt=""></span>
+              <span class="photo" style="width:46px;height:50px;border:1px solid var(--line-2)"><img src="photos/levis-denim-jeans.webp" alt=""></span>
+              <span class="photo" style="width:46px;height:50px;border:1px solid var(--line-2)"><img src="photos/sneaker-white.webp" alt=""></span>
+              <span class="photo" style="width:46px;height:50px;border:1px solid var(--line-2)"><img src="photos/pashmina-shawl.webp" alt=""></span>
+              <span class="photo" style="width:46px;height:50px;border:1px solid var(--line-2)"><img src="photos/watch-dress-steel.webp" alt=""></span>
+              <span class="art" style="width:31px;flex:none">
+                <svg viewBox="0 0 31 50" style="width:31px;height:50px">
+                  <g class="m1" stroke-width="1.1" stroke-opacity=".9">
+                    <path d="M31 2H12L2 12v26l10 10h19"/>
+                    <circle cx="13" cy="25" r="3.4"/>
+                  </g>
+                  <text x="22" y="29" text-anchor="middle" style="font:500 10px 'Courier New',monospace;fill:var(--ink-2);stroke:none">+2</text>
+                </svg>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== EVENT 2 — later: doors closed, keyhole unturned ===== -->
+      <div class="plate" style="padding:9px 11px">
+        <div style="display:flex;align-items:center;gap:11px">
+          <!-- the escutcheon alone. A whole armoire redrawn in miniature only
+               repeated the hero above it; the unturned keyhole says the same
+               thing in five strokes: this one is still shut. -->
+          <span class="art" style="flex:none;width:22px">
+            <svg viewBox="0 0 22 40" style="width:22px;height:40px">
+              <g class="m2" stroke-width="1.1" stroke-opacity=".9">
+                <path d="M11 3c-4.5 0-7 3.4-7 8v18c0 4.6 2.5 8 7 8s7-3.4 7-8V11c0-4.6-2.5-8-7-8z"/>
+                <circle cx="11" cy="17" r="2.8"/><path d="M11 20v7"/>
+              </g>
+            </svg>
+          </span>
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;align-items:baseline;gap:8px">
+              <span class="t-serif" style="flex:1;text-transform:uppercase;font-size:14px;letter-spacing:.03em">Wedding season, Delhi</span>
+              <span class="t-mono-s" style="flex:none">SEP 7 – SEP 9</span>
+            </div>
+            <div class="rule-dash" style="margin:6px 0 5px"></div>
+            <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px">
+              <span class="t-mono-s" style="font-size:8.5px;letter-spacing:.05em;white-space:nowrap">CELEBRATION · NEW DELHI · 3 DAYS HELD</span>
+              <span class="t-mono-s gold" style="flex:none;font-size:8.5px;letter-spacing:.05em;white-space:nowrap">· IN 27 DAYS</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== the past ===== -->
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="t-label" style="flex:none">Already happened</span>
+        <div class="rule" style="flex:1"></div>
+      </div>
+
+    </div>
+
+    <!-- the shell's tab bar — Events lives under More -->
+    <div class="tabs">
+      <div class="tab">
+        <svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15"/><path d="M4 10h16M9 3v4M15 3v4"/><text x="12" y="18" text-anchor="middle" style="font:400 7px 'Courier New';fill:currentColor;stroke:none">11</text></svg>
+        Today
+      </div>
+      <div class="tab">
+        <svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17"/><path d="M12 4v17M8.5 11h1M14.5 11h1M5 4h14"/></svg>
+        Closet
+      </div>
+      <div class="tab">
+        <svg viewBox="0 0 24 24"><path d="M11 7a1 1 0 0 1 2 0M12 9v2M12 11 5 17h14z"/></svg>
+        Outfits
+      </div>
+      <div class="tab">
+        <svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14"/><path d="M4 9h16M8 13h8M8 16h5"/></svg>
+        Feed
+      </div>
+      <div class="tab on">
+        <svg viewBox="0 0 24 24"><circle cx="6" cy="8" r="1"/><circle cx="6" cy="12" r="1"/><circle cx="6" cy="16" r="1"/><path d="M10 8h9M10 12h9M10 16h9"/></svg>
+        More
+      </div>
+    </div>
+  </div>
+  <p class="caption-note"><b>Events — at rest.</b> The next event is an armoire standing open:
+  cornice, both leaves swung back, and the cusped arch of the opening framing the days held.
+  Each day is ruled off by a plain rail with a half-cut tag where its pieces run on — the
+  thread and punched eyelet belong to the moment overlay, not over the photographs. Later and
+  past events keep their doors closed on a keyhole escutcheon; a tap opens them.</p>
+</div>
+
+<!-- ========== the doors-open moment ========== -->
+<div class="stage">
+  <div class="phone" data-room="atelier">
+    <div class="screen" style="gap:9px">
+      <div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span class="t-display">Events</span>
+          <span class="t-mono-s" style="flex:1;text-align:right">3 coming up</span>
+          <span class="tag" style="flex:none;height:36px;padding:0 15px 0 12px"><span class="eyelet"></span><span>+ Add</span></span>
+        </div>
+        <div class="rule-double" style="margin-top:8px"></div>
+      </div>
+
+      <div class="plate quiet" style="padding:10px 12px;opacity:.3">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;align-items:baseline;gap:8px">
+              <span class="t-serif" style="flex:1;text-transform:uppercase;font-size:14px;letter-spacing:.03em">Wedding season, Delhi</span>
+              <span class="t-mono-s" style="flex:none">SEP 7 – SEP 9</span>
+            </div>
+            <div class="rule-dash" style="margin:6px 0 5px"></div>
+            <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px">
+              <span class="t-mono-s" style="font-size:8.5px;letter-spacing:.05em;white-space:nowrap">CELEBRATION · NEW DELHI · 3 DAYS HELD</span>
+              <span class="t-mono-s" style="flex:none;font-size:8.5px;letter-spacing:.05em;white-space:nowrap">· IN 27 DAYS</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="plate quiet" style="padding:10px 12px;opacity:.22">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;align-items:baseline;gap:8px">
+              <span class="t-serif" style="flex:1;text-transform:uppercase;font-size:14px;letter-spacing:.03em">Lakmé fashion week</span>
+              <span class="t-mono-s" style="flex:none">JUL 9 – JUL 10</span>
+            </div>
+            <div class="rule-dash" style="margin:6px 0 5px"></div>
+            <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px">
+              <span class="t-mono-s" style="font-size:8.5px;letter-spacing:.05em;white-space:nowrap">WORK · MUMBAI · 2 DAYS HELD</span>
+              <span class="t-mono-s" style="flex:none;font-size:8.5px;letter-spacing:.05em">· DONE</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- the canonical moment: the armoire opens on a cusped arch -->
+    <div class="moment">
+      <svg viewBox="0 0 240 260" style="width:316px;height:342px;fill:none">
+        <!-- cornice and crown -->
+        <g class="m2" stroke-width="1.8">
+          <path d="M28 44h184"/><path d="M40 32h160"/><path d="M28 44l12-12M212 44l-12-12"/>
+        </g>
+        <g class="m1" stroke-width="1.3">
+          <path d="M104 32c0-8 7-10 11-16 3-4 5-7 5-7s2 3 5 7c4 6 11 8 11 16"/>
+          <path d="M112 32c0-5 5-7 8-11 3 4 8 6 8 11"/>
+        </g>
+        <!-- the leaves, drawn mid-swing: two positions, the second dashed -->
+        <g class="m1" stroke-width="1.2" stroke-opacity=".55" stroke-dasharray="4 4">
+          <path d="M78 50v150M162 50v150"/>
+        </g>
+        <g class="m2" stroke-width="1.8">
+          <path d="M30 52v156M56 62v136M30 52l26 10M30 208l26-10"/>
+          <path d="M210 52v156M184 62v136M210 52l-26 10M210 208l-26-10"/>
+        </g>
+        <g class="m1" stroke-width="1.1" stroke-opacity=".9">
+          <path d="M37 68v124M50 74v112M37 68l13 6M37 192l13-6"/>
+          <path d="M203 68v124M190 74v112M203 68l-13 6M203 192l-13-6"/>
+        </g>
+        <!-- the cusped arch revealed in the opening, drawing itself -->
+        <g class="m2" stroke-width="2" stroke-dasharray="330" stroke-dashoffset="18">
+          <path d="M62.0 120.0Q71.1 112.6 66.4 103.2Q78.9 99.2 79.0 88.9Q93.0 89.4 97.8 79.3Q110.7 84.4 120.0 76.0Q129.3 84.4 142.2 79.3Q147.0 89.4 161.0 88.9Q161.1 99.2 173.6 103.2Q168.9 112.6 178.0 120.0"/>
+        </g>
+        <g class="m1" stroke-width="1" stroke-opacity=".75">
+          <path d="M54.0 120.0Q64.4 111.0 59.0 99.3Q73.2 94.4 73.3 81.8Q89.1 82.2 94.7 70.1Q109.3 75.8 120.0 66.0Q130.7 75.8 145.3 70.1Q150.9 82.2 166.7 81.8Q166.8 94.4 181.0 99.3Q175.6 111.0 186.0 120.0"/>
+        </g>
+        <g class="m1" stroke-width="1.2" stroke-opacity=".9">
+          <path d="M62 120v78M178 120v78"/>
+          <path d="M56 198h128"/>
+        </g>
+        <!-- the first day-rail, ruling itself left to right; its tags drop
+             and hang one by one, sixty milliseconds apart -->
+        <g class="m2" stroke-width="1.6" stroke-dasharray="106" stroke-dashoffset="26">
+          <path d="M72 142h96"/>
+        </g>
+        <g class="m1" stroke-width="1.1" stroke-opacity=".9">
+          <path d="M72 137v10M168 137v10"/>
+          <circle cx="90" cy="142" r="3"/><path d="M90 145v9"/>
+          <circle cx="120" cy="142" r="3"/><path d="M120 145v9"/>
+          <circle cx="150" cy="142" r="3"/><path d="M150 145v5"/>
+        </g>
+        <g class="m2" stroke-width="1.3">
+          <path d="M84 154h12l4 5v13l-4 5H84l-4-5v-13z"/>
+          <path d="M114 154h12l4 5v13l-4 5h-12l-4-5v-13z"/>
+        </g>
+        <g class="m1" stroke-width="1.1" stroke-opacity=".5" stroke-dasharray="3 3">
+          <path d="M144 150h12l4 5v13l-4 5h-12l-4-5v-13z"/>
+        </g>
+        <!-- plinth on bracket feet -->
+        <g class="m2" stroke-width="1.6">
+          <path d="M40 216h160"/><path d="M32 232h176"/>
+          <path d="M40 216l-8 16M200 216l8 16"/>
+        </g>
+      </svg>
+      <p class="caption">The armoire opens · Sep 7 – Sep 9 held</p>
+    </div>
+
+    <div class="tabs">
+      <div class="tab"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>Today</div>
+      <div class="tab"><svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17"/><path d="M12 4v17M8.5 11h1M14.5 11h1"/></svg>Closet</div>
+      <div class="tab"><svg viewBox="0 0 24 24"><path d="M11 7a1 1 0 0 1 2 0M12 9v2M12 11 5 17h14z"/></svg>Outfits</div>
+      <div class="tab"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14"/><path d="M4 9h16M8 13h8M8 16h5"/></svg>Feed</div>
+      <div class="tab on"><svg viewBox="0 0 24 24"><circle cx="6" cy="8" r="1"/><circle cx="6" cy="12" r="1"/><circle cx="6" cy="16" r="1"/><path d="M10 8h9M10 12h9M10 16h9"/></svg>More</div>
+    </div>
+  </div>
+  <p class="caption-note"><b>Event planned — the doors open.</b> 800ms: the leaves swing back
+  from their closed positions, the cusped arch draws itself across the opening, and the first
+  day-rail rules from left to right before its tags drop and hang, sixty milliseconds apart.
+  Reduce Motion snaps the doors open with no staggered drops; the native shell adds one deep
+  beat at the hinge.</p>
+</div>
+
+</div>
+</body>
