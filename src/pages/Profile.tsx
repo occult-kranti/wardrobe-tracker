@@ -12,6 +12,8 @@ import { personaById } from '../lib/personaWardrobe';
 import { formatMoney } from '@almari/shared/cost';
 import { FEED_ENABLED } from '@almari/shared/flags';
 
+const LOCALE = 'en-IN' as const;
+
 /**
  * A WARDROBE'S OWN PAGE — who keeps it, how they dress, and what they show.
  *
@@ -158,7 +160,7 @@ export default function Profile() {
         <Card>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-5">
             <Stat value={wardrobe.activeItems.length} label="In the closet" />
-            <Stat value={worn.toLocaleString('en-IN')} label="Wears recorded" />
+            <Stat value={worn.toLocaleString(LOCALE)} label="Wears recorded" />
             <Stat value={wardrobe.outfits.length} label="Outfits" />
             <Stat value={spend > 0 ? formatMoney(spend) : '—'} label="What it cost" />
           </div>

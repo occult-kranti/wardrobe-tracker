@@ -1,13 +1,15 @@
 import { useMemo, useState, type CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
 import { useWardrobe } from '../context/WardrobeContext';
-import { categoryLabel, isPlannedLog, SOURCE_LABELS, type ClothingItem, type ItemSource } from '@almari/shared/types';
+import { categoryLabel, isPlannedLog, SEASON_LABELS, SOURCE_LABELS, type ClothingItem, type ItemSource, type Season } from '@almari/shared/types';
 import { daysSince, isFutureDate, todayLocal } from '@almari/shared/dates';
 import { aggregateCostPerWear, costPerWear, formatMoney, formatPerWear } from '@almari/shared/cost';
 import { Button, Card, EmptyState, Masthead, SectionTitle, Stat, TableRail } from '../components/ui';
 import { Basting, GarmentPlate, LeaderLine, PlateEmptyLedger } from '../components/art';
 import AddItemModal from '../components/AddItemModal';
 import { photoSrc } from '../lib/photoStore';
+
+const LOCALE = 'en-IN' as const;
 
 /**
  * LEDGER — the closet's accounts, set like magazine infographics.
@@ -35,7 +37,7 @@ const bastingRow: CSSProperties = {
 function monthTick(key: string): string {
   const [y, m] = key.split('-').map(Number);
   const d = new Date(y, m - 1, 1);
-  const short = d.toLocaleDateString('en-IN', { month: 'short' });
+  const short = d.toLocaleDateString(LOCALE, { month: 'short' });
   return d.getFullYear() === new Date().getFullYear() ? short : `${short} ’${String(y).slice(2)}`;
 }
 
@@ -43,7 +45,7 @@ function monthTick(key: string): string {
 function monthLabel(dateStr: string): string {
   const d = new Date(`${dateStr}T00:00:00`);
   const sameYear = d.getFullYear() === new Date().getFullYear();
-  return d.toLocaleDateString('en-IN', sameYear ? { month: 'long' } : { month: 'long', year: 'numeric' });
+  return d.toLocaleDateString(LOCALE, sameYear ? { month: 'long' } : { month: 'long', year: 'numeric' });
 }
 
 /** Brand-group sentinels — pieces with no maker to rank. Never real makers. */
@@ -175,6 +177,30 @@ export default function Statistics() {
       .sort((a, b) => b.wears - a.wears || a.label.localeCompare(b.label));
     return { rows, max: rows.reduce((m, r) => Math.max(m, r.wears), 0) };
   }, [activeItems, settings]);
+
+  /* ---------- by season ---------- */
+
+  const seasons = useMemo(() => {
+    const counts = new Map<string, { pieces: number; wears: number }>();
+    for (const item of activeItems) {
+      for (const s of item.season ?? []) {
+        const curr = counts.get(s) ?? { pieces: 0, wears: 0 };
+        curr.pieces += 1;
+        curr.wears += item.wearCount;
+        counts.set(s, curr);
+      }
+    }
+    const order: Season[] = ['spring', 'summer', 'fall', 'winter'];
+    const rows = order
+      .filter(s => counts.has(s))
+      .map(s => ({
+        season: s,
+        label: SEASON_LABELS[s],
+        ...(counts.get(s) as { pieces: number; wears: number }),
+      }));
+    const max = rows.reduce((m, r) => Math.max(m, r.wears), 0);
+    return { rows, max };
+  }, [activeItems]);
 
   /* ---------- the monthly spine ----------
      One pass builds every month-indexed series: wears, distinct pieces worn, and
@@ -401,7 +427,7 @@ export default function Statistics() {
 
   return (
     <div className="space-y-6">
-      <Masthead title="Ledger" meta={`${daysLogged.toLocaleString('en-IN')} days logged`} />
+      <Masthead title="Ledger" meta={`${daysLogged.toLocaleString(LOCALE)} days logged`} />
 
       {/* Cumulative, factual, unloseable. Stated like a bank balance.
           "Wears recorded" is the item-wear total — the same words used to label a
@@ -409,7 +435,7 @@ export default function Statistics() {
       <Card>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-5">
           <Stat value={activeItems.length} label="In the closet" />
-          <Stat value={itemWears.toLocaleString('en-IN')} label="Wears recorded" />
+          <Stat value={itemWears.toLocaleString(LOCALE)} label="Wears recorded" />
           <Stat value={outfits.length} label="Outfits" />
           <Stat value={unworn.length} label="Not worn yet" />
         </div>
@@ -448,6 +474,25 @@ export default function Statistics() {
                 value={row.wears}
                 aside={`${row.count} ${row.count === 1 ? 'piece' : 'pieces'}`}
                 max={categories.max}
+                width={4}
+              />
+            ))}
+          </div>
+        </Card>
+      ) : null}
+
+      {/* By season — seasonal coverage and wear distribution */}
+      {seasons.rows.length > 0 ? (
+        <Card>
+          <SectionTitle aside="wears · pieces">By season</SectionTitle>
+          <div>
+            {seasons.rows.map(row => (
+              <BarRow
+                key={row.season}
+                label={row.label}
+                value={row.wears}
+                aside={`${row.pieces} ${row.pieces === 1 ? 'piece' : 'pieces'}`}
+                max={seasons.max}
                 width={4}
               />
             ))}
@@ -557,7 +602,7 @@ export default function Statistics() {
           </div>
           <Basting className="my-4" />
           <p className="text-[14px] text-text-2 leading-snug">
-            {formatMoney(costTotals.basis)} across {costTotals.wears.toLocaleString('en-IN')} wears
+            {formatMoney(costTotals.basis)} across {costTotals.wears.toLocaleString(LOCALE)} wears
             of the pieces it bought. Every wear divides the same money one more way; every piece
             added starts the sum again.
           </p>

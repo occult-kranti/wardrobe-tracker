@@ -31,6 +31,8 @@ import {
   IconUp,
 } from '../components/icons';
 import { showToast } from '../components/Toast';
+import { PendingPayload } from '../components/UsageConsent';
+import { eraseUsage, loadConsent, setConsent } from '../lib/usage';
 import { useInstall } from '../lib/install';
 import { syncModeOf } from '../lib/sync';
 import { AccountPanel } from './Door';
@@ -316,6 +318,115 @@ const THEME_LABELS: Record<Theme, string> = {
 
 const THEMES: { value: Theme; label: string }[] =
   THEME_ORDER.map(value => ({ value, label: THEME_LABELS[value] }));
+
+/**
+ * THE ALPHA USAGE RECORD, AND THE SWITCH THAT ENDS IT.
+ *
+ * PLAN.md non-negotiable #1 was amended on 2026-08-28 to admit an opt-in usage
+ * note for the duration of the alpha. The ask itself is
+ * src/components/UsageConsent.tsx, which shows once; this is the room it can
+ * always be found in afterwards, and the only way back in after a refusal.
+ *
+ * THE ORDER OF THE TWO CALLS IN `flip` IS LOAD-BEARING. `eraseUsage()` names
+ * the rows on the service by this device's install id, and `setConsent(false)`
+ * retires that id. Erase first, then revoke; the other way round asks the
+ * service to drop rows without being able to say which ones.
+ *
+ * The window between them is a few hundred milliseconds in which `record()`
+ * would still write, because the gate it reads is the stored consent. Nothing
+ * survives it: `setConsent(false)` empties the buffer on its way past.
+ *
+ * There is no confirmation dialog on the way OFF. A gate in front of the
+ * privacy-preserving direction is a gate that exists to slow it down, and this
+ * house does not build those. The gate is on the way in, and it is unticked.
+ */
+function UsageRow() {
+  const [consent, setHeld] = useState(() => loadConsent());
+  const [showing, setShowing] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [strandedRows, setStranded] = useState(false);
+  const on = consent.state === 'granted';
+
+  const flip = async () => {
+    if (busy) return;
+    if (!on) {
+      setHeld(setConsent(true));
+      setStranded(false);
+      showToast('On. Switch it off here whenever you like.', 'info');
+      return;
+    }
+    setBusy(true);
+    // 'erased' or 'failed', and the two get different sentences. Reporting the
+    // first over the second is the one lie this whole feature is built to make
+    // impossible, so the outcome is read straight and never smoothed.
+    const outcome = await eraseUsage();
+    setHeld(setConsent(false));
+    setBusy(false);
+    const stranded = outcome === 'failed';
+    setStranded(stranded);
+    showToast(
+      stranded
+        ? 'Off. This device is empty; the service did not answer.'
+        : 'Off. What was gathered is deleted, here and there.',
+      stranded ? 'error' : 'info',
+    );
+  };
+
+  return (
+    <div className="space-y-4">
+      <Row
+        title={on ? 'The usage note is on' : 'The usage note is off'}
+        body={
+          on
+            ? 'This device sends a note while the alpha runs: which screens were opened, how long a photograph took to catalogue, when a write was refused, how often a wear was logged. Never a garment, a brand, a note, a photograph, or anything you typed. The alpha is small, so a count of three is three people — this is not anonymous.'
+            : 'Nothing is being recorded, and nothing is being held back either: before you allow it, none of this is written down in the first place.'
+        }
+        control={
+          <Toggle active={on} disabled={busy} onClick={() => { void flip(); }}>
+            {on ? 'On' : 'Off'}
+          </Toggle>
+        }
+      />
+
+      {consent.decidedAt ? (
+        <p className="type-ledger text-[11px] text-text-2 tabular">
+          Decided {longDay(consent.decidedAt)}
+        </p>
+      ) : null}
+
+      {/* Left standing, not thrown as a toast that clears in four seconds. The
+          sentence is the difference between a record that is gone and a record
+          that is only gone from here, and a reader is entitled to find it again
+          the next time they open this page in the same session. */}
+      {strandedRows ? (
+        <p className="text-[13px] text-danger leading-snug">
+          The service did not answer when it was asked to drop what it holds. Everything gathered on
+          this device is deleted; those rows are not, and the id that named them was retired with
+          them.
+        </p>
+      ) : null}
+
+      <Basting />
+
+      <Row
+        title="What would be sent"
+        body="The real note from this device, not a description of one. Before you allow it there is nothing to show, so it shows the shape instead."
+        control={
+          <Button onClick={() => setShowing(v => !v)} aria-expanded={showing}>
+            {showing ? 'Hide' : 'Show'}
+          </Button>
+        }
+      />
+
+      {/* Keyed on the consent state, so flipping the switch while the block is
+          open re-reads instead of leaving the previous answer on screen. That
+          block reads once at mount by design — see its note in
+          UsageConsent.tsx — and a stale payload standing under a switch that
+          now says "off" is the one stale render this page cannot afford. */}
+      {showing ? <PendingPayload key={consent.state} /> : null}
+    </div>
+  );
+}
 
 /* ---------- the page ---------- */
 
@@ -865,6 +976,18 @@ export default function Settings() {
         </div>
       </Card>
 
+      {/* ---------- the alpha usage record ----------
+
+          Directly under "Your data", because it is the third thing that can
+          leave this device and belongs beside the two that already can — the
+          export you take and the wardrobe you sync. Filing it under About, with
+          the version number, would be filing it where nobody looks for a
+          switch. */}
+      <Card>
+        <SectionTitle aside="the alpha only">Usage note</SectionTitle>
+        <UsageRow />
+      </Card>
+
       {/* ---------- about ---------- */}
       <Card>
         <SectionTitle>About</SectionTitle>
@@ -882,9 +1005,9 @@ export default function Settings() {
           app will say so before it asks for anything. Until end-to-end encryption arrives, a
           synced copy is stored readable: the person running Almari and the company hosting the
           database could open it. A wardrobe kept on this device is read by no one.
-          There are no analytics,
-          no shop links, affiliate codes or sponsored pieces, and there never will be. Because the
-          data lives here first, keeping a copy is on you.
+          There are no shop links, affiliate codes or sponsored pieces, and there never will be.
+          For the alpha there is one usage note, off unless you switch it on above, and it carries
+          no part of your wardrobe. Because the data lives here first, keeping a copy is on you.
         </p>
 
         <button
@@ -917,14 +1040,13 @@ export default function Settings() {
 
       {/* ---------- the alpha's control room ----------
 
-          NOT ADVERTISED HERE. The portal administers the device — it deletes
-          wardrobes, and its nuclear step clears every trace on this browser —
-          and the passcode was retired by owner order (2026-08-19). A labelled
-          door to that, one tap from Settings, is an invitation to fifteen
-          curious testers rather than a control for the one person running the
-          alpha. The route is untouched: /#/admin opens directly for whoever
-          knows the address, which is the lead. Nothing is deleted here except
-          the advertisement. */}
+          IT IS NOT IN THIS APP AT ALL, as of 2026-08-28. The project lead's
+          board used to be a route here (/#/admin), unadvertised but reachable
+          by anyone who knew the address. It is now a separate build served from
+          its own address, which is a better answer than an unadvertised door:
+          this bundle carries none of its code, no admin token, and no page a
+          curious tester can reach by typing. The address is not written here,
+          because it is not this app's to give. */}
     </div>
   );
 }

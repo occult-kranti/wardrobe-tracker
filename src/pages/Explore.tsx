@@ -697,7 +697,7 @@ function OnShow({ postId }: { postId: string }) {
                 <Chip as="span">{COMMONS_LABEL}</Chip>
                 <Chip as="span">sample</Chip>
               </div>
-              <p className="type-editorial text-[19px] sm:text-[20px] leading-snug text-balance mt-3">
+              <p className="type-editorial text-[19px] sm:text-[20px] leading-snug text-balance mt-3 line-clamp-3">
                 {guest.caption}
               </p>
               <p className="type-ledger text-[11px] text-text-2 mt-3">

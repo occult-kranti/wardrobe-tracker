@@ -100,7 +100,7 @@
   </div>
 
   <a class="door" href="./">Open Almari</a>
-  <p class="aside">It opens in a browser tab. Nothing to install from a store, and no account needed.</p>
+  <p class="aside">It opens in a browser tab. Nothing to install from a store, and no account needed. On first open it asks once whether it may keep a usage record &mdash; it is off until you say yes, and <a href="#records">what it would carry is set out below</a>.</p>
 
   <h2>Then install it, before you hang anything</h2>
   <div class="card">
@@ -116,12 +116,21 @@
 
   <h2>Where your record lives</h2>
   <div class="card">
-    <p>Almari keeps everything in your browser&rsquo;s own storage, on your device. There is no feed of strangers, no follower counts, and no analytics: the app reports nothing about you to anyone.</p>
+    <p>Almari keeps everything in your browser&rsquo;s own storage, on your device. There is no feed of strangers, no follower counts, and no advertising. Three things can leave this device, and each of the three is yours to switch on: a wardrobe you choose to sync, a photograph you hand to the cataloguer, and the usage record below.</p>
     <p>An account is optional, and the whole app works with no account at all. What an account does is one thing &mdash; it keeps a copy of a wardrobe you choose to sync, so another device can open it. Signing out ends that and deletes nothing.</p>
     <p class="quiet">Until end-to-end encryption ships, a synced copy &mdash; photographs included &mdash; sits readably on the maker&rsquo;s server, which means the maker could technically open it. Encryption is the committed next step, not a thing already done. Sync only what you are comfortable with, or nothing at all.</p>
     <p class="quiet">When you ask for a photograph to be read, that photograph goes to Claude Fable by Anthropic, through Almari&rsquo;s relay, and comes back as words. It is not stored along the way, no key sits on your device, and nothing else from your closet travels with it.</p>
     <p class="quiet">Both of those run on the maker&rsquo;s Supabase free tier and model key, so they cost you nothing; if that ever changes, the app will say so before it asks for anything. There are no shop links, affiliate codes or sponsored pieces, and there never will be.</p>
     <p class="quiet">Because the record lives here first, keeping a copy is on you. Clearing this browser&rsquo;s site data, removing the app, or wiping the device takes the wardrobe with it. <strong>Export from Settings</strong> is the copy you file away yourself &mdash; do it in the first week, not the last.</p>
+  </div>
+
+  <h2 id="records">The usage record, and how to refuse it</h2>
+  <div class="card">
+    <p>This alpha asks one thing of you that the finished app will not. The first time Almari opens it shows a panel with the exact payload printed in it, and asks whether it may keep a usage record. <strong>It is off until you tick the box.</strong> Nothing is written down before you do &mdash; not held back from sending, not written down at all &mdash; so if you decline, there is nothing to decline the sending of.</p>
+    <p><strong>What it carries:</strong> counts, timings, and the names of screens. That the app was opened. That a piece was added, and whether by hand, by photograph or from the intake bench. That a wear was logged, and how many pieces were in it. How long a screen was open. How long the cataloguer took, and how many of its guesses you kept. Whether a sync worked. That a write was refused because the device was full. That something went wrong, in which part of the app, and of what kind &mdash; network, refused, out of room, unreadable, timed out.</p>
+    <p><strong>What it never carries, by any route:</strong> the name of a garment or a brand, a note, a &ldquo;fits like&rdquo; line, a caption, a word of any conversation, the names you gave your own categories and occasions, a colour, a photograph or anything derived from one, what a piece cost (a broad band only, never the figure), the name of a wardrobe, your name, your handle, or your email. The app has no way to put your writing into it. There is no filter deciding what is safe to send; there is simply no route by which your writing can reach the record.</p>
+    <p><strong>How to make it stop:</strong> Settings shows you the record as it stands and lets you switch it off. Switching it off empties it on this device and asks the server to delete the rows it already holds. You can also decline at the first panel and never think about it again; nothing else in the app changes either way.</p>
+    <p class="quiet">Two things said plainly rather than buried. The alpha cohort is small, so a count of three is three people: these numbers are not anonymous and we do not call them anonymous. And this ends with the alpha &mdash; when the alpha closes, the part of the app that does the recording is removed, not left switched off. The complete list, event by event, is in the project&rsquo;s <code>docs/45-what-almari-records.md</code>, and you can ask for a copy.</p>
   </div>
 
   <h2>What to try first</h2>
@@ -142,6 +151,7 @@
   <div class="card">
     <ul>
       <li>It sends you nothing &mdash; no notifications, no reminders, nothing that buzzes in your pocket. Every nudge in this alpha comes from a person.</li>
+      <li>It does not watch you by default. The usage record above is the only thing that reports anything at all, and it stays silent unless you switch it on.</li>
       <li>The Look Book &mdash; the shared feed and Explore &mdash; is switched off this season. What is shared happens inside a conversation, or not at all.</li>
       <li>There is no store listing. For this alpha the app is the web app, kept on your home screen.</li>
       <li>A browser gives an app a small, fixed amount of room, and photographs fill it fastest. A closet of names costs almost nothing; a closet of photographs has a ceiling. Export often.</li>

@@ -1,3 +1,4 @@
+/** Declarative walkthrough step scripts for each screen's interactive tutorial. See also tour state in tutorial.ts. */
 /**
  * PER-PAGE WALKTHROUGHS — the step scripts, and nothing else.
  *
@@ -390,8 +391,8 @@ const TUTORIALS: Record<string, Tutorial> = {
    * /feed and /explore are NOT scripted this season. Both guides are seated
    * behind FEED_ENABLED, and guideKeyFor returns null for them while the flag
    * is off, so an entry here would be unreachable copy. They walk in with the
-   * rooms. /admin has no guide, so it can have no tutorial — correct: it is an
-   * alpha portal, not a room in the product.
+   * rooms. The project lead's board is not listed either, and no longer could
+   * be: it left this app on 2026-08-28 for a build of its own.
    */
 };
 

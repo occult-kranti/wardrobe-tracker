@@ -1,3 +1,4 @@
+/** Tour state persistence — tracks which tours/guides the user has seen. See also walkthroughScripts in tutorials.ts. */
 /**
  * The tour's one flag, and the page guides' one list — both in this device's
  * local storage, both plain reads and writes.

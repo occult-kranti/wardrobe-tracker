@@ -106,6 +106,20 @@ async function open(size) {
   await ctx.addInitScript(paths => {
     try {
       window.localStorage.setItem('toile-guides', JSON.stringify(paths));
+      /* AND THE ALPHA'S CONSENT SHEET, SETTLED BEFORE THE APP BOOTS.
+         UsageConsent lets itself in a beat after the floor clears of other
+         dialogs, which on a suite this long means it appears in the middle of
+         somebody else's click and intercepts it — pointer events, not a
+         failure anybody could read. It is settled here for the same reason the
+         guides are settled on the line above: this suite is about the app in
+         its steady state, and the sheet has a suite of its own
+         (scripts/test-usage-live.mjs) that opens it deliberately and asserts
+         every rule it keeps. 'declined' rather than 'granted', so nothing is
+         recorded while the suite drives the app. */
+      window.localStorage.setItem(
+        'almari-usage-consent',
+        JSON.stringify({ state: 'declined', installId: null, decidedAt: new Date().toISOString(), version: 1 }),
+      );
     } catch {
       /* storage that will not write cannot pop either — guideSeen reads true */
     }

@@ -111,6 +111,10 @@ function EventComposer({
    * months on the card beside "30 days held". The later days simply could not
    * be dressed, and nothing anywhere said why. The arithmetic lives here so
    * the composer can say it before the event exists.
+   *
+   * Note: We don't clamp the endDate state itself; the 30-day cap is enforced
+   * independently both here in the held computation and in the submit loop below,
+   * triggering UI warnings rather than silently mutating the user's input.
    */
   const held = (() => {
     const last = endDate && endDate > startDate ? endDate : startDate;

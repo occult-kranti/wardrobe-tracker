@@ -533,6 +533,7 @@
   .rail {
     overflow-x: auto;
     overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
     /* The focus ring is a 2px outline at 2px offset, so it reaches 4px past the
        chip — 3px here clipped the last pixel of it on every chip in the row. */
     padding: 4px;

@@ -50,16 +50,36 @@
 - [x] Taxonomy editor · theme control · backup reminder
 - [x] PWA manifest and drawn app icons
 
-## Phase 3 — Next (📋)
+## Phase 3 — Alpha Website & Differentiators (🏃 mostly shipped)
 
-- [ ] Service worker for true offline (manifest is in; SW is not)
-- [ ] Repair log with costs folded into cost-per-wear (needs a centralized CPW helper)
+- [x] Competitive intelligence framework synthesis (~382 capabilities across 9 apps) → `docs/44-alpha-website-competitive-roadmap.md`
+- [x] Claude Advisor Tool protocol & timing guidance system prompts → `GEMINI.md`, `AGENTS.md`, `.agents/skills/advisor-tool/SKILL.md`
+- [x] Kimi multimodal research engine & subagent swarm laws → `.agents/skills/`
+- [x] Centralized cost-per-wear helper with re-wear rate → `packages/shared/cost.ts`.
+      Repair folding is a **seam, not a feature**: every consumer reads `basis`
+      rather than `item.cost`, and `RepairEntry` is declared, but there is no
+      `repairs` field on `ClothingItem` and no way to log a repair cost yet.
+- [x] The Ledger upgrade: Seasonal coverage, re-wear rate, CPW over time → `src/pages/Statistics.tsx`
+- [x] Packing list generator, with the capsule-density line, opened from the
+      Closet → `src/components/PackingListModal.tsx` (the modal and the density
+      line), `src/pages/Closet.tsx` (the button that opens it)
+- [x] Cost engine test suite (`scripts/test-cost-engine.mjs`) wired into `npm run verify`
+- [ ] Back-office portal. The first attempt (`src/pages/Admin.tsx`,
+      `src/lib/admin.ts`, `scripts/test-admin-portal.mjs`) has been removed from
+      the tree; the portal is being rebuilt as a separate build
+      (`portal.html`, `src/portal/`, `vite.portal.config.ts`). Nothing here
+      shipped inside the app.
+- [x] Packing list test suite (`scripts/test-packing.mjs`) wired into `npm run verify`
+- [x] Automated a11y + contrast regression checks in `npm run verify` →
+      `scripts/test-a11y.mjs`. Not in CI: `.github/workflows/deploy.yml` runs
+      lint, migrate, demo, intake and the build, and nothing else.
+- [x] Service worker for true offline. `public/sw.js` carries two placeholders
+      that `vite.config.ts` rewrites at `closeBundle`, and the build fails if
+      either survives — a worker that precaches nothing cannot ship.
 - [ ] Category delete/merge with item reassignment
 - [ ] Optional local PIN lock — ship only with honest copy (localStorage is plaintext)
 - [ ] Client-side background removal for photos (on-device = privacy *and* speed)
-- [ ] Packing list generator
 - [ ] Sealed "season recap" export card (the shareable artifact, opt-in, no social graph)
-- [ ] Automated a11y + contrast regression checks in CI
 
 ## Phase 4 — Mobile (📱 later)
 
@@ -78,12 +98,26 @@ the app development plan (native tracks, backend, tooling) in
 
 ## Non-negotiables (any future work must hold these)
 
-1. **Local-first, forever.** No accounts, no cloud sync, no telemetry.
+1. **Local-first, forever.** No accounts, no cloud sync, no telemetry — *that
+   sentence is the rule as first written, and it has since been amended twice.
+   The two amendments below are what binds; the sentence above is history.*
    *(Amended 2026-08-18 by owner direction: an optional account is admitted, and
    it does one job only — keeping a synced copy of a wardrobe's record on
    Supabase so a second device can open it. Sync is opt-in per wardrobe and off
    by default; a wardrobe that never opts in never leaves the device, and
-   everything works with no account at all. Telemetry stays banned.)*
+   everything works with no account at all.)*
+   *(Amended 2026-08-28 by owner direction: a third exception is admitted, and
+   only for the alpha — an OPT-IN usage record. A tester is asked once, in a
+   panel that shows the exact payload, and nothing is collected until they tick
+   the box. It carries counts, timings and the names of screens — never a
+   garment, never a brand, never a photograph, never a word anyone typed. It can
+   be read, exported and switched off from Settings, and switching it off
+   deletes what was gathered, here and there. The cohort is small enough that a
+   count of three is three people, so these numbers are not anonymous and Almari
+   does not call them anonymous. It expires with the alpha: when the alpha ends
+   the collector is removed, not merely disabled. The vocabulary, the consent
+   gate and the bounded buffer are `src/lib/usage.ts`; the full account of what
+   is and is not kept is [`docs/45-what-almari-records.md`](docs/45-what-almari-records.md).)*
 2. **No commerce.** No shop links, affiliate codes, or retailer suggestions — a
    feature that talks you out of buying cannot profit from buying.
 3. **No shame mechanics.** No guilt screens, red alarm colors on low-wear pieces, or
@@ -100,4 +134,4 @@ the app development plan (native tracks, backend, tooling) in
 
 ---
 
-*Plan updated 2026-08-18.*
+*Plan updated 2026-08-28.*

@@ -203,7 +203,7 @@ export default function Chats() {
           {threads.map(({ conversation, last, count }) => {
             const others = conversation.memberIds.filter(id => id !== activeId).map(id => byId.get(id));
             /* 'Someone' was a wardrobe deleted out from under its threads. The
-               portal now prunes its own removals (lib/admin.ts), but a retired
+               app now prunes its own removals (lib/community.ts), but a retired
                wardrobe still leaves its threads behind, and a thread must never
                name a person who is not there. */
             const title = conversation.isGroup

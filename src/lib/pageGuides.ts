@@ -271,8 +271,9 @@ const GUIDES: Record<string, Guide> = {
  * /furniture/:id, /open/new — falls back to its parent's guide, because a
  * conversation is still conversations and a place is still the dressing room.
  * Anything with no guide gets no control at all, which is the honest answer for
- * /admin (an alpha-only portal, not a room in the product) and for an address
- * that does not exist.
+ * an address that does not exist. (It used to be the answer for /admin too;
+ * the project lead's board left this app on 2026-08-28 and is a separate build
+ * now, so there is no longer a room here to withhold a guide from.)
  */
 export function guideFor(pathname: string): Guide | null {
   const key = guideKeyFor(pathname);

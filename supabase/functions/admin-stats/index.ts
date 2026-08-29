@@ -91,10 +91,105 @@ Deno.serve(async (req: Request) => {
     };
   });
 
+  /* ------------------------------------------------------------------
+     THE ROSTER — one row per person who has actually arrived.
+     ------------------------------------------------------------------
+
+     The counts above answer "how many"; they cannot answer the question the
+     alpha is actually run to answer, which is "did anybody who was handed the
+     link get as far as an account, and then as far as using it?". That needs
+     the rows, not the total: an alpha of fifteen where twelve signed up and one
+     ever synced is a completely different situation from one where three signed
+     up and all three did, and the two are the same number on a dashboard that
+     only counts.
+
+     WHAT THIS CARRIES, AND WHY EACH FIELD IS DEFENSIBLE. Every one of these is
+     the service's OWN operational record of an account it was asked to keep —
+     the same category as a subscriber list, not telemetry:
+
+       email          the address the owner sent the invitation to. They already
+                      have it; without it a row is an opaque uuid and the roster
+                      cannot do its job, which is telling one tester from another.
+       created_at     when the account was made. This is the signup curve.
+       last_sign_in   whether they came back. This is retention, and it is the
+                      one number the category's own research says nobody
+                      publishes.
+       confirmed      whether the address was verified, so a stuck invitation
+                      looks different from a person who never opened it.
+       profile        display name and handle IF they made one. Null is a real
+                      and interesting answer: an account with no profile is
+                      somebody who signed up and stopped.
+       wardrobes      how many of their wardrobes are synced, their total size,
+                      and when one last changed.
+
+     WHAT IT NEVER CARRIES: the wardrobe document. Not one garment, not one
+     name, not one photograph. The state column is measured (bytes, envelope
+     version) and discarded, exactly as it is for the table above. A wardrobe's
+     contents stay between its owner and the row it is stored in, and this
+     function is not a way around that.
+  */
+
+  // Re-listed rather than counted, because the loop above kept only a total.
+  // The alpha is 15–50 people; the page guard is for a mistake, not for scale.
+  const people: Array<Record<string, unknown>> = [];
+  for (let page = 1; page <= 50; page += 1) {
+    const { data, error } = await supa.auth.admin.listUsers({ page, perPage: 200 });
+    if (error) return json(502, { error: 'the roster listing failed' });
+    for (const u of data.users) {
+      people.push({
+        id: u.id,
+        email: u.email ?? null,
+        created_at: u.created_at ?? null,
+        last_sign_in_at: u.last_sign_in_at ?? null,
+        confirmed: !!(u.email_confirmed_at ?? u.confirmed_at),
+      });
+    }
+    if (data.users.length < 200) break;
+  }
+
+  // Their profiles, if they made one. A LEFT JOIN done here rather than in SQL
+  // because the two live in different schemas (auth and public) and the client
+  // cannot join across them.
+  const { data: profileRows, error: profListErr } = await supa
+    .from('profiles')
+    .select('id,display_name,handle,created_at');
+  if (profListErr) return json(502, { error: 'the profile listing failed' });
+  const profileById = new Map(
+    (profileRows ?? []).map((p) => [
+      p.id as string,
+      { display_name: p.display_name ?? null, handle: p.handle ?? null, created_at: p.created_at ?? null },
+    ]),
+  );
+
+  // And what each of them has actually synced, folded from the rows already read.
+  const byOwner = new Map<string, { count: number; bytes: number; lastSync: string | null }>();
+  for (const w of wardrobes) {
+    const held = byOwner.get(w.user_id) ?? { count: 0, bytes: 0, lastSync: null };
+    held.count += 1;
+    held.bytes += w.bytes;
+    if (!held.lastSync || (w.updated_at && w.updated_at > held.lastSync)) held.lastSync = w.updated_at;
+    byOwner.set(w.user_id, held);
+  }
+
+  const roster = people
+    .map((p) => {
+      const held = byOwner.get(p.id as string) ?? { count: 0, bytes: 0, lastSync: null };
+      return {
+        ...p,
+        profile: profileById.get(p.id as string) ?? null,
+        wardrobes: held.count,
+        bytes: held.bytes,
+        lastSync: held.lastSync,
+      };
+    })
+    // Newest arrival first: the question is usually "did anyone turn up today?".
+    .sort((a, b) => String(b.created_at ?? '').localeCompare(String(a.created_at ?? '')));
+
   return json(200, {
     generatedAt: new Date().toISOString(),
     users,
     profiles: profiles ?? 0,
     wardrobes,
+    roster,
   });
 });

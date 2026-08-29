@@ -316,6 +316,17 @@ export default function Wishlist() {
       notes: notes.trim() || undefined,
       status: 'waiting',
       // Silence for the whole wait, then one question. Nothing in between.
+      //
+      // NO WAIT MEANS NO COOLING-OFF AT ALL, and the `undefined` is load-bearing.
+      // An empty envelope stamped with today reads as a wait that has ALREADY
+      // run out: isAsking() is `todayLocal() >= endsAt`, so the card asks "still
+      // want it?" the instant the piece is written down; waitLine() computes
+      // zero days left and says nothing; and the branch below that hides the
+      // exit while a piece is mid-wait takes the coolingOff's mere presence as
+      // proof of a wait, so "Let it go" disappears too. The net of it is a piece
+      // added without a wait being interrogated on arrival with its calm exit
+      // removed — the unprompted second-guessing the panel vetoed by name, and
+      // non-negotiable #3. It shipped once as a two-line "improvement".
       coolingOff: days > 0 ? { endsAt: addDays(todayLocal(), days), asked: false } : undefined,
     });
     showToast(

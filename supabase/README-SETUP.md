@@ -128,6 +128,68 @@ synced wardrobe removes its row.
 | Relay `503` | `KIMI_KEY` unset | step 4 |
 | Relay `401` from browser only | JWT enforced | `--no-verify-jwt` deploy |
 
+## 6. The alpha usage record (optional, opt-in)
+
+PLAN.md non-negotiable #1 was amended by owner direction on 2026-08-28 to
+admit an opt-in usage record for the alpha only — a closed vocabulary of
+product events (screen views, wear-logged counts, error kinds), never
+wardrobe content. This step is what makes the send side of it work; nothing
+breaks if it is skipped — a tester who never sees this deployed simply has
+their events sit harmlessly in the local ring buffer (src/lib/usage.ts)
+until Settings' consent panel is wired up, and nothing is lost by that delay
+because nothing is buffered until consent is granted in the first place.
+
+```sh
+supabase functions deploy usage --no-verify-jwt
+```
+
+`--no-verify-jwt` for the same reason as `ai-proxy` above: the app calls this
+function with no Authorization header, because it has no user session to
+send one from — the whole point of an install id instead of an account id is
+that this works for someone who has never signed in.
+
+No secret to set beyond what Supabase already injects: `SUPABASE_URL` and
+`SUPABASE_SERVICE_ROLE_KEY` are provided automatically to every edge
+function on this project (the same pair `admin-stats` already relies on),
+and the usage function uses the service role to write rows and to satisfy a
+revoke's delete-by-install-id — see the RLS comment in `supabase/setup.sql`
+for why that specific operation is not left to the anon key.
+
+**Verify the table exists and is locked down:** step 1's `setup.sql` paste
+already created `public.usage_events` — reopen the
+[table editor](https://supabase.com/dashboard/project/wvupsqfevlrmhqfjreyx/editor)
+and confirm it shows "RLS enabled" with exactly one policy (insert, anon).
+
+**Verify the function end to end** — this posts one honest event and expects
+it stored, then asks for it back and expects nothing (no read for the
+device, only the erase-by-install-id path leaves this a way to check its own
+work — see setup.sql's own verification block for a signed-in SQL check):
+
+```sh
+curl -X POST https://wvupsqfevlrmhqfjreyx.supabase.co/functions/v1/usage \
+  -H 'content-type: application/json' \
+  -d '{"installId":"deploy-check","sentAt":"2026-01-01T00:00:00.000Z","build":"deploy-check","events":[{"name":"app_opened","at":1735689600000,"props":{"cold":true,"standalone":false}}]}'
+```
+
+- `{"stored":1}`: the function works.
+- `400` naming an event or a field: expected if you edit the sample above —
+  that is clamp 3/4 (the vocabulary allowlist and the property-shape check)
+  doing exactly its job.
+- A CORS error from the browser but success from curl: the function is
+  enforcing JWT — redeploy with `--no-verify-jwt` as above.
+
+Then erase what the check just wrote, so the deploy check does not sit in
+the table forever pretending to be a real tester:
+
+```sh
+curl -X DELETE https://wvupsqfevlrmhqfjreyx.supabase.co/functions/v1/usage \
+  -H 'content-type: application/json' \
+  -d '{"installId":"deploy-check"}'
+```
+
+`{"erased":1}` confirms the row is gone — the same call Settings makes on a
+real revoke, against a real tester's install id instead of this one.
+
 ## The relay's clamps (added 2026-08-20)
 
 `ai-proxy` is no longer a pure pass-through. Four clamps stand, each commented

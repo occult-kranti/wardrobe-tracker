@@ -6,8 +6,9 @@
 
 **Your wardrobe, on record.** A private ledger for a real wardrobe — track what you
 own, what you actually wear, and what it costs per wear. No subscription, no shop
-links, no telemetry. Everything lives on your device; an account is optional, and
-only ever syncs a wardrobe you choose.
+links, no ads. Everything lives on your device; an account is optional and only
+ever syncs a wardrobe you choose, and the alpha's usage record stays off until
+you turn it on.
 
 **Live:** https://occult-kranti.github.io/wardrobe-tracker/ · **V2 (glass):** https://occult-kranti.github.io/wardrobe-tracker/v2/ · **Mobile design pack:** https://occult-kranti.github.io/wardrobe-tracker/mobile_version_v1/
 
@@ -30,9 +31,13 @@ photographing their closets, then paywall the analytics that made the labor wort
 (Indyx, $74.99/yr; Cladwell, $95.88/yr) — or cap the free closet at exactly 100 items
 (Acloset, GetWardrobe), or charge for backup. The ones that stay free stay free
 because they earn when you buy: Whering's lead investor is eBay, and Alta holds
-4,000 brand partnerships. Meanwhile fashion apps average about 28% retention at
-90 days, because logging a wear takes longer than the habit can survive.
-[The full benchmark of eleven apps](docs/24-competitive-benchmark.md) has the numbers.
+4,000 brand partnerships. Meanwhile retention in this neighbourhood is punishing
+and well measured — shopping apps sit at roughly 5.6% thirty days after install —
+because logging a wear takes longer than the habit can survive. (The widely
+repeated "about 28% at ninety days for fashion apps" is not a number we will pass
+on: `docs/28-the-company.md` §1.1 traces it to vendor content that contradicts the
+day-30 data, and treats it as unsourced.)
+[The full benchmark of eleven apps](docs/24-competitive-benchmark.md) has the rest.
 
 Almari takes the opposite bet: give away everything the others charge for
 (cost-per-wear, utilization, the full ledger), keep the daily loop under two taps,
@@ -46,7 +51,11 @@ and never make the record hostage. There is no server to hold it.
 - **Today** — the day's single question, answered in two taps. Wear logging credits
   every piece in an outfit and never shames a missed day.
 - **Outfits** — build layered outfits with any number of pieces from any category.
-  The generator only deals wearable cards: clean, unbenched, unretired.
+  The generator deals from what is actually available: everything still in the
+  closet except pieces in the wash, pieces benched for a repair or the tailor,
+  pieces packed away in a compartment, and categories you asked to keep quiet.
+  Something worn yesterday and not yet washed stays in the deal — re-wearing the
+  same jeans is ordinary practice, not an exception.
 - **Calendar** — a week view where future days are *plans* (they don't inflate wear
   counts) and past days are never a report card.
 - **Ledger** — utilization, cost-per-wear, monthly activity, a plain brand table,
@@ -105,25 +114,40 @@ moderated, and reviewed by a developer and a behavioral psychologist.
 **What the panel vetoed, and we honored:** no gender question or gendered sections
 ever · no commerce anywhere near the anti-impulse features · no shame mechanics,
 guilt screens, or red alarm colors on low-wear pieces · no badges, streaks, or
-confetti · no notifications · no accounts, cloud sync, or telemetry · no required
+confetti · no notifications · no accounts, cloud sync, or telemetry (all three
+since amended, below) · no required
 fields that erase people (required brand erases makers, required photos erase the
-privacy-conscious, fixed categories erase everyone else). Two vetoes were later
-amended by owner direction — positive-only badges are in the design, and an
-optional account exists for per-wardrobe sync; see PLAN.md and the Privacy
+privacy-conscious, fixed categories erase everyone else). Three vetoes were later
+amended by owner direction — positive-only badges are in the design, an optional
+account exists for per-wardrobe sync, and the alpha carries an opt-in usage
+record that is off until a tester turns it on; see PLAN.md and the Privacy
 section below.
 
 ## Privacy
 
-All data is stored locally in your browser, and that stays the default — no
-analytics, no telemetry, and nothing is sent anywhere you did not send it.
+All data is stored locally in your browser, and that stays the default. Three
+exceptions exist, and each one is your choice.
 
-Two exceptions exist, and both are your choice. An account does one job only:
-keeping a synced copy of a wardrobe's record on Supabase so a second device can
-open it. Sync is opt-in per wardrobe and off until you turn it on; a wardrobe
-that never opts in never leaves the device. And when you ask the app to
-catalogue a photograph, that photograph goes to Almari's relay — which holds the
-AI key on the server, so this device never has one — and comes back as words and
-coordinates. A key or endpoint of your own can be set in Settings instead.
+**An account** does one job only: keeping a synced copy of a wardrobe's record on
+Supabase so a second device can open it. Sync is opt-in per wardrobe and off
+until you turn it on; a wardrobe that never opts in never leaves the device.
+
+**A photograph you hand to the cataloguer** goes to Almari's relay — which holds
+the AI key on the server, so this device never has one — and comes back as words
+and coordinates. A key or endpoint of your own can be set in Settings instead.
+
+**The alpha usage record**, admitted by owner direction on 2026-08-28 and lasting
+only as long as the alpha. It is off until you tick a box in a panel that shows
+you the exact payload first, and nothing is written down before you do. It
+carries counts, timings and the names of screens — never a garment, never a
+brand, never a photograph, never a word you typed. You can read it, export it and
+switch it off from Settings, and switching it off deletes what was gathered, on
+this device and on the server. The cohort is small enough that a count of three
+is three people, so these numbers are not anonymous and this app does not call
+them anonymous. When the alpha ends the collector is removed rather than
+disabled. [`docs/45-what-almari-records.md`](docs/45-what-almari-records.md) is
+the complete account, event by event and property by property.
+
 Nothing else leaves the device.
 
 Export a complete, lossless JSON backup from Settings at any time; imports

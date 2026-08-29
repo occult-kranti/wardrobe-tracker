@@ -150,3 +150,27 @@ export function formatPerWear(value: number | null, opts: { dash?: string } = {}
   if (value === null) return opts.dash ?? '—';
   return `₹${value.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
+
+export interface RewearRateResult {
+  totalWears: number;
+  distinctPieces: number;
+  rate: number;
+}
+
+/**
+ * Re-wear rate: total wears divided by distinct pieces worn.
+ * Rewards wearing what you already own multiple times.
+ */
+export function calculateRewearRate(
+  items: Costed[],
+  opts: { totalWears?: number; distinctPieces?: number } = {}
+): RewearRateResult {
+  const distinct = opts.distinctPieces ?? items.filter(i => wearsOf(i) > 0).length;
+  const total = opts.totalWears ?? items.reduce((sum, i) => sum + wearsOf(i), 0);
+  return {
+    totalWears: total,
+    distinctPieces: distinct,
+    rate: distinct > 0 ? total / distinct : 0,
+  };
+}
+

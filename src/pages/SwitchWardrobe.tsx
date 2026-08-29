@@ -7,7 +7,7 @@ import { IconPlus } from '../components/icons';
 import { PERSONAS } from '../lib/personaWardrobe';
 import { syncModeOf } from '../lib/sync';
 import { showToast } from '../components/Toast';
-import { AccountPanel, Choice, WardrobeList, StartWardrobeForm, START_LEDE } from './Door';
+import { AccountPanel, Choice, WardrobeList, StartWardrobeForm, COPY } from './Door';
 
 /**
  * Switching wardrobes. Nothing is written and nothing is lost — every mutation
@@ -72,7 +72,7 @@ export function StartWardrobe() {
     <div className="space-y-6">
       <Masthead title="Start a wardrobe" />
       <Card>
-        <p className="text-[14px] text-text-2 leading-relaxed">{START_LEDE}</p>
+        <p className="text-[14px] text-text-2 leading-relaxed">{COPY.startLede}</p>
         <StartWardrobeForm onDone={() => navigate('/', { replace: true })} />
       </Card>
     </div>

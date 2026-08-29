@@ -1,5 +1,13 @@
 # 34 — The app development plan: Expo, Supabase, and the QR alpha
 
+> **Superseded in one respect, 2026-08-28.** This is a dated record and its text
+> is left as written. Where it says Almari collects nothing and has no telemetry,
+> that was true when this was written and is no longer the whole truth: the owner
+> amended PLAN.md non-negotiable #1 to admit an opt-in alpha usage record, off
+> until a tester ticks a box. What is collected, and what never is, is
+> `docs/45-what-almari-records.md`. Nothing else in this document is affected.
+
+
 > **Status:** plan of record · **Owner:** project lead · **Opened:** 2026-08-18
 > **Supersedes:** docs/32-the-two-ports.md on the native toolchain only (the
 > Capacitor verdict). Its storage research (§"do not adopt SQLite", the photo

@@ -16,6 +16,8 @@ import { Button, IconButton } from './ui';
 import { FEED_ENABLED } from '@almari/shared/flags';
 import { barSlots, slotFor } from '@almari/shared/nav';
 import { LOOK_BOOK_PATHS } from '../lib/routes';
+import { isRecording, record } from '../lib/usage';
+import { screenOf } from '../lib/screens';
 
 interface NavItem {
   path: string;
@@ -142,6 +144,49 @@ function owns(path: string, here: string): boolean {
   return (HELD_BY[path] ?? []).some(p => here === p || here.startsWith(`${p}/`));
 }
 
+/**
+ * WHICH ROOMS GET OPENED, AND FOR HOW LONG.
+ *
+ * The alpha's real question is which rooms of this house nobody ever enters,
+ * and this is the only place that can answer it: every address inside a
+ * wardrobe renders through Layout.
+ *
+ * TWO THINGS HERE ARE DELIBERATE AND LOOK LIKE FUSSINESS.
+ *
+ * The pathname is mapped to a SCREEN NAME from a closed list before anything is
+ * written down. A pathname is not safe to record: /profile/:id, /chats/:id,
+ * /furniture/:id and /explore/:postId all carry identifiers, and one of them is
+ * another person's. `screenOf` returns 'elsewhere' for anything it does not
+ * recognise, so a route added later leaks nothing until somebody deliberately
+ * names it.
+ *
+ * The duration is measured on the way OUT, in the effect's cleanup, because a
+ * screen's dwell time is not known when it opens. That also means the last
+ * screen of a session is never recorded — the page is gone before the cleanup
+ * runs — which is a known and accepted gap; `session_ended` covers the tail.
+ */
+function useScreenRecord(pathname: string): void {
+  useEffect(() => {
+    const screen = screenOf(pathname);
+    const opened = Date.now();
+    /* THE GATE IS READ AT BOTH ENDS, and the second read is the interesting one.
+       A dwell time is measured from mount to unmount, and the consent panel
+       opens over whatever screen somebody happens to be on — so the ordinary
+       case is that they allow the record part-way through a screen they opened
+       BEFORE allowing it. record() would then happily write that span, because
+       by the time the cleanup runs the gate is open.
+       Nothing is buffered before consent either way, so rule 2's letter was
+       never broken. But the NUMBER would be a measurement of the period the
+       panel promises is not measured, and that promise is absolute enough that
+       the distinction is worth closing rather than explaining. */
+    const wasRecording = isRecording();
+    return () => {
+      if (!wasRecording) return;
+      record('screen_viewed', { screen, ms: Date.now() - opened });
+    };
+  }, [pathname]);
+}
+
 export default function Layout() {
   const [addOpen, setAddOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
@@ -152,6 +197,8 @@ export default function Layout() {
   useEffect(() => {
     setMoreOpen(false);
   }, [location.pathname]);
+
+  useScreenRecord(location.pathname);
 
   // Escape closes the sheet from anywhere; the route change above closes it
   // on navigation; the scrim below closes it on a tap outside. Three ways

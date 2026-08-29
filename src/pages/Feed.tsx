@@ -344,7 +344,7 @@ export function Story() {
   const step = (dir: 1 | -1) => {
     setPos(p => {
       const cur = decks[p.deck];
-      if (!cur) return p;
+      if (!cur) return { deck: 0, frame: 0 };
       if (dir === 1) {
         if (p.frame + 1 < cur.frames.length) return { deck: p.deck, frame: p.frame + 1 };
         // The commons is an island: a walk through wardrobes ends at the

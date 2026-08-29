@@ -73,8 +73,12 @@ function FurniturePlate({
               key={s.id}
               x={s.x} y={s.y} width={s.w} height={s.h}
               fill="transparent"
-              className="cursor-pointer"
+              role="button"
+              tabIndex={0}
+              aria-label={piece.slots.find(x => x.id === s.id)?.label ?? `Slot ${s.id}`}
+              className="cursor-pointer focus:outline focus:outline-2 focus:outline-accent"
               onClick={() => onSlot(s.id)}
+              onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSlot(s.id); } }}
             >
               <title>{piece.slots.find(x => x.id === s.id)?.label}</title>
             </rect>
