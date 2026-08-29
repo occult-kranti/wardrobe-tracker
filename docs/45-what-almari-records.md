@@ -96,9 +96,13 @@ make analytics a betrayal.
 
 ### 3.1 · The gate
 
-A tester is asked once. The panel renders `pendingPayload()` — the real payload
-from this device, not a sample and not a description of one — and the box is
-unticked. **Nothing is buffered before consent.** Not held back from sending:
+A tester is asked once, and the box is unticked. Under *show what would be
+sent*, the panel renders `pendingPayload()` — the real payload from this
+device, not a sample and not a description of one. Before consent that function
+returns `null`, because there is nothing to return, so the block prints the
+declared shape instead and the line above it says exactly that. The real
+payload is what the same block shows in Settings afterwards.
+**Nothing is buffered before consent.** Not held back from sending:
 not written down at all. `record()` checks `isRecording()` on its first line and
 returns. This is the whole trust argument, and it is why a tester who opens the
 panel cannot find it already full of their morning.
@@ -139,15 +143,18 @@ silently discarded in production.
 | `screen_viewed` | `screen` (enum, below), `ms` (num) | Which rooms are used, and for how long |
 | `intake_run` | `offered` (num), `accepted` (num), `ms` (num) | Whether the cataloguer's guesses are kept |
 | `cutout_run` | `ms` (num), `kept` (bool) | Whether the background lift is taken or discarded |
-| `export_taken` | `bytes` (num) | Whether testers keep their own copy |
+| `export_taken` | `size` (`under-1mb` \| `1-3mb` \| `3-5mb` \| `over-5mb`) | Whether testers keep their own copy |
 | `tutorial_step` | `screen` (enum, below), `action` (`shown` \| `done` \| `skipped`) | Where a walkthrough is abandoned |
-| `write_refused` | `bytes` (num) | The full-device failure, which is real and frequent here |
+| `write_refused` | `size` (band, as above) | The full-device failure, which is real and frequent here |
 | `error_raised` | `where` (`intake` \| `cutout` \| `sync` \| `photos` \| `storage` \| `render` \| `export`), `kind` (`network` \| `refused` \| `quota` \| `parse` \| `timeout` \| `unknown`) | That something broke, in which part, of what kind |
-| `sync_attempted` | `ok` (bool), `ms` (num), `bytes` (num) | Whether sync works on real phones and real networks |
+| `sync_attempted` | `ok` (bool), `ms` (num), `size` (band, as above) | Whether sync works on real phones and real networks |
 | `session_ended` | `ms` (num), `screens` (num) | The shape of a session |
 
-Every event also carries `at`, milliseconds since epoch on this device's clock.
-A batch carries `installId`, `sentAt` and `build`, and nothing else.
+Every event also carries `at`, milliseconds since epoch on this device's clock
+— except `sync_attempted`, whose `at` is floored to the hour, for the reason
+given in §3.6. A batch carries `installId`, `sentAt` and `build`, and nothing
+else. Fourteen names is the ceiling, not a report of today's wiring: a name
+nothing calls yet records nothing, and the tree is where that is read off.
 
 `screen` is an enum of seventeen room names — `today`, `closet`, `outfits`,
 `dressing-room`, `calendar`, `events`, `ledger`, `wishlist`, `before-you-buy`,
@@ -160,7 +167,9 @@ Garment names. Brands. Notes. *Fits like* lines. Captions. Chat text. The names
 a person gave their own categories and occasions, which are user-authored by
 law. Colours. Photographs, or anything derived from one. Cost **values** — only
 the tier bucket in `piece_added`. Wardrobe names. Account names. Handles. Email
-addresses. Pathnames. Item, outfit and wardrobe ids.
+addresses. Pathnames. Item, outfit and wardrobe ids. Byte counts — a payload,
+an export and a refused write are each a four-way size band, never a figure.
+The exact moment of a sync — that one event's clock is floored to the hour.
 
 `scripts/test-usage.mjs` carries the red-proof: it builds a wardrobe of real
 garment names, brands, notes and photographs, drives every path that records,
@@ -180,20 +189,27 @@ repaired: it is not the record, and losing it costs nobody anything.
 
 The project owner, and nobody else. Rows are keyed by `installId` and carry no
 account, no email and no handle. That is not the same as unlinkable, and the
-difference is worth stating rather than glossing. **An install id and a synced
-wardrobe can be matched by their timing.** A `sync_attempted` event carries the
-millisecond it happened and the exact byte length that went up; the same push
-writes `public.wardrobes` with a server-stamped `updated_at` under a `user_id`
-that names the person. The owner holds the service key over both tables, so for
-a tester who runs sync, the two can be lined up on when they happened. Nothing
-in the schema prevents it. What prevents it is that the owner does not do it,
-and that no code in this repo does it: `supabase/functions/admin-stats` reads
-`profiles` and `wardrobes` and never opens `usage_events` at all, so the join
-would have to be run by hand, deliberately, against the tables directly. A
-tester who never turns sync on leaves nothing on the server to line the record
-up against — but they are still not anonymous, because **the cohort is small
-enough that a count of three is three people.** Almari does not call these
-numbers anonymous, and no document in this repo may describe them as anonymous.
+difference is the one thing this section exists to state rather than gloss.
+
+**An install id and a synced wardrobe were joinable by their timing, and the
+code was changed to blunt it.** A push writes `public.wardrobes` with a
+server-stamped `updated_at` under a `user_id` that names the person, and
+`sync_attempted` is recorded in the same instant. So that event, alone of the
+fourteen, is stamped with its clock floored to the hour (`COARSE_EVENTS` and
+`stampFor` in `src/lib/usage.ts`) and its payload size as a four-way band
+rather than a byte count (`sizeTierOf`). Both were exact when this document was
+first written; both were coarsened for this reason and for no other.
+
+What is left is the hour in which a sync happened, on both sides. In a cohort
+this size that still narrows towards a person without naming one, and the owner
+holds the service key over both tables, so nothing in the schema forbids the
+join being run by hand. What stands against it is that the owner does not do
+it, and that no code in this repo does: `supabase/functions/admin-stats` reads
+`profiles` and `wardrobes` and never opens `usage_events` at all. A tester who
+never turns sync on leaves nothing on the server to line the record up against
+— but they are still not anonymous, because **the cohort is small enough that a
+count of three is three people.** Almari does not call these numbers anonymous,
+and no document in this repo may describe them as anonymous.
 
 **Retention: ninety days is the intention. It is not built.** Nothing in
 `supabase/` deletes a row because it got old — there is no scheduled sweep, no
@@ -216,6 +232,11 @@ be counted cannot be the number the whole cohort is judged by.
 - **Switch it off in Settings.** Revocation is destruction: the local buffer is
   emptied and the service is asked to drop every row for that `installId`. A
   revoke that merely stopped future sends would make the Settings copy false.
+  When the service does not answer, `eraseUsage()` returns `'failed'` and
+  Settings leaves a standing line saying so — this device is empty, those rows
+  are not, and the id that named them was retired with them. Reporting the
+  clean outcome over the failed one is the single lie this feature is built to
+  make impossible, and the rows are then removed by hand on request.
 - **Read it first.** Settings shows the record as it stands — the real payload
   from this device, through the same `PendingPayload` block the consent panel
   uses — so the decision is made against the actual contents rather than a
