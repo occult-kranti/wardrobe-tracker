@@ -200,8 +200,10 @@ fourteen, is stamped with its clock floored to the hour (`COARSE_EVENTS` and
 rather than a byte count (`sizeTierOf`). Both were exact when this document was
 first written; both were coarsened for this reason and for no other.
 
-What is left is the hour in which a sync happened, on both sides. In a cohort
-this size that still narrows towards a person without naming one, and the owner
+What is left is a join at the resolution of an hour. The server's `updated_at`
+is still exact; the record's stamp is not, so the two can be lined up only on
+the hour they share. In a cohort this size that still narrows towards a person
+without naming one, and the owner
 holds the service key over both tables, so nothing in the schema forbids the
 join being run by hand. What stands against it is that the owner does not do
 it, and that no code in this repo does: `supabase/functions/admin-stats` reads

@@ -203,9 +203,27 @@ function lineOf(text, index) {
  */
 const SUPERSEDED_BANNER = /superseded[^\n]{0,120}(2026-08-28|usage record|docs\/45)/i;
 
-/** Only a dated record under docs/ may be qualified by a banner. */
+/**
+ * Numbered documents that are LIVE, whatever their number says. docs/35 is the
+ * owner's standing decisions, docs/37 §3 is the consent note a tester reads and
+ * agrees to in writing before day 0, and docs/45 is the record of what is
+ * collected that every other document points at by name. None of the three is
+ * a dated argument nobody acts on; all three are read as current. A banner at
+ * the top of one of them would silence this gate over the whole file — over the
+ * exact paragraph a tester consents to — which is how docs/37 came to count two
+ * exceptions where there were three. The escape is not available to them: they
+ * are corrected in the body, as the living documents are.
+ */
+const LIVE_RECORDS = new Set([
+  'docs/35-alpha-panel.md',
+  'docs/37-alpha-kit.md',
+  'docs/45-what-almari-records.md',
+]);
+
+/** Only a dated record under docs/ — and never a live one — may be qualified by a banner. */
 function bannerMayApply(relPath) {
-  return /^docs\/\d+-/.test(relPath.split('\\').join('/'));
+  const rel = relPath.split('\\').join('/');
+  return /^docs\/\d+-/.test(rel) && !LIVE_RECORDS.has(rel);
 }
 
 /** Is the banner present in the file's opening — where a reader would meet it? */
@@ -255,6 +273,7 @@ function runScan(root, { quiet = false } = {}) {
   const failures = [];
   const scanned = docFilesUnder(root);
   let clean = 0;
+  let escaped = 0;
   for (const abs of scanned) {
     if (!existsSync(abs)) continue;
     let text;
@@ -273,7 +292,7 @@ function runScan(root, { quiet = false } = {}) {
     // prose. See SUPERSEDED_BANNER above for why this is a whole-file escape
     // and why only docs/NN-*.md may use it.
     if (bannerMayApply(rel) && carriesBanner(text)) {
-      clean++;
+      escaped++;
       continue;
     }
     const hits = scanText(text);
@@ -292,11 +311,18 @@ function runScan(root, { quiet = false } = {}) {
     }
   }
   // One line for the clean majority, rather than sixty PASS lines that bury
-  // the handful of FAILs somebody actually has to act on.
+  // the handful of FAILs somebody actually has to act on. The banner-escaped
+  // files are counted SEPARATELY and named in the count: they are not clean,
+  // they still carry the old sentence, and a summary that folded them into
+  // "clean" would be this check telling the same kind of comfortable lie it
+  // exists to catch.
   if (!quiet) {
     console.log(
-      `PASS - ${clean} of ${scanned.length} scanned document(s) carry no unqualified ` +
-      `"no telemetry" style promise`
+      `${failures.length ? 'INFO' : 'PASS'} - ${clean} of ${scanned.length} scanned document(s) ` +
+      `carry no unqualified "no telemetry" style promise` +
+      (escaped
+        ? `; ${escaped} dated record(s) keep theirs under a superseded banner`
+        : '')
     );
   }
   return { armed: true, failures };
@@ -312,10 +338,18 @@ function walkFiles(dir, accept, { recurse = true, skipDir = () => false } = {}) 
   let entries;
   try {
     entries = readdirSync(dir, { withFileTypes: true });
-  } catch {
+  } catch (err) {
+    // A directory that is simply absent is normal — the red-proof fixtures
+    // have no docs/ or company/ at all. A directory that exists and cannot be
+    // listed is not normal, and it means documents went unscanned, so it is
+    // said out loud rather than swallowed by the same catch.
+    if (err.code !== 'ENOENT') console.log(`WARN - ${dir} could not be listed (${err.code ?? err.message}) — documents under it went unscanned`);
     return [];
   }
   const found = [];
+  // isDirectory()/isFile() come from lstat, so a symlink is neither: a
+  // symlinked document is skipped and a symlink loop cannot hang this walk.
+  // That is the trade taken deliberately; no document in this repo is a link.
   for (const entry of entries.sort((a, b) => a.name.localeCompare(b.name))) {
     const abs = path.join(dir, entry.name);
     if (entry.isDirectory()) {
@@ -339,6 +373,10 @@ function docFilesUnder(root) {
   const attic = path.join(root, 'docs', 'attic');
   return [
     ...walkFiles(root, isMarkdown, { recurse: false }),
+    // index.html and portal.html sit at the root and are both served to a
+    // person; neither is under public/ or company/, so a walk that took only
+    // the root's Markdown would miss them the way the old list missed docs/37.
+    ...walkFiles(root, isHtml, { recurse: false }),
     ...walkFiles(path.join(root, 'docs'), isMarkdown, { skipDir: (abs) => abs === attic }),
     ...walkFiles(path.join(root, 'company'), isHtml),
     ...walkFiles(path.join(root, 'public'), isHtml),
@@ -418,6 +456,38 @@ function runRedProof() {
     : 'RED-PROOF FAILED — an honest, correctly-qualified sentence was flagged as a lie');
   if (wronglyFlagged) bad++;
   rmSync(honestRoot, { recursive: true, force: true });
+
+  /* The banner escape is the one way a document may keep the old sentence, so
+     its SCOPE needs proving in both directions or it is just a hole with a
+     comment over it. One tree, one banner, one identical lying sentence, in
+     four places: the dated record may keep it; the alpha kit (the consent note
+     a tester agrees to), the tester's landing page, and PLAN.md may not. */
+  const banner = '> **Superseded in one respect, 2026-08-28.** See docs/45 for what is collected.';
+  const lie = 'Local-first, forever. No accounts, no cloud sync, no telemetry.';
+  const bannerRoot = mkdtempSync(path.join(tmpdir(), 'promises-red-banner-'));
+  writeFixture(bannerRoot, path.join('src', 'lib', 'usage.ts'), 'export const EVENT_NAMES = [];\n');
+  writeFixture(bannerRoot, path.join('docs', '29-a-dated-record.md'), `# 29\n\n${banner}\n\n${lie}\n`);
+  writeFixture(bannerRoot, path.join('docs', '37-alpha-kit.md'), `# 37\n\n${banner}\n\n${lie}\n`);
+  writeFixture(bannerRoot, path.join('public', 'alpha.html'), `<h1>Alpha</h1>\n<p>${banner}</p>\n<p>${lie}</p>\n`);
+  writeFixture(bannerRoot, 'PLAN.md', `# Plan\n\n${banner}\n\n${lie}\n`);
+  console.log('\n=== red-proof fixture: the same banner and the same lie in four documents ===');
+  const bannerResult = runScan(bannerRoot, { quiet: true });
+  const flagged = new Set(bannerResult.failures.map((f) => f.file));
+  for (const f of bannerResult.failures) console.log(`    caught: ${f.file}:${f.line} (${f.pattern})`);
+  const scopeCases = [
+    ['docs/29-a-dated-record.md', false, 'a dated record keeps its historical prose under the banner'],
+    ['docs/37-alpha-kit.md', true, 'the alpha kit is live and the banner does not excuse it'],
+    ['public/alpha.html', true, 'a tester-facing page cannot be excused by a banner'],
+    ['PLAN.md', true, 'a living document cannot be excused by a banner'],
+  ];
+  for (const [file, mustFlag, why] of scopeCases) {
+    const ok = flagged.has(file) === mustFlag;
+    console.log(ok
+      ? `RED-PROOF OK — ${why}`
+      : `RED-PROOF FAILED — ${file} was ${mustFlag ? 'NOT flagged and should have been' : 'flagged and should not have been'}: ${why}`);
+    if (!ok) bad++;
+  }
+  rmSync(bannerRoot, { recursive: true, force: true });
 
   console.log(bad === 0 ? '\nALL RED-PROOFS PASSED' : `\n${bad} RED-PROOF(S) FAILED`);
   process.exit(bad ? 1 : 0);

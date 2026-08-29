@@ -50,7 +50,7 @@ manual nudges and replies stop being manageable for one moderator.
 |---|---|---|---|
 | A — Mobile-first Gen-Z fashion users | Phone-first, dress with intent most days, the demographic that is starting to pay for apps | ~40% | The daily-loop test. If logging a wear is too slow for them, the app fails its core promise |
 | B — Power users | Own 50+ pieces, have tried to catalogue a wardrobe before | ~30% | The stress test. Big closets expose slow grids, heavy imports, and maths that breaks at scale |
-| C — Privacy-conscious users | Read privacy policies, avoid accounts, come from privacy communities | ~30% | The trust test. They will read the consent note and the usage panel and check whether what the app says leaves the device is what leaves it, and say so |
+| C — Privacy-conscious users | Read privacy policies, avoid accounts, come from privacy communities | ~30% | The trust test. They will read the consent note and the usage panel and check the claim against what the device actually sends, and say so |
 
 Recruit where the cohorts already are, per `docs/28-the-company.md` §4.4:
 India metro Gen-Z fashion circles, privacy communities (global), and the
@@ -184,8 +184,8 @@ account. Your wardrobe is stored on your device. Three things can leave that
 device, and each of the three is yours to switch on — sync, photo intake, and
 the opt-in usage record. Turn none of them on and we cannot see what you log,
 when you open the app, or whether you open it at all: the app has no way to
-tell us. That is why this study exists — mostly, the only way we learn
-anything is you telling us.
+tell us. That is why this study exists — what the app can say is thin, and
+mostly the only way we learn anything is you telling us.
 
 **Three exceptions, all optional, all off until you turn them on:**
 
@@ -198,29 +198,30 @@ anything is you telling us.
    into wardrobe entries. Only the photos you pick, only when you use it.
    Everything else — including the background-cutout feature — runs entirely
    on your device.
-3. **The usage record.** New for this alpha, and gone when the alpha ends.
-   The first time you open Almari it shows you a panel with the exact payload
-   printed in it and asks whether it may keep a usage record. **It is off
-   until you tick the box**, and nothing is written down before you do — not
-   held back from sending, written down nowhere at all. If you tick it, what
-   it carries is counts, timings and the names of screens: that the app was
-   opened, that a piece was added and by which route, that a wear was logged
-   and how many pieces were in it, how long a screen was open, how long the
-   cataloguer took, whether a sync worked, and that something went wrong, in
-   which part of the app and of what kind. What it never carries, by any
-   route: a garment name, a brand, a note, a caption, a word of any
-   conversation, a colour, a photograph or anything derived from one, what a
-   piece cost (a broad band only, never the figure), a wardrobe name, your
-   name, your handle, or your email. There is no route by which anything you
-   type can reach it. Settings shows you the record as it stands and switches
-   it off; switching it off empties it on your device and asks the server to
-   delete the rows it already holds. Two things we would rather say than have
-   you find out: the cohort is small, so a count of three is three people —
-   these numbers are not anonymous and we do not call them anonymous — and if
-   you also run sync, the timing of a sync in the record and the timing of the
-   same sync on the server can be matched, so the record is not unlinkable
-   from you either. The full account, event by event, is
-   `docs/45-what-almari-records.md`; ask and we will send it.
+3. **The usage record.** New for this alpha, and removed when the alpha ends.
+   The first time you open Almari it asks whether it may keep one, with a link
+   that prints exactly what would be sent — before you agree there is nothing
+   to print, so it shows you the shape instead. **It is off until you tick the
+   box**, and nothing is written down before you do: not held back from
+   sending, not written down at all. If you tick it, the most it can carry is
+   counts, timings and the names of screens — that a piece was added and by
+   which route, that a wear was logged and how many pieces were in it, how
+   long a screen was open, how long the cataloguer took, whether a sync
+   worked, and that something went wrong, in which part of the app and of what
+   kind. It never carries anything you typed, a photograph or anything drawn
+   from one, a colour, a garment or brand name, a price (a broad band only,
+   never the figure), a wardrobe name, or your name, handle or email. There is
+   no route by which your writing can reach it. Settings shows you the record
+   as it stands and switches it off; switching it off empties it on your
+   device and asks the server to delete the rows it already holds. **Two
+   things stated plainly:** the cohort is small, so a count of three is three
+   people — these numbers are not anonymous and we do not call them anonymous
+   — and if you also run sync, the hour a sync happened is in the record and
+   on the server both, so the record narrows towards you even though it never
+   names you.
+
+The complete account of all three, event by event, is the project's
+`docs/45-what-almari-records.md`. Ask and we will send it.
 
 **What we ask you to share, manually:**
 
