@@ -1,12 +1,5 @@
 # 34 — The app development plan: Expo, Supabase, and the QR alpha
 
-> **Superseded in one respect, 2026-08-28.** This is a dated record and its text
-> is left as written. Where it says Almari collects nothing and has no telemetry,
-> that was true when this was written and is no longer the whole truth: the owner
-> amended PLAN.md non-negotiable #1 to admit an opt-in alpha usage record, off
-> until a tester ticks a box. What is collected, and what never is, is
-> `docs/45-what-almari-records.md`. Nothing else in this document is affected.
-
 
 > **Status:** plan of record · **Owner:** project lead · **Opened:** 2026-08-18
 > **Supersedes:** docs/32-the-two-ports.md on the native toolchain only (the
@@ -431,7 +424,10 @@ reviewed against truth:
 Each phase lists steps, acceptance checks, and the edge cases that must be
 tested before it closes. Alpha gates (docs/28 §4.4) bind Phase 4: ≤2-tap
 assisted logging, ≥60% week-1 diary completion, ≥40% week-12 logging — all
-measured manually, no telemetry.
+measured manually. The opt-in alpha usage record (amended 2026-08-28;
+docs/45-what-almari-records.md) can count screens and wears beside those
+numbers, and cannot answer any of the three on its own — a gate that reads
+"≥60% week-1 diary completion" is answered by diaries.
 
 ### Phase 0 — setup
 

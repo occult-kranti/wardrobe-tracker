@@ -1,12 +1,5 @@
 # 33 — The Alpha Mobile Sprint
 
-> **Superseded in one respect, 2026-08-28.** This is a dated record and its text
-> is left as written. Where it says Almari collects nothing and has no telemetry,
-> that was true when this was written and is no longer the whole truth: the owner
-> amended PLAN.md non-negotiable #1 to admit an opt-in alpha usage record, off
-> until a tester ticks a box. What is collected, and what never is, is
-> `docs/45-what-almari-records.md`. Nothing else in this document is affected.
-
 
 > **Status:** active · **Owner:** project lead · **Opened:** 2026-08-18
 > **Mission:** take Almari from a desktop-strong PWA to a mobile-first build a
@@ -150,7 +143,10 @@ new closets open without an empty room.
   midnight-crossing wear log, DST week, corrupted localStorage, storage quota,
   two-tab torture.
 - G2 Alpha kit: PWA install instructions, manual feedback form, diary-study
-  template, consent text. Measurement stays manual (no telemetry), gated on
+  template, consent text. Measurement is manual first — the diary and the
+  interviews carry the gates below, and the opt-in usage record (amended
+  2026-08-28; docs/45-what-almari-records.md) counts what it can beside them,
+  never instead of them. Gated on
   docs/28 §4.4: ≤2-tap logging, ≥60% week-1 diary completion, ≥40% week-12
   logging.
 - G3 Device matrix: iOS Safari 390px, Android Chrome 360/412px, desktop
