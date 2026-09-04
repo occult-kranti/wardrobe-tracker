@@ -224,11 +224,12 @@ website and competitive roadmap · `docs/45` what Almari records, and what it
 does not. `supabase/README-SETUP.md` is the owner's
 runbook for the account and the relay.
 
-Stale by design, kept as history: `HANDOFF.md`, `PROMPT.md` and
-`BUILD-HANDOFF.md` are session briefs from earlier phases (Toile-era branch
-names, superseded counts), and `.claude/skills/README.md` describes skills that
-do not exist. Where a document and the tree disagree, believe the tree and the
-newest numbered doc.
+`HANDOFF.md` is the handoff of record (rewritten 2026-09-04: sprint state, the
+deploy runbook, the outfit-features cost ruling, and the wave roadmap). Stale
+by design, kept as history: `PROMPT.md` and `BUILD-HANDOFF.md` are session
+briefs from earlier phases (Toile-era branch names, superseded counts), and
+`.claude/skills/README.md` describes skills that do not exist. Where a
+document and the tree disagree, believe the tree and the newest numbered doc.
 
 ## The parallelization law (subagent waves)
 
