@@ -39,12 +39,9 @@
 .v2 .plate,
 .v2 .plate-ink {
   position: relative;
-  /* background-COLOR, never the shorthand. The shorthand resets
-     background-image to none, and every room's corner ornament — the dye
-     house's brass hooks, the obsidian's gold and silver — is a
-     background-image set in index.css. This rule loads after those, so for
-     the whole of v2 the glass was quietly erasing the ornament in every
-     themed room. Setting only the channel we mean leaves the art alone. */
+  /* Set only the surface colour so an explicitly chosen image remains intact.
+     Corner ornaments now use PlateOrnament SVGs in padded Card border lanes;
+     neither this material nor the low-glass fallback can erase those lanes. */
   background-color:
     color-mix(in srgb, var(--color-surface) calc(var(--glass-alpha) * 100%), transparent);
   -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.15);

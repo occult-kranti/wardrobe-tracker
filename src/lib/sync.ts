@@ -1,6 +1,7 @@
 import { getSupabase } from './supabase';
 import { loadWardrobe, saveWardrobe } from './accounts';
 import { hasPhotoRefs, inlinePhotosIn } from './photoStore';
+import { record, sizeTierOf } from './usage';
 import type { Account, AppState, SyncMode } from '@almari/shared/types';
 
 /**
@@ -418,6 +419,12 @@ export async function pushNow(
   if (!shouldSync(account) || !account.syncId) return 'sent';
   const now = new Date().toISOString();
   const row = toRow({ name: account.name, syncId: account.syncId }, await forTheWire(state), userId, now);
+  /* The size of what went up, and how long it took. Both are facts about OUR
+     service rather than about anybody's clothes: a push that is slow because it
+     is carrying six megabytes of inlined photographs is the commonest way sync
+     fails in this app, and neither number can carry a garment. */
+  const size = sizeTierOf(JSON.stringify(row).length);
+  const started = Date.now();
   try {
     const { data, error } = await getSupabase()
       .from('wardrobes')
@@ -426,9 +433,14 @@ export async function pushNow(
       .single();
     if (error) throw error;
     stampSynced(account.id, stampFrom(data, now));
+    record('sync_attempted', { ok: true, ms: Date.now() - started, size });
     return 'sent';
   } catch {
     queuePush(account, state, now);
+    record('sync_attempted', { ok: false, ms: Date.now() - started, size });
+    // The KIND of trouble, never its text. A Supabase error message can quote
+    // the row it refused, and the row is the wardrobe.
+    record('error_raised', { where: 'sync', kind: 'network' });
     return 'queued';
   }
 }

@@ -1,5 +1,13 @@
 # The sidelines — the executive review of everything the launch plan does not cover
 
+> **Superseded in one respect, 2026-08-28.** This is a dated record and its text
+> is left as written. Where it says Almari collects nothing and has no telemetry,
+> that was true when this was written and is no longer the whole truth: the owner
+> amended PLAN.md non-negotiable #1 to admit an opt-in alpha usage record, off
+> until a tester ticks a box. What is collected, and what never is, is
+> `docs/45-what-almari-records.md`. Nothing else in this document is affected.
+
+
 *Drafted 13 August 2026. docs/28 is the launch plan: what gets built, what
 gets filed, what gets sold, and what it costs. This document is the sidelines
 — the obligations, setups and risks that are not product work but that a

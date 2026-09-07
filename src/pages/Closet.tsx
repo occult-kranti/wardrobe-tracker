@@ -5,6 +5,7 @@ import { Tilt } from '../components/Glass';
 import { useWardrobe } from '../context/WardrobeContext';
 import ItemDetail from '../components/ItemDetail';
 import AddItemModal from '../components/AddItemModal';
+import PackingListModal from '../components/PackingListModal';
 import { showToast } from '../components/Toast';
 import { Button, IconButton, Chip, LinkButton, Masthead, Modal, EmptyState, TagRail } from '../components/ui';
 import {
@@ -298,6 +299,7 @@ export default function Closet() {
   const [amendId, setAmendId] = useState<string | null>(null);
   const [menuItemId, setMenuItemId] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
+  const [packingOpen, setPackingOpen] = useState(false);
   const [retiring, setRetiring] = useState<ClothingItem | null>(null);
   const [passTo, setPassTo] = useState<string>('');
   const { accounts, activeId, active, community, setCommunity } = useSession();
@@ -449,6 +451,7 @@ export default function Closet() {
                 they already scroll. */}
             <LinkButton to="/intake?photos=1" compact>From photos</LinkButton>
             <LinkButton to="/intake?feed=1" compact>From a screenshot</LinkButton>
+            <Button tone="secondary" compact onClick={() => setPackingOpen(true)}>Packing list</Button>
           </span>
         )}
       />
@@ -1024,6 +1027,7 @@ export default function Closet() {
         />
       )}
       <AddItemModal open={addOpen} onClose={() => setAddOpen(false)} />
+      <PackingListModal open={packingOpen} onClose={() => setPackingOpen(false)} />
     </div>
   );
 }

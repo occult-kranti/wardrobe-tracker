@@ -6,8 +6,9 @@
 
 **Your wardrobe, on record.** A private ledger for a real wardrobe — track what you
 own, what you actually wear, and what it costs per wear. No subscription, no shop
-links, no telemetry. Everything lives on your device; an account is optional, and
-only ever syncs a wardrobe you choose.
+links, no ads. Everything lives on your device; an account is optional and only
+ever syncs a wardrobe you choose, and the alpha's usage record stays off until
+you turn it on.
 
 **Live:** https://occult-kranti.github.io/wardrobe-tracker/ · **V2 (glass):** https://occult-kranti.github.io/wardrobe-tracker/v2/ · **Mobile design pack:** https://occult-kranti.github.io/wardrobe-tracker/mobile_version_v1/
 
@@ -30,9 +31,13 @@ photographing their closets, then paywall the analytics that made the labor wort
 (Indyx, $74.99/yr; Cladwell, $95.88/yr) — or cap the free closet at exactly 100 items
 (Acloset, GetWardrobe), or charge for backup. The ones that stay free stay free
 because they earn when you buy: Whering's lead investor is eBay, and Alta holds
-4,000 brand partnerships. Meanwhile fashion apps average about 28% retention at
-90 days, because logging a wear takes longer than the habit can survive.
-[The full benchmark of eleven apps](docs/24-competitive-benchmark.md) has the numbers.
+4,000 brand partnerships. Meanwhile retention in this neighbourhood is punishing
+and well measured — shopping apps sit at roughly 5.6% thirty days after install —
+because logging a wear takes longer than the habit can survive. (The widely
+repeated "about 28% at ninety days for fashion apps" is not a number we will pass
+on: `docs/28-the-company.md` §1.1 traces it to vendor content that contradicts the
+day-30 data, and treats it as unsourced.)
+[The full benchmark of eleven apps](docs/24-competitive-benchmark.md) has the rest.
 
 Almari takes the opposite bet: give away everything the others charge for
 (cost-per-wear, utilization, the full ledger), keep the daily loop under two taps,
@@ -46,7 +51,11 @@ and never make the record hostage. There is no server to hold it.
 - **Today** — the day's single question, answered in two taps. Wear logging credits
   every piece in an outfit and never shames a missed day.
 - **Outfits** — build layered outfits with any number of pieces from any category.
-  The generator only deals wearable cards: clean, unbenched, unretired.
+  The generator deals from what is actually available: everything still in the
+  closet except pieces in the wash, pieces benched for a repair or the tailor,
+  pieces packed away in a compartment, and categories you asked to keep quiet.
+  Something worn yesterday and not yet washed stays in the deal — re-wearing the
+  same jeans is ordinary practice, not an exception.
 - **Calendar** — a week view where future days are *plans* (they don't inflate wear
   counts) and past days are never a report card.
 - **Ledger** — utilization, cost-per-wear, monthly activity, a plain brand table,
@@ -70,13 +79,24 @@ and never make the record hostage. There is no server to hold it.
 - **What's it like out?** — one tap, four answers, kept for the day. It narrows
   the day's suggestions the way weather-aware rivals do, without a location
   permission, a forecast API, or anything to leak.
+- **Outfits and Rose atelier** — saved outfits have a main tab, with Calendar
+  one press away. Profile is in More. The web alpha defaults to light warm pink,
+  ivory photo mats and rose-gold/silver details; a saved theme choice is retained.
+- **What should I wear?** — describe an event, its date and dress code, and ask
+  Claude Fable 5.1 for an outfit from the available clothes in this wardrobe.
+  Check a chosen city's forecast or enter the weather yourself, request a
+  change, then save the outfit or reserve it for an event day. The screen shows
+  what is sent before you agree; saving never records a wear. The [UI and
+  functionality plan](docs/46-alpha-event-stylist-review.md) includes the alpha
+  screen review and remaining improvements.
 - **On your home screen** — a manifest and an offline service worker, so Almari
   gets an icon, opens full screen, and works with no signal. No store, no account.
 - **Catalogue from photos** — the first hour is the slowest thing about a wardrobe app,
   so hand a photograph of the clothes to whatever vision model you already use, with
   [the prompt](docs/23-photo-intake.md), and drop the file it writes into the app. Every
   piece arrives as a draft with its doubts stated; nothing is written until you say so.
-  The photograph never passes through us — there is nothing here to pass through.
+  You can also ask the in-app cataloguer to read a photo through Almari's AI
+  relay. That route names the provider before the button that sends it.
 
 ## Design
 
@@ -105,25 +125,50 @@ moderated, and reviewed by a developer and a behavioral psychologist.
 **What the panel vetoed, and we honored:** no gender question or gendered sections
 ever · no commerce anywhere near the anti-impulse features · no shame mechanics,
 guilt screens, or red alarm colors on low-wear pieces · no badges, streaks, or
-confetti · no notifications · no accounts, cloud sync, or telemetry · no required
+confetti · no notifications · no accounts, cloud sync, or telemetry (all three
+since amended, below) · no required
 fields that erase people (required brand erases makers, required photos erase the
-privacy-conscious, fixed categories erase everyone else). Two vetoes were later
-amended by owner direction — positive-only badges are in the design, and an
-optional account exists for per-wardrobe sync; see PLAN.md and the Privacy
+privacy-conscious, fixed categories erase everyone else). Three vetoes were later
+amended by owner direction — positive-only badges are in the design, an optional
+account exists for per-wardrobe sync, and the alpha carries an opt-in usage
+record that is off until a tester turns it on; see PLAN.md and the Privacy
 section below.
 
 ## Privacy
 
-All data is stored locally in your browser, and that stays the default — no
-analytics, no telemetry, and nothing is sent anywhere you did not send it.
+All data is stored locally in your browser, and that stays the default.
+The optional services below require your choice.
 
-Two exceptions exist, and both are your choice. An account does one job only:
-keeping a synced copy of a wardrobe's record on Supabase so a second device can
-open it. Sync is opt-in per wardrobe and off until you turn it on; a wardrobe
-that never opts in never leaves the device. And when you ask the app to
-catalogue a photograph, that photograph goes to Almari's relay — which holds the
-AI key on the server, so this device never has one — and comes back as words and
-coordinates. A key or endpoint of your own can be set in Settings instead.
+**An account** does one job only: keeping a synced copy of a wardrobe's record on
+Supabase so a second device can open it. Sync is opt-in per wardrobe and off
+until you turn it on; a wardrobe that never opts in has no synced copy.
+
+**A photograph you hand to the cataloguer** goes to Almari's relay — which holds
+the AI key on the server, so this device never has one — and comes back as words
+and coordinates. A key or endpoint of your own can be set in Settings instead.
+
+**An outfit request** sends the event, weather and selected available garment
+fields to the configured AI service only after you agree and press Suggest or
+Update. Photos, costs, brands, garment notes, wear history and account details
+are excluded. The default model is Claude Fable 5.1. Its response is checked
+against the submitted garment IDs before it can be saved.
+
+**A city search or forecast** goes to Open-Meteo only when you press its button.
+The app uses the city you choose, never device geolocation. Manual weather and
+unknown-weather styling remain available without a forecast lookup.
+
+**The alpha usage record**, admitted by owner direction on 2026-08-28 and lasting
+only as long as the alpha. It is off until you tick a box in a panel that shows
+you the exact payload first, and nothing is written down before you do. It
+carries counts, timings and the names of screens — never a garment, never a
+brand, never a photograph, never a word you typed. You can read it, export it and
+switch it off from Settings, and switching it off deletes what was gathered, on
+this device and on the server. The cohort is small enough that a count of three
+is three people, so these numbers are not anonymous and this app does not call
+them anonymous. When the alpha ends the collector is removed rather than
+disabled. [`docs/45-what-almari-records.md`](docs/45-what-almari-records.md) is
+the complete account, event by event and property by property.
+
 Nothing else leaves the device.
 
 Export a complete, lossless JSON backup from Settings at any time; imports
@@ -143,7 +188,18 @@ npm run verify   # build, brand, migration, persona and intake suites
 # The browser suites. Serve a build first: npx vite preview --port 4174
 npm run test:flows     # every route, signed out and in, phone and desktop
 npm run test:features  # the door, the cutout, the weather, installability
+npm run test:eventstylist:browser # event, weather, refinement, save and isolation
+npm run test:rose:browser # default theme, Outfits navigation and saved historical sets
+npm run audit:alpha    # screenshots of every enabled alpha route
+node scripts/test-event-stylist-live.mjs --live # synthetic closet; two live AI calls
+npm run review:alpha   # local recorded results and screen gallery on 127.0.0.1:4176
 ```
+
+See the [prompt review](docs/48-alpha-prompt-review.md),
+[validation record](docs/47-alpha-event-stylist-validation.md), and
+[local and hosted link directory](docs/49-alpha-links.md) for the alpha review.
+The [Rose atelier and Outfits validation](docs/52-rose-outfits-validation.md)
+records the latest navigation, theme, and browser checks.
 
 Stack: React 19 · TypeScript · Vite · Tailwind CSS v4 · React Router (HashRouter,
 for static hosting) · localStorage.

@@ -1,5 +1,6 @@
 # 33 — The Alpha Mobile Sprint
 
+
 > **Status:** active · **Owner:** project lead · **Opened:** 2026-08-18
 > **Mission:** take Almari from a desktop-strong PWA to a mobile-first build a
 > circle of 15–20 alpha testers can live in — feed alive, sync correct,
@@ -142,7 +143,10 @@ new closets open without an empty room.
   midnight-crossing wear log, DST week, corrupted localStorage, storage quota,
   two-tab torture.
 - G2 Alpha kit: PWA install instructions, manual feedback form, diary-study
-  template, consent text. Measurement stays manual (no telemetry), gated on
+  template, consent text. Measurement is manual first — the diary and the
+  interviews carry the gates below, and the opt-in usage record (amended
+  2026-08-28; docs/45-what-almari-records.md) counts what it can beside them,
+  never instead of them. Gated on
   docs/28 §4.4: ≤2-tap logging, ≥60% week-1 diary completion, ≥40% week-12
   logging.
 - G3 Device matrix: iOS Safari 390px, Android Chrome 360/412px, desktop

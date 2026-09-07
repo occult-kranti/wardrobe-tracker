@@ -1,5 +1,13 @@
 # 39 — The Index, the friend graph, and the calendar question
 
+> **Superseded in one respect, 2026-08-28.** This is a dated record and its text
+> is left as written. Where it says Almari collects nothing and has no telemetry,
+> that was true when this was written and is no longer the whole truth: the owner
+> amended PLAN.md non-negotiable #1 to admit an opt-in alpha usage record, off
+> until a tester ticks a box. What is collected, and what never is, is
+> `docs/45-what-almari-records.md`. Nothing else in this document is affected.
+
+
 > **Status:** design record · **Written:** 2026-08-19 · **Squad:** PLAN, one
 > document, no code. **Binding on everything below:**
 > `.claude/skills/toile-social/SKILL.md` (the four verbs, snapshot consent, no

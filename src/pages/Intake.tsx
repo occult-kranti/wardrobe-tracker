@@ -12,7 +12,8 @@ import {
 } from '@almari/shared/intake';
 import { INTAKE_PROMPT, OUTFIT_PROMPT } from '../lib/intakePrompt';
 import { INTAKE_SAMPLES, type IntakeSample } from '../lib/intakeSamples';
-import { prepareImage, readPhotograph, type Prepared } from '../lib/anthropic';
+import { aiStylistDisclosure, prepareImage, readPhotograph, type Prepared } from '../lib/anthropic';
+import { record } from '../lib/usage';
 import { harvest, type Harvested } from '../lib/harvest';
 import { confirmWrite } from '../hooks/useLocalStorage';
 import { storePhoto } from '../lib/photoStore';
@@ -570,8 +571,18 @@ export default function Intake() {
     if (!result) return;
     if (cataloguing.current) return;
     cataloguing.current = true;
+    /* THE INTAKE'S YIELD — the number this alpha most needs and cannot guess.
+       The category's own unsolved problem is the cost of the first hour, and
+       the only honest measure of whether this page solves it is how many pieces
+       the model OFFERED against how many the person actually kept, and how long
+       they waited for the answer. Three numbers, none of which can carry a
+       garment: what was offered, what was accepted, and the milliseconds. */
+    const offered = result.drafts.length;
+    const accepted = result.drafts.filter(d => ticked.has(d.ref)).length;
+    const started = Date.now();
     try {
       await writeChosen(result);
+      record('intake_run', { offered, accepted, ms: Date.now() - started });
     } finally {
       cataloguing.current = false;
     }
@@ -612,7 +623,7 @@ export default function Intake() {
         // The picture cut from the photograph, when there is one.
         imageUrl: filed.get(d.ref) ?? '',
         favorite: false,
-      }));
+      }, 'intake'));
     }
 
     // A worn photograph is a look as well as a row of pieces. Saving it as one
@@ -622,7 +633,7 @@ export default function Intake() {
       addOutfit({
         name: look.name,
         itemIds: written,
-        occasion: look.occasion[0],
+        occasion: look.occasion?.[0] ?? 'everyday',
         favorite: false,
         // The mirror shot itself, kept as the look's own picture.
         imageUrl: lookPicture,
@@ -723,14 +734,13 @@ export default function Intake() {
             <div className="rounded-[2px] border border-accent/60 bg-sunken p-4">
               <p className="type-ledger text-[11px] text-accent">This one step uses the network</p>
               <p className="text-[13px] text-text-2 mt-2 leading-relaxed">
-                The photograph goes to Claude Fable by Anthropic, through Almari&rsquo;s relay, which
-                holds the key on the server so this device never has one — or to your own
-                endpoint, if you have set one in Settings. It comes back as words and
+                The photograph is sent using {aiStylistDisclosure()} The default relay holds the key on the server.
+                A personal key you saved stays on this device. It comes back as words and
                 coordinates. The cutting, the background removal and the writing all happen
                 on this device, and the photograph makes exactly one journey.
               </p>
               <p className="type-ledger text-[10px] text-text-2 mt-3">
-                No key on this device · your own endpoint can be set in Settings
+                The default relay holds its key · your own endpoint can be set in Settings
               </p>
             </div>
 
@@ -807,8 +817,7 @@ export default function Intake() {
             <div className="rounded-[2px] border border-accent/60 bg-sunken p-4 mt-4">
               <p className="type-ledger text-[11px] text-accent">One journey per screenshot</p>
               <p className="text-[13px] text-text-2 mt-2 leading-relaxed">
-                The screenshots go to Claude Fable by Anthropic, through Almari&rsquo;s relay — the
-                key is held on the server, never on this device — only when you press the button.
+                The screenshots are sent using {aiStylistDisclosure()} Only when you press the button.
                 Group photos are left alone, and nothing is written until you say so.
               </p>
             </div>
@@ -858,8 +867,7 @@ export default function Intake() {
             <div className="rounded-[2px] border border-accent/60 bg-sunken p-4 mt-4">
               <p className="type-ledger text-[11px] text-accent">One journey per photograph</p>
               <p className="text-[13px] text-text-2 mt-2 leading-relaxed">
-                The photographs go to Claude Fable by Anthropic, through Almari&rsquo;s relay — the
-                key is held on the server, never on this device — only when you press the
+                The photographs are sent using {aiStylistDisclosure()} Only when you press the
                 button. Nothing is written until you say so.
               </p>
             </div>

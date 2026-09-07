@@ -92,7 +92,7 @@ async function clampsOffline() {
       return;
     }
 
-    const ask = async ({ model = 'claude-fable-5', max_tokens = 512, origin, method = 'POST', raw, headers = {} } = {}) => {
+    const ask = async ({ model = 'claude-fable-5-1', max_tokens = 512, origin, method = 'POST', raw, headers = {} } = {}) => {
       calls.length = 0;
       const h = { 'content-type': 'application/json', ...headers };
       if (origin) h.origin = origin;
@@ -110,7 +110,13 @@ async function clampsOffline() {
     console.log('the clamps, offline (supabase/functions/ai-proxy)\n');
 
     // (1) the model allowlist
-    let r = await ask({ model: 'claude-fable-5' });
+    let r = await ask({ model: 'claude-fable-5-1' });
+    check('claude-fable-5-1 goes to Anthropic unchanged', r.status === 200 && !!r.sent?.url.includes('api.anthropic.com') && JSON.parse(r.sent.body).model === 'claude-fable-5-1', r.status);
+    r = await ask({ model: 'claude-fable-5-1-latest' });
+    check('Fable 5.1 latest alias passes', r.status === 200, r.status);
+    r = await ask({ model: 'claude-fable-5-1-evil.example.com' });
+    check('Fable 5.1 arbitrary suffix is refused', r.status === 400 && r.sent === null, r.status);
+    r = await ask({ model: 'claude-fable-5' });
     check('claude-fable-5 goes to Anthropic', r.status === 200 && !!r.sent?.url.includes('api.anthropic.com'), r.status);
     r = await ask({ model: 'claude-opus-5' });
     check('claude-opus-5 goes to Anthropic', r.status === 200 && !!r.sent?.url.includes('api.anthropic.com'), r.status);
@@ -124,7 +130,7 @@ async function clampsOffline() {
     check('a -latest variant passes', r.status === 200, r.status);
     r = await ask({ model: 'gpt-4o-mini' });
     check('an unlisted model is refused, nothing forwarded', r.status === 400 && r.sent === null, r.status);
-    check('the refusal names the doors', /claude-fable-5, claude-opus-5, gemini-3\.7-flash, k3/.test(r.text), r.text.slice(0, 70));
+    check('the refusal names the doors', /claude-fable-5-1, claude-fable-5, claude-opus-5, gemini-3\.7-flash, k3/.test(r.text), r.text.slice(0, 90));
     r = await ask({ model: 'claude-fable-5-evil.example.com' });
     check('an arbitrary suffix is not a variant', r.status === 400, r.status);
     r = await ask({ model: 'claude-fable-5x' });
@@ -204,7 +210,7 @@ if (!process.argv.includes('--live')) {
 /** Anthropic Messages shape for claude*, OpenAI chat shape for the rest. */
 function bodyFor(model) {
   if (model.startsWith('claude')) {
-    return { model, max_tokens: 512, messages: [{ role: 'user', content: ASK }] };
+    return { model, max_tokens: model === 'claude-fable-5-1' ? 8000 : 512, messages: [{ role: 'user', content: ASK }] };
   }
   // Kimi K3 reasons out of the same budget — 8000 is the working floor.
   const maxTokens = model === 'k3' ? 8000 : 512;
@@ -220,7 +226,7 @@ function textOf(model, parsed) {
   return parsed?.choices?.[0]?.message?.content ?? '';
 }
 
-const MODELS = ['claude-fable-5', 'claude-opus-5', 'gemini-3.7-flash', 'k3'];
+const MODELS = ['claude-fable-5-1', 'claude-opus-5', 'gemini-3.7-flash', 'k3'];
 const rows = [];
 
 console.log('\nthe deployed relay\n');

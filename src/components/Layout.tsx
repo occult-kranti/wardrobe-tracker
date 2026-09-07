@@ -4,7 +4,7 @@ import { nextTheme } from '../lib/accounts';
 import {
   IconToday, IconCloset, IconOutfits, IconCalendar, IconLedger,
   IconWishlist, IconCompare, IconRail, IconSettings, IconPlus, IconTheme, IconMenu, IconClose,
-  IconEvents, IconFeed, IconChats, IconHouse, IconSearch,
+  IconEvents, IconFeed, IconChats, IconProfile, IconSearch,
 } from './icons';
 import { GroundFrieze, HangingRail, GutterFigure, ScatterField, Wordmark, TagMark } from './art';
 import { useWardrobe } from '../context/WardrobeContext';
@@ -14,8 +14,10 @@ import { PageGuide } from './Tutorial';
 import { ToastContainer } from './Toast';
 import { Button, IconButton } from './ui';
 import { FEED_ENABLED } from '@almari/shared/flags';
-import { barSlots, slotFor } from '@almari/shared/nav';
+import { webBarSlots, slotFor } from '@almari/shared/nav';
 import { LOOK_BOOK_PATHS } from '../lib/routes';
+import { isRecording, record } from '../lib/usage';
+import { screenOf } from '../lib/screens';
 
 interface NavItem {
   path: string;
@@ -26,25 +28,24 @@ interface NavItem {
 }
 
 /**
- * The five bar addresses take their WORDS from the shared roster
- * (packages/shared/nav.ts, docs/42 §7) rather than from here, so the phone
- * rail and the native house bar cannot drift apart in a rename. The roster
- * carries no icons — each app binds its own by key — so the drawing still
- * lives in this file. Every entry that seats no bar slot names itself.
+ * Shared destinations take their words from the roster. The web alpha's
+ * 2026-09-07 amendment seats Outfits and names /profile Profile; the native
+ * House bindings remain intact. Every destination outside a roster names
+ * itself here, and each app still supplies its own icon components.
  *
  * A path the roster does not know falls back to itself, which is an obviously
  * wrong label rather than a plausible one: it would read "/closet" on the rail
  * the first time it rendered.
  */
 const words = (path: string): { label: string; shortLabel?: string } => {
-  const slot = slotFor(path);
+  const slot = webBarSlots().find(s => s.path === path) ?? slotFor(path);
   return { label: slot?.label ?? path, shortLabel: slot?.shortLabel };
 };
 
 const ALL_NAV: NavItem[] = [
   { path: '/', ...words('/'), icon: IconToday },
   { path: '/closet', ...words('/closet'), icon: IconCloset },
-  { path: '/outfits', label: 'Outfits', icon: IconOutfits },
+  { path: '/outfits', ...words('/outfits'), icon: IconOutfits },
   { path: '/calendar', label: 'Calendar', icon: IconCalendar },
   { path: '/ledger', label: 'Ledger', icon: IconLedger },
   { path: '/wishlist', label: 'Wishlist', icon: IconWishlist },
@@ -59,10 +60,9 @@ const ALL_NAV: NavItem[] = [
   // never in the five mobile slots, which stay five.
   { path: '/explore', label: 'Explore', icon: IconSearch },
   { path: '/chats', ...words('/chats'), icon: IconChats },
-  // HOUSE. The slot label and the masthead were rehung; the address did not
-  // move, so every link anyone ever sent to /profile still lands. The glyph
-  // is the almirah (docs/42 §1) — the app's namesake wears its own name.
-  { path: '/profile', ...words('/profile'), icon: IconHouse },
+  // Profile stays at its bookmarkable address and is always reachable in More.
+  // The native House keeps its own label and wardrobe-switching gesture.
+  { path: '/profile', label: 'Profile', icon: IconProfile },
   { path: '/rail', label: 'Shared rail', shortLabel: 'Rail', icon: IconRail },
   { path: '/settings', label: 'Settings', icon: IconSettings },
   // Its only other entry is the desktop rail's footer, which is `hidden lg:flex`
@@ -96,18 +96,12 @@ const navItems: NavItem[] = ALL_NAV.filter(
 /**
  * Five cells in the thumb zone: four addresses and the More sheet.
  *
- * The four come off the roster in the roster's order, so the phone rail and the
- * native house bar are the same bar read twice (docs/42 §7). Flag off the
- * roster is four long and the rail reads TODAY · CLOSET · CHATS · HOUSE ·
- * MORE; flag on it is five, the Look Book takes the centre, and the House
- * moves to the sheet — because the web's fifth cell is More, and six cells at
- * 320px is a wall we do not build. The slice is that decision, and it is the
- * ONLY place the web bar differs from the native one, which has no More.
- *
- * Outfits leaves the rail for the sheet here. That is the single declared cost
- * of the whole plan — one extra tap — spent to seat the owner's roster.
+ * Outfits is fourth at both flag values. The third address is Chats in alpha
+ * and Looks in showcase; showcase Chats moves to More. Profile always lives
+ * in More. Native keeps its existing roster until its Outfits screen is ported.
+ * See the dated web amendment in docs/42.
  */
-const mobilePrimary = barSlots().slice(0, 4).map(s => s.path);
+const mobilePrimary = webBarSlots().map(s => s.path);
 
 /**
  * Does this nav entry own the address we are at?
@@ -142,6 +136,49 @@ function owns(path: string, here: string): boolean {
   return (HELD_BY[path] ?? []).some(p => here === p || here.startsWith(`${p}/`));
 }
 
+/**
+ * WHICH ROOMS GET OPENED, AND FOR HOW LONG.
+ *
+ * The alpha's real question is which rooms of this house nobody ever enters,
+ * and this is the only place that can answer it: every address inside a
+ * wardrobe renders through Layout.
+ *
+ * TWO THINGS HERE ARE DELIBERATE AND LOOK LIKE FUSSINESS.
+ *
+ * The pathname is mapped to a SCREEN NAME from a closed list before anything is
+ * written down. A pathname is not safe to record: /profile/:id, /chats/:id,
+ * /furniture/:id and /explore/:postId all carry identifiers, and one of them is
+ * another person's. `screenOf` returns 'elsewhere' for anything it does not
+ * recognise, so a route added later leaks nothing until somebody deliberately
+ * names it.
+ *
+ * The duration is measured on the way OUT, in the effect's cleanup, because a
+ * screen's dwell time is not known when it opens. That also means the last
+ * screen of a session is never recorded — the page is gone before the cleanup
+ * runs — which is a known and accepted gap; `session_ended` covers the tail.
+ */
+function useScreenRecord(pathname: string): void {
+  useEffect(() => {
+    const screen = screenOf(pathname);
+    const opened = Date.now();
+    /* THE GATE IS READ AT BOTH ENDS, and the second read is the interesting one.
+       A dwell time is measured from mount to unmount, and the consent panel
+       opens over whatever screen somebody happens to be on — so the ordinary
+       case is that they allow the record part-way through a screen they opened
+       BEFORE allowing it. record() would then happily write that span, because
+       by the time the cleanup runs the gate is open.
+       Nothing is buffered before consent either way, so rule 2's letter was
+       never broken. But the NUMBER would be a measurement of the period the
+       panel promises is not measured, and that promise is absolute enough that
+       the distinction is worth closing rather than explaining. */
+    const wasRecording = isRecording();
+    return () => {
+      if (!wasRecording) return;
+      record('screen_viewed', { screen, ms: Date.now() - opened });
+    };
+  }, [pathname]);
+}
+
 export default function Layout() {
   const [addOpen, setAddOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
@@ -152,6 +189,8 @@ export default function Layout() {
   useEffect(() => {
     setMoreOpen(false);
   }, [location.pathname]);
+
+  useScreenRecord(location.pathname);
 
   // Escape closes the sheet from anywhere; the route change above closes it
   // on navigation; the scrim below closes it on a tap outside. Three ways
@@ -165,10 +204,14 @@ export default function Layout() {
     return () => document.removeEventListener('keydown', onKey);
   }, [moreOpen]);
 
-  // The rooms, in the house's order — the dye house first, then the obsidian.
+  // The cycle uses the same order as Settings and the device's default theme.
   const cycleTheme = () => setTheme(nextTheme(theme));
 
-  const primaryNav = navItems.filter(n => mobilePrimary.includes(n.path));
+  // Map the roster, rather than filtering the desktop list: Outfits appears
+  // earlier on desktop but must stay fourth in the phone rail.
+  const primaryNav = mobilePrimary
+    .map(path => navItems.find(n => n.path === path))
+    .filter((item): item is NavItem => item !== undefined);
   const secondaryNav = navItems.filter(n => !mobilePrimary.includes(n.path));
   // On /ledger or /wishlist the always-on-screen chrome said nothing about
   // where you were, because the page that owns the address is behind More.
@@ -190,7 +233,7 @@ export default function Layout() {
         <ScatterField page={location.pathname} />
       </div>
       {/* Mobile masthead */}
-      <header className="lg:hidden fixed top-0 inset-x-0 z-50 bg-bg/95 backdrop-blur-sm border-b border-border safe-t">
+      <header className="app-masthead lg:hidden fixed top-0 inset-x-0 z-50 bg-bg/95 backdrop-blur-sm border-b border-border safe-t">
         <div className="flex items-center justify-between masthead-bar px-4">
           <Link to="/" className="flex items-center gap-2 text-text min-h-11 py-1" aria-label="Almari — home">
             <TagMark size={22} />
@@ -208,7 +251,7 @@ export default function Layout() {
       </header>
 
       {/* Desktop rail */}
-      <aside className="hidden lg:flex flex-col w-[220px] shrink-0 border-r border-border bg-bg sticky top-0 h-screen">
+      <aside className="app-sidebar hidden lg:flex flex-col w-[220px] shrink-0 border-r border-border bg-bg sticky top-0 h-screen">
         <div className="px-6 pt-7 pb-6">
           <Link to="/" className="flex items-center gap-2.5 text-text min-h-11 py-1" aria-label="Almari — home">
             <TagMark size={34} />
@@ -348,6 +391,7 @@ export default function Layout() {
                 <Link
                   key={item.path}
                   to={item.path}
+                  aria-current={active ? 'page' : undefined}
                   className={`flex items-center gap-3 h-12 px-5 type-label text-[13px] border-b border-border last:border-0 ${
                     active ? 'text-text bg-sunken' : 'text-text-2'
                   }`}

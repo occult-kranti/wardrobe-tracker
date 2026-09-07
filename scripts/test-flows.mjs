@@ -49,7 +49,7 @@ await build({
   logLevel: 'error',
 });
 const { FEED_ENABLED } = await import(pathToFileURL(join(flagDir, 'flags.js')).href);
-const { barSlots } = await import(pathToFileURL(join(flagDir, 'nav.js')).href);
+const { webBarSlots } = await import(pathToFileURL(join(flagDir, 'nav.js')).href);
 const { guidedPaths } = await import(pathToFileURL(join(flagDir, 'pageGuides.js')).href);
 
 /** The Look Book's addresses on the web. Hidden together or shown together. */
@@ -106,6 +106,20 @@ async function open(size) {
   await ctx.addInitScript(paths => {
     try {
       window.localStorage.setItem('toile-guides', JSON.stringify(paths));
+      /* AND THE ALPHA'S CONSENT SHEET, SETTLED BEFORE THE APP BOOTS.
+         UsageConsent lets itself in a beat after the floor clears of other
+         dialogs, which on a suite this long means it appears in the middle of
+         somebody else's click and intercepts it — pointer events, not a
+         failure anybody could read. It is settled here for the same reason the
+         guides are settled on the line above: this suite is about the app in
+         its steady state, and the sheet has a suite of its own
+         (scripts/test-usage-live.mjs) that opens it deliberately and asserts
+         every rule it keeps. 'declined' rather than 'granted', so nothing is
+         recorded while the suite drives the app. */
+      window.localStorage.setItem(
+        'almari-usage-consent',
+        JSON.stringify({ state: 'declined', installId: null, decidedAt: new Date().toISOString(), version: 1 }),
+      );
     } catch {
       /* storage that will not write cannot pop either — guideSeen reads true */
     }
@@ -305,7 +319,7 @@ const survey = page => page.evaluate(() => {
   await page.waitForTimeout(500);
 
   /* --- the rail IS the roster (docs/42 §7) --- */
-  const slots = barSlots().slice(0, 4);
+  const slots = webBarSlots();
   const rail = await page.evaluate(() => {
     const bar = [...document.querySelectorAll('nav')]
       .find(n => getComputedStyle(n).position === 'fixed');
@@ -328,11 +342,11 @@ const survey = page => page.evaluate(() => {
   await page.waitForTimeout(400);
   const sheet = await page.evaluate(() =>
     [...document.querySelectorAll('div.pane a[href]')].map(a => a.getAttribute('href')));
-  check('More carries Outfits, which left the rail to seat the roster',
-    sheet.includes('#/outfits'), sheet.join(' '));
+  check('More carries Profile while Outfits has a main tab',
+    sheet.includes('#/profile') && !sheet.includes('#/outfits'), sheet.join(' '));
   if (FEED_ENABLED) {
-    check('flag on: the House moved to More, displaced by the Look Book',
-      sheet.includes('#/profile'), sheet.join(' '));
+    check('flag on: conversations remain in More when Looks occupies the third tab',
+      sheet.includes('#/chats'), sheet.join(' '));
   } else {
     check('flag off: no door in More opens on the Look Book',
       !sheet.includes('#/feed') && !sheet.includes('#/explore'), sheet.join(' '));

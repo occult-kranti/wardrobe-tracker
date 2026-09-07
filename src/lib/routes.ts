@@ -33,6 +33,7 @@ const ROUTE_TABLE: Route[] = [
   { path: '/furniture/:id', name: 'a place' },
   { path: '/calendar', name: 'the calendar' },
   { path: '/events', name: 'events' },
+  { path: '/events/style', name: 'an outfit for an event' },
   { path: '/ledger', name: 'the ledger' },
   { path: '/wishlist', name: 'the wishlist' },
   { path: '/compare', name: 'before you buy' },
@@ -48,7 +49,9 @@ const ROUTE_TABLE: Route[] = [
   { path: '/rail/:id', name: "a neighbour's rail" },
   { path: '/intake', name: 'photo intake' },
   { path: '/settings', name: 'settings' },
-  { path: '/admin', name: 'the project lead portal' },
+  // '/admin' was struck 2026-08-28: the project lead's board is a separate
+  // build on its own address now, so this house has no such room and safeNext
+  // must not remember a link to one.
   { path: '/open', name: 'wardrobes' },
   { path: '/open/new', name: 'a new wardrobe' },
 ];

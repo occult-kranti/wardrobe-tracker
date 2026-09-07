@@ -1,5 +1,13 @@
 # Competitive benchmark — the wardrobe-app category
 
+> **Superseded in one respect, 2026-08-28.** This is a dated record and its text
+> is left as written. Where it says Almari collects nothing and has no telemetry,
+> that was true when this was written and is no longer the whole truth: the owner
+> amended PLAN.md non-negotiable #1 to admit an opt-in alpha usage record, off
+> until a tester ticks a box. What is collected, and what never is, is
+> `docs/45-what-almari-records.md`. Nothing else in this document is affected.
+
+
 *Two research passes, 12–13 August 2026 — the second read changelogs, Google Play Data Safety filings and roughly 800 store and forum reviews. Every figure below is sourced; where a number is
 self-reported by the company or comes from a rival's marketing page, it says so.
 Where sources disagree, both numbers are printed rather than averaged.*

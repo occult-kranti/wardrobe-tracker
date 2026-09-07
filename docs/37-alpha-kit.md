@@ -7,7 +7,7 @@
 >
 > This kit answers to: the pre-registered gates in `docs/28-the-company.md` §4.4
 > (median assisted logging ≤ 2 taps; ≥60% week-1 diary completion; ≥40% week-12
-> logging — all measured manually, no telemetry), phase G of
+> logging — all measured by hand, none of them from the app), phase G of
 > `docs/33-alpha-mobile-roadmap.md`, and the QR distribution plan in
 > `docs/34-app-development-plan.md` §7.
 >
@@ -34,9 +34,10 @@
 
 One person runs this alpha: the **moderator**. They send every message, run
 every session, count every tap, and file every report. The app has no
-notifications and no telemetry by design, so every nudge and every measurement
-in this document is a human doing something by hand. That is not a workaround;
-it is the product's promise kept.
+notifications, and the one thing it records — the opt-in usage record of §3,
+off until a tester ticks a box — measures no gate in this kit. Every nudge and
+every measurement in this document is a human doing something by hand. That is
+not a workaround; it is the product's promise kept.
 
 ---
 
@@ -49,7 +50,7 @@ manual nudges and replies stop being manageable for one moderator.
 |---|---|---|---|
 | A — Mobile-first Gen-Z fashion users | Phone-first, dress with intent most days, the demographic that is starting to pay for apps | ~40% | The daily-loop test. If logging a wear is too slow for them, the app fails its core promise |
 | B — Power users | Own 50+ pieces, have tried to catalogue a wardrobe before | ~30% | The stress test. Big closets expose slow grids, heavy imports, and maths that breaks at scale |
-| C — Privacy-conscious users | Read privacy policies, avoid accounts, come from privacy communities | ~30% | The trust test. They will check whether "nothing leaves your device" is true, and say so |
+| C — Privacy-conscious users | Read privacy policies, avoid accounts, come from privacy communities | ~30% | The trust test. They will read the consent note and the usage panel and check the claim against what the device actually sends, and say so |
 
 Recruit where the cohorts already are, per `docs/28-the-company.md` §4.4:
 India metro Gen-Z fashion circles, privacy communities (global), and the
@@ -177,13 +178,16 @@ weeks. You keep a tiny daily diary (§5), fill in one feedback form midway
 (§4), and — if you are up for it — join one 30-minute session where we watch
 you use the app and a closing chat at the end. That is the whole ask.
 
-**What the app collects: nothing.** Almari has no analytics, no telemetry, no
-tracking, and no account by default. Your wardrobe data is stored on your
-device and nowhere else. We cannot see what you log, when you open the app,
-or whether you open it at all — the app has no way to tell us. That is why
-this study exists: the only way we learn anything is you telling us.
+**What the app collects on its own: nothing.** Almari loads no third-party
+analytics, no tracking scripts and no advertising code, and it needs no
+account. Your wardrobe is stored on your device. Optional requests can leave
+that device: sync, AI photo intake and event styling, a city forecast, and
+the opt-in usage record. Turn none of them on and we cannot see what you log,
+when you open the app, or whether you open it at all: the app has no way to
+tell us. That is why this study exists — what the app can say is thin, and
+mostly the only way we learn anything is you telling us.
 
-**Two exceptions, both optional, both under your control:**
+**The optional services, each requiring your choice:**
 
 1. **Sync.** If you create an account and turn on sync, a copy of your
    wardrobe data is kept on our sync server (Supabase) under your account, as
@@ -192,8 +196,37 @@ this study exists: the only way we learn anything is you telling us.
 2. **Photo intake.** If you use the AI photo-intake feature, the photos you
    choose are sent to the AI provider through our proxy so they can be read
    into wardrobe entries. Only the photos you pick, only when you use it.
-   Everything else — including the background-cutout feature — runs entirely
-   on your device.
+   The background-cutout feature runs entirely on your device. The event
+   stylist separately sends your event, weather and available garment metadata
+   after showing the fields and asking you to agree. It excludes photos,
+   costs, brands, garment notes and account details. Its default is Claude
+   Fable 5.1 by Anthropic; Settings can select your own endpoint. City search
+   and forecast buttons contact Open-Meteo only when pressed, using the city
+   you choose; no device geolocation. Manual weather is available instead.
+3. **The usage record.** New for this alpha, and removed when the alpha ends.
+   The first time you open Almari it asks whether it may keep one, with a link
+   that prints exactly what would be sent — before you agree there is nothing
+   to print, so it shows you the shape instead. **It is off until you tick the
+   box**, and nothing is written down before you do: not held back from
+   sending, not written down at all. If you tick it, the most it can carry is
+   counts, timings and the names of screens — that a piece was added and by
+   which route, that a wear was logged and how many pieces were in it, how
+   long a screen was open, how long the cataloguer took, whether a sync
+   worked, and that something went wrong, in which part of the app and of what
+   kind. It never carries anything you typed, a photograph or anything drawn
+   from one, a colour, a garment or brand name, a price (a broad band only,
+   never the figure), a wardrobe name, or your name, handle or email. There is
+   no route by which your writing can reach it. Settings shows you the record
+   as it stands and switches it off; switching it off empties it on your
+   device and asks the server to delete the rows it already holds. **Two
+   things stated plainly:** the cohort is small, so a count of three is three
+   people — these numbers are not anonymous and we do not call them anonymous
+   — and if you also run sync, the hour a sync happened is in the record and
+   on the server both, so the record narrows towards you even though it never
+   names you.
+
+The complete account of all three, event by event, is the project's
+`docs/45-what-almari-records.md`. Ask and we will send it.
 
 **What we ask you to share, manually:**
 
@@ -311,10 +344,12 @@ That is the whole entry. Four lines. If you wore nothing, two lines.
 2. What did you ignore or avoid, and why?
 3. If you could change one thing, what would it be?
 
-**Why this matters:** we deliberately cannot see how you use the app — there
-is no analytics. This diary is the entire measurement of whether the daily
-loop works, and one of the alpha's pass/fail gates is how many testers
-complete week 1 of it. Skipped days are data too: if you stopped because it
+**Why this matters:** what the app can tell us is thin and it is yours to
+withhold — counts and timings from the opt-in usage record if you turned it
+on, nothing at all if you did not, and either way not a word about whether the
+daily loop was worth keeping. This diary is the entire measurement of that,
+and one of the alpha's pass/fail gates is how many testers complete week 1 of
+it. Skipped days are data too: if you stopped because it
 felt pointless, write that once and we will count it honestly.
 
 ---
@@ -396,8 +431,10 @@ do not forgive it.
 
 The three gates are pre-registered in `docs/28-the-company.md` §4.4 and are
 absolute. They are measured **only** through the manual channels in this kit.
-Nobody instruments the app to check them — that would break the promise the
-gates exist to protect. The circulating "28% D90 fashion-app retention"
+No gate is read off the opt-in usage record, and none can be: a number
+produced only by the testers who agreed to be counted is not the number the
+whole cohort is judged by, and a gate that could be moved by how many people
+ticked a box is not a gate. The circulating "28% D90 fashion-app retention"
 figure is unsourced and appears in no gate, no comparison, and no writeup.
 
 **Definitions below are fixed now, before day 0. Do not revise them after the
@@ -527,7 +564,7 @@ human message from the moderator, sent by hand.
 | **Before day 0** | Alpha-1 build published (PWA deploy + `eas update` on the `preview` channel). QR verified on a fresh Expo Go install on one iPhone and one Android. PWA URL verified on a fresh phone. Consent text, install instructions, diary template, and feedback form all filled and ready. Cohorts assigned from screening answers. |
 | **Day 0** | Invites go out: consent note (§3) first, then install instructions (§2) and the diary template (§5) once consent comes back in writing. Same-day install help for anyone stuck. |
 | **Day 1** | The moderator confirms every tester is installed, one by one. Stragglers get 1:1 help. Nobody starts day 2 uninstalled. |
-| **Day 2** | **First-diary nudge** — a short personal message from the moderator to anyone who has not sent a day-1 entry. This is a human email/message; the app itself sends nothing, ever. |
+| **Day 2** | **First-diary nudge** — a short personal message from the moderator to anyone who has not sent a day-1 entry. This is a human email/message; the app never messages a tester, ever. |
 | **Day 7** | Mid-point: the feedback form (§4) goes out, plus a diary check-in — one gentle human reminder to anyone behind on entries. Week-1 diary completion is computed here for gate 2 (entries due by end of day 9). |
 | **Days 1–13** | Bug fixes ship as OTA updates / deploys as they land (§9 ladder). No re-scan, no reinstall for testers. |
 | **Day 14** | Close-out: 30-minute closing interview per volunteer (the §6 closing questions work async for the rest), voluntary research-export collection under the consent protocol (§3 — redacted variant preferred), and the thank-you. |

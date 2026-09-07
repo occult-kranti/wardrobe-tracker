@@ -1,11 +1,10 @@
 /**
- * THE ONE THING IN ALMARI THAT LEAVES THE DEVICE, ONE PHOTOGRAPH AT A TIME.
+ * DELIBERATE AI REQUESTS: A PHOTOGRAPH OR AN EVENT OUTFIT BRIEF.
  *
- * Everything else here is local by construction: no analytics, no tracking,
- * and a wardrobe only syncs if its owner chose that. This file is the other
- * exception, and it is an exception the person makes deliberately, one
- * photograph at a time. Nothing is sent unless a button is pressed, and the
- * screen that offers it says exactly where the photograph goes.
+ * Nothing is sent unless a button is pressed. Each screen explains what
+ * goes to the chosen provider. Photo intake sends one prepared photograph;
+ * event styling sends the reviewed brief, weather and eligible garment
+ * descriptions, with no photographs. Neither path records usage payloads.
  *
  * THE PROVIDERS, in the order they are asked:
  *
@@ -14,7 +13,7 @@
  *      and routes by the model's name: a `claude*` model goes to Anthropic,
  *      anything else to Kimi by Moonshot AI. The app POSTs the provider's own
  *      request shape and sends no key, because it does not have one; the
- *      relay adds the key. The default is Claude Fable 5 — cataloguing a
+ *      relay adds the key. The default is Claude Fable 5.1 — cataloguing a
  *      photograph works out of the box.
  *   2. Your own endpoint, set in Settings. Two shapes are spoken:
  *      an endpoint whose URL points at Anthropic (or any `/v1/messages`
@@ -36,23 +35,16 @@
 
 const RELAY_ENDPOINT = 'https://wvupsqfevlrmhqfjreyx.supabase.co/functions/v1/ai-proxy';
 /**
- * Claude Fable 5 by Anthropic — the model the relay asks by default, and the
+ * Claude Fable 5.1 by Anthropic — the model the relay asks by default, and the
  * name the copy gives. The relay routes by the model's name: a `claude*` model
  * is forwarded to Anthropic, anything else to Kimi by Moonshot AI.
  *
- * The bake-off that chose it, run through this relay on a real wardrobe
- * photograph: Fable 5 and Opus 5 each found 14 pieces where Sonnet 4.5 found
- * 12 — Sonnet missed a camouflage tee worn under a hoodie. Fable is the slower
- * and the dearer of the two that saw everything (median 19.8s against 14.3s;
- * $10/$50 against $5/$25 per MTok) and is the default anyway, because a
- * photograph is read once and the reading is the whole product. Run
- * `scripts/model-bakeoff.mjs` to put the numbers back on the table.
- *
- * Thinking is always on for Fable 5: `thinking: {type:'disabled'}` comes back
- * 400, so the request below sends no thinking parameter at all — and no
- * temperature, top_p, top_k or assistant prefill, none of which Fable accepts.
+ * Upgraded by owner request for the event-styling alpha. Earlier Fable 5
+ * bake-off figures do not describe this version. Fable 5.1 uses always-on
+ * adaptive thinking: requests omit thinking overrides, sampling parameters,
+ * assistant prefill and forced tool choice. The prompt requests plain JSON.
  */
-const RELAY_MODEL = 'claude-fable-5';
+const RELAY_MODEL = 'claude-fable-5-1';
 /** Who the relay is talking to, for honest error copy. Derived, not written down twice. */
 const RELAY_PROVIDER = RELAY_MODEL.startsWith('claude') ? 'Claude (by Anthropic)' : 'Kimi (by Moonshot AI)';
 /** The relay speaks the provider's own shape — Anthropic Messages for a claude* model. */
@@ -480,4 +472,150 @@ export async function readPhotograph(image: Prepared, prompt: string): Promise<{
   const legacy = loadKey();
   if (legacy) return readViaAnthropic(legacy, image, prompt);
   return readViaRelay(image, prompt);
+}
+
+/* ---------- event styling: text only, explicitly requested ---------- */
+
+const STYLIST_TIMEOUT_MS = 90_000;
+const STYLIST_RESPONSE_BYTES = 256 * 1024;
+
+/** The destination shown before consent, including the legacy fallback. */
+export function aiStylistDisclosure(): string {
+  const override = loadOverride();
+  if (override) {
+    let destination = 'your configured endpoint';
+    try { destination = new URL(override.endpoint).origin; } catch { /* validated before sending */ }
+    return `${override.model} at ${destination}, using your endpoint settings.`;
+  }
+  if (loadKey()) return 'Claude Opus 5 by Anthropic, using your saved key; Claude Haiku 4.5 if that key cannot access Opus.';
+  return 'Claude Fable 5.1 by Anthropic, through the Almari relay.';
+}
+
+function stylistError(status: number, body: string, own: boolean): string {
+  if (status === 401 || status === 403) return own
+    ? 'The AI provider refused this key or model. Check the AI settings.'
+    : 'The relay could not access the AI model. The person running Almari needs to check its key.';
+  if (status === 429) return 'The AI provider is busy. Wait a minute and try the outfit request again.';
+  if (status === 413) return 'The outfit request is too large. Shorten the event details and try again.';
+  if (status === 400 && /credit|billing/i.test(body)) return 'The AI account has no API credit available.';
+  if (status === 400 && /does not carry|not offered|allowlist/i.test(body) && !own)
+    return 'Fable 5.1 is not available on this relay yet. The person running Almari needs to update the relay.';
+  if (status === 400 || status === 404) return 'The AI provider refused this request or model. Check the AI settings and try again.';
+  if (status === 503 && /not configured/i.test(body)) return 'The AI relay has no provider key configured yet.';
+  if (status >= 500) return 'The AI provider is having trouble. Try the outfit request again shortly.';
+  return `The outfit request failed (${status}). Try again.`;
+}
+
+/** Bound the whole response, including any thinking blocks, before parsing. */
+async function readStylistResponse(response: Response): Promise<string> {
+  if (Number(response.headers.get('content-length') ?? 0) > STYLIST_RESPONSE_BYTES) {
+    await response.body?.cancel();
+    throw new Error('The AI response was too long to use. Try the outfit request again.');
+  }
+  if (!response.body) return '';
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let bytes = 0;
+  let text = '';
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      bytes += value.byteLength;
+      if (bytes > STYLIST_RESPONSE_BYTES) {
+        await reader.cancel();
+        throw new Error('The AI response was too long to use. Try the outfit request again.');
+      }
+      text += decoder.decode(value, { stream: true });
+    }
+    return text + decoder.decode();
+  } finally {
+    reader.releaseLock();
+  }
+}
+
+function stylistResponseText(raw: string, anthropic: boolean): string {
+  let json: Record<string, unknown>;
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error();
+    json = parsed as Record<string, unknown>;
+  } catch {
+    throw new Error('The AI response could not be read. Try the outfit request again.');
+  }
+  let content: unknown;
+  if (anthropic) {
+    if (json.stop_reason === 'max_tokens') throw new Error('The AI answer was cut short. Try the outfit request again.');
+    content = json.content;
+  } else {
+    const choices = json.choices;
+    const choice = Array.isArray(choices) ? choices[0] : undefined;
+    if (choice?.finish_reason === 'length') throw new Error('The AI answer was cut short. Try the outfit request again.');
+    content = choice?.message?.content;
+  }
+  const text = (typeof content === 'string' ? content : Array.isArray(content)
+    ? content.filter(block => block?.type === 'text' && typeof block.text === 'string').map(block => block.text).join('\n')
+    : '').trim();
+  if (!text) throw new Error('The AI returned no outfit. Try again with a little more event detail.');
+  return text;
+}
+
+/**
+ * Uses the same endpoint precedence as photo intake. No image field exists
+ * in this request. Cancellation and timeout span the response body as well
+ * as connection setup, and a legacy fallback returns its actual model name.
+ */
+export async function askStylistText(system: string, prompt: string, signal?: AbortSignal): Promise<{ text: string; model: string }> {
+  if (signal?.aborted) throw new DOMException('The outfit request was cancelled.', 'AbortError');
+  if (!system.trim() || !prompt.trim()) throw new Error('Add event details before asking for an outfit.');
+  if (system.length + prompt.length > 200_000) throw new Error('The outfit request is too large. Shorten the event details and try again.');
+  const override = loadOverride();
+  const legacy = override ? '' : loadKey();
+  const endpoint = override?.endpoint ?? (legacy ? ANTHROPIC_ENDPOINT : RELAY_ENDPOINT);
+  let endpointUrl: URL;
+  try { endpointUrl = new URL(endpoint); } catch { throw new Error('The AI endpoint address is not valid. Check Settings.'); }
+  if (endpointUrl.protocol !== 'https:') throw new Error('The AI endpoint must use https. Check Settings.');
+  const anthropic = override ? speaksAnthropic(endpoint) : legacy ? true : RELAY_SPEAKS_ANTHROPIC;
+  const key = override?.key ?? legacy;
+  let model = override?.model ?? (legacy ? ANTHROPIC_PREFERRED : RELAY_MODEL);
+  const headers: Record<string, string> = { 'content-type': 'application/json' };
+  if (anthropic) {
+    if (key) {
+      headers['x-api-key'] = key;
+      headers['anthropic-version'] = ANTHROPIC_VERSION;
+    }
+    if (endpointUrl.hostname === 'api.anthropic.com') headers['anthropic-dangerous-direct-browser-access'] = 'true';
+  } else if (key) headers.authorization = `Bearer ${key}`;
+
+  const controller = new AbortController();
+  let timedOut = false;
+  const cancel = () => controller.abort();
+  signal?.addEventListener('abort', cancel, { once: true });
+  const timeout = setTimeout(() => { timedOut = true; controller.abort(); }, STYLIST_TIMEOUT_MS);
+  const send = () => fetch(endpoint, {
+    method: 'POST', headers, signal: controller.signal,
+    body: JSON.stringify(anthropic
+      ? { model, max_tokens: MAX_TOKENS, system, messages: [{ role: 'user', content: prompt }] }
+      : { model, max_tokens: MAX_TOKENS, messages: [{ role: 'system', content: system }, { role: 'user', content: prompt }] }),
+  });
+  try {
+    let response = await send();
+    if (legacy && (response.status === 403 || response.status === 404)) {
+      await response.body?.cancel();
+      model = ANTHROPIC_FALLBACK;
+      response = await send();
+    }
+    const raw = await readStylistResponse(response);
+    if (controller.signal.aborted) throw new DOMException('The outfit request was cancelled.', 'AbortError');
+    if (!response.ok) throw new Error(stylistError(response.status, raw, Boolean(override || legacy)));
+    return { text: stylistResponseText(raw, anthropic), model };
+  } catch (error) {
+    if (timedOut) throw new Error('The outfit request took too long. Try again.');
+    if (signal?.aborted) throw new DOMException('The outfit request was cancelled.', 'AbortError');
+    if (error instanceof TypeError) throw new Error('Could not reach the AI provider. Check the connection and try again.');
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+    signal?.removeEventListener('abort', cancel);
+  }
 }

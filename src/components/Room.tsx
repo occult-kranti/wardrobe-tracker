@@ -161,7 +161,7 @@ export function Room() {
             {room.bare
               ? 'Everything hangs on the rail for now. '
               : `${room.bays.map(b => b.name).join(', ')}${room.beyond > 0 ? `, and ${room.beyond} more through the door` : ''}. `}
-            <Link to="/furniture" className="text-accent underline underline-offset-[3px]">
+            <Link to="/furniture" className="inline-flex items-center min-h-11 text-accent underline underline-offset-[3px]">
               {room.bare ? 'Draw a place' : 'The dressing room'}
             </Link>
             {room.chair ? (
@@ -171,7 +171,7 @@ export function Room() {
                 <button
                   type="button"
                   onClick={sendToWash}
-                  className="text-accent underline underline-offset-[3px]"
+                  className="inline-flex items-center min-h-11 text-accent underline underline-offset-[3px]"
                 >
                   Send them to the wash
                 </button>
@@ -184,7 +184,7 @@ export function Room() {
           {furniture.length === 0
             ? 'Nothing has an address yet. '
             : `${furniture.length} ${furniture.length === 1 ? 'place' : 'places'}, and what is in them. `}
-          <Link to="/furniture" className="text-accent underline underline-offset-[3px]">
+          <Link to="/furniture" className="inline-flex items-center min-h-11 text-accent underline underline-offset-[3px]">
             {furniture.length === 0 ? 'Draw a place' : 'The dressing room'}
           </Link>
           {/* Putting the wash away behind the drawing would mean hiding the

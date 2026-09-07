@@ -6,6 +6,7 @@ import { todayLocal, isFutureDate, addDays } from '@almari/shared/dates';
 import { migrate } from '@almari/shared/migrate';
 import { wardrobeKey } from '../lib/accounts';
 import { sweepPhotos } from '../lib/photoStore';
+import { record, type AddRoute, type CostTier } from '../lib/usage';
 import { useSession } from './SessionContext';
 import {
   SYNC_ADOPTED_EVENT,
@@ -39,8 +40,13 @@ import {
 interface WardrobeContextType extends AppState {
   /** Active (non-retired) items — what every browse surface should use. */
   activeItems: ClothingItem[];
-  /** Returns the new piece's id, so a caller writing several can then relate them. */
-  addItem: (item: Omit<ClothingItem, 'id' | 'dateAdded' | 'wearCount' | 'laundryStatus'>) => string;
+  /** Returns the new piece's id, so a caller writing several can then relate them.
+      `via` names the route the piece arrived by, for the usage record only; it is
+      optional and defaults to 'manual', so no existing caller has to care. */
+  addItem: (
+    item: Omit<ClothingItem, 'id' | 'dateAdded' | 'wearCount' | 'laundryStatus'>,
+    via?: AddRoute,
+  ) => string;
   updateItem: (id: string, updates: Partial<ClothingItem>) => void;
   /** Removes the piece and everything naming it; returns the way to put it back. */
   deleteItem: (id: string) => () => void;
@@ -117,6 +123,22 @@ interface WardrobeContextType extends AppState {
 }
 
 const WardrobeContext = createContext<WardrobeContextType | null>(null);
+
+/**
+ * A cost BAND, never an amount.
+ *
+ * The usage record may carry which band a piece sits in and must never carry
+ * what it cost — a price is a fact about somebody's life, and four buckets
+ * answer every question the alpha actually has about whether the ledger is
+ * being used. The thresholds match the ones the Ledger already reasons in.
+ */
+function costTierOf(cost: number | undefined): CostTier {
+  if (typeof cost !== 'number' || Number.isNaN(cost)) return 'unrecorded';
+  if (cost === 0) return 'free';
+  if (cost < 1000) return 'budget';
+  if (cost < 5000) return 'mid';
+  return 'investment';
+}
 
 /**
  * A loan names its counterparty, so the rail needs a record of them — the
@@ -345,7 +367,15 @@ export function WardrobeProvider({ accountId, children }: { accountId: string; c
     return () => window.removeEventListener(SYNC_ADOPTED_EVENT, onAdopted);
   }, [accountId, setState]);
 
-  const addItem = useCallback((item: Omit<ClothingItem, 'id' | 'dateAdded' | 'wearCount' | 'laundryStatus'>) => {
+  const addItem = useCallback((
+    item: Omit<ClothingItem, 'id' | 'dateAdded' | 'wearCount' | 'laundryStatus'>,
+    /* How the piece came to be written down. Optional and defaulted so every
+       existing call site is unaffected; the two routes that know better —
+       photo intake and the sample seeder — say so. It is an enum, never a
+       string from the piece: see src/lib/usage.ts on why the vocabulary is
+       closed. */
+    via: AddRoute = 'manual',
+  ) => {
     const newItem: ClothingItem = {
       ...item,
       id: crypto.randomUUID(),
@@ -354,6 +384,12 @@ export function WardrobeProvider({ accountId, children }: { accountId: string; c
       laundryStatus: 'clean',
     };
     setState(prev => ({ ...prev, items: [...prev.items, newItem] }));
+    /* OUTSIDE the updater, and that placement is load-bearing: React is free to
+       call an updater more than once (it does, under StrictMode), and a piece
+       counted twice is a number the owner would act on. Nothing here reads the
+       piece's name, brand, colour or note — only whether a photograph exists
+       and which cost band it falls in. */
+    record('piece_added', { via, hasPhoto: !!item.imageUrl, tier: costTierOf(item.cost) });
     return newItem.id;
   }, [setState]);
 
@@ -466,6 +502,8 @@ export function WardrobeProvider({ accountId, children }: { accountId: string; c
       wearCount: 0,
     };
     setState(prev => ({ ...prev, outfits: [...prev.outfits, newOutfit] }));
+    // The count of pieces, never their names and never the outfit's own name.
+    record('outfit_created', { pieces: outfit.itemIds.length });
   }, [setState]);
 
   const deleteOutfit = useCallback((id: string) => {
@@ -522,7 +560,24 @@ export function WardrobeProvider({ accountId, children }: { accountId: string; c
         ),
       };
     });
-  }, [setState]);
+    /* A PLAN IS NOT A WEAR, and the usage record honours that distinction as
+       carefully as the Ledger does. A future-dated log moves no wear count
+       here, so counting it as a wear in the record would tell the owner the
+       daily loop is healthier than it is — the one number this alpha exists to
+       read honestly.
+
+       The credited count is recomputed from the state we can see rather than
+       lifted out of the updater, because the updater may run twice and must
+       stay free of side effects. It can differ from the updater's own count by
+       one render in the rare case of two logs in the same tick; that is a
+       count, not a wear log, and it is not worth a ref to make exact. */
+    if (!planned) {
+      const credited = outfitId
+        ? new Set([...itemIds, ...(state.outfits.find(o => o.id === outfitId)?.itemIds ?? [])])
+        : new Set(itemIds);
+      record('wear_logged', { pieces: credited.size, viaOutfit: !!outfitId });
+    }
+  }, [setState, state.outfits]);
 
   const removeWearLog = useCallback((id: string) => {
     setState(prev => {

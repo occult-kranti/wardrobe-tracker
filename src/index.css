@@ -5,6 +5,12 @@
    Contract: docs/05-brand-identity.md. Never hardcode a hex in
    a component; every color resolves through these variables.
 
+   Owner amendment, 2026-09-07: Rose atelier (the retained `gilt` key)
+   uses a light warm-pink ground, dark rose interface accents, and rose-gold
+   with silver decoration. This explicitly supersedes the blue-only rule
+   below for that room. Other rooms keep their existing palette. Functional
+   borders and text remain distinct from the pale metals; see docs/50.
+
    TWO REDS AND A BLUE — the split ruled by the judge pass of
    2026-08-11 (docs/14-the-brand-colour.md, 2 of 3 judges).
 
@@ -205,32 +211,10 @@
 }
 
 /* ============================================================
-   the gilding room — the fourth room, and the bold one.
-
-   Where gold leaf is laid. The reference is Klimt's gold-period ground —
-   gold over rose, ornament carrying the surface — and the zari thread of
-   Indian occasionwear: the one place in the building where the DECORATION
-   is the point. Available to everyone, named for a workshop, like every
-   other room (§2.7: identity-keyed skins are the prohibited class; a room
-   is not an identity).
-
-   How it stays inside the house physics while being the loudest room:
-
-   1. The boldness lives in the GROUND and the THREAD, not the accent.
-      The rose silk ground carries chroma 0.028 — half again the salon's
-      0.019, felt immediately — and the borders are actual gold (C 0.075,
-      the most chromatic hairline in the house) with the pattern-paper
-      crosses drawn in gold at 10%. The photographs still sit on a quieter
-      mat (C 0.022), so the boldness surrounds the clothes rather than
-      tinting them.
-   2. The interface accent is still washing blue, restated for this ground
-      (docs/14: a brand colour that changes per theme is not a brand
-      colour) — and blue against rose-gold is the Klimt move anyway.
-   3. The wax keeps its own token, like every room.
-
-   Every pair measured: tightest text pair is accent/sunken and
-   text-2/sunken at 5.22:1, 16% over AA. Full table in
-   docs/15-the-gilding-room.md.
+   Rose atelier replaces the gilding room's material by owner direction,
+   2026-09-07. Its persisted key remains `gilt`, so a stored room preference
+   still resolves. The palette and border treatment are documented in
+   docs/50-rose-atelier.md; docs/15 records the previous gold-leaf treatment.
    ============================================================ */
 /* ============================================================
    the dye house — the fifth room: the dark rose.
@@ -280,33 +264,33 @@
 }
 
 :root[data-theme="gilt"] {
-  --color-bg: #F3DCD4;           /* rose silk */
-  --color-surface: #FAEEE7;      /* tissue over the leaf */
-  --color-mat: #F6E9E1;          /* the photograph's mount — quieter than the room */
-  --color-sunken: #E9C8BC;       /* deeper rose wells */
-  --color-bg-deep: #E4BAAB;      /* the deeper silk the armoire stands in (text-2 4.62:1) */
-  --color-text: #33201C;         /* plum-black ink (11.73:1 on bg) */
-  --color-text-2: #6E453C;       /* 6.20:1 on bg, 5.22:1 on sunken */
-  --color-border: #D3A47F;       /* GOLD hairlines — the room's signature, C 0.075 */
-  --color-accent: #0E566E;       /* washing blue for a rose ground (6.21:1) */
-  --color-accent-hover: #0A4356; /* 8.20:1 */
-  --color-accent-fill: #0E566E;
-  --color-on-accent: #FFF8F2;    /* 7.75:1 on the fill */
-  --color-accent-on-ink: #7CBEDC; /* 7.52:1 on the plum ink fill */
-  --color-seal: #BE1231;         /* 4.82:1 on the silk, chalk T at 6.01:1 */
-  --color-artline: #A2751F;      /* the frieze's first metal: the leaf itself */
-  --color-artline-2: #8F979D;    /* paired with silver — Klimt kept both leafs */
-  --color-danger: #701A1E;
-  --color-danger-fill: #701A1E;  /* chalk label 10.76:1 */
-  --color-success: #2E6247;
-  --color-warning: #6F4C15;
-  --color-gold: #A2751F;         /* the leaf itself — decorative only, never text */
-  --color-charcoal: #453029;
-  --color-chalk: #FFF8F2;
-  --color-ink-fill: #33201C;
-  --color-on-ink: #FAEEE7;       /* 13.52:1 */
-  --pattern-ink: 162, 117, 31;   /* the cutting grid drawn in GOLD, not ink */
-  --pattern-alpha: 0.10;
+  --color-bg: #F8E8E4;           /* warm blush paper */
+  --color-surface: #FFF8F5;      /* warm white, opaque beneath reading surfaces */
+  --color-mat: #F4EFEC;          /* neutral mount for garment photographs */
+  --color-sunken: #EFDBD6;
+  --color-bg-deep: #EBD2CC;
+  --color-text: #34262C;         /* plum ink: 12.10:1 on bg, 10.02:1 on bg-deep */
+  --color-text-2: #674E55;       /* secondary text stays above 5.22:1 on every ground */
+  --color-border: #916A74;       /* functional edges: at least 3.23:1, never pale metal */
+  --color-accent: #7E485F;       /* dark rose: 5.93:1 on bg, 4.91:1 on bg-deep */
+  --color-accent-hover: #65364C;
+  --color-accent-fill: #7E485F;
+  --color-on-accent: #FFFAF7;    /* 6.80:1 on the rose fill */
+  --color-accent-on-ink: #E3ACBD; /* pale rose on plum ink: 7.47:1 */
+  --color-seal: #BE1231;         /* the existing wax mark keeps its own role */
+  --color-artline: #B88378;      /* rose gold: decoration only */
+  --color-artline-2: #A5ADB5;    /* silver: decoration only */
+  --color-danger: #822B3A;
+  --color-danger-fill: #822B3A;  /* chalk label: 8.60:1 */
+  --color-success: #2D604A;
+  --color-warning: #705015;
+  --color-gold: #B88378;         /* existing decorative-metal token, now rose gold */
+  --color-charcoal: #47383E;
+  --color-chalk: #FFFAF7;
+  --color-ink-fill: #34262C;
+  --color-on-ink: #FFF8F5;       /* 13.70:1 on the ink fill */
+  --pattern-ink: 128, 86, 94;
+  --pattern-alpha: 0.035;
   color-scheme: light;
 }
 
@@ -533,6 +517,7 @@
   .rail {
     overflow-x: auto;
     overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
     /* The focus ring is a 2px outline at 2px offset, so it reaches 4px past the
        chip — 3px here clipped the last pixel of it on every chip in the row. */
     padding: 4px;
@@ -736,87 +721,25 @@
   }
 
 
-  /* Mughal corner curves on every room's plates.
-
-     The multifoil (cusped) arch of Mughal and Rajput building — the profile of
-     a jharokha opening — quartered into a corner ornament: an outer frame
-     quadrant and an inner run of three cusps stepping through the turn. Placed
-     top-right and bottom-left, where card content is thinnest, in each room's
-     own metal: gold and brass in the light rooms, silver in the atelier,
-     bronze in the dye house. Ornament in the border, never behind a
-     photograph. */
-  :root[data-theme="light"] .plate {
-    background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2048%2048'%3E%3Cg%20fill='none'%20stroke='%23C9A227'%20stroke-width='1.75'%20stroke-opacity='0.42'%20stroke-linecap='butt'%20transform='rotate(90%2024%2024)'%3E%3Cpath%20d='M3%2045V16Q3%203%2016%203h29'/%3E%3Cpath%20d='M10%2042V26a6%206%200%20016-6%206%206%200%20016-6%206%206%200%20016-6h14'/%3E%3C/g%3E%3C/svg%3E"), url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2048%2048'%3E%3Cg%20fill='none'%20stroke='%23C9A227'%20stroke-width='1.75'%20stroke-opacity='0.42'%20stroke-linecap='butt'%20transform='rotate(270%2024%2024)'%3E%3Cpath%20d='M3%2045V16Q3%203%2016%203h29'/%3E%3Cpath%20d='M10%2042V26a6%206%200%20016-6%206%206%200%20016-6%206%206%200%20016-6h14'/%3E%3C/g%3E%3C/svg%3E");
-    background-position: right 5px top 5px, left 5px bottom 5px;
-    background-size: 40px 40px;
-    background-repeat: no-repeat;
-  }
-  :root[data-theme="salon"] .plate {
-    background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2048%2048'%3E%3Cg%20fill='none'%20stroke='%23A9762F'%20stroke-width='1.75'%20stroke-opacity='0.42'%20stroke-linecap='butt'%20transform='rotate(90%2024%2024)'%3E%3Cpath%20d='M3%2045V16Q3%203%2016%203h29'/%3E%3Cpath%20d='M10%2042V26a6%206%200%20016-6%206%206%200%20016-6%206%206%200%20016-6h14'/%3E%3C/g%3E%3C/svg%3E"), url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2048%2048'%3E%3Cg%20fill='none'%20stroke='%23A9762F'%20stroke-width='1.75'%20stroke-opacity='0.42'%20stroke-linecap='butt'%20transform='rotate(270%2024%2024)'%3E%3Cpath%20d='M3%2045V16Q3%203%2016%203h29'/%3E%3Cpath%20d='M10%2042V26a6%206%200%20016-6%206%206%200%20016-6%206%206%200%20016-6h14'/%3E%3C/g%3E%3C/svg%3E");
-    background-position: right 5px top 5px, left 5px bottom 5px;
-    background-size: 40px 40px;
-    background-repeat: no-repeat;
-  }
-  :root[data-theme="gilt"] .plate {
-    background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2048%2048'%3E%3Cg%20fill='none'%20stroke='%23A2751F'%20stroke-width='1.75'%20stroke-opacity='0.42'%20stroke-linecap='butt'%20transform='rotate(90%2024%2024)'%3E%3Cpath%20d='M3%2045V16Q3%203%2016%203h29'/%3E%3Cpath%20d='M10%2042V26a6%206%200%20016-6%206%206%200%20016-6%206%206%200%20016-6h14'/%3E%3C/g%3E%3C/svg%3E"), url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2048%2048'%3E%3Cg%20fill='none'%20stroke='%23A2751F'%20stroke-width='1.75'%20stroke-opacity='0.42'%20stroke-linecap='butt'%20transform='rotate(270%2024%2024)'%3E%3Cpath%20d='M3%2045V16Q3%203%2016%203h29'/%3E%3Cpath%20d='M10%2042V26a6%206%200%20016-6%206%206%200%20016-6%206%206%200%20016-6h14'/%3E%3C/g%3E%3C/svg%3E");
-    background-position: right 5px top 5px, left 5px bottom 5px;
-    background-size: 40px 40px;
-    background-repeat: no-repeat;
-  }
-  :root[data-theme="dark"] .plate {
-    background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2048%2048'%3E%3Cg%20fill='none'%20stroke='%23B4BEC3'%20stroke-width='1.75'%20stroke-opacity='0.42'%20stroke-linecap='butt'%20transform='rotate(90%2024%2024)'%3E%3Cpath%20d='M3%2045V16Q3%203%2016%203h29'/%3E%3Cpath%20d='M10%2042V26a6%206%200%20016-6%206%206%200%20016-6%206%206%200%20016-6h14'/%3E%3C/g%3E%3C/svg%3E"), url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2048%2048'%3E%3Cg%20fill='none'%20stroke='%23B4BEC3'%20stroke-width='1.75'%20stroke-opacity='0.42'%20stroke-linecap='butt'%20transform='rotate(270%2024%2024)'%3E%3Cpath%20d='M3%2045V16Q3%203%2016%203h29'/%3E%3Cpath%20d='M10%2042V26a6%206%200%20016-6%206%206%200%20016-6%206%206%200%20016-6h14'/%3E%3C/g%3E%3C/svg%3E");
-    background-position: right 5px top 5px, left 5px bottom 5px;
-    background-size: 40px 40px;
-    background-repeat: no-repeat;
-  }
-  :root[data-theme="dyehouse"] .plate {
-    background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2048%2048'%3E%3Cg%20fill='none'%20stroke='%23C98A4B'%20stroke-width='1.75'%20stroke-opacity='0.42'%20stroke-linecap='butt'%20transform='rotate(90%2024%2024)'%3E%3Cpath%20d='M3%2045V16Q3%203%2016%203h29'/%3E%3Cpath%20d='M10%2042V26a6%206%200%20016-6%206%206%200%20016-6%206%206%200%20016-6h14'/%3E%3C/g%3E%3C/svg%3E"), url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2048%2048'%3E%3Cg%20fill='none'%20stroke='%23C98A4B'%20stroke-width='1.75'%20stroke-opacity='0.42'%20stroke-linecap='butt'%20transform='rotate(270%2024%2024)'%3E%3Cpath%20d='M3%2045V16Q3%203%2016%203h29'/%3E%3Cpath%20d='M10%2042V26a6%206%200%20016-6%206%206%200%20016-6%206%206%200%20016-6h14'/%3E%3C/g%3E%3C/svg%3E");
-    background-position: right 5px top 5px, left 5px bottom 5px;
-    background-size: 40px 40px;
-    background-repeat: no-repeat;
-  }
-  /* The obsidian takes the dye house's ornament, and takes it in BOTH metals:
-     the top-right corner struck in gold, the bottom-left answering in silver.
-     This is the only room where two metals are allowed to meet — on black,
-     gold and silver read as two materials rather than as an inconsistency,
-     and the diagonal keeps them from touching. */
-  :root[data-theme="obsidian"] .plate {
-    background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2048%2048'%3E%3Cg%20fill='none'%20stroke='%23E7C46A'%20stroke-width='1.75'%20stroke-opacity='0.50'%20stroke-linecap='butt'%20transform='rotate(90%2024%2024)'%3E%3Cpath%20d='M3%2045V16Q3%203%2016%203h29'/%3E%3Cpath%20d='M10%2042V26a6%206%200%20016-6%206%206%200%20016-6%206%206%200%20016-6h14'/%3E%3C/g%3E%3C/svg%3E"), url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2048%2048'%3E%3Cg%20fill='none'%20stroke='%23CFD6E0'%20stroke-width='1.75'%20stroke-opacity='0.38'%20stroke-linecap='butt'%20transform='rotate(270%2024%2024)'%3E%3Cpath%20d='M3%2045V16Q3%203%2016%203h29'/%3E%3Cpath%20d='M10%2042V26a6%206%200%20016-6%206%206%200%20016-6%206%206%200%20016-6h14'/%3E%3C/g%3E%3C/svg%3E");
-    background-position: right 5px top 5px, left 5px bottom 5px;
-    background-size: 40px 40px;
-    background-repeat: no-repeat;
-  }
+  /* Corner artwork is now explicit PlateOrnament SVG inside padded Card
+     lanes. A generic plate may be a photo, thumbnail, or control and has no
+     guaranteed empty corner. Never attach background ornaments to it. */
 
   /* Kakemono mounting: a hanging scroll is framed twice, the work inside a
-     brocade border inside an outer mount. In this room every plate takes that
-     double frame — the card's own gold hairline, then a second, fainter gold
-     rule floated 3px outside it. Decoration in the border, never in the text:
-     gold stays a frame colour here, exactly as §2 requires.
+     brocade border inside an outer mount. Only padded card frames keep the
+     outer mounting; Rose atelier's matching silver edge is below the layers.
      :not(:focus-visible) on every mounting rule below: the decoration sits in
      the same outline slot as the house focus ring and, at (0,3,0), was
      silently beating it — a keyboard-focused plate looked exactly like an
      unfocused one in the three mounted rooms (found by the Showing stress
      suite, 2026-08-20). The frame steps aside while the ring speaks. */
-  :root[data-theme="gilt"] .plate:not(:focus-visible) {
-    outline: 1px solid color-mix(in srgb, var(--color-gold) 40%, transparent);
-    outline-offset: 3px;
-  }
-  :root[data-theme="gilt"] .plate-ink:not(:focus-visible) {
-    outline: 1px solid color-mix(in srgb, var(--color-gold) 55%, transparent);
-    outline-offset: 3px;
-  }
-  /* The masthead's thin second rule is drawn in the leaf. */
-  :root[data-theme="gilt"] .rule-double::after {
-    background: color-mix(in srgb, var(--color-gold) 75%, transparent);
-  }
-
   /* The dye house takes the same mounting, struck in brass on plum. The bold
      rooms carry the double frame; the quiet rooms stay plain. */
-  :root[data-theme="dyehouse"] .plate:not(:focus-visible) {
+  :root[data-theme="dyehouse"] .card-frame:not(:focus-visible) {
     outline: 1px solid color-mix(in srgb, var(--color-gold) 30%, transparent);
     outline-offset: 3px;
   }
-  :root[data-theme="dyehouse"] .plate-ink:not(:focus-visible) {
+  :root[data-theme="dyehouse"] .card-frame.plate-ink:not(:focus-visible) {
     outline: 1px solid color-mix(in srgb, var(--color-gold) 45%, transparent);
     outline-offset: 3px;
   }
@@ -829,11 +752,11 @@
      silver. It was refused once, when the border was rose gold and the two
      warm lines read as one thick smudge; gold against silver separates
      cleanly, which is the whole reason the metals were changed. */
-  :root[data-theme="obsidian"] .plate:not(:focus-visible) {
+  :root[data-theme="obsidian"] .card-frame:not(:focus-visible) {
     outline: 1px solid color-mix(in srgb, var(--color-silver) 26%, transparent);
     outline-offset: 3px;
   }
-  :root[data-theme="obsidian"] .plate-ink:not(:focus-visible) {
+  :root[data-theme="obsidian"] .card-frame.plate-ink:not(:focus-visible) {
     outline: 1px solid color-mix(in srgb, var(--color-silver) 40%, transparent);
     outline-offset: 3px;
   }
@@ -1052,6 +975,114 @@
     .cv-rack { contain-intrinsic-size: auto 227px 336px; }
   }
   .cv-turn-phone { content-visibility: auto; contain-intrinsic-size: auto 343px 517px; }
+}
+
+/* Card artwork has its own empty lane, in every room. A 20px corner starts
+   4px from the edge and ends at 24px. Content begins at 36px; even existing
+   controls lifted by an 8px negative margin retain a 4px focus-ring gap.
+   Horizontal padding stays unchanged, so narrow cards keep their text width.
+   This rule is outside the layers so a padding utility cannot spend the art
+   lane. Unpadded/photo cards and generic interactive plates never opt in. */
+.card-frame {
+  position: relative;
+  padding-block: 36px;
+}
+.plate-ornament {
+  position: absolute;
+  display: block;
+  width: 20px;
+  height: 20px;
+  pointer-events: none;
+  opacity: 0.72;
+}
+.plate-ornament-top-right {
+  top: 4px;
+  right: 4px;
+  color: var(--color-artline);
+}
+.plate-ornament-bottom-left {
+  bottom: 4px;
+  left: 4px;
+  color: var(--color-artline-2);
+}
+
+/* Rose atelier's material sits outside the component layer because v2.css is
+   unlayered and loads afterwards. The room selector is more specific than its
+   generic glass rules: cards and sheets remain opaque warm white, and their
+   calculated text contrast does not depend on whatever is behind the sheet.
+   These are surface rules only. Fields retain the functional border token;
+   links, buttons and keyboard focus retain the dark rose accent. */
+:root[data-theme="gilt"] :is(.plate, .plate-ink, .pane, [role="dialog"]) {
+  background-color: var(--color-surface);
+  background-image: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow: none;
+}
+/* An explicitly chosen well or photo mat keeps its opaque token. Inline
+   garment swatches also keep their own colour through the normal cascade. */
+:root[data-theme="gilt"] :is(.plate, .plate-ink).bg-sunken {
+  background-color: var(--color-sunken);
+}
+:root[data-theme="gilt"] :is(.plate, .plate-ink).bg-mat {
+  background-color: var(--color-mat);
+}
+
+/* Resting card frames are decoration. A plate that is itself an interactive
+   control keeps the functional edge. The ink plate retains the still darker
+   selection cue used by swatches and furniture picks. Only padded card frames
+   take a second decorative edge, and it steps aside for keyboard focus. */
+:root[data-theme="gilt"] .plate {
+  border-color: var(--color-border);
+}
+:root[data-theme="gilt"] .plate-ink {
+  border-color: var(--color-text);
+}
+:root[data-theme="gilt"] .plate:not(:is(a, button, [role="button"], [tabindex])) {
+  border-color: color-mix(in srgb, var(--color-artline) 72%, var(--color-surface));
+  border-bottom-color: color-mix(in srgb, var(--color-artline-2) 78%, var(--color-surface));
+}
+:root[data-theme="gilt"] .card-frame:not(:focus-visible) {
+  outline: 1px solid color-mix(in srgb, var(--color-artline-2) 42%, transparent);
+  outline-offset: 3px;
+}
+:root[data-theme="gilt"] :is(.plate, .plate-ink, .v2-tilt)::after {
+  content: none;
+}
+
+/* The small cutting marks become sparser, with a rose pencil at 3.5% rather
+   than the former gold grid at 10%. The neutral photograph mat has no pattern. */
+:root[data-theme="gilt"] .pattern-paper {
+  background-size: 32px 3px, 3px 32px, 100% 100%;
+}
+
+:root[data-theme="gilt"] .rule-double {
+  border-bottom-width: 1px;
+  border-bottom-color: var(--color-border);
+}
+:root[data-theme="gilt"] .rule-double::after {
+  background: linear-gradient(to right, var(--color-artline) 0 66%, var(--color-artline-2) 66% 100%);
+}
+
+/* Chrome has one quiet metal edge. The active navigation marker and the
+   navigation text still use their functional ink/rose tokens. */
+:root[data-theme="gilt"] :is(.app-masthead, .app-sidebar, .nav-rail) {
+  background-color: var(--color-surface);
+  border-color: var(--color-artline-2);
+}
+
+/* A small tissue mount for the Outfits introduction and its engraved mark.
+   Layout stays with the page: its title and action groups can wrap at 320px. */
+:root[data-theme="gilt"] .outfits-intro {
+  min-width: 0;
+  padding: clamp(1rem, 2.5vw, 1.5rem);
+  background-color: var(--color-surface);
+  border: 1px solid color-mix(in srgb, var(--color-artline) 72%, var(--color-surface));
+  border-bottom-color: color-mix(in srgb, var(--color-artline-2) 78%, var(--color-surface));
+  border-radius: 2px;
+}
+:root[data-theme="gilt"] .outfits-intro > header {
+  margin-bottom: 1rem;
 }
 
 @media (prefers-reduced-motion: reduce) {

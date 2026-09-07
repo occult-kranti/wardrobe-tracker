@@ -290,6 +290,14 @@ for (const file of files) {
       hexOf(light, '--color-chalk'),
     ].filter(Boolean)
   );
+  // The web's first frame uses Rose atelier. Only the HTML splash may also
+  // name its ground and lettering; the favicon files keep the mark's smaller
+  // palette. Derive these values from the theme, never a duplicate hex list.
+  const rose = blockOf(':root[data-theme="gilt"]');
+  const splashAllowed = new Set([
+    ...allowed,
+    ...['--color-bg', '--color-text', '--color-text-2'].map(token => hexOf(rose, token)).filter(Boolean),
+  ]);
   if (seal) {
     for (const rel of ['index.html', 'public/icon.svg', 'public/icon-maskable.svg']) {
       let text;
@@ -299,7 +307,8 @@ for (const file of files) {
         continue;
       }
       const found = [...text.replace(/%23/g, '#').matchAll(/#[0-9a-fA-F]{6}/g)].map(m => m[0].toUpperCase());
-      const strays = found.filter(h => !allowed.has(h));
+      const palette = rel === 'index.html' ? splashAllowed : allowed;
+      const strays = found.filter(h => !palette.has(h));
       if (strays.length) {
         add(join(ROOT, rel), 0, 'the-mark-is-the-seal-colour',
           `${[...new Set(strays)].join(', ')} — the app icons carry --color-seal (${seal}), the grounds, ink or chalk`);

@@ -127,13 +127,30 @@ export function useLocalStorage<T>(
     if (!job) return;
     pending.current = null;
     inFlight--;
+    let wrote = '';
     try {
-      window.localStorage.setItem(job.key, JSON.stringify(job.value));
+      wrote = JSON.stringify(job.value);
+      window.localStorage.setItem(job.key, wrote);
       errored.current = false;
     } catch (e) {
       // Counted every time. A confirmation waiting on the ledger needs the
       // fact, not the announcement.
       refusals++;
+      /* THE MOST IMPORTANT THING THE USAGE RECORD CAN CARRY.
+         A device that will not take the write is how this app fails for a real
+         person, and it fails silently on their side — they see a normal screen
+         and lose the hour. It is also the one failure a project lead cannot
+         guess at from the outside. The SIZE of the attempted write is the whole
+         diagnosis (a purse full of photographs versus a genuinely full disk),
+         and a byte count carries nothing about what was in it.
+
+         Imported lazily so this hook — which every wardrobe write goes through
+         — does not take a module dependency on the recorder at load time, and
+         so a recorder that throws for any reason can never be the reason a
+         write is lost. */
+      void import('../lib/usage')
+        .then(m => m.record('write_refused', { size: m.sizeTierOf(wrote.length) }))
+        .catch(() => { /* the record is never worth an error of its own */ });
       // Said once per run of trouble, not once per keystroke.
       if (!errored.current) {
         errored.current = true;

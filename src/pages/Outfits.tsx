@@ -8,12 +8,13 @@ import { ShareSheet } from '../components/ShareSheet';
 import { FEED_ENABLED } from '@almari/shared/flags';
 import { categoryLabel, displayTag, type ClothingItem, type Outfit, type ShareScope } from '@almari/shared/types';
 import {
-  Button, Card, Chip, EmptyState, Field, IconButton, Masthead, SectionTitle, TagRail, inputClass,
+  Button, Card, Chip, EmptyState, Field, IconButton, LinkButton, Masthead, SectionTitle, TagRail, inputClass,
 } from '../components/ui';
 import {
-  IconCheck, IconClose, IconEyeletFilled, IconPin, IconPlus, IconShears,
+  IconCalendar, IconCheck, IconClose, IconEyeletFilled, IconPin, IconPlus, IconShears,
 } from '../components/icons';
 import { Basting, GarmentPlate, PlateEmptyOutfits, PlateWashline } from '../components/art';
+import { RoseAtelierMark } from '../components/RoseAtelier';
 import { showToast } from '../components/Toast';
 import { photoSrc } from '../lib/photoStore';
 
@@ -21,14 +22,15 @@ import { photoSrc } from '../lib/photoStore';
  * OUTFITS — sets of pieces that already work together.
  *
  * Three surfaces, in order of how often they get used:
- *   1. The draw — deals only from getWearablePool() (in rotation: not in the
- *      wash, unbenched, unretired, unpacked, non-quiet — a worn piece stays in
- *      the pool since the 2026-08-20 review fix), optionally narrowed to one
- *      occasion. An empty pool is a state with a plate, not an error.
+ *   1. Saved outfits — every saved set, including its retired or missing pieces.
  *   2. The builder — groups by settings.categories and takes any number of pieces
  *      from any category. No one-slot-per-category assumption: two coats and three
  *      necklaces is a valid outfit.
- *   3. The saved outfits — photos first, one ledger line, one carmine "wear today".
+ *   3. The draw — deals only from getWearablePool() (in rotation: not in the
+ *      wash, unbenched, unretired, unpacked, non-quiet — a worn piece stays in
+ *      the pool since the 2026-08-20 review fix), optionally narrowed to one
+ *      occasion. An empty pool is a state with a plate, not an error.
+ *      Saved sets lead the browsing view; an opened builder stays above them.
  *
  * Contract: docs/05-brand-identity.md §7, docs/06-focus-group-requirements.md §1.6.
  */
@@ -104,6 +106,8 @@ function OutfitCard({
 }) {
   const [confirming, setConfirming] = useState(false);
   const retired = members.filter(m => m.retired);
+  const missing = outfit.itemIds.filter(id => !members.some(item => item.id === id)).length;
+  const canWear = outfit.itemIds.length > 0 && missing === 0 && retired.length === 0;
 
   const ledger = [
     outfit.wearCount === 0 ? 'Not worn yet' : `Worn ${outfit.wearCount}×`,
@@ -119,7 +123,7 @@ function OutfitCard({
     <Card className="flex flex-col">
       <div className="flex items-start justify-between gap-2">
         <h3 className="type-editorial text-[19px] leading-tight break-words min-w-0">{outfit.name}</h3>
-        <div className="flex items-center shrink-0 -mt-2 -mr-2">
+        <div className="flex items-center shrink-0">
           <IconButton
             label={outfit.favorite ? `Unpin "${outfit.name}"` : `Pin "${outfit.name}"`}
             aria-pressed={outfit.favorite}
@@ -178,6 +182,24 @@ function OutfitCard({
         </p>
       ) : null}
 
+      {missing > 0 && members.length > 0 ? (
+        <p className="text-[13px] text-text-2 mt-3 leading-snug">
+          {missing} {missing === 1 ? 'piece is' : 'pieces are'} no longer in the closet. The outfit keeps its record.
+        </p>
+      ) : null}
+      {!canWear ? (
+        <p className="text-[13px] text-text-2 mt-3 leading-snug">
+          Wear today is available when every piece is still in the closet and none are retired.
+        </p>
+      ) : null}
+
+      {(outfit.stylingNote || outfit.notes) && (
+        <details className="mt-3 text-[13px] text-text-2">
+          <summary className="min-h-11 flex items-center cursor-pointer underline">Styling notes</summary>
+          {outfit.stylingNote && <p className="leading-relaxed whitespace-pre-wrap break-words">{outfit.stylingNote}</p>}
+          {outfit.notes && <p className="leading-relaxed whitespace-pre-wrap break-words mt-2">{outfit.notes}</p>}
+        </details>
+      )}
       <Basting className="mt-4" />
 
       {confirming ? (
@@ -214,7 +236,7 @@ function OutfitCard({
                 repeats, so a browse page of twenty outfits was rendering twenty
                 carmine fills and the accent stopped meaning anything. The hero
                 treatment belongs to the single thumb-zone log action on Today. */}
-            <Button tone="secondary" onClick={onWear} icon={<IconEyeletFilled size={10} />} className="shrink-0">
+            <Button tone="secondary" onClick={onWear} disabled={!canWear} icon={<IconEyeletFilled size={10} />} className="shrink-0">
               Wear today
             </Button>
           </div>
@@ -458,12 +480,33 @@ export default function Outfits() {
     closeBuilder();
   };
 
-  /* ---------- nothing in the closet yet ---------- */
+  const intro = (
+    <div className="outfits-intro">
+      <Masthead
+        title="Outfits"
+        meta={`${outfits.length} saved`}
+        action={<RoseAtelierMark className="w-[88px] sm:w-[140px] shrink-0" />}
+      />
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        {!building && activeItems.length > 0 && outfits.length > 0 ? (
+          <Button tone="primary" onClick={openBuilder} icon={<IconPlus size={16} />}>
+            Build an outfit
+          </Button>
+        ) : null}
+        <LinkButton to="/calendar" tone="tertiary" icon={<IconCalendar size={18} />}>Calendar</LinkButton>
+        {!building && activeItems.length > 0 ? (
+          <LinkButton to="/events/style" tone="tertiary" wrap>What should I wear? Ask AI</LinkButton>
+        ) : null}
+      </div>
+    </div>
+  );
 
-  if (activeItems.length === 0) {
+  /* Empty clothes do not erase the saved outfit record. */
+
+  if (activeItems.length === 0 && outfits.length === 0) {
     return (
-      <>
-        <Masthead title="Outfits" />
+      <div className="space-y-6">
+        {intro}
         <Card>
           <EmptyState
             plate={<PlateEmptyOutfits />}
@@ -476,7 +519,7 @@ export default function Outfits() {
             }
           />
         </Card>
-      </>
+      </div>
     );
   }
 
@@ -484,17 +527,7 @@ export default function Outfits() {
 
   return (
     <div className="space-y-6">
-      <Masthead
-        title="Outfits"
-        meta={`${outfits.length} ${outfits.length === 1 ? 'outfit' : 'outfits'}`}
-        action={
-          !building && outfits.length > 0 ? (
-            <Button tone="primary" onClick={openBuilder} icon={<IconPlus size={16} />}>
-              Build an outfit
-            </Button>
-          ) : null
-        }
-      />
+      {intro}
 
       {/* ---------- builder ---------- */}
       {building ? (
@@ -507,7 +540,7 @@ export default function Outfits() {
                 necklaces is a valid answer.
               </p>
             </div>
-            <IconButton label="Close the builder" onClick={closeBuilder} className="shrink-0 -mt-2 -mr-2">
+            <IconButton label="Close the builder" onClick={closeBuilder} className="shrink-0">
               <IconClose size={18} />
             </IconButton>
           </div>
@@ -595,68 +628,9 @@ export default function Outfits() {
         </Card>
       ) : null}
 
-      {/* ---------- the draw ---------- */}
-      <Card>
-        <SectionTitle aside={`${pool.length} ready`}>Deal a set</SectionTitle>
-
-        {pool.length === 0 ? (
-          <EmptyState
-            plate={<PlateWashline />}
-            title="Everything's on the line. Laundry first."
-            body="Only pieces that are clean, mended, and in rotation are dealt. There will be something the moment a wash finishes."
-          />
-        ) : (
-          <>
-            <div className="flex flex-wrap gap-2">
-              <Chip selected={occasion === ''} onClick={() => setOccasion('')}>
-                Anything
-              </Chip>
-              {settings.occasions.map(tag => (
-                <Chip
-                  key={tag}
-                  selected={occasion === tag}
-                  onClick={() => setOccasion(occasion === tag ? '' : tag)}
-                >
-                  {displayTag(tag)}
-                </Chip>
-              ))}
-            </div>
-
-            <Basting className="my-5" />
-
-            {drawPool.length < 2 ? (
-              <EmptyState
-                plate={<PlateWashline />}
-                title={
-                  occasion
-                    ? `Nothing ready for ${displayTag(occasion).toLowerCase()} right now.`
-                    : 'One piece is ready. A set takes two.'
-                }
-                body={
-                  occasion
-                    ? 'Clear the tag to deal from everything that is clean and in rotation.'
-                    : 'The rest are in the wash, waiting on a repair, or in a category you have taken out of suggestions.'
-                }
-              />
-            ) : (
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <p className="text-[14px] text-text-2 leading-snug">
-                  {drawPool.length} pieces are clean and in rotation
-                  {occasion ? ` for ${displayTag(occasion).toLowerCase()}` : ''}. A deal takes a few
-                  of them at random and hands them to the builder.
-                </p>
-                <Button onClick={draw} className="shrink-0 w-full sm:w-auto">
-                  Deal a set
-                </Button>
-              </div>
-            )}
-          </>
-        )}
-      </Card>
-
       {/* ---------- saved outfits ---------- */}
       {sortedOutfits.length > 0 ? (
-        <div className="bg-surface plate rounded-[2px] p-4 sm:p-5 grid grid-cols-1 sm:grid-cols-2 gap-4 v2-rise">
+        <section aria-label="Saved outfits" className="grid grid-cols-1 sm:grid-cols-2 gap-4 v2-rise">
           {sortedOutfits.map(outfit => {
             const members = outfit.itemIds
               .map(id => byId.get(id))
@@ -686,7 +660,7 @@ export default function Outfits() {
               />
             );
           })}
-        </div>
+        </section>
       ) : (
         <Card>
           <EmptyState
@@ -703,6 +677,67 @@ export default function Outfits() {
           />
         </Card>
       )}
+
+      {/* ---------- the draw ---------- */}
+      {activeItems.length > 0 ? (
+        <Card>
+          <SectionTitle aside={`${pool.length} ready`}>Deal a set</SectionTitle>
+
+          {pool.length === 0 ? (
+            <EmptyState
+              plate={<PlateWashline />}
+              title="Everything's on the line. Laundry first."
+              body="Only pieces that are clean, mended, and in rotation are dealt. There will be something the moment a wash finishes."
+            />
+          ) : (
+            <>
+              <div className="flex flex-wrap gap-2">
+                <Chip selected={occasion === ''} onClick={() => setOccasion('')}>
+                  Anything
+                </Chip>
+                {settings.occasions.map(tag => (
+                  <Chip
+                    key={tag}
+                    selected={occasion === tag}
+                    onClick={() => setOccasion(occasion === tag ? '' : tag)}
+                  >
+                    {displayTag(tag)}
+                  </Chip>
+                ))}
+              </div>
+
+              <Basting className="my-5" />
+
+              {drawPool.length < 2 ? (
+                <EmptyState
+                  plate={<PlateWashline />}
+                  title={
+                    occasion
+                      ? `Nothing ready for ${displayTag(occasion).toLowerCase()} right now.`
+                      : 'One piece is ready. A set takes two.'
+                  }
+                  body={
+                    occasion
+                      ? 'Clear the tag to deal from everything that is clean and in rotation.'
+                      : 'The rest are in the wash, waiting on a repair, or in a category you have taken out of suggestions.'
+                  }
+                />
+              ) : (
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <p className="text-[14px] text-text-2 leading-snug">
+                    {drawPool.length} pieces are clean and in rotation
+                    {occasion ? ` for ${displayTag(occasion).toLowerCase()}` : ''}. A deal takes a few
+                    of them at random and hands them to the builder.
+                  </p>
+                  <Button onClick={draw} className="shrink-0 w-full sm:w-auto">
+                    Deal a set
+                  </Button>
+                </div>
+              )}
+            </>
+          )}
+        </Card>
+      ) : null}
 
       {/* Nothing can open it with the row above gone, but a sheet for a verb
           the branch does not offer should not be in the tree either. */}

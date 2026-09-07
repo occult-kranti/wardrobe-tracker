@@ -1,5 +1,13 @@
 # The company — Almari's launch plan
 
+> **Superseded in one respect, 2026-08-28.** This is a dated record and its text
+> is left as written. Where it says Almari collects nothing and has no telemetry,
+> that was true when this was written and is no longer the whole truth: the owner
+> amended PLAN.md non-negotiable #1 to admit an opt-in alpha usage record, off
+> until a tester ticks a box. What is collected, and what never is, is
+> `docs/45-what-almari-records.md`. Nothing else in this document is affected.
+
+
 *Drafted 13 August 2026, against seven commissioned research reports (India
 incorporation, IP, regulation, market, costs, funding, mobile stack) and the
 repository's own competitive benchmark (docs/24). Sourced inline where

@@ -75,6 +75,24 @@ const { guideFor: guideRecord, guidedPaths: allGuidedPaths } =
 
 await ctx.addInitScript(paths => {
   try {
+    /* The alpha's consent sheet is settled FIRST and unconditionally — before
+       the probe-popups escape hatch below, not after it.
+
+       UsageConsent lets itself in a beat after the floor clears of other
+       dialogs (it yields to the tour and to a page guide rather than stacking
+       on them). In a suite this long that means it surfaces in the middle of
+       somebody else's click and swallows the pointer event, which reads as a
+       mysterious timeout rather than as a failure. The popup block further
+       down deliberately turns the guides back ON to watch them pop, and it
+       must still not meet this sheet — hence "before the return".
+
+       'declined' rather than 'granted', so no run of this suite records
+       anything. The sheet's own behaviour is asserted in
+       scripts/test-usage-live.mjs, which opens it on purpose. */
+    window.localStorage.setItem(
+      'almari-usage-consent',
+      JSON.stringify({ state: 'declined', installId: null, decidedAt: new Date().toISOString(), version: 1 }),
+    );
     if (window.localStorage.getItem('probe-popups') === 'on') return;
     window.localStorage.setItem('toile-guides', JSON.stringify(paths));
   } catch {
@@ -176,8 +194,8 @@ if (FEED_ENABLED) {
       && !/feed/i.test(stranded.text),
     '');
 }
-check('the door is already in the house theme, not the light room',
-  stranded.theme === 'dyehouse', `data-theme=${stranded.theme}`);
+check('the door opens in Rose atelier before a wardrobe is selected',
+  stranded.theme === 'gilt', `data-theme=${stranded.theme}`);
 
 /* THE FIRST VIEWPORT OF THE FIRST SCREEN.
 
@@ -603,8 +621,8 @@ check('the weather never asks for your location', !after.asked, '');
       warns: !!warn,
       declaredFirst: !!warn && !!send
         && !!(warn.compareDocumentPosition(send) & Node.DOCUMENT_POSITION_FOLLOWING),
-      namesRelay: /Almari.s relay/i.test(text),
-      namesModel: /Claude Fable by Anthropic/i.test(text),
+      namesRelay: /Almari(?:.s)? relay/i.test(text),
+      namesModel: /Claude Fable 5\.1 by Anthropic/i.test(text),
       serverKey: /holds the key on the server/i.test(text),
       saysLocal: /cutting, the background removal and the writing all happen on this/i.test(text),
       stillOffersPrompt: /Copy the prompt/i.test(text),
@@ -1119,14 +1137,14 @@ check('the weather never asks for your location', !after.asked, '');
   await page.goto(`${ORIGIN}/#/settings`, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(700);
   const rooms = await page.evaluate(() => {
-    const names = ['Dye house', 'Obsidian', 'Atelier', 'Salon', 'Gilding room', 'Pattern room', 'System'];
+    const names = ['Rose atelier', 'Dye house', 'Obsidian', 'Atelier', 'Salon', 'Pattern room', 'System'];
     const shown = [...document.querySelectorAll('button')]
       .map(b => (b.textContent || '').trim())
       .filter(t => names.includes(t));
     return shown;
   });
   check('the picker lists the rooms in the order the button walks them',
-    rooms.join(' · ') === 'Dye house · Obsidian · Atelier · Salon · Gilding room · Pattern room · System',
+    rooms.join(' · ') === 'Rose atelier · Dye house · Obsidian · Atelier · Salon · Pattern room · System',
     rooms.join(' · ') || 'no rooms found');
 
   // And the cycle's first step must be the same room the picker leads with.
@@ -1139,7 +1157,7 @@ check('the weather never asks for your location', !after.asked, '');
     await new Promise(r => setTimeout(r, 300));
     return { before, after: document.documentElement.getAttribute('data-theme') };
   });
-  check('and the house opens in the dye house', cycled.before === 'dyehouse', `data-theme=${cycled.before}`);
+  check('the app starts in Rose atelier and cycles to Dye house', cycled.before === 'gilt' && cycled.after === 'dyehouse', `data-theme=${cycled.before} → ${cycled.after}`);
 }
 
 /* ============ the obsidian room ============ */
@@ -1160,7 +1178,10 @@ check('the weather never asks for your location', !after.asked, '');
       artline2: s.getPropertyValue('--color-artline-2').trim(),
       silver: s.getPropertyValue('--color-silver').trim(),
       outline: ps?.outlineWidth ?? '',
-      ornament: (ps?.backgroundImage ?? '').includes('svg'),
+      ornament: Array.from(document.querySelectorAll('.card-frame > .plate-ornament')).some(svg => {
+        const bounds = svg.getBoundingClientRect();
+        return bounds.width > 0 && bounds.height > 0 && svg.querySelectorAll('path').length === 2;
+      }),
       sheen: getComputedStyle(document.documentElement).getPropertyValue('--sheen-strength').trim(),
     };
   });
@@ -1171,87 +1192,37 @@ check('the weather never asks for your location', !after.asked, '');
   check('the pointer light is softened', Number(room.sheen) <= 0.12, room.sheen);
 }
 
-/* ============ the project lead portal ============ */
+/* ============ the project lead portal ============
+
+   STRUCK 2026-08-28. The portal was a route inside this app (#/admin) and the
+   checks here drove its naming sheets. It is now a separate build on its own
+   address (vite.portal.config.ts, src/portal/), so the app has no such page
+   and these checks had nothing to open — they were red for days without
+   anyone noticing, because this suite is not in the verify chain.
+
+   The board has its own suite now: scripts/test-portal.mjs, which asserts the
+   separation from the other side (the closet app is not reachable there, the
+   board fetches nothing on mount, every empty state names its own kind of
+   empty). What belongs HERE instead is the one assertion this suite is placed
+   to make: that the app no longer answers at that address at all. */
 {
-  // The portal administers the device. The passcode gate was retired by owner
-  // order (2026-08-19): the portal opens directly, and the locks are the
-  // naming sheets — every destructive step must pass one; the nuclear one must
-  // be typed out. These checks run while a worked closet (meher) is open.
   await page.goto(`${ORIGIN}/#/admin`, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(800);
-
-  check('the portal opens directly onto the controls, no gate',
-    await page.locator('#admin-pass').count() === 0, '');
-
-  const opened = await page.evaluate(() => ({
-    meher: /meher/i.test(document.body.innerText),
-    checks: /run the checks/i.test(document.body.innerText),
-  }));
-  check('the ledger of wardrobes is standing open', opened.meher && opened.checks, '');
-
-  // The smoke panel first, against the real wardrobes alone — a stunt account
-  // injected later must not be what the checks are measured on.
-  await page.getByRole('button', { name: /run the checks/i }).click();
-  await page.waitForTimeout(5000);
-  const smoke = await page.evaluate(() => ({
-    aside: /of \d+ passing/i.test(document.body.innerText),
-    fails: [...document.querySelectorAll('main *')]
-      .filter(el => el.children.length === 0 && /^\s*Fail\s*$/.test(el.textContent || '')).length,
-  }));
-  check('the portal checks run and every one passes', smoke.aside && smoke.fails === 0,
-    `${smoke.fails} failing`);
-
-  // A stunt wardrobe, deleted through the guarded path — the e2e proof that
-  // selection + sheet + confirm removes a profile and every key it owned.
-  await page.evaluate(() => {
-    const accounts = JSON.parse(localStorage.getItem('toile-accounts') ?? '[]');
-    accounts.push({
-      id: 'portal-stunt', name: 'Portal Stunt', handle: '@stunt', monogram: 'PS',
-      color: '#777777', createdAt: new Date().toISOString(),
-    });
-    localStorage.setItem('toile-accounts', JSON.stringify(accounts));
-    localStorage.setItem('wardrobe-tracker:portal-stunt',
-      JSON.stringify({ items: [], outfits: [], wishlist: [], wearLogs: [], events: [] }));
-  });
-  await page.reload({ waitUntil: 'domcontentloaded' });
-  await page.waitForTimeout(900); // the gate remembers this tab
-
-  check('a stunt wardrobe joins the ledger',
-    await page.getByLabel(/mark portal stunt/i).count() === 1, '');
-  await page.getByLabel(/mark portal stunt/i).click();
-  await page.getByRole('button', { name: /delete selected/i }).click();
-  await page.waitForTimeout(400);
-  const sheet = page.locator('.modal-overlay');
-  check('deleting profiles passes a naming sheet first',
-    /portal stunt/i.test(await sheet.innerText()), '');
-  await sheet.getByRole('button', { name: /delete/i }).click();
-  await page.waitForTimeout(600);
-  // The row's checkbox is the scoped proof — a body-text match would find the
-  // action log's own line about the deletion, which is meant to be there.
-  const rowGone = await page.getByLabel(/mark portal stunt/i).count() === 0;
-  const afterDelete = await page.evaluate(() => ({
-    store: localStorage.getItem('wardrobe-tracker:portal-stunt'),
-    registry: localStorage.getItem('toile-accounts') ?? '',
-  }));
-  check('and the confirm removes the profile, its store and its registry line',
-    rowGone && afterDelete.store === null && !afterDelete.registry.includes('portal-stunt'), '');
-
-  // The nuclear option stays shut until the phrase is typed — and even then
-  // can be walked back, which this run does: the fixtures must survive it.
-  await page.getByRole('button', { name: /delete all profiles/i }).click();
-  await page.waitForTimeout(400);
-  const nuke = page.locator('.modal-overlay');
-  const confirm = nuke.getByRole('button', { name: /delete everything/i });
-  const shutAtFirst = await confirm.isDisabled();
-  await page.locator('#admin-confirm-phrase').fill('DELETE EVERYTHIN');
-  const shutOnTypo = await confirm.isDisabled();
-  await page.locator('#admin-confirm-phrase').fill('DELETE EVERYTHING');
-  const armed = await confirm.isEnabled();
-  check('the nuclear sheet wants the exact phrase', shutAtFirst && shutOnTypo && armed, '');
-  await nuke.getByRole('button', { name: /keep everything/i }).click();
-  await page.waitForTimeout(400);
-  check('and cancelling leaves every wardrobe standing',
-    /meher/i.test(await page.evaluate(() => document.body.innerText)), '');
+  const text = await page.evaluate(() => document.body.innerText);
+  const url = page.url();
+  // routes.ts no longer carries /admin, so the address is unknown: an open
+  // wardrobe renders NotFound, and a shut one is sent to the door WITHOUT the
+  // address being remembered in ?next= (safeNext refuses a route we do not have).
+  check(
+    'the app no longer serves a project lead portal',
+    /No such page/i.test(text) || /an account is optional/i.test(text),
+    text.slice(0, 60).split('\n').join(' ')
+  );
+  check(
+    'and a link to it is never remembered through the door',
+    !/next=.*admin/i.test(url),
+    url
+  );
 }
 
 /* ============ the debts the fix squads asked to have written down ============
@@ -1762,8 +1733,12 @@ check('a service worker is registered, so the app survives no signal',
     await page.waitForTimeout(200);
 
     // The other half of the seating: a screen with no guide gets no control of
-    // either kind. /admin is an alpha portal, not a room in the product.
-    await land('/admin');
+    // either kind. This used to land on /admin, which was an alpha portal
+    // rather than a room in the product; the portal moved out of this app on
+    // 2026-08-28, so the negative control is now an address the house simply
+    // does not have. NotFound serves that purpose exactly as well, and it can
+    // never quietly acquire a guide of its own the way a real page could.
+    await land('/nowhere');
     const portal = await page.evaluate(() => ({
       guide: [...document.querySelectorAll('button')]
         .some(b => /what is this page/i.test(b.textContent)),

@@ -4,6 +4,8 @@ import { Button, IconButton, Modal } from './ui';
 import { IconClose } from './icons';
 import { guidePops, guideSeen, markGuideSeen, markTourDone, markWalkthroughSeen } from '../lib/tutorial';
 import { guideFor, guideKeyFor } from '../lib/pageGuides';
+import { record } from '../lib/usage';
+import { screenOf as screenOfPath } from '../lib/screens';
 import { tutorialFor, type StepTarget, type Tutorial as StepScript } from '../lib/tutorials';
 
 /**
@@ -172,6 +174,12 @@ export function PageGuide({ path }: { path: string }) {
     setSeen(true);
     setPopped(false);
     setOpen(true);
+    /* The onboarding funnel, and the only thing recorded about it is which
+       screen and which of three verbs. A guide ASKED for is a different fact
+       from one that opened itself, and the alpha's question is whether the
+       uninvited ones are read or waved away — so 'shown' is written when the
+       sheet pops (below) and 'done' when somebody reaches for it themselves. */
+    record('tutorial_step', { screen: screenOfPath(path), action: 'done' });
   };
 
   /**
@@ -196,6 +204,9 @@ export function PageGuide({ path }: { path: string }) {
       markGuideSeen(key);
       setSeen(true);
       setPopped(false);
+      // An uninvited sheet, answered. 'shown' rather than 'done': it was put in
+      // front of somebody, and dismissing it is not the same as reading it.
+      record('tutorial_step', { screen: screenOfPath(path), action: 'shown' });
     }
     setOpen(false);
   };

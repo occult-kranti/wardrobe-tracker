@@ -45,13 +45,10 @@ import type { Account, SyncMode } from '@almari/shared/types';
  *   /open/new      → the form, with a way back to the list
  */
 
-export const START_LEDE =
-  'It begins empty, on this device. Only a name is needed — everything else can wait until there is something to say.';
-
-// The count is derived, not written down — a number in prose goes stale the
-// day a persona is added, and this line already had to be corrected once.
-export const SAMPLES_NOTE =
-  `Samples are ${PERSONAS.length} worked closets — a full year of wear, saved outfits, and clothes lent between them. Useful for seeing what a year of this looks like before you catalogue your own.`;
+export const COPY = {
+  startLede: 'It begins empty, on this device. Only a name is needed — everything else can wait until there is something to say.',
+  samplesNote: `Samples are ${PERSONAS.length} worked closets — a full year of wear, saved outfits, and clothes lent between them. Useful for seeing what a year of this looks like before you catalogue your own.`
+} as const;
 
 /** What the door is holding for you, if you arrived by a deep link. */
 export function NextNote({ next }: { next: string | null }) {
@@ -452,7 +449,7 @@ export default function Door({ starting = false }: { starting?: boolean }) {
         ) : showForm ? (
           <Card>
             <h1 className="type-masthead text-[24px] pb-2 rule-double">Start a wardrobe</h1>
-            <p className="text-[14px] text-text-2 mt-4 leading-relaxed">{START_LEDE}</p>
+            <p className="text-[14px] text-text-2 mt-4 leading-relaxed">{COPY.startLede}</p>
             <NextNote next={next} />
             <StartWardrobeForm onDone={land} />
 
@@ -460,7 +457,7 @@ export default function Door({ starting = false }: { starting?: boolean }) {
               <>
                 <Basting className="my-5" />
                 <Button onClick={installSamples}>Or open the sample wardrobes</Button>
-                <p className="type-ledger text-[11px] text-text-2 mt-4">{SAMPLES_NOTE}</p>
+                <p className="type-ledger text-[11px] text-text-2 mt-4">{COPY.samplesNote}</p>
               </>
             ) : (
               <>
@@ -500,7 +497,7 @@ export default function Door({ starting = false }: { starting?: boolean }) {
               )}
             </div>
             {accounts.some(a => a.isSample) ? null : (
-              <p className="type-ledger text-[11px] text-text-2 mt-4">{SAMPLES_NOTE}</p>
+              <p className="type-ledger text-[11px] text-text-2 mt-4">{COPY.samplesNote}</p>
             )}
             <div className="mt-4">
               <Button tone="tertiary" onClick={() => setPastAccount(false)}>Back to the account</Button>

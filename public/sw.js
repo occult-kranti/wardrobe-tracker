@@ -219,6 +219,11 @@ self.addEventListener('fetch', event => {
   // cache that outlives a sign-out.
   if (url.origin !== self.location.origin) return;
 
+  // The published operator shell shares this origin, not the app's cache.
+  // Do not cache it or fall back to wardrobe HTML when the portal is offline.
+  const portalPath = new URL('portal/', SHELL).pathname;
+  if (url.pathname === portalPath.slice(0, -1) || url.pathname.startsWith(portalPath)) return;
+
   // The app's own document, and only that one. public/ also ships pages that
   // are not the app (the alpha sheet, and whatever the board adds next); a
   // blanket SPA fallback would answer a request for one of those with the

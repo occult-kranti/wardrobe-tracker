@@ -1,5 +1,6 @@
 # 34 — The app development plan: Expo, Supabase, and the QR alpha
 
+
 > **Status:** plan of record · **Owner:** project lead · **Opened:** 2026-08-18
 > **Supersedes:** docs/32-the-two-ports.md on the native toolchain only (the
 > Capacitor verdict). Its storage research (§"do not adopt SQLite", the photo
@@ -423,7 +424,10 @@ reviewed against truth:
 Each phase lists steps, acceptance checks, and the edge cases that must be
 tested before it closes. Alpha gates (docs/28 §4.4) bind Phase 4: ≤2-tap
 assisted logging, ≥60% week-1 diary completion, ≥40% week-12 logging — all
-measured manually, no telemetry.
+measured manually. The opt-in alpha usage record (amended 2026-08-28;
+docs/45-what-almari-records.md) can count screens and wears beside those
+numbers, and cannot answer any of the three on its own — a gate that reads
+"≥60% week-1 diary completion" is answered by diaries.
 
 ### Phase 0 — setup
 

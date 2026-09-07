@@ -143,11 +143,21 @@
     </div>
 
     <div class="ship">
-      <h3>In flight this wave</h3>
-      <p><strong>Sign-in with optional Supabase sync</strong> — the device stays the default home of every wardrobe; an account is optional and sync is opt-in per wardrobe — and the <strong>AI photo-intake proxy layer</strong>. Neither is claimed as shipped until the suites say so.</p>
+      <h3>Competitive intelligence &amp; master taxonomy</h3>
+      <p>Analysis of <strong>382 capabilities across 9 major competitors</strong> (Whering, Acloset, Indyx, Alta, Stylebook, etc.) synthesized into <code>docs/44-alpha-website-competitive-roadmap.md</code>. Formalized Almari's non-negotiable anti-shame counter-positioning and established Claude Advisor Tool timing guidance in <code>GEMINI.md</code> / <code>AGENTS.md</code>.</p>
     </div>
 
-    <p class="suites"><b>Green today</b> build · brand (69 files) · migrate · demo · feed (72 checks) · cast · intake</p>
+    <div class="ship">
+      <h3>Centralized cost engine &amp; the Ledger</h3>
+      <p>Cost-per-wear centralized in <code>packages/shared/cost.ts</code>, re-wear rate (wears ÷ distinct pieces), and seasonal coverage in the Ledger without shame or alarm states. The repair fold <code>(cost + Σ repairs) / wears</code> is a <em>seam</em>, not a shipped feature: every consumer reads <code>basis</code> rather than <code>item.cost</code>, but there is no <code>repairs</code> field on a piece yet and no way to log a repair cost.</p>
+    </div>
+
+    <div class="ship">
+      <h3>Packing list assistant</h3>
+      <p>A capsule packing list generator in the Closet with day-based presets, responsive checklists, capsule density tracking, and clipboard export.</p>
+    </div>
+
+    <p class="suites"><b>Green today</b> build · brand (93 files) · alias parity (esbuild + vite) · migrate · cast · demo · intake · feed (72 checks) · sync · feed-intake · gallery-intake · export · dates (5 zones) · routes · native storage · photos · cost engine · packing assistant · a11y &amp; brand conformance · relay edge probe · similarity scoring · account &amp; storage namespacing · household &amp; pass lifecycle · outdoors weather filtering · furnishing heuristics · tutorial state machine</p>
   </section>
 
   <!-- ================================================================== -->
@@ -285,7 +295,7 @@
       <h2 id="p-gates">The gates</h2>
       <span class="part-when">Alpha exit criteria · pre-registered</span>
     </header>
-    <p class="part-note">From <code>docs/28-the-company.md</code> §4.4, absolute and pre-registered. Measurement stays manual — moderated sessions, diary studies, volunteered exports — because the app has no telemetry and never will.</p>
+    <p class="part-note">From <code>docs/28-the-company.md</code> §4.4, absolute and pre-registered. Measurement is still principally manual — moderated sessions, diary studies, volunteered exports. Since <strong>2026-08-28</strong> it may also read the <strong>opt-in alpha usage record</strong> (PLAN.md #1 as amended): counts, timings and screen names, from testers who ticked the box, and from nobody else. No gate is written against it, and no gate may be: a number produced only by the testers who agreed to be counted is not a number the cohort can be judged by. <code>docs/45-what-almari-records.md</code> is the full account.</p>
 
     <div class="gates">
       <div class="gate"><b>Gate 1 · Speed</b><span class="num">≤ 2 taps</span>Median assisted logging flow, stopwatched in moderated sessions.</div>
@@ -303,10 +313,11 @@
       <h2 id="p-never">What we will not do</h2>
       <span class="part-when">The non-negotiables · amended by owner direction</span>
     </header>
-    <p class="part-note">Two of these changed this sprint, on purpose and in the open — local-first became the <em>default</em> rather than the only mode, and the blanket ban on gamification became a ban on everything except positive, fashion-based marks. The rest are untouched.</p>
+    <p class="part-note">Three of these changed, on purpose and in the open — local-first became the <em>default</em> rather than the only mode, the blanket ban on gamification became a ban on everything except positive, fashion-based marks, and the alpha now carries an opt-in usage record that is off until a tester turns it on. The rest are untouched.</p>
 
     <ol class="never">
       <li><strong>Local-first remains the default.</strong><span class="am">Amended</span><p>Sign-in is optional; sync is opt-in per wardrobe; the app on one device, with no account, is the product — not a trial of the product.</p></li>
+      <li><strong>Nothing is collected that a tester did not switch on.</strong><span class="am">Amended</span><p>For the alpha only, an opt-in usage record exists. A tester is asked once, in a panel that shows the exact payload, and nothing is written down until they tick the box. It carries counts, timings and the names of screens — never a garment, never a brand, never a photograph, never a word anyone typed. It can be read, exported and switched off from Settings, and switching it off deletes what was gathered, on the device and on the server. The cohort is small enough that a count of three is three people, so these numbers are not anonymous and we do not call them anonymous. When the alpha ends the collector is removed, not merely disabled. Detail: <code>docs/45-what-almari-records.md</code>.</p></li>
       <li><strong>No commerce.</strong><p>No shop links, affiliate codes, or retailer suggestions. A feature that talks you out of buying cannot profit from buying.</p></li>
       <li><strong>No shame mechanics.</strong><p>No guilt screens, no red alarm colours on low-wear pieces, no wasted-money framing. An app users lie to is worse than no app.</p></li>
       <li><strong>Badges and rewards are positive-only and fashion-based.</strong><span class="am">Amended</span><p>Marks for the behaviour the product exists to create — wearing what you own. Never a streak that punishes a missed day, never confetti for spending.</p></li>

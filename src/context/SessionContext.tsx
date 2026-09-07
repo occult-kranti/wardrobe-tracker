@@ -30,7 +30,8 @@ import {
   hasLegacyWardrobe,
   THEME_KEY,
 } from '../lib/accounts';
-import { pruneCommunity } from '../lib/admin';
+import { pruneCommunity } from '../lib/community';
+import { record } from '../lib/usage';
 import { buildPersonaState, PERSONAS, PERSONA_SEED_VERSION } from '../lib/personaWardrobe';
 import { mergeCommunity, normalizeCommunity, seedCommunity } from '../lib/communitySeed';
 import { mergeSchedule } from '../lib/feedEngine';
@@ -223,6 +224,11 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   // flipped on sign-in.
   useEffect(() => {
     applyTheme(theme);
+    if (theme !== 'system') return;
+    const preference = window.matchMedia('(prefers-color-scheme: dark)');
+    const refresh = () => applyTheme('system');
+    preference.addEventListener('change', refresh);
+    return () => preference.removeEventListener('change', refresh);
   }, [theme]);
 
   // First paint: read the registry, adopting any pre-accounts closet.
@@ -349,6 +355,11 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     setActiveId(id);
     saveActiveId(id);
     stampOpened(id);
+    /* The first step of the activation funnel, and the only fact recorded about
+       it is whether the wardrobe started from a sample. Not its name, not its
+       handle, not its monogram, not who made it — those are the person, and
+       this is a count of how many wardrobes the alpha has begun. */
+    record('wardrobe_created', { seeded: false });
     return account;
   }, [accounts, persist]);
 

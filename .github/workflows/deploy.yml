@@ -41,6 +41,15 @@ jobs:
       - run: npm run test:demo
       - run: npm run test:intake
       - run: npm run build
+      # Owner authorized the public operator shell on 2026-09-07. Keep it out
+      # of consumer chunks/precache, then copy its separately built artifact.
+      - name: Verify consumer isolation
+        run: node scripts/check-portal-not-shipped.mjs
+      - run: npm run test:modelcost
+      - run: npm run test:adminai
+      - run: npm run build:portal
+      - name: Publish the authenticated operator shell
+        run: node scripts/stage-portal.mjs
       # The mobile design pack ships beside the app at /mobile_version_v1/.
       - run: node scripts/build-mobile-gallery.mjs
       # The team boards ship at /company/; the company PLAN PAGE deliberately

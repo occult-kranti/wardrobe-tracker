@@ -44,7 +44,7 @@ const { sharedAliases, SHARED_PACKAGE, packageRoot } = await import(
 );
 // The six lifted modules plus the two shell modules of docs/42 (flags, nav).
 // Sorted — the check compares element-wise against a sorted directory read.
-const EXPECTED_MODULES = ['cost', 'dates', 'flags', 'intake', 'migrate', 'nav', 'similarity', 'types'];
+const EXPECTED_MODULES = ['cost', 'dates', 'flags', 'intake', 'migrate', 'nav', 'similarity', 'storage', 'types'];
 const actualModules = readdirSync(packageRoot)
   .filter((f) => f.endsWith('.ts') && !f.endsWith('.d.ts') && !f.endsWith('.d.mts'))
   .map((f) => f.replace(/\.ts$/, ''))

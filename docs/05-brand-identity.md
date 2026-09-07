@@ -1,5 +1,14 @@
 # TOILE — Brand Identity & Design Contract
 
+> **Web alpha amendment, 2026-09-07 — owner direction.** The new default is
+> Rose atelier: light warm pink grounds, ivory garment mats, muted dark-rose
+> controls and rose-gold/silver details. This supersedes earlier restrictions
+> on pink grounds and the requirement for a blue interaction accent in this
+> theme. Token-based artwork, readable text, focus visibility and neutral
+> clothing language still apply. See [the color review](50-rose-atelier.md)
+> and [art direction](51-rose-atelier-art.md). The existing `gilt` theme ID is
+> retained; other saved theme choices and the native scaffold stay intact.
+
 > **Toile** */twahl/ — n.* An early garment prototype sewn in plain cloth; the tailor's
 > working record of what a piece really is.
 >

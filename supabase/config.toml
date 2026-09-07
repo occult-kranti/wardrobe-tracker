@@ -14,3 +14,17 @@ verify_jwt = false
 # inside the function. The one-off equivalent is `--no-verify-jwt` at deploy.
 [functions.admin-stats]
 verify_jwt = false
+
+# Operator image/model tests authenticate with ADMIN_TOKEN inside the function.
+[functions.admin-ai]
+verify_jwt = false
+
+# The usage ingest has no JWT either — it is called by an app whose user may not
+# have an account at all, and its locks are the six clamps inside it (body cap,
+# event cap, vocabulary allowlist, per-event property shape, origin check, rate
+# limit). Without this block a deploy that is not the exact README command ships
+# it with JWT verification ON, every flush answers 401, and usage.ts swallows the
+# failure by design — so the record would simply never arrive and nothing would
+# say why.
+[functions.usage]
+verify_jwt = false

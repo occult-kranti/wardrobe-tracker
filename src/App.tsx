@@ -9,12 +9,14 @@ import { Button, LinkButton, Masthead } from './components/ui';
 import { ROUTES, LOOK_BOOK_PATHS, safeNext } from './lib/routes';
 import { FEED_ENABLED } from '@almari/shared/flags';
 import { PHOTOS_HYDRATED_EVENT, hydratePhotos } from './lib/photoStore';
+import UsageConsent, { USAGE_BUILD } from './components/UsageConsent';
+import { scheduleFlush } from './lib/usage';
 
 /**
  * WHAT ARRIVES WITH THE DOOR, AND WHAT ARRIVES WHEN IT IS ASKED FOR.
  *
  * Every page used to be a static import, which made one 1.33MB script: the
- * arrival path parsed the admin portal, the Look Book (hidden behind a flag
+ * arrival path parsed the Look Book (hidden behind a flag
  * that is off), the intake vision code and 234KB of generated garment plates
  * before it could paint the door. Measured under slow-4G emulation, first
  * paint was 3.4 seconds — several of them spent on code the tester will never
@@ -137,6 +139,7 @@ const ELEMENTS: Record<string, ReactElement> = {
   '/furniture/:id': arriving('furniture-piece', () => import('./pages/Furniture').then(m => ({ default: m.FurniturePiece }))),
   '/calendar': arriving('calendar', () => import('./pages/Calendar')),
   '/events': arriving('events', () => import('./pages/Events')),
+  '/events/style': arriving('event-stylist', () => import('./pages/EventStylist')),
   '/ledger': arriving('ledger', () => import('./pages/Statistics')),
   '/wishlist': arriving('wishlist', () => import('./pages/Wishlist')),
   '/compare': arriving('compare', () => import('./pages/BeforeYouBuy')),
@@ -152,7 +155,10 @@ const ELEMENTS: Record<string, ReactElement> = {
   '/rail/:id': arriving('rail-profile', () => import('./pages/Rail').then(m => ({ default: m.RailProfile }))),
   '/intake': arriving('intake', () => import('./pages/Intake')),
   '/settings': arriving('settings', () => import('./pages/Settings')),
-  '/admin': arriving('admin', () => import('./pages/Admin')),
+  /* The project lead's board used to sit at '/admin' here. It is now a separate
+     build on its own address (vite.portal.config.ts, src/portal/), so the app
+     carries none of it: no operator tooling, no admin token, and no page a
+     tester can reach by typing. */
   '/open': arriving('wardrobes', () => import('./pages/SwitchWardrobe')),
   '/open/new': arriving('wardrobe-new', () => import('./pages/SwitchWardrobe').then(m => ({ default: m.StartWardrobe }))),
 };
@@ -217,11 +223,34 @@ function Holding() {
 function Session() {
   const { ready, activeId } = useSession();
 
+  /**
+   * THE ALPHA USAGE RECORD'S SCHEDULE, AND WHY IT HANGS OFF activeId.
+   *
+   * `scheduleFlush` does nothing at all until this device has been asked and
+   * has said yes — the gate is in src/lib/usage.ts, not here — so this is a
+   * schedule, not a decision. What it is NOT allowed to be is a schedule that
+   * outlives the reason for it: while nothing is open there is no wardrobe to
+   * be used and nothing to report, so the door does not carry one, and
+   * switching wardrobes tears the old one down before starting the new.
+   *
+   * `scheduleFlush` hands back its own detach function — the listener on
+   * `visibilitychange` and the slow fallback interval — which is exactly the
+   * shape a useEffect cleanup wants, so it is returned as one.
+   */
+  useEffect(() => {
+    if (!activeId) return;
+    return scheduleFlush(USAGE_BUILD);
+  }, [activeId]);
+
   if (!ready) return <Holding />;
   if (!activeId) return <DoorRoutes />;
 
   return (
     <WardrobeProvider key={activeId} accountId={activeId}>
+      {/* The ask, and the one place it can stand: inside an open wardrobe.
+          It shows itself once, on its own schedule, and only while nobody has
+          answered it yet — see src/components/UsageConsent.tsx. */}
+      <UsageConsent />
       <Routes>
         <Route element={<Layout />}>
           {ROUTES.map(r => (

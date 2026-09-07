@@ -1,8 +1,8 @@
 /**
- * THE ROSTER — the bar, in order, once, for both apps.
+ * THE ROSTERS — native bindings and the web alpha's four main addresses.
  *
- * docs/42 §7. The web's phone rail and the native house bar read this array and
- * nothing else, so their order cannot diverge; the native bar's pager pages,
+ * docs/42 §7 and its 2026-09-07 web amendment. NAV_SLOTS keeps the native
+ * screen and icon bindings stable; the native bar's pager pages,
  * its swipe adjacency and the eyelet's stops are the same array again, which is
  * what makes "the bar and the page you land on agree" a property of the data
  * rather than of somebody's care.
@@ -17,8 +17,8 @@
  * every message anyone ever sent. Only the slot label and the masthead were
  * rehung.
  *
- * GEOMETRY LAW: anything measuring the bar measures barSlots(), never
- * NAV_SLOTS. Four slots are four generous drawers of a complete chest — no
+ * GEOMETRY LAW: native measures barSlots(), web measures webBarSlots().
+ * Four slots are four generous drawers of a complete chest — no
  * spacer, no ghost cell, no disabled slot where the Look Book will sit.
  */
 import { FEED_ENABLED } from './flags';
@@ -43,6 +43,20 @@ export const NAV_SLOTS: NavSlot[] = [
 ];
 
 export const barSlots = () => NAV_SLOTS.filter(s => !s.flagged || FEED_ENABLED);
+
+/**
+ * The web alpha puts saved outfits within one tap. Its fifth cell is More,
+ * where Profile always lives and Chats lives when the Look Book is enabled.
+ * Keep the native roster above intact: it has no Outfits tab screen yet.
+ */
+export function webBarSlots(): NavSlot[] {
+  return [
+    NAV_SLOTS[0],
+    NAV_SLOTS[1],
+    NAV_SLOTS[FEED_ENABLED ? 2 : 3],
+    { key: 'outfits', path: '/outfits', label: 'Outfits' },
+  ];
+}
 
 /** The roster's words for an address, or undefined where it seats no slot. */
 export function slotFor(path: string): NavSlot | undefined {
