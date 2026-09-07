@@ -1,0 +1,361 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Toile mobile — Shared Rail</title>
+<link rel="stylesheet" href="foundation.css">
+<body>
+<div style="display:flex;gap:30px;flex-wrap:wrap;justify-content:center">
+
+<!-- ========== at rest: the empty rail ========== -->
+<div class="stage">
+  <div class="phone" data-room="atelier">
+
+    <div class="topbar">
+      <svg viewBox="0 0 18 22" style="width:15px;height:18px;fill:none">
+        <g class="m2" stroke-width="1.2"><path d="M5 1h12v20H5L1 11z"/><circle cx="6.5" cy="11" r="2.2"/></g>
+      </svg>
+      <span class="wordmark">TOILE</span>
+      <span class="spacer"></span>
+      <!-- the rail's own counter: nothing out, nothing home -->
+      <span class="tag" style="height:26px"><span class="eyelet"></span><span>0</span></span>
+      <span class="plus">+</span>
+    </div>
+
+    <div class="screen" style="gap:9px;padding-top:10px">
+
+      <div>
+        <span class="t-display">The Shared Rail</span>
+        <div class="rule-tick" style="margin-top:9px"></div>
+      </div>
+
+      <!-- THE EMPTY PANEL. An empty ledger is a whole room, not an apology:
+           the plate owns the viewport and the ground survives all around it. -->
+      <div class="plate" style="padding:14px 16px 18px;flex:1;display:flex;flex-direction:column;justify-content:center">
+
+        <!-- THE RAIL: the page's verb shown even when there is nothing on it —
+             two hangers at rest, one travelling, its tag on a thread. -->
+        <div class="art" style="margin-top:4px">
+          <svg viewBox="0 0 300 116" style="width:100%;height:auto;fill:none">
+            <!-- the rail and its end brackets -->
+            <g class="m1" stroke-width="1.4">
+              <path d="M22 20h72M206 20h72"/>
+              <circle cx="14" cy="20" r="7"/><circle cx="286" cy="20" r="7"/>
+              <path d="M28 15v10M272 15v10"/>
+            </g>
+            <!-- the gap the travelling hanger is crossing -->
+            <g class="m1" stroke-width="1.2" stroke-dasharray="5 5" stroke-opacity=".8">
+              <path d="M94 20h112"/>
+            </g>
+            <!-- hanger at rest, left -->
+            <g class="m2" stroke-width="1.2">
+              <path d="M57 20a5 5 0 0 1 10 0"/><path d="M62 25v6"/>
+              <path d="M62 31 33 55h58z"/>
+            </g>
+            <!-- hanger at rest, right -->
+            <g class="m2" stroke-width="1.2">
+              <path d="M233 20a5 5 0 0 1 10 0"/><path d="M238 25v6"/>
+              <path d="M238 31 209 55h58z"/>
+            </g>
+            <!-- the travelling hanger, mid-rail, with its tag strung beneath -->
+            <g class="m2" stroke-width="1.5">
+              <path d="M144 20a6 6 0 0 1 12 0"/><path d="M150 26v7"/>
+              <path d="M150 33 114 60h72z"/><path d="M114 60h72"/>
+              <path d="M150 60v12"/>
+              <path d="M141 72h18v26h-18z"/>
+              <circle cx="150" cy="79" r="3"/>
+            </g>
+            <text x="150" y="94" text-anchor="middle"
+              style="font:500 9px 'Courier New',monospace;fill:var(--ink-2)">0</text>
+          </svg>
+        </div>
+
+        <!-- the bandaji that carried the pieces used to be drawn here too; one
+             room, one drawing — the trunk gets its full construction in the
+             moment overleaf, and stands between the houses in the rail strip. -->
+
+        <p class="t-italic" style="text-align:center;font-size:19px;margin-top:12px">The rail is empty.</p>
+
+        <p class="t-mono" style="text-align:center;font-size:10.5px;line-height:1.75;
+          text-transform:uppercase;margin-top:9px">Borrowing between closets that trust each other —
+          who has what, and when it came home. Profiles here are records you keep on this device,
+          like a contact book. The sample wardrobe includes a working rail.</p>
+
+        <div style="margin-top:26px;display:flex;justify-content:center">
+          <span class="btn" style="height:50px;padding:0 30px">
+            <span style="width:9px;height:9px;border-radius:50%;border:1.5px solid var(--gold);flex:none"></span>
+            <span>Load the sample</span>
+          </span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- no quick-add tag here: the top bar already carries +, and a second add
+         drawn in the corner argued with LOAD THE SAMPLE across the same panel -->
+
+    <div class="tabs">
+      <div class="tab"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>Today</div>
+      <div class="tab"><svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17"/><path d="M12 4v17M8.5 11h1M14.5 11h1"/></svg>Closet</div>
+      <div class="tab"><svg viewBox="0 0 24 24"><path d="M11 7a1 1 0 0 1 2 0M12 9v2M12 11 5 17h14z"/></svg>Outfits</div>
+      <div class="tab"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14"/><path d="M4 9h16M8 13h8M8 16h5"/></svg>Feed</div>
+      <div class="tab on"><svg viewBox="0 0 24 24"><circle cx="6" cy="8" r="1"/><circle cx="6" cy="12" r="1"/><circle cx="6" cy="16" r="1"/><path d="M10 8h9M10 12h9M10 16h9"/></svg>More</div>
+    </div>
+  </div>
+  <p class="caption-note"><b>Shared Rail — empty.</b> The rail owns the page and states the verb
+  even with nothing on it — two hangers at rest, one crossing the dashed gap with its tag on a
+  thread, the count reading zero. The bandaji it all travels in gets its real construction
+  overleaf, when the sample loads. An empty ledger is a whole room, not an apology: the ground is
+  left bare around it. LOAD THE SAMPLE is the only control on the page — adding by hand stays in
+  the top bar — and there are no requests, no approvals, no due dates.</p>
+</div>
+
+<!-- ========== the moment: loading the sample ========== -->
+<div class="stage">
+  <div class="phone" data-room="atelier">
+
+    <div class="topbar">
+      <svg viewBox="0 0 18 22" style="width:15px;height:18px;fill:none">
+        <g class="m2" stroke-width="1.2"><path d="M5 1h12v20H5L1 11z"/><circle cx="6.5" cy="11" r="2.2"/></g>
+      </svg>
+      <span class="wordmark">TOILE</span>
+      <span class="spacer"></span>
+      <span class="tag" style="height:26px"><span class="eyelet"></span><span>0</span></span>
+      <span class="plus">+</span>
+    </div>
+
+    <div class="screen" style="gap:9px;padding-top:10px">
+      <div>
+        <span class="t-display">The Shared Rail</span>
+        <div class="rule-tick" style="margin-top:9px"></div>
+      </div>
+      <div class="plate" style="padding:16px;flex:1;opacity:.3">
+        <p class="t-italic" style="text-align:center;font-size:19px;margin-top:180px">The rail is empty.</p>
+        <p class="t-mono" style="text-align:center;font-size:10.5px;line-height:1.75;
+          text-transform:uppercase;margin-top:9px">Borrowing between closets that trust each other —
+          who has what, and when it came home.</p>
+      </div>
+    </div>
+
+    <!-- the sample loads: the lid lifts, tags rise on their thread, the rail assembles -->
+    <div class="moment">
+      <svg viewBox="0 0 220 250" style="width:246px;height:280px;fill:none">
+        <!-- the rail assembling, hanger by hanger, left to right -->
+        <g class="m2" stroke-width="1.8" stroke-dasharray="184" stroke-dashoffset="42">
+          <path d="M18 26h184"/>
+        </g>
+        <g class="m2" stroke-width="1.5">
+          <path d="M52 26a5 5 0 0 1 10 0"/><path d="M57 31v5"/><path d="M57 36 33 56h48z"/>
+          <path d="M105 26a5 5 0 0 1 10 0"/><path d="M110 31v5"/><path d="M110 36 86 56h48z"/>
+        </g>
+        <g class="m2" stroke-width="1.5" stroke-opacity=".55">
+          <path d="M158 26a5 5 0 0 1 10 0"/><path d="M163 31v5"/><path d="M163 36 139 56h48z"/>
+        </g>
+        <!-- the string of tags rising out of the trunk -->
+        <g class="m2" stroke-width="1.3">
+          <path d="M62 84c22-14 74-14 96 0"/>
+          <path d="M74 84v10M110 78v10M146 84v10"/>
+          <path d="M66 94h16v20H66zM102 88h16v20h-16zM138 94h16v20h-16z"/>
+          <circle cx="74" cy="99" r="2.2"/><circle cx="110" cy="93" r="2.2"/><circle cx="146" cy="99" r="2.2"/>
+        </g>
+        <!-- the bandaji, lid swung open on its hinges -->
+        <g class="m1" stroke-width="1.8">
+          <path d="M44 150h132v72H44z"/>
+          <path d="M38 222h144v10H38z"/>
+          <path d="M52 232v8M168 232v8"/>
+        </g>
+        <g class="m1" stroke-width="1.6" transform="rotate(-24 44 150)">
+          <path d="M44 150l6-26a72 24 0 0 1 120 0l6 26"/>
+          <path d="M44 150h132"/>
+        </g>
+        <g class="m2" stroke-width="1.2"><circle cx="44" cy="150" r="3.4"/></g>
+        <g class="m2" stroke-width="1.4">
+          <path d="M70 222v-72M84 222v-72M144 222v-72M158 222v-72"/>
+          <path d="M44 170h132M44 184h132"/>
+        </g>
+        <g class="m2" stroke-width="1">
+          <circle cx="77" cy="196" r="1.8"/><circle cx="77" cy="210" r="1.8"/>
+          <circle cx="151" cy="196" r="1.8"/><circle cx="151" cy="210" r="1.8"/>
+          <circle cx="58" cy="177" r="1.8"/><circle cx="110" cy="177" r="1.8"/><circle cx="164" cy="177" r="1.8"/>
+        </g>
+        <!-- hasp, padlock swung clear -->
+        <g class="m1" stroke-width="1.4">
+          <path d="M100 150h20v22h-20z"/><circle cx="110" cy="164" r="3"/>
+        </g>
+        <g class="m2" stroke-width="1.6">
+          <path d="M118 190v-6a6 6 0 0 1 12 0v8"/>
+          <path d="M118 190h16v16h-16z"/><circle cx="126" cy="197" r="2.2"/>
+        </g>
+      </svg>
+      <p class="caption">The lid opens · tags rise · the rail assembles</p>
+    </div>
+
+    <div class="tabs">
+      <div class="tab"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>Today</div>
+      <div class="tab"><svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17"/><path d="M12 4v17M8.5 11h1M14.5 11h1"/></svg>Closet</div>
+      <div class="tab"><svg viewBox="0 0 24 24"><path d="M11 7a1 1 0 0 1 2 0M12 9v2M12 11 5 17h14z"/></svg>Outfits</div>
+      <div class="tab"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14"/><path d="M4 9h16M8 13h8M8 16h5"/></svg>Feed</div>
+      <div class="tab on"><svg viewBox="0 0 24 24"><circle cx="6" cy="8" r="1"/><circle cx="6" cy="12" r="1"/><circle cx="6" cy="16" r="1"/><path d="M10 8h9M10 12h9M10 16h9"/></svg>More</div>
+    </div>
+  </div>
+  <p class="caption-note"><b>Load the sample — the canonical travelling moment.</b> 900ms: the
+  bandaji's lid swings open on its hinges, a string of tags rises out on one thread, and the rail
+  assembles hanger by hanger left to right before the populated page fades in. The native shell
+  ticks three times, left to right, as each hanger lands. Reduce Motion cross-fades instead.</p>
+</div>
+
+<!-- ========== the populated rail ========== -->
+<div class="stage">
+  <div class="phone" data-room="atelier">
+
+    <div class="topbar">
+      <svg viewBox="0 0 18 22" style="width:15px;height:18px;fill:none">
+        <g class="m2" stroke-width="1.2"><path d="M5 1h12v20H5L1 11z"/><circle cx="6.5" cy="11" r="2.2"/></g>
+      </svg>
+      <span class="wordmark">TOILE</span>
+      <span class="spacer"></span>
+      <span class="tag on" style="height:26px"><span class="eyelet"></span><span>3</span></span>
+      <span class="plus">+</span>
+    </div>
+
+    <div class="screen" style="gap:9px;padding-top:10px">
+
+      <div>
+        <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px">
+          <span class="t-display" style="font-size:31px">The Shared Rail</span>
+          <span class="t-mono-s">3 out · 1 home</span>
+        </div>
+        <div class="rule-tick" style="margin-top:9px"></div>
+      </div>
+
+      <!-- THE RAIL STRIP: the literal ledger. Home to the left, out to the right,
+           the bandaji standing between the two houses. -->
+      <div class="plate" style="padding:10px 12px 6px">
+        <span class="brk tl"></span><span class="brk br"></span>
+        <div class="art">
+          <svg viewBox="0 0 300 84" style="width:100%;height:auto;fill:none">
+            <g class="m1" stroke-width="1.5"><path d="M10 16h280"/><path d="M10 11v10M290 11v10"/></g>
+            <!-- home, left -->
+            <g class="m2" stroke-width="1.2">
+              <path d="M42 16a4 4 0 0 1 8 0"/><path d="M46 20v4"/><path d="M46 24 28 40h36z"/>
+            </g>
+            <!-- out, right: three hangers with their household monograms -->
+            <g class="m2" stroke-width="1.2">
+              <path d="M186 16a4 4 0 0 1 8 0"/><path d="M190 20v4"/><path d="M190 24 172 40h36z"/>
+              <path d="M226 16a4 4 0 0 1 8 0"/><path d="M230 20v4"/><path d="M230 24 212 40h36z"/>
+              <path d="M266 16a4 4 0 0 1 8 0"/><path d="M270 20v4"/><path d="M270 24 252 40h36z"/>
+            </g>
+            <!-- the bandaji, standing in the gap between the houses and clear of
+                 both — it was touching the first hanger out -->
+            <g class="m1" stroke-width="1.2" transform="translate(-30 0)">
+              <path d="M126 44h48v22h-48z"/><path d="M126 44l4-8a24 8 0 0 1 40 0l4 8"/>
+              <path d="M122 66h56v6h-56z"/>
+            </g>
+            <g class="m2" stroke-width="1" transform="translate(-30 0)"><path d="M138 66V44M162 66V44M126 54h48"/></g>
+            <text x="46" y="54" text-anchor="middle" style="font:500 8px 'Courier New',monospace;fill:var(--ink-2)">HOME</text>
+            <text x="190" y="54" text-anchor="middle" style="font:500 8px 'Courier New',monospace;fill:var(--ink-2)">AM</text>
+            <text x="230" y="54" text-anchor="middle" style="font:500 8px 'Courier New',monospace;fill:var(--ink-2)">VS</text>
+            <text x="270" y="54" text-anchor="middle" style="font:500 8px 'Courier New',monospace;fill:var(--ink-2)">AM</text>
+          </svg>
+        </div>
+      </div>
+
+      <!-- OUT RIGHT NOW -->
+      <div class="plate quiet" style="padding:11px 13px 9px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span class="t-label" style="flex:none">Out right now</span>
+          <div class="rule-dash" style="flex:1"></div>
+          <span class="t-mono-s" style="flex:none">3</span>
+        </div>
+
+        <!-- row: the piece and its direction, then who has it and since when -->
+        <div style="margin-top:10px">
+          <div style="display:flex;align-items:center;gap:9px">
+            <span class="t-serif" style="flex:1;min-width:0;font-size:16px">Bandhgala jacket</span>
+            <span class="tag" style="flex:none;height:28px"><span>Out →</span></span>
+          </div>
+          <div style="display:flex;align-items:baseline;gap:8px;margin-top:5px">
+            <span class="t-mono-s" style="font-size:9px;white-space:nowrap">Aarav Menon · lent Aug 2</span>
+            <div class="leader" style="margin:0 6px 3px"></div>
+            <span class="t-mono-s gold" style="flex:none;font-size:9px">Came home</span>
+          </div>
+        </div>
+        <div class="rule-dot" style="margin:10px 0"></div>
+        <div>
+          <div style="display:flex;align-items:center;gap:9px">
+            <span class="t-serif" style="flex:1;min-width:0;font-size:16px">Pashmina shawl</span>
+            <span class="tag" style="flex:none;height:28px"><span>Out →</span></span>
+          </div>
+          <div style="display:flex;align-items:baseline;gap:8px;margin-top:5px">
+            <span class="t-mono-s" style="font-size:9px;white-space:nowrap">Vikram Sethi · lent Jul 28</span>
+            <div class="leader" style="margin:0 6px 3px"></div>
+            <span class="t-mono-s gold" style="flex:none;font-size:9px">Came home</span>
+          </div>
+        </div>
+        <div class="rule-dot" style="margin:10px 0"></div>
+        <div>
+          <div style="display:flex;align-items:center;gap:9px">
+            <span class="t-serif" style="flex:1;min-width:0;font-size:16px">Anarkali gown</span>
+            <span class="tag" style="flex:none;height:28px"><span>Out →</span></span>
+          </div>
+          <div style="display:flex;align-items:baseline;gap:8px;margin-top:5px">
+            <span class="t-mono-s" style="font-size:9px;white-space:nowrap">Aarav Menon · lent Jul 19</span>
+            <div class="leader" style="margin:0 6px 3px"></div>
+            <span class="t-mono-s gold" style="flex:none;font-size:9px">Came home</span>
+          </div>
+        </div>
+        <div class="rule-dash" style="margin:10px 0 6px"></div>
+        <p class="t-mono-s" style="font-size:9px">Every loan is due when asked.</p>
+      </div>
+
+      <!-- CAME HOME -->
+      <div class="plate quiet" style="padding:11px 13px 9px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span class="t-label" style="flex:none">Came home</span>
+          <div class="rule-dash" style="flex:1"></div>
+          <span class="t-mono-s" style="flex:none">1</span>
+        </div>
+        <div style="margin-top:10px;opacity:.66">
+          <div style="display:flex;align-items:center;gap:9px">
+            <span class="t-serif" style="flex:1;min-width:0;font-size:16px">Silk camisole</span>
+            <span class="tag" style="flex:none;height:28px"><span>← Home</span></span>
+          </div>
+          <div style="display:flex;align-items:baseline;gap:8px;margin-top:5px">
+            <span class="t-mono-s" style="font-size:9px;white-space:nowrap">Vikram Sethi · home Aug 6</span>
+            <div class="leader" style="margin:0 6px 3px"></div>
+            <span class="t-mono-s gold" style="flex:none;font-size:9px">Went out</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- the contact book: records, not accounts -->
+      <div style="padding:0 2px">
+        <p class="t-mono-s">Profiles on this device</p>
+        <div style="display:flex;gap:8px;margin-top:6px">
+          <span class="tag"><span class="eyelet"></span><span>AM · Aarav</span></span>
+          <span class="tag"><span class="eyelet"></span><span>VS · Vikram</span></span>
+        </div>
+        <p class="t-mono-s" style="margin-top:10px">Kept on this device, like a contact book.<br>
+          Records exchanged by hand · Aug 9</p>
+      </div>
+
+      <!-- the floor: the rail is drawn once at the top of the page, not again
+           down here. The page simply ends and the ground is left bare. -->
+
+    </div>
+
+    <div class="tabs">
+      <div class="tab"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>Today</div>
+      <div class="tab"><svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17"/><path d="M12 4v17M8.5 11h1M14.5 11h1"/></svg>Closet</div>
+      <div class="tab"><svg viewBox="0 0 24 24"><path d="M11 7a1 1 0 0 1 2 0M12 9v2M12 11 5 17h14z"/></svg>Outfits</div>
+      <div class="tab"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14"/><path d="M4 9h16M8 13h8M8 16h5"/></svg>Feed</div>
+      <div class="tab on"><svg viewBox="0 0 24 24"><circle cx="6" cy="8" r="1"/><circle cx="6" cy="12" r="1"/><circle cx="6" cy="16" r="1"/><path d="M10 8h9M10 12h9M10 16h9"/></svg>More</div>
+    </div>
+  </div>
+  <p class="caption-note"><b>Shared Rail — the sample's working rail.</b> The rail strip is the
+  ledger read at a glance: home to the left, out to the right, the bandaji standing between the
+  two houses. Rows carry the piece, the household, the date it left and DUE WHEN ASKED — trust,
+  not terms. CAME HOME sends the hanger back along the rail and re-latches the hasp; long-press
+  lifts a row's tag for EDIT RECORD and REMOVE.</p>
+</div>
+
+</div>
+</body>

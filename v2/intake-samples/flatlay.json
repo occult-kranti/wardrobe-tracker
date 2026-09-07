@@ -1,0 +1,54 @@
+{
+  "toileIntake": 1,
+  "capturedAt": "2026-08-12",
+  "photos": [
+    { "n": 1, "note": "three pieces laid out on white floorboards, one on a clip hanger" }
+  ],
+  "pieces": [
+    {
+      "ref": "p1",
+      "photo": 1,
+      "name": "Striped patch-pocket top",
+      "category": "tops",
+      "description": "White jersey top with fine navy stripes and two patch pockets.",
+      "color": "#F0EEE9",
+      "colorName": "white",
+      "pattern": "striped",
+      "material": "jersey",
+      "season": ["spring", "summer"],
+      "occasion": ["casual"],
+      "confidence": 0.82,
+      "uncertain": ["material"],
+      "box": [0.0, 0.0, 0.62, 0.58]
+    },
+    {
+      "ref": "p2",
+      "photo": 1,
+      "name": "White mesh trainers",
+      "category": "shoes",
+      "description": "White mesh trainers with blush panels and black laces.",
+      "color": "#E8E3DA",
+      "colorName": "off-white",
+      "pattern": "solid",
+      "season": ["spring", "summer", "fall"],
+      "occasion": ["casual", "sport"],
+      "confidence": 0.91,
+      "box": [0.34, 0.33, 0.38, 0.53]
+    },
+    {
+      "ref": "p3",
+      "photo": 1,
+      "name": "Dark green wide trousers",
+      "category": "bottoms",
+      "description": "Dark green trousers with a pleated waist, hung from clips.",
+      "color": "#1F2C24",
+      "colorName": "dark green",
+      "pattern": "solid",
+      "season": ["fall", "winter", "spring"],
+      "occasion": ["work", "casual"],
+      "confidence": 0.64,
+      "uncertain": ["category", "material"],
+      "box": [0.64, 0.04, 0.36, 0.92]
+    }
+  ]
+}

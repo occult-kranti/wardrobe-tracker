@@ -1,0 +1,210 @@
+{
+  "outfits": {
+    "AM-01": "wardrobe/aarav/AM-01.webp",
+    "AM-02": "wardrobe/aarav/AM-02.webp",
+    "AM-03": "wardrobe/aarav/AM-03.webp",
+    "AM-04": "wardrobe/aarav/AM-04.webp",
+    "AM-05": "wardrobe/aarav/AM-05.webp",
+    "AM-06": "wardrobe/aarav/AM-06.webp",
+    "AM-07": "wardrobe/aarav/AM-07.webp",
+    "AM-08": "wardrobe/aarav/AM-08.webp",
+    "AM-09": "wardrobe/aarav/AM-09.webp",
+    "AM-10": "wardrobe/aarav/AM-10.webp",
+    "AM-11": "wardrobe/aarav/AM-11.webp",
+    "AM-12": "wardrobe/aarav/AM-12.webp",
+    "AM-13": "wardrobe/aarav/AM-13.webp",
+    "AM-14": "wardrobe/aarav/AM-14.webp",
+    "AM-15": "wardrobe/aarav/AM-15.webp",
+    "AM-16": "wardrobe/aarav/AM-16.webp",
+    "AM-17": "wardrobe/aarav/AM-17.webp",
+    "AM-18": "wardrobe/aarav/AM-18.webp",
+    "AM-19": "wardrobe/aarav/AM-19.webp",
+    "AM-20": "wardrobe/aarav/AM-20.webp",
+    "MK-01": "wardrobe/meher/MK-01.webp",
+    "MK-02": "wardrobe/meher/MK-02.webp",
+    "MK-03": "wardrobe/meher/MK-03.webp",
+    "MK-04": "wardrobe/meher/MK-04.webp",
+    "MK-05": "wardrobe/meher/MK-05.webp",
+    "MK-06": "wardrobe/meher/MK-06.webp",
+    "MK-07": "wardrobe/meher/MK-07.webp",
+    "MK-08": "wardrobe/meher/MK-08.webp",
+    "MK-09": "wardrobe/meher/MK-09.webp",
+    "MK-10": "wardrobe/meher/MK-10.webp",
+    "MK-11": "wardrobe/meher/MK-11.webp",
+    "MK-12": "wardrobe/meher/MK-12.webp",
+    "MK-13": "wardrobe/meher/MK-13.webp",
+    "MK-14": "wardrobe/meher/MK-14.webp",
+    "MK-15": "wardrobe/meher/MK-15.webp",
+    "MK-16": "wardrobe/meher/MK-16.webp",
+    "MK-17": "wardrobe/meher/MK-17.webp",
+    "MK-18": "wardrobe/meher/MK-18.webp",
+    "MK-19": "wardrobe/meher/MK-19.webp",
+    "MK-20": "wardrobe/meher/MK-20.webp",
+    "VS-01": "wardrobe/vikram/VS-01.webp",
+    "VS-02": "wardrobe/vikram/VS-02.webp",
+    "VS-03": "wardrobe/vikram/VS-03.webp",
+    "VS-04": "wardrobe/vikram/VS-04.webp",
+    "VS-05": "wardrobe/vikram/VS-05.webp",
+    "VS-06": "wardrobe/vikram/VS-06.webp",
+    "VS-07": "wardrobe/vikram/VS-07.webp",
+    "VS-08": "wardrobe/vikram/VS-08.webp",
+    "VS-09": "wardrobe/vikram/VS-09.webp",
+    "VS-10": "wardrobe/vikram/VS-10.webp",
+    "VS-11": "wardrobe/vikram/VS-11.webp",
+    "VS-12": "wardrobe/vikram/VS-12.webp",
+    "VS-13": "wardrobe/vikram/VS-13.webp",
+    "VS-14": "wardrobe/vikram/VS-14.webp",
+    "VS-15": "wardrobe/vikram/VS-15.webp",
+    "VS-16": "wardrobe/vikram/VS-16.webp",
+    "VS-17": "wardrobe/vikram/VS-17.webp",
+    "VS-18": "wardrobe/vikram/VS-18.webp",
+    "VS-19": "wardrobe/vikram/VS-19.webp",
+    "VS-20": "wardrobe/vikram/VS-20.webp"
+  },
+  "products": [
+    {
+      "slug": "hm-chinos",
+      "brand": "hm",
+      "category": "chinos",
+      "path": "wardrobe/brand/hm-chinos.webp"
+    },
+    {
+      "slug": "hm-shirt",
+      "brand": "hm",
+      "category": "shirt",
+      "path": "wardrobe/brand/hm-shirt.webp"
+    },
+    {
+      "slug": "hm-sweater",
+      "brand": "hm",
+      "category": "sweater",
+      "path": "wardrobe/brand/hm-sweater.webp"
+    },
+    {
+      "slug": "levis-denim-jeans",
+      "brand": "levis",
+      "category": "denim-jeans",
+      "path": "wardrobe/brand/levis-denim-jeans.webp"
+    },
+    {
+      "slug": "levis-t-shirt",
+      "brand": "levis",
+      "category": "t-shirt",
+      "path": "wardrobe/brand/levis-t-shirt.webp"
+    },
+    {
+      "slug": "levis-trucker-jacket",
+      "brand": "levis",
+      "category": "trucker-jacket",
+      "path": "wardrobe/brand/levis-trucker-jacket.webp"
+    },
+    {
+      "slug": "nike-hoodie",
+      "brand": "nike",
+      "category": "hoodie",
+      "path": "wardrobe/brand/nike-hoodie.webp"
+    },
+    {
+      "slug": "nike-joggers",
+      "brand": "nike",
+      "category": "joggers",
+      "path": "wardrobe/brand/nike-joggers.webp"
+    },
+    {
+      "slug": "nike-t-shirt",
+      "brand": "nike",
+      "category": "t-shirt",
+      "path": "wardrobe/brand/nike-t-shirt.webp"
+    },
+    {
+      "slug": "uniqlo-hoodie",
+      "brand": "uniqlo",
+      "category": "hoodie",
+      "path": "wardrobe/brand/uniqlo-hoodie.webp"
+    },
+    {
+      "slug": "uniqlo-jeans",
+      "brand": "uniqlo",
+      "category": "jeans",
+      "path": "wardrobe/brand/uniqlo-jeans.webp"
+    },
+    {
+      "slug": "uniqlo-t-shirt",
+      "brand": "uniqlo",
+      "category": "t-shirt",
+      "path": "wardrobe/brand/uniqlo-t-shirt.webp"
+    },
+    {
+      "slug": "adidas-leggings",
+      "brand": "adidas",
+      "category": "leggings",
+      "path": "wardrobe/brand/adidas-leggings.webp"
+    },
+    {
+      "slug": "adidas-t-shirt",
+      "brand": "adidas",
+      "category": "t-shirt",
+      "path": "wardrobe/brand/adidas-t-shirt.webp"
+    },
+    {
+      "slug": "adidas-track-jacket",
+      "brand": "adidas",
+      "category": "track-jacket",
+      "path": "wardrobe/brand/adidas-track-jacket.webp"
+    },
+    {
+      "slug": "gap-hoodie",
+      "brand": "gap",
+      "category": "hoodie",
+      "path": "wardrobe/brand/gap-hoodie.webp"
+    },
+    {
+      "slug": "gap-jeans",
+      "brand": "gap",
+      "category": "jeans",
+      "path": "wardrobe/brand/gap-jeans.webp"
+    },
+    {
+      "slug": "gap-t-shirt",
+      "brand": "gap",
+      "category": "t-shirt",
+      "path": "wardrobe/brand/gap-t-shirt.webp"
+    },
+    {
+      "slug": "mango-dress",
+      "brand": "mango",
+      "category": "dress",
+      "path": "wardrobe/brand/mango-dress.webp"
+    },
+    {
+      "slug": "mango-jeans",
+      "brand": "mango",
+      "category": "jeans",
+      "path": "wardrobe/brand/mango-jeans.webp"
+    },
+    {
+      "slug": "mango-shirt",
+      "brand": "mango",
+      "category": "shirt",
+      "path": "wardrobe/brand/mango-shirt.webp"
+    },
+    {
+      "slug": "zara-blouse",
+      "brand": "zara",
+      "category": "blouse",
+      "path": "wardrobe/brand/zara-blouse.webp"
+    },
+    {
+      "slug": "zara-dress",
+      "brand": "zara",
+      "category": "dress",
+      "path": "wardrobe/brand/zara-dress.webp"
+    },
+    {
+      "slug": "zara-trousers",
+      "brand": "zara",
+      "category": "trousers",
+      "path": "wardrobe/brand/zara-trousers.webp"
+    }
+  ]
+}

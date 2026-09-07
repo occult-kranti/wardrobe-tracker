@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
+  <!-- The tag mark at launcher size: the pair reduces to one tag, and the
+       letter comes back now that the hanger no longer competes for the face.
+       Chalk on the seal, half-grid coordinates for crisp strokes. -->
+  <rect width="192" height="192" fill="#BE1231"/>
+  <path d="M52.5 60.5 79.5 33.5h33l27 27v88a7 7 0 0 1-7 7h-73a7 7 0 0 1-7-7Z"
+    fill="none" stroke="#FFFDF6" stroke-width="12" stroke-linejoin="miter"/>
+  <circle cx="96" cy="63" r="10" fill="none" stroke="#FFFDF6" stroke-width="9"/>
+  <text x="96" y="140" text-anchor="middle" fill="#FFFDF6"
+    style="font:700 62px Georgia,'Times New Roman',serif">T</text>
+</svg>

@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<!-- data-theme is named here, statically. The consumer app reads the stored
+     room through src/lib/accounts.ts; the board deliberately does not import
+     that module, because it drags the whole account layer into a bundle that
+     has no accounts. Any of the six rooms in src/index.css may be named here. -->
+<html lang="en" data-theme="gilt">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Almari — alpha monitor</title>
+    <meta name="referrer" content="no-referrer" />
+    <meta name="robots" content="noindex, nofollow" />
+    <!-- No manifest, no theme-color, no apple-touch-icon, no service worker.
+         This is a board, not an installable app, and it must never be answered
+         from a cached yesterday. -->
+    <script type="module" crossorigin src="./assets/portal-ELb76QCa.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/portal-zDnFITfF.css">
+  </head>
+  <body>
+    <div id="portal-root"></div>
+  </body>
+</html>

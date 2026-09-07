@@ -1,0 +1,15 @@
+{
+  "toileIntake": 1,
+  "capturedAt": "2026-08-12",
+  "photos": [
+    { "n": 1, "note": "a shelved closet of toiletries — shampoo, soap, toothbrushes" },
+    { "n": 2, "note": "a linen closet: folded towels and sheets, empty hangers" },
+    { "n": 3, "note": "a street; a small heap of discarded fabric at the kerb, far away" }
+  ],
+  "pieces": [],
+  "skipped": [
+    { "photo": 1, "reason": "not a wearable piece", "note": "every shelf holds bottles, boxes and soap" },
+    { "photo": 2, "reason": "not a wearable piece", "note": "folded towels and bed linen; the hangers are empty" },
+    { "photo": 3, "reason": "too far away to name honestly", "note": "a heap of fabric at the kerb, perhaps a coat and a blanket" }
+  ]
+}
