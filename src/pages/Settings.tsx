@@ -202,11 +202,11 @@ function ProviderRows() {
   return (
     <div className="space-y-3">
       <Row
-        title="Where the photograph goes"
+        title="Where AI requests go"
         body={
           held
             ? `To your own endpoint — ${held.endpoint} — with your own key. The relay is not involved.`
-            : 'To Almari\u2019s relay, which holds the service key, and from there to the model — only when you ask it to catalogue a photograph. It comes back as words and coordinates; the cutting and the writing happen on this device.'
+            : 'To Almari\u2019s relay, which holds the service key, then Claude Fable 5.1 by Anthropic. The cataloguer sends the photograph you choose. The event stylist sends the event, weather and available garment details after you agree and press Suggest. Your own endpoint or legacy key takes precedence when configured.'
         }
         control={
           held ? (
@@ -311,7 +311,7 @@ const THEME_LABELS: Record<Theme, string> = {
   obsidian: 'Obsidian',
   dark: 'Atelier',
   salon: 'Salon',
-  gilt: 'Gilding room',
+  gilt: 'Rose atelier',
   light: 'Pattern room',
   system: 'System',
 };
@@ -788,7 +788,7 @@ export default function Settings() {
         <SectionTitle>Appearance</SectionTitle>
         <Row
           title="Paper"
-          body="Six rooms in the same building: the pattern room where cloth is cut, the salon where a collection is shown, the gilding room where the gold leaf is laid, the dye house where the madder vats stain the walls rose, the obsidian where the glass reflects, and the atelier at night. System follows the device. The choice belongs to this screen, not to a wardrobe, so it holds when you open a different one."
+          body="Rose atelier is the new default: light warm pink, ivory surfaces, and rose-gold and silver details. Choose another room or let System follow your device. Your choice stays on this screen when you open a different wardrobe."
           control={
             <div className="flex flex-wrap gap-2">
               {THEMES.map(opt => (
@@ -998,13 +998,17 @@ export default function Settings() {
 
         <p className="text-[14px] text-text-2 leading-relaxed">
           Everything you enter stays in this browser's local storage, and the app makes no network
-          requests about your closet unless you ask for one. Two asks exist: a wardrobe you mark
-          as synced keeps a copy on your account so another device can open it, and a photograph
-          goes to the AI provider only when you ask it to be catalogued. Both run on the owner's
+          requests about your closet unless you ask for one. A wardrobe you mark
+          as synced keeps a copy on your account so another device can open it. A photograph
+          goes to the AI provider when you ask it to be catalogued. The event stylist sends your
+          event, weather and available garment details when you agree and ask for an outfit.
+          A city lookup and forecast go to Open-Meteo only when you press their buttons.
+          The default AI and sync services run on the owner's
           Supabase free tier and model key, so they cost you nothing; if that ever changes, the
           app will say so before it asks for anything. Until end-to-end encryption arrives, a
           synced copy is stored readable: the person running Almari and the company hosting the
-          database could open it. A wardrobe kept on this device is read by no one.
+          database could open it. A wardrobe kept on this device sends only the AI requests
+          you choose to make; its full record stays here unless you export it or enable sync.
           There are no shop links, affiliate codes or sponsored pieces, and there never will be.
           For the alpha there is one usage note, off unless you switch it on above, and it carries
           no part of your wardrobe. Because the data lives here first, keeping a copy is on you.

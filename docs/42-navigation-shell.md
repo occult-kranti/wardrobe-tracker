@@ -1,5 +1,30 @@
 # 42 · The navigation shell — the build-ready spec
 
+> **Web alpha amendment, 2026-09-07:** the owner's current direction supersedes
+> the historical web roster below. The web bar is **Today · Closet · Chats ·
+> Outfits · More**. With the Look Book enabled it is **Today · Closet · Looks ·
+> Outfits · More**, and Chats moves to More. **Profile** replaces the web label
+> House and is always in More, using `IconProfile`. `/profile`, `/profile/:id`,
+> `/outfits` and `/calendar` keep their addresses. The native roster and House
+> long-press switcher remain unchanged until a native Outfits screen is ported.
+>
+> `packages/shared/nav.ts` now exports `webBarSlots()` for the four web links;
+> native continues to consume `NAV_SLOTS` and `barSlots()`. Layout maps the web
+> roster in order rather than filtering the desktop list. The More button
+> remains the fifth equal cell, and it stays marked on secondary routes.
+>
+> Outfits opens with its saved sets before the random deal. Every saved set
+> stays visible even when all clothes have been retired or removed. Cards
+> explain retired and missing pieces, and a new wear cannot be logged from
+> a set with either condition. Existing wear history is unchanged. Calendar
+> is a visible link on both populated and empty Outfits screens; it also
+> remains in More. Build and explicit AI styling remain available when the
+> closet has active clothes. The header includes one decorative rose-gold
+> and silver atelier drawing; controls wrap on narrow phones. The lighter
+> Rose atelier default retains the persisted `gilt` theme identifier and
+> preserves explicitly stored theme choices. This amendment concerns the
+> web alpha; the dated native specification below remains its record.
+
 **Verdict: APPROVED — build.** Closing ruling of the navigation panel (three
 seats, two rounds, one direction memo), 2026-08-20. Every load-bearing claim
 was re-verified in the tree this session: expo-router 57.0.14 vendors

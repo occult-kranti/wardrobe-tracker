@@ -11,7 +11,7 @@ import {
   ORNAMENT_LABELS, ORNAMENT_NOTES,
 } from '../lib/furnitureArt';
 import { FURNITURE_PROMPT, readFurniture, type FurnitureRead } from '../lib/furniturePrompt';
-import { hasKey, keyLooksWrong, prepareImage, readPhotograph, saveKey } from '../lib/anthropic';
+import { aiStylistDisclosure, hasKey, keyLooksWrong, prepareImage, readPhotograph, saveKey } from '../lib/anthropic';
 import { photoSrc } from '../lib/photoStore';
 import {
   FURNITURE_FORMS, MAX_FURNITURE, MAX_FURNITURE_NAME, MAX_SLOT_LABEL, ORNAMENTS,
@@ -214,8 +214,7 @@ function DrawPiece({ open, onClose }: { open: boolean; onClose: () => void }) {
             draw it.
           </p>
           <p className="text-[13px] text-text-2 mt-2 leading-snug">
-            The photograph goes to Claude Fable by Anthropic, through Almari&rsquo;s relay — the
-            key is held on the server, never on this device.
+            The photograph is sent using {aiStylistDisclosure()}
           </p>
           <input
             ref={photoRef}

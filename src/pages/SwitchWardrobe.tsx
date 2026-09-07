@@ -131,7 +131,7 @@ function WardrobeDetails() {
             onChange={e => updateAccount(active.id, { handle: e.target.value })}
           />
         </Field>
-        <Field label="City" htmlFor="wd-city" hint="Optional. It only shapes the weather notes.">
+        <Field label="City" htmlFor="wd-city" hint="Optional. Kept with this wardrobe. The event stylist asks separately before checking a city's forecast.">
           <input
             id="wd-city"
             className={inputClass}

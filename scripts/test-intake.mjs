@@ -186,7 +186,10 @@ check('messy file: the blank name is dropped with a reason', messy.dropped.some(
   // The prompt the app sends is the prompt the doc prints. The outfit prompt
   // interpolates its vetoed-word list, so the doc holds the resolved text —
   // compare on the resolved form, which is what a reader would paste.
-  const vetoed = promptTs.match(/const VETOED_WORDS = '([^']*(?:\\'[^']*)*)'/);
+  // Consume escapes as a pair. The former greedy [^']* consumed the slash
+  // before \' and mistook that apostrophe for the closing quote, accepting
+  // a documentation warning truncated to just the first word.
+  const vetoed = promptTs.match(/const VETOED_WORDS = '((?:\\.|[^'\\])*)'/);
   const resolved = vetoed
     ? outfit.replace('${VETOED_WORDS}', vetoed[1].replace(/\\'/g, "'"))
     : outfit;

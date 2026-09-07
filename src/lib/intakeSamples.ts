@@ -33,7 +33,7 @@ export const INTAKE_SAMPLES: IntakeSample[] = [
     caption: 'Eleven pieces spread on a white bedspread, several still carrying shop tags.',
     // The photograph belongs to whoever took it and was never copied here.
     // Drop a JPEG at public/intake-samples/bed-flatlay.jpg and it appears.
-    photoNote: 'Your own photograph — drop it at public/intake-samples/bed-flatlay.jpg to see it here.',
+    photoNote: 'A sample catalogue without a photograph. Try it to see how pieces are reviewed before adding them.',
     file: 'intake-samples/bed-flatlay.json',
     outcome: '11 pieces · 3 skipped',
   },

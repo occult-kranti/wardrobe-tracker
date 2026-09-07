@@ -342,7 +342,7 @@ export function RailProfile() {
           <SectionTitle aside={`${profile.lendable.length} pieces`}>Open to borrow</SectionTitle>
           <ul className="grid sm:grid-cols-2 gap-x-6">
             {profile.lendable.map(piece => {
-              const item = piece.itemId ? getItem(piece.itemId) : undefined;
+              const item = profile.isMe && piece.itemId ? getItem(piece.itemId) : undefined;
               const photo = photoSrc(item?.imageUrl);
               return (
                 <li key={piece.itemId ?? piece.name} className="flex items-center gap-3 h-14">

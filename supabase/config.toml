@@ -15,6 +15,10 @@ verify_jwt = false
 [functions.admin-stats]
 verify_jwt = false
 
+# Operator image/model tests authenticate with ADMIN_TOKEN inside the function.
+[functions.admin-ai]
+verify_jwt = false
+
 # The usage ingest has no JWT either — it is called by an app whose user may not
 # have an account at all, and its locks are the six clamps inside it (body cap,
 # event cap, vocabulary allowlist, per-event property shape, origin check, rate

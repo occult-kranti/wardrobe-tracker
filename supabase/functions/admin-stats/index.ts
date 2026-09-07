@@ -23,6 +23,7 @@
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 
 const CORS: Record<string, string> = {
+  'cache-control': 'no-store',
   'access-control-allow-origin': '*',
   'access-control-allow-methods': 'GET, POST, OPTIONS',
   'access-control-allow-headers': 'content-type, x-admin-token',

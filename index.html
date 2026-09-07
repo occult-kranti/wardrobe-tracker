@@ -9,8 +9,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
     <title>Almari — your wardrobe, on record</title>
     <meta name="description" content="A private ledger for a real wardrobe. Track what you own, what you wear, and what it costs per wear. Offline, on your device, free." />
-    <meta name="theme-color" content="#F4EFE2" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#17140F" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#F8E8E4" />
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%23BE1231'/%3E%3Cpath d='M4.5 5.5 6.5 3.5h3l2 2v7.5a.5.5 0 0 1-.5.5H5a.5.5 0 0 1-.5-.5Z' fill='none' stroke='%23FFFDF6' stroke-width='1.1' stroke-linejoin='miter'/%3E%3Ccircle cx='8' cy='5.6' r='.9' fill='none' stroke='%23FFFDF6' stroke-width='.9'/%3E%3Ctext x='8' y='12' text-anchor='middle' fill='%23FFFDF6' style='font:700 5.6px Georgia,serif'%3ET%3C/text%3E%3C/svg%3E" />
     <link rel="manifest" href="./manifest.webmanifest" />
     <!-- iOS never reads SVG touch icons; without a bitmap here, Add to Home
@@ -137,8 +136,8 @@
   gap: 12px;
   padding: 24px;
   text-align: center;
-  background: var(--color-bg, #F4EFE2);
-  color: var(--color-text, #201D18);
+  background: var(--color-bg, #F8E8E4);
+  color: var(--color-text, #34262C);
 }
 #almari-splash .mark { display: inline-flex; flex-direction: column; }
 #almari-splash .word {
@@ -153,7 +152,7 @@
   font-family: var(--font-display, Georgia, 'Times New Roman', serif);
   font-style: italic;
   font-size: 14px;
-  color: var(--color-text-2, #201D18);
+  color: var(--color-text-2, #674E55);
 }
     </style>
     <!-- THE ROOM IS CHOSEN BEFORE THE FIRST PIXEL.
@@ -161,7 +160,7 @@
          enough for the app and too late for the mark below: a module script is
          deferred, and the browser is free to paint before it runs. Without
          these six lines the splash lands in the pattern room and flips to the
-         dye house a frame later, on every cold start.
+         chosen room a frame later, on every cold start.
          THE ROOMS ARE NAMED IN src/lib/accounts.ts (THEME_ORDER, DEFAULT_THEME
          and THEME_KEY are the source of truth). Add one there and forget this
          list and the only cost is that its first frame is the default room,
@@ -170,12 +169,12 @@
       (function () {
         try {
           var stored = JSON.parse(localStorage.getItem('toile-theme') || '{}').theme;
-          var rooms = ['dyehouse', 'obsidian', 'dark', 'salon', 'gilt', 'light'];
+          var rooms = ['gilt', 'dyehouse', 'obsidian', 'dark', 'salon', 'light'];
           if (stored === 'system') return;
-          var room = rooms.indexOf(stored) >= 0 ? stored : 'dyehouse';
+          var room = rooms.indexOf(stored) >= 0 ? stored : 'gilt';
           document.documentElement.setAttribute('data-theme', room);
         } catch (e) {
-          document.documentElement.setAttribute('data-theme', 'dyehouse');
+          document.documentElement.setAttribute('data-theme', 'gilt');
         }
       })();
     </script>

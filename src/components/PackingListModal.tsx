@@ -60,7 +60,7 @@ export default function PackingListModal({ open, onClose }: PackingListModalProp
     return activeItems.filter(i => selectedIds.has(i.id));
   }, [activeItems, selectedIds]);
 
-  const copyAsText = () => {
+  const copyAsText = async () => {
     if (selectedItems.length === 0) return;
     const lines = [
       `PACKING LIST (${tripDays} days · ${selectedItems.length} pieces)`,
@@ -71,8 +71,12 @@ export default function PackingListModal({ open, onClose }: PackingListModalProp
       '----------------------------------------',
       'Packed with Almari',
     ];
-    navigator.clipboard.writeText(lines.join('\n'));
-    showToast('Packing list copied to clipboard');
+    try {
+      await navigator.clipboard.writeText(lines.join('\n'));
+      showToast('Packing list copied to clipboard');
+    } catch {
+      showToast('The clipboard did not accept the list. Your packing choices are still here.', 'info');
+    }
   };
 
   const clearAll = () => {
@@ -97,8 +101,9 @@ export default function PackingListModal({ open, onClose }: PackingListModalProp
                 <button
                   key={days}
                   type="button"
+                  aria-pressed={tripDays === days}
                   onClick={() => setTripDays(days)}
-                  className={`px-2 py-1 text-[12px] rounded-[2px] border transition-colors ${
+                  className={`min-w-11 min-h-11 px-2 py-1 text-[13px] rounded-[2px] border transition-colors ${
                     tripDays === days
                       ? 'border-accent text-accent bg-accent/5 font-medium'
                       : 'border-border text-text-2 hover:border-text-2'
@@ -132,6 +137,7 @@ export default function PackingListModal({ open, onClose }: PackingListModalProp
           />
           <input
             type="text"
+            aria-label="Search closet to pack"
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Search closet to pack..."

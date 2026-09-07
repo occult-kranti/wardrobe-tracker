@@ -1,0 +1,20 @@
+/** Publish only the independently built public operator shell, after the consumer gate. */
+import { existsSync, readFileSync, readdirSync, mkdirSync, copyFileSync, cpSync } from 'node:fs';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+const root = fileURLToPath(new URL('..', import.meta.url));
+const built = join(root, 'dist-portal');
+const target = join(root, 'dist', 'portal');
+const names = readdirSync(built);
+if (names.some(n => !['assets', 'portal.html'].includes(n))) throw Error('Unexpected file in portal artifact');
+if (!existsSync(join(built, 'portal.html')) || !existsSync(join(built, 'assets'))) throw Error('Build the portal first');
+const sw = readFileSync(join(root, 'dist', 'sw.js'), 'utf8');
+if (!sw.includes("new URL('portal/', SHELL)")) throw Error('Consumer worker must bypass the portal');
+const precache = sw.match(/const PRECACHE = ([^;]+);/)?.[1];
+if (!precache || /portal|admin-ai|admin-stats/.test(precache)) throw Error('Operator files must not be precached');
+const html = readFileSync(join(built, 'portal.html'), 'utf8');
+if (/serviceWorker\.register|rel="manifest"|src="\/src\//.test(html)) throw Error('Unexpected portal entry content');
+mkdirSync(target, { recursive: true });
+copyFileSync(join(built, 'portal.html'), join(target, 'index.html'));
+cpSync(join(built, 'assets'), join(target, 'assets'), { recursive: true });
+console.log('Staged public portal shell at dist/portal; consumer precache unchanged.');

@@ -79,13 +79,24 @@ and never make the record hostage. There is no server to hold it.
 - **What's it like out?** — one tap, four answers, kept for the day. It narrows
   the day's suggestions the way weather-aware rivals do, without a location
   permission, a forecast API, or anything to leak.
+- **Outfits and Rose atelier** — saved outfits have a main tab, with Calendar
+  one press away. Profile is in More. The web alpha defaults to light warm pink,
+  ivory photo mats and rose-gold/silver details; a saved theme choice is retained.
+- **What should I wear?** — describe an event, its date and dress code, and ask
+  Claude Fable 5.1 for an outfit from the available clothes in this wardrobe.
+  Check a chosen city's forecast or enter the weather yourself, request a
+  change, then save the outfit or reserve it for an event day. The screen shows
+  what is sent before you agree; saving never records a wear. The [UI and
+  functionality plan](docs/46-alpha-event-stylist-review.md) includes the alpha
+  screen review and remaining improvements.
 - **On your home screen** — a manifest and an offline service worker, so Almari
   gets an icon, opens full screen, and works with no signal. No store, no account.
 - **Catalogue from photos** — the first hour is the slowest thing about a wardrobe app,
   so hand a photograph of the clothes to whatever vision model you already use, with
   [the prompt](docs/23-photo-intake.md), and drop the file it writes into the app. Every
   piece arrives as a draft with its doubts stated; nothing is written until you say so.
-  The photograph never passes through us — there is nothing here to pass through.
+  You can also ask the in-app cataloguer to read a photo through Almari's AI
+  relay. That route names the provider before the button that sends it.
 
 ## Design
 
@@ -125,16 +136,26 @@ section below.
 
 ## Privacy
 
-All data is stored locally in your browser, and that stays the default. Three
-exceptions exist, and each one is your choice.
+All data is stored locally in your browser, and that stays the default.
+The optional services below require your choice.
 
 **An account** does one job only: keeping a synced copy of a wardrobe's record on
 Supabase so a second device can open it. Sync is opt-in per wardrobe and off
-until you turn it on; a wardrobe that never opts in never leaves the device.
+until you turn it on; a wardrobe that never opts in has no synced copy.
 
 **A photograph you hand to the cataloguer** goes to Almari's relay — which holds
 the AI key on the server, so this device never has one — and comes back as words
 and coordinates. A key or endpoint of your own can be set in Settings instead.
+
+**An outfit request** sends the event, weather and selected available garment
+fields to the configured AI service only after you agree and press Suggest or
+Update. Photos, costs, brands, garment notes, wear history and account details
+are excluded. The default model is Claude Fable 5.1. Its response is checked
+against the submitted garment IDs before it can be saved.
+
+**A city search or forecast** goes to Open-Meteo only when you press its button.
+The app uses the city you choose, never device geolocation. Manual weather and
+unknown-weather styling remain available without a forecast lookup.
 
 **The alpha usage record**, admitted by owner direction on 2026-08-28 and lasting
 only as long as the alpha. It is off until you tick a box in a panel that shows
@@ -167,7 +188,18 @@ npm run verify   # build, brand, migration, persona and intake suites
 # The browser suites. Serve a build first: npx vite preview --port 4174
 npm run test:flows     # every route, signed out and in, phone and desktop
 npm run test:features  # the door, the cutout, the weather, installability
+npm run test:eventstylist:browser # event, weather, refinement, save and isolation
+npm run test:rose:browser # default theme, Outfits navigation and saved historical sets
+npm run audit:alpha    # screenshots of every enabled alpha route
+node scripts/test-event-stylist-live.mjs --live # synthetic closet; two live AI calls
+npm run review:alpha   # local recorded results and screen gallery on 127.0.0.1:4176
 ```
+
+See the [prompt review](docs/48-alpha-prompt-review.md),
+[validation record](docs/47-alpha-event-stylist-validation.md), and
+[local and hosted link directory](docs/49-alpha-links.md) for the alpha review.
+The [Rose atelier and Outfits validation](docs/52-rose-outfits-validation.md)
+records the latest navigation, theme, and browser checks.
 
 Stack: React 19 · TypeScript · Vite · Tailwind CSS v4 · React Router (HashRouter,
 for static hosting) · localStorage.

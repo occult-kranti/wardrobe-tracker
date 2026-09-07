@@ -7,12 +7,13 @@ in full rather than in the margin of six other files. It is the document the
 app's own copy points at — the README's Privacy section, `company/ship.html`,
 `public/alpha.html`, `AGENTS.md` and `GEMINI.md` all end here.
 
-It answers one question in four parts: **everything the maker of this app can
+It answers one question across the routes below: **everything the maker of this app can
 learn about a tester, by every route that exists.** For each route: what it
 carries, what it does not, who can read it, and how a tester makes it stop.
 
-The four routes are unequal, and the inequality matters. Three of them existed
-before the amendment; only the third is new. None of them turns on by itself.
+The original four routes are unequal. Three existed before the 2026-08-28
+amendment, which introduced the third route. The fifth was added for event
+styling on 2026-09-07. None turns on by itself.
 
 | # | Route | On by default | New in this amendment |
 |---|---|---|---|
@@ -20,6 +21,11 @@ before the amendment; only the third is new. None of them turns on by itself.
 | 2 | The relay, and the services behind it | No — one press at a time | No |
 | 3 | The opt-in usage record | **No — off until the box is ticked** | **Yes** |
 | 4 | Human research | No — by invitation and written consent | No |
+| 5 | Event weather lookup | No — separate city and forecast buttons | Added 2026-09-07 |
+
+The owner requested event styling on 2026-09-07. Route 2 now includes explicit
+text requests as well as photographs; route 5 is the optional forecast lookup.
+Neither changes the alpha usage record or allows free text into that record.
 
 ---
 
@@ -63,16 +69,24 @@ synced needs nothing done to it.
 **What it is.** When a person asks the app to read a photograph, the image goes
 to `supabase/functions/ai-proxy`, which holds the provider keys so the device
 never has to, and forwards it to Anthropic, Google or Moonshot by model prefix.
-One press, one photograph.
+The event stylist also uses this relay, after a disclosure, a consent checkbox
+and a press of Suggest an outfit or Update outfit. The default model is
+`claude-fable-5-1` (Claude Fable 5.1 by Anthropic).
 
 **What it carries.** The photograph and the intake prompt, out; words and
-coordinates, back. Four clamps apply: a model allowlist (`claude-fable-5`,
+coordinates, back. Styling sends the event, date, time, dress code, setting,
+preferences, weather source/summary and available garment IDs, names, category
+labels, colours, materials, patterns, seasons and occasion tags. An update also
+sends the previous suggestion and the requested change. Four clamps apply:
+a model allowlist (`claude-fable-5-1`, `claude-fable-5`,
 `claude-opus-5`, `gemini-3.7-flash`, `k3`, plus point releases), a token
 ceiling, a body cap, and an Origin check.
 
-**What it does not carry.** No wardrobe document, no account identifier, no
-other piece from the closet. The relay function writes no log lines of its own.
-The photograph is not stored along the way.
+**What it does not carry.** No whole wardrobe document or account identifier.
+The styling projection excludes photos, costs, brands, garment notes, fit notes,
+wear history, household data and chats. A photograph request carries no other
+closet records. The relay function writes no log lines of its own and does not
+persist request bodies. Provider retention is described below.
 
 **Who can read it.** Whatever the platform keeps: Supabase's edge-function
 request logs (timestamps, status codes, sizes — the project owner can see
@@ -80,8 +94,25 @@ these), and the model provider's own retention policy for an API request, which
 is the provider's and not Almari's. A tester who prefers neither can set their
 own endpoint or key in Settings, which bypasses the relay entirely.
 
-**How a tester makes it stop.** Do not use the cataloguer. Nothing else in the
-app calls it, and every route into it is a deliberate press.
+**How a tester makes it stop.** Do not press the cataloguer or stylist request
+buttons. Typing a brief never calls AI. Drafts remain in memory; only a saved
+outfit or reservation joins the local wardrobe and any opt-in sync. Cancelling
+stops waiting for a response; it cannot recall a request already sent upstream.
+
+### 5 · Event weather lookup
+
+Find city sends the typed city to Open-Meteo's geocoding API. After the person
+chooses a matching city, Check forecast sends its coordinates, timezone and
+event date to Open-Meteo's forecast API. The device's location is never read.
+Both requests omit credentials and referrers. Like any service receiving a
+request, Open-Meteo can see the connecting IP address; its service policies
+apply. Results stay in memory, carry their date/time and fetch time, and are
+cleared when the location or event time changes. No polling or background
+refresh occurs. Manual weather works without these requests, and unavailable
+weather is explicitly marked unknown when sent to AI.
+
+References: [forecast API](https://open-meteo.com/en/docs),
+[city search API](https://open-meteo.com/en/docs/geocoding-api).
 
 ---
 

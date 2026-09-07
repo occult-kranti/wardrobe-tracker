@@ -88,12 +88,18 @@ export default function Profile() {
 
   return (
     <div className="space-y-6">
-      <Masthead title={account.name} meta={account.handle} />
+      <Masthead title={isMe ? 'Profile' : account.name} meta={isMe ? 'Your wardrobe' : account.handle} />
 
       <Card>
         <div className="flex items-start gap-5">
           <AccountMark account={account} size={72} />
           <div className="min-w-0 flex-1">
+            {isMe ? (
+              <div className="mb-3">
+                <h2 className="type-editorial text-[22px] leading-snug break-words">{account.name}</h2>
+                <p className="type-ledger text-[11px] text-text-2 mt-1 break-words">{account.handle}</p>
+              </div>
+            ) : null}
             {account.tagline ? (
               <p className="type-editorial text-[20px] sm:text-[22px] leading-snug text-balance">
                 {account.tagline}
@@ -225,7 +231,7 @@ export default function Profile() {
             <Button wrap onClick={() => setRoofOpen(true)}>Join wardrobes under a roof</Button>
           </div>
           <p className="text-[13px] text-text-2 mt-3 leading-snug">
-            A household is ids and a kind, nothing else — no roles, no shape, no locks.
+            A household groups wardrobes kept on this device. Each wardrobe keeps its own clothes and wear history.
             Everyone joins by their own yes and leaves without asking.
           </p>
         </Card>

@@ -139,6 +139,7 @@ const ELEMENTS: Record<string, ReactElement> = {
   '/furniture/:id': arriving('furniture-piece', () => import('./pages/Furniture').then(m => ({ default: m.FurniturePiece }))),
   '/calendar': arriving('calendar', () => import('./pages/Calendar')),
   '/events': arriving('events', () => import('./pages/Events')),
+  '/events/style': arriving('event-stylist', () => import('./pages/EventStylist')),
   '/ledger': arriving('ledger', () => import('./pages/Statistics')),
   '/wishlist': arriving('wishlist', () => import('./pages/Wishlist')),
   '/compare': arriving('compare', () => import('./pages/BeforeYouBuy')),

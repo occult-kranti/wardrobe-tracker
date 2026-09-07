@@ -16,8 +16,8 @@
 //       anything else              → Kimi, by Moonshot AI (KIMI_KEY)
 //   - the answer streams back untouched
 //
-// It logs nothing and stores nothing. A photograph passes through it and is
-// not kept — the wardrobe record is on the device, and its copy, if any, is
+// It logs nothing and stores nothing. A photograph or an explicitly requested
+// event outfit brief passes through without being kept. The wardrobe is on the device, and its copy, if any, is
 // in the wardrobes table. This function holds no state at all.
 //
 // Deno runtime, per Supabase edge function convention.
@@ -46,7 +46,7 @@ const CORS: Record<string, string> = {
    changes the shape of a request the app actually makes. */
 
 /**
- * (1) The models this relay carries. The app's intake sends claude-fable-5
+ * (1) The models this relay carries. The app sends claude-fable-5-1
  * (RELAY_MODEL, src/lib/anthropic.ts); the portal's service board and
  * scripts/test-relay.mjs also knock with claude-opus-5, gemini-3.7-flash and
  * k3 (RELAY_SERVICES, src/lib/admin.ts). A dated or point-release variant of
@@ -55,7 +55,8 @@ const CORS: Record<string, string> = {
  * prefix, or "claude-fable-5-anything" would be a hole in the list. Anything
  * unlisted is refused here, calmly and by name, rather than billed upstream.
  */
-const ALLOWED_MODELS = ['claude-fable-5', 'claude-opus-5', 'gemini-3.7-flash', 'k3'];
+// Keep Fable 5 for cached alpha clients while new clients move to 5.1.
+const ALLOWED_MODELS = ['claude-fable-5-1', 'claude-fable-5', 'claude-opus-5', 'gemini-3.7-flash', 'k3'];
 const POINT_RELEASE = /^-(latest|\d{6,8})$/;
 function modelAllowed(model: string): boolean {
   return ALLOWED_MODELS.some(m => model === m || (model.startsWith(m) && POINT_RELEASE.test(model.slice(m.length))));

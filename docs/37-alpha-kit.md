@@ -180,14 +180,14 @@ you use the app and a closing chat at the end. That is the whole ask.
 
 **What the app collects on its own: nothing.** Almari loads no third-party
 analytics, no tracking scripts and no advertising code, and it needs no
-account. Your wardrobe is stored on your device. Three things can leave that
-device, and each of the three is yours to switch on — sync, photo intake, and
+account. Your wardrobe is stored on your device. Optional requests can leave
+that device: sync, AI photo intake and event styling, a city forecast, and
 the opt-in usage record. Turn none of them on and we cannot see what you log,
 when you open the app, or whether you open it at all: the app has no way to
 tell us. That is why this study exists — what the app can say is thin, and
 mostly the only way we learn anything is you telling us.
 
-**Three exceptions, all optional, all off until you turn them on:**
+**The optional services, each requiring your choice:**
 
 1. **Sync.** If you create an account and turn on sync, a copy of your
    wardrobe data is kept on our sync server (Supabase) under your account, as
@@ -196,8 +196,13 @@ mostly the only way we learn anything is you telling us.
 2. **Photo intake.** If you use the AI photo-intake feature, the photos you
    choose are sent to the AI provider through our proxy so they can be read
    into wardrobe entries. Only the photos you pick, only when you use it.
-   Everything else — including the background-cutout feature — runs entirely
-   on your device.
+   The background-cutout feature runs entirely on your device. The event
+   stylist separately sends your event, weather and available garment metadata
+   after showing the fields and asking you to agree. It excludes photos,
+   costs, brands, garment notes and account details. Its default is Claude
+   Fable 5.1 by Anthropic; Settings can select your own endpoint. City search
+   and forecast buttons contact Open-Meteo only when pressed, using the city
+   you choose; no device geolocation. Manual weather is available instead.
 3. **The usage record.** New for this alpha, and removed when the alpha ends.
    The first time you open Almari it asks whether it may keep one, with a link
    that prints exactly what would be sent — before you agree there is nothing

@@ -20,7 +20,7 @@ let failed = 0;
 const b = await chromium.launch();
 const p = await b.newPage();
 for (const h of ['**://fonts.googleapis.com/**','**://fonts.gstatic.com/**','**://api.fontshare.com/**']) await p.route(h, r => r.abort());
-await p.goto('http://localhost:4173/', { waitUntil: 'domcontentloaded' });
+await p.goto(process.argv[2] ?? 'http://localhost:4173/', { waitUntil: 'domcontentloaded' });
 
 for (const theme of ['light','dark','salon','gilt','dyehouse','obsidian']) {
   const t = await p.evaluate(th => {

@@ -8,8 +8,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 wear, what it costs per wear. Local-first — no commerce, no shame mechanics; an
 optional account syncs a wardrobe you choose, off by default, and the alpha's
 opt-in usage record is off until a tester ticks the box (PLAN.md #1 as amended
-2026-08-28; `src/lib/usage.ts` and `docs/45-what-almari-records.md`). The house style is pattern-cutting paper, iron-gall ink, one
-sealing-wax carmine. Comments in this repo are long and essayistic on purpose:
+2026-08-28; `src/lib/usage.ts` and `docs/45-what-almari-records.md`). By owner direction on 2026-09-07, the web alpha opens in Rose atelier:
+light warm pink, ivory photo mats, dark rose controls, and rose-gold/silver
+details. Its saved theme ID remains `gilt`; explicit saved themes still win.
+See `docs/50-rose-atelier.md`. The main web tab is Outfits; Profile lives in
+More, and Outfits links directly to Calendar. The native scaffold keeps its
+existing roster through the separate web mapping in `packages/shared/nav.ts`.
+Comments in this repo are long and essayistic on purpose:
 they record *why*, usually after a failure. Read the comment before changing
 what it guards.
 
@@ -27,8 +32,9 @@ Three trees and a back office:
   https://docs.expo.dev/versions/v57.0.0/ before writing any app code. Load the
   `expo-build` skill before touching `app/`.
 - `supabase/` — the backend: `setup.sql` (tables + RLS), `functions/ai-proxy`
-  (the AI relay), `functions/admin-stats`. `workers/ai-proxy` is a legacy
+  (the AI relay), `functions/admin-stats`, and `functions/admin-ai` (authenticated operator tests). `workers/ai-proxy` is a legacy
   Cloudflare fallback, kept for reference and not deployed.
+- `src/portal/` — separate operator shell published at `/portal/` by owner direction on 2026-09-07. All calls are explicit; the admin token and test material stay in memory. Build output is `dist-portal/`, outside consumer chunks and precache. See `docs/55-admin-ai-workbench.md`.
 - `company/` — internal boards (tracker, ship page, build plan). Not the
   product; `company/ship.html` is the public status page.
 - `docs/` — numbered decision records (see *Documents of record*).
@@ -126,14 +132,20 @@ env var (an Expo Go tester carries no environment); the `feed-showcase` branch
 differs by exactly that one line. Suites read the flag from the module and
 assert the other truth at the other value; nothing is skipped by deletion.
 
-### The three things that leave the device
+### The requests that leave the device
 
 1. **A photograph, one press at a time.** `src/lib/anthropic.ts` → the relay at
    `supabase/functions/ai-proxy/index.ts`, which holds the provider keys and
    routes by model prefix (`claude*` → Anthropic, `gemini*` → Google, anything
    else → Kimi). Four clamps: model allowlist (`ALLOWED_MODELS`), token ceiling,
-   body cap, Origin check. Default model `claude-fable-5`. A user's own endpoint
-   or a legacy key bypasses the relay entirely.
+   body cap, Origin check. Default model `claude-fable-5-1`. A user's own endpoint
+   or a legacy key bypasses the relay entirely. By owner direction on 2026-09-07,
+   this adapter also sends explicit event-styling requests: event/weather plus
+   a closed projection of available garment metadata, after the screen's
+   disclosure and consent checkbox. No photographs, costs, brands, garment
+   notes, fit notes, wear history, account data or chats enter that projection.
+   Open-Meteo receives a city search or forecast request only on its own button
+   press; no device geolocation, automatic lookup or background polling.
 2. **A wardrobe that opted in.** `src/lib/sync.ts` → the `wardrobes` table.
    Last-writer-wins over the whole document, no field-level merge; a sample
    wardrobe never syncs; signing out never deletes. The pure rules are
@@ -160,7 +172,7 @@ assert the other truth at the other value; nothing is skipped by deletion.
      first: a tester must never lose a wear log because the app was recording
      that they logged one.
 
-Everything else is local by construction. What is never collected by any route:
+Everything else is local by construction. What the alpha usage record never collects:
 garment names, brands, notes, `fitsLike`, captions, chat text, category and
 occasion labels, colours, photographs or anything derived from one, cost values
 (only a tier bucket), wardrobe names, account names, handles, email addresses.

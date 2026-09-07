@@ -33,6 +33,7 @@ const ROUTE_TABLE: Route[] = [
   { path: '/furniture/:id', name: 'a place' },
   { path: '/calendar', name: 'the calendar' },
   { path: '/events', name: 'events' },
+  { path: '/events/style', name: 'an outfit for an event' },
   { path: '/ledger', name: 'the ledger' },
   { path: '/wishlist', name: 'the wishlist' },
   { path: '/compare', name: 'before you buy' },

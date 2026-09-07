@@ -64,15 +64,11 @@
       Closet → `src/components/PackingListModal.tsx` (the modal and the density
       line), `src/pages/Closet.tsx` (the button that opens it)
 - [x] Cost engine test suite (`scripts/test-cost-engine.mjs`) wired into `npm run verify`
-- [ ] Back-office portal. The first attempt (`src/pages/Admin.tsx`,
-      `src/lib/admin.ts`, `scripts/test-admin-portal.mjs`) has been removed from
-      the tree; the portal is being rebuilt as a separate build
-      (`portal.html`, `src/portal/`, `vite.portal.config.ts`). Nothing here
-      shipped inside the app.
+- [x] Separate operator portal: authenticated statistics and explicit image/text/event tests across the five relay models, with usage-based cost estimates. Public shell publication authorized on 2026-09-07; consumer chunks and offline cache remain separate. See `docs/55-admin-ai-workbench.md`.
 - [x] Packing list test suite (`scripts/test-packing.mjs`) wired into `npm run verify`
 - [x] Automated a11y + contrast regression checks in `npm run verify` →
       `scripts/test-a11y.mjs`. Not in CI: `.github/workflows/deploy.yml` runs
-      lint, migrate, demo, intake and the build, and nothing else.
+      lint, migrate, demo, intake, model cost/admin auth checks, isolated app and portal builds.
 - [x] Service worker for true offline. `public/sw.js` carries two placeholders
       that `vite.config.ts` rewrites at `closeBundle`, and the build fails if
       either survives — a worker that precaches nothing cannot ship.
@@ -99,12 +95,12 @@ the app development plan (native tracks, backend, tooling) in
 ## Non-negotiables (any future work must hold these)
 
 1. **Local-first, forever.** No accounts, no cloud sync, no telemetry — *that
-   sentence is the rule as first written, and it has since been amended twice.
-   The two amendments below are what binds; the sentence above is history.*
+   sentence is the rule as first written, and it has since been amended.
+   The amendments below are what binds; the sentence above is history.*
    *(Amended 2026-08-18 by owner direction: an optional account is admitted, and
    it does one job only — keeping a synced copy of a wardrobe's record on
    Supabase so a second device can open it. Sync is opt-in per wardrobe and off
-   by default; a wardrobe that never opts in never leaves the device, and
+   by default; a wardrobe that never opts in has no synced copy, and
    everything works with no account at all.)*
    *(Amended 2026-08-28 by owner direction: a third exception is admitted, and
    only for the alpha — an OPT-IN usage record. A tester is asked once, in a
@@ -118,6 +114,14 @@ the app development plan (native tracks, backend, tooling) in
    the collector is removed, not merely disabled. The vocabulary, the consent
    gate and the bounded buffer are `src/lib/usage.ts`; the full account of what
    is and is not kept is [`docs/45-what-almari-records.md`](docs/45-what-almari-records.md).)*
+   *(Amended 2026-09-07 by owner direction for event styling: after a disclosure
+   and an explicit request, AI may receive the event brief, weather and a closed
+   selection of available garment metadata. Photographs, costs, brands, garment
+   notes, account details and chat history are excluded from styling requests.
+   A city search and forecast may contact Open-Meteo only on an explicit press;
+   no device geolocation or background refresh. Manual weather remains available.
+   These requests are separate from the alpha usage record, whose closed
+   vocabulary and prohibition on free text remain unchanged.)*
 2. **No commerce.** No shop links, affiliate codes, or retailer suggestions — a
    feature that talks you out of buying cannot profit from buying.
 3. **No shame mechanics.** No guilt screens, red alarm colors on low-wear pieces, or

@@ -1,184 +1,31 @@
-/**
- * THE BOARD'S ONLY NETWORK CODE — two live services, and nothing local.
- *
- * This is a deliberate COPY of the server-facing half of src/lib/admin.ts
- * rather than an import of it. admin.ts pulls ./accounts, ./sync, ./photoStore,
- * ./exportDoc, ./personaWardrobe and @almari/shared/migrate — the entire
- * consumer wardrobe layer, generated sample closets included, plus
- * module-scope localStorage reads — into a bundle that has no wardrobe and is
- * served from a different origin. A later wave lifts the shared half out of
- * admin.ts so both sides import one copy; until then the duplication is
- * bounded, named here, and cheaper than the alternative.
- *
- * WHAT THIS FILE MAY NEVER GAIN: a reader of this device's localStorage. The
- * board reports the ALPHA, and the operator's own browser is not the alpha.
- * The previous portal reported the operator's own wardrobes — sample personas
- * and all — under the heading "Product analytics", and that is the specific
- * failure this separation exists to correct.
- */
-
-/* ==================== the relay ==================== */
-
-/**
- * The relay's address. The source of truth is RELAY_ENDPOINT in
- * src/lib/anthropic.ts, which keeps it module-private on purpose; it is
- * re-declared here so the board can knock on the same door the intake walks
- * through. If one moves, move both.
- */
-export const RELAY_ENDPOINT =
-  'https://wvupsqfevlrmhqfjreyx.supabase.co/functions/v1/ai-proxy';
-
-/** The whole probe: one sentence out, one line back. Nothing else is sent. */
-const PROBE_PROMPT = 'Reply with exactly: relay test ok';
-
-export interface RelayService {
-  id: string;
-  label: string;
-  model: string;
-  /** Which response shape comes back — the request body is the same either way. */
-  shape: 'anthropic' | 'openai';
-  maxTokens: number;
-}
-
-/**
- * The four models the relay can route to. Kimi K3 is a reasoning model that
- * spends its thinking from the same token budget as the answer, so its probe
- * carries the 8000-token ceiling the intake uses — 512 would be eaten whole by
- * the thinking and the answer would arrive empty.
- */
+/** Operational stats and explicit authenticated probes; no browser storage or wardrobe imports. */
+import { runModel, ModelRunError } from './workbenchClient';
+import { normalizeUsage, estimateModelCost } from './modelCost';
+import type { ModelId } from './modelCatalog';
+export interface RelayService { id: string; label: string; model: ModelId; maxTokens: number }
 export const RELAY_SERVICES: RelayService[] = [
-  { id: 'fable', label: 'Claude Fable 5', model: 'claude-fable-5', shape: 'anthropic', maxTokens: 512 },
-  { id: 'opus', label: 'Claude Opus 5', model: 'claude-opus-5', shape: 'anthropic', maxTokens: 512 },
-  { id: 'gemini', label: 'Gemini 3.7 Flash', model: 'gemini-3.7-flash', shape: 'openai', maxTokens: 512 },
-  { id: 'kimi', label: 'Kimi K3', model: 'k3', shape: 'openai', maxTokens: 8000 },
+  { id: 'fable', label: 'Claude Fable 5.1', model: 'claude-fable-5-1', maxTokens: 8000 },
+  { id: 'opus', label: 'Claude Opus 5', model: 'claude-opus-5', maxTokens: 8000 },
+  { id: 'gemini', label: 'Gemini 3.7 Flash', model: 'gemini-3.7-flash', maxTokens: 8000 },
+  { id: 'kimi', label: 'Kimi K3', model: 'k3', maxTokens: 8000 },
 ];
-
-/**
- * healthy      — HTTP 200, an answer came back.
- * unconfigured — the relay answered 503 "not configured": the house has not
- *                set that provider's key. Its own calm state, not a failure.
- * failed       — any other HTTP answer.
- * unreachable  — the network itself refused; there is no HTTP status.
- */
 export type ProbeVerdict = 'healthy' | 'unconfigured' | 'failed' | 'unreachable';
-
-export interface ProbeResult {
-  verdict: ProbeVerdict;
-  /** null when the network never answered. */
-  status: number | null;
-  latencyMs: number;
-  /** The first line of the model's answer, or the trouble in one phrase. */
-  answer: string;
-}
-
-function firstLine(text: string): string {
-  return (
-    text
-      .split('\n')
-      .map(line => line.trim())
-      .find(line => line.length > 0) ?? ''
-  );
-}
-
-/** The answer's text, read by the shape the provider speaks. */
-function probeAnswer(service: RelayService, json: unknown): string {
-  if (service.shape === 'anthropic') {
-    const blocks = (json as { content?: Array<{ type?: string; text?: string }> }).content ?? [];
-    return firstLine(blocks.filter(b => b.type === 'text').map(b => b.text ?? '').join('\n'));
-  }
-  const content = (json as {
-    choices?: Array<{ message?: { content?: string | Array<{ type?: string; text?: string }> } }>;
-  }).choices?.[0]?.message?.content;
-  // OpenAI-compatible content is a string; some providers send typed parts.
-  const text =
-    typeof content === 'string'
-      ? content
-      : (content ?? []).filter(b => b.type === 'text').map(b => b.text ?? '').join('\n');
-  return firstLine(text);
-}
-
-/**
- * One knock on the relay for one model. The request body is the tiny probe and
- * nothing else — no photograph, no closet, no key, because the relay holds the
- * keys server-side.
- *
- * A probe spends the house's own tokens, which is why nothing in this board
- * ever fires one on mount or on a timer. It is asked for, or it does not happen.
- */
-export async function probeRelay(service: RelayService): Promise<ProbeResult> {
+export interface ProbeResult { verdict: ProbeVerdict; status: number | null; latencyMs: number; answer: string; costLabel?: string; costUsd?: number | null }
+export async function probeRelay(service: RelayService, token: string): Promise<ProbeResult> {
   const started = performance.now();
-  let res: Response;
   try {
-    res = await fetch(RELAY_ENDPOINT, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        model: service.model,
-        max_tokens: service.maxTokens,
-        messages: [{ role: 'user', content: PROBE_PROMPT }],
-      }),
-    });
-  } catch {
-    return {
-      verdict: 'unreachable',
-      status: null,
-      latencyMs: Math.round(performance.now() - started),
-      answer: 'The relay could not be reached from here.',
-    };
-  }
-  const latencyMs = Math.round(performance.now() - started);
-  const body = await res.text().catch(() => '');
-  if (res.status === 200) {
-    let answer = '';
-    try {
-      answer = probeAnswer(service, JSON.parse(body));
-    } catch {
-      /* a 200 that does not parse is still a 200; the answer line says so */
-    }
-    return { verdict: 'healthy', status: 200, latencyMs, answer: answer || 'The answer came back empty.' };
-  }
-  if (res.status === 503 && /not configured/i.test(body)) {
-    return { verdict: 'unconfigured', status: 503, latencyMs, answer: 'The house has not set this key yet.' };
-  }
-  return {
-    verdict: 'failed',
-    status: res.status,
-    latencyMs,
-    answer: firstLine(body) || `The relay answered ${res.status}.`,
-  };
-}
-
-/* ==================== the stats service ==================== */
-
-export const ADMIN_STATS_ENDPOINT =
-  'https://wvupsqfevlrmhqfjreyx.supabase.co/functions/v1/admin-stats';
-
-/**
- * sessionStorage, deliberately: the token leaves when the tab closes.
- *
- * Note that the board runs on its own origin, so a token typed into the app's
- * old #/admin page is NOT visible here, and never was. That is correct, and the
- * copy on the page says so rather than implying a shared key.
- */
-export const ADMIN_TOKEN_KEY = 'almari-admin-token';
-
-export function loadAdminToken(): string {
-  try {
-    return window.sessionStorage.getItem(ADMIN_TOKEN_KEY) ?? '';
-  } catch {
-    return '';
+    const run = await runModel({ modelId: service.model, token, system: '', prompt: 'Reply with exactly: relay test ok', maxTokens: service.maxTokens });
+    const cost = estimateModelCost(service.model, normalizeUsage(service.model, run.raw), run.requestedAt);
+    return { verdict: run.text.trim() ? 'healthy' : 'failed', status: 200, latencyMs: run.latencyMs,
+      answer: run.text.trim().split('\n')[0] || 'The answer came back empty.', costLabel: cost.label, costUsd: cost.usd };
+  } catch (error) {
+    const status = error instanceof ModelRunError ? error.status : null;
+    return { verdict: status === 503 ? 'unconfigured' : status ? 'failed' : 'unreachable', status,
+      latencyMs: Math.round(performance.now() - started), answer: error instanceof Error ? error.message : 'The relay could not be reached.',
+      costLabel: 'Cost unavailable', costUsd: null };
   }
 }
-
-export function saveAdminToken(token: string): void {
-  try {
-    if (token.trim()) window.sessionStorage.setItem(ADMIN_TOKEN_KEY, token.trim());
-    else window.sessionStorage.removeItem(ADMIN_TOKEN_KEY);
-  } catch {
-    /* private mode — the token holds for this render only */
-  }
-}
-
+export const ADMIN_STATS_ENDPOINT = 'https://wvupsqfevlrmhqfjreyx.supabase.co/functions/v1/admin-stats';
 export interface AlphaWardrobeRow {
   id: string;
   user_id: string;
@@ -241,10 +88,67 @@ export type AlphaStatsResult =
   | { kind: 'absent' }
   | { kind: 'failed'; status: number };
 
+type StatsRecord = Record<string, unknown>;
+const statsRecord = (value: unknown): value is StatsRecord =>
+  value !== null && typeof value === 'object' && !Array.isArray(value);
+const statsCount = (value: unknown): value is number =>
+  typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
+const statsId = (value: unknown): value is string => typeof value === 'string' && value.trim().length > 0;
+const nullableText = (value: unknown): value is string | null => value === null || typeof value === 'string';
+const statsStamp = (value: unknown): value is string => {
+  if (typeof value !== 'string'
+    || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?(?:Z|[+-]\d{2}:\d{2})$/.test(value)
+    || !Number.isFinite(Date.parse(value))) return false;
+  // Date.parse otherwise rolls February 30 into March instead of rejecting it.
+  const day = value.slice(0, 10);
+  const midnight = Date.parse(`${day}T00:00:00Z`);
+  return Number.isFinite(midnight) && new Date(midnight).toISOString().slice(0, 10) === day;
+};
+const nullableStamp = (value: unknown): value is string | null => value === null || statsStamp(value);
+
+/** A 200 response is not evidence of zero people. Validate every required field
+ * before rendering counts, and project only the service's operational schema.
+ * An absent roster is the one supported older-service omission; a present but
+ * malformed roster must never look like an older service or an empty alpha.
+ */
+function parseAlphaStats(value: unknown): AlphaStats | null {
+  if (!statsRecord(value) || !statsStamp(value.generatedAt) || !statsCount(value.users)
+    || !statsCount(value.profiles) || !Array.isArray(value.wardrobes)) return null;
+  const wardrobes: AlphaWardrobeRow[] = [];
+  for (const row of value.wardrobes) {
+    if (!statsRecord(row) || !statsId(row.id) || !statsId(row.user_id)
+      || !statsStamp(row.updated_at) || !statsCount(row.bytes)
+      || !(row.v === undefined || row.v === null || statsCount(row.v) || statsId(row.v))) return null;
+    wardrobes.push({ id: row.id, user_id: row.user_id, updated_at: row.updated_at, bytes: row.bytes,
+      ...(row.v === undefined ? {} : { v: row.v as number | string | null }) });
+  }
+  const hasRoster = Object.prototype.hasOwnProperty.call(value, 'roster');
+  if (hasRoster && !Array.isArray(value.roster)) return null;
+  const roster: AlphaPerson[] = [];
+  for (const row of hasRoster ? value.roster as unknown[] : []) {
+    if (!statsRecord(row) || !statsId(row.id) || !nullableText(row.email)
+      || !nullableStamp(row.created_at) || !nullableStamp(row.last_sign_in_at)
+      || typeof row.confirmed !== 'boolean' || !statsCount(row.wardrobes)
+      || !statsCount(row.bytes) || !nullableStamp(row.lastSync)) return null;
+    let profile: AlphaPerson['profile'] = null;
+    if (row.profile !== null) {
+      if (!statsRecord(row.profile) || !nullableText(row.profile.display_name)
+        || !nullableText(row.profile.handle) || !nullableStamp(row.profile.created_at)) return null;
+      profile = { display_name: row.profile.display_name, handle: row.profile.handle,
+        created_at: row.profile.created_at };
+    }
+    roster.push({ id: row.id, email: row.email, created_at: row.created_at,
+      last_sign_in_at: row.last_sign_in_at, confirmed: row.confirmed, profile,
+      wardrobes: row.wardrobes, bytes: row.bytes, lastSync: row.lastSync });
+  }
+  return { generatedAt: value.generatedAt, users: value.users, profiles: value.profiles,
+    wardrobes, roster, hasRoster };
+}
+
 export async function fetchAlphaStats(token: string): Promise<AlphaStatsResult> {
   let res: Response;
   try {
-    res = await fetch(ADMIN_STATS_ENDPOINT, { headers: { 'x-admin-token': token } });
+    res = await fetch(ADMIN_STATS_ENDPOINT, { cache: 'no-store', credentials: 'omit', headers: { 'x-admin-token': token } });
   } catch {
     return { kind: 'absent' };
   }
@@ -252,22 +156,8 @@ export async function fetchAlphaStats(token: string): Promise<AlphaStatsResult> 
   if (res.status === 404) return { kind: 'absent' };
   if (!res.ok) return { kind: 'failed', status: res.status };
   try {
-    const json = (await res.json()) as Partial<AlphaStats>;
-    return {
-      kind: 'ok',
-      stats: {
-        generatedAt: typeof json.generatedAt === 'string' ? json.generatedAt : '',
-        users: typeof json.users === 'number' ? json.users : 0,
-        profiles: typeof json.profiles === 'number' ? json.profiles : 0,
-        wardrobes: Array.isArray(json.wardrobes) ? json.wardrobes : [],
-        roster: Array.isArray(json.roster) ? json.roster : [],
-        // The KEY's presence, not the array's length. A service that predates
-        // the roster sends no key at all, and rendering that as an empty alpha
-        // would be the board's worst possible lie: "nobody signed up" when the
-        // truth is "this board asked a question the service does not answer".
-        hasRoster: Object.prototype.hasOwnProperty.call(json, 'roster'),
-      },
-    };
+    const stats = parseAlphaStats(await res.json());
+    return stats ? { kind: 'ok', stats } : { kind: 'failed', status: res.status };
   } catch {
     return { kind: 'failed', status: res.status };
   }

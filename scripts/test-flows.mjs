@@ -49,7 +49,7 @@ await build({
   logLevel: 'error',
 });
 const { FEED_ENABLED } = await import(pathToFileURL(join(flagDir, 'flags.js')).href);
-const { barSlots } = await import(pathToFileURL(join(flagDir, 'nav.js')).href);
+const { webBarSlots } = await import(pathToFileURL(join(flagDir, 'nav.js')).href);
 const { guidedPaths } = await import(pathToFileURL(join(flagDir, 'pageGuides.js')).href);
 
 /** The Look Book's addresses on the web. Hidden together or shown together. */
@@ -319,7 +319,7 @@ const survey = page => page.evaluate(() => {
   await page.waitForTimeout(500);
 
   /* --- the rail IS the roster (docs/42 §7) --- */
-  const slots = barSlots().slice(0, 4);
+  const slots = webBarSlots();
   const rail = await page.evaluate(() => {
     const bar = [...document.querySelectorAll('nav')]
       .find(n => getComputedStyle(n).position === 'fixed');
@@ -342,11 +342,11 @@ const survey = page => page.evaluate(() => {
   await page.waitForTimeout(400);
   const sheet = await page.evaluate(() =>
     [...document.querySelectorAll('div.pane a[href]')].map(a => a.getAttribute('href')));
-  check('More carries Outfits, which left the rail to seat the roster',
-    sheet.includes('#/outfits'), sheet.join(' '));
+  check('More carries Profile while Outfits has a main tab',
+    sheet.includes('#/profile') && !sheet.includes('#/outfits'), sheet.join(' '));
   if (FEED_ENABLED) {
-    check('flag on: the House moved to More, displaced by the Look Book',
-      sheet.includes('#/profile'), sheet.join(' '));
+    check('flag on: conversations remain in More when Looks occupies the third tab',
+      sheet.includes('#/chats'), sheet.join(' '));
   } else {
     check('flag off: no door in More opens on the Look Book',
       !sheet.includes('#/feed') && !sheet.includes('#/explore'), sheet.join(' '));

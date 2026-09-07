@@ -224,6 +224,11 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   // flipped on sign-in.
   useEffect(() => {
     applyTheme(theme);
+    if (theme !== 'system') return;
+    const preference = window.matchMedia('(prefers-color-scheme: dark)');
+    const refresh = () => applyTheme('system');
+    preference.addEventListener('change', refresh);
+    return () => preference.removeEventListener('change', refresh);
   }, [theme]);
 
   // First paint: read the registry, adopting any pre-accounts closet.

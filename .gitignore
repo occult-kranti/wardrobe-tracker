@@ -38,3 +38,6 @@ supabase/.temp/
 # Source packs (large, and the generated output is committed)
 *.zip
 scripts/fill-states.json
+
+# Separately built operator shell; source stays in src/portal.
+dist-portal/

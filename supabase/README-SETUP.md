@@ -6,10 +6,10 @@ the person running the house — to switch on the two optional pieces:
 1. **The account** (Supabase Auth + the `wardrobes` table) so a wardrobe can
    keep a copy of its record on more than one device.
 2. **The AI relay** (the `ai-proxy` edge function) so cataloguing a
-   photograph works without anyone needing their own key.
+   photograph and requesting an event outfit work without a personal key.
 
 Everything below is done once. Nothing here is a secret except your
-Kimi (Moonshot AI) key, which is never written in this repo — it goes
+Anthropic key (and any optional provider keys), which is never written in this repo — it goes
 straight into Supabase's secret store in step 4.
 
 ---
@@ -57,9 +57,13 @@ writes a local `.gitignore`d reference, not a secret.
 ## 4. The relay: key in, function out
 
 ```sh
-# Your own Kimi (Moonshot AI) key goes here — the value itself, never written
-# to any file in this repo.
-supabase secrets set KIMI_KEY=<your-kimi-key>
+# The default model is Claude Fable 5.1. Put the Anthropic key in the secret
+# store; never write its value in this repo.
+supabase secrets set ANTHROPIC_KEY=<your-anthropic-key>
+
+# Optional, only if the service board should also probe these providers:
+# supabase secrets set KIMI_KEY=<your-kimi-key>
+# supabase secrets set GEMINI_KEY=<your-google-key>
 
 supabase functions deploy ai-proxy
 ```
@@ -79,29 +83,50 @@ supabase secrets list
 ```
 
 **Verify the relay end to end** — this asks the model to say a word, and a
-working relay answers with JSON containing it. The body is an ordinary
-OpenAI-compatible chat-completions request, exactly what the app sends; the
-relay adds the key:
+working relay answers with JSON containing it. This is an Anthropic Messages
+request for the default model; the relay adds the key:
 
 ```sh
 curl -X POST https://wvupsqfevlrmhqfjreyx.supabase.co/functions/v1/ai-proxy \
   -H 'content-type: application/json' \
-  -d '{"model":"k3","max_tokens":8000,"messages":[{"role":"user","content":[{"type":"text","text":"Reply with the single word: hem"}]}]}'
+  -d '{"model":"claude-fable-5-1","max_tokens":8000,"messages":[{"role":"user","content":"Reply with the single word: hem"}]}'
 ```
 
-- A `200` with `choices[0].message.content` naming the word: the relay works.
-  (Kimi K3 is a reasoning model — the reasoning rides along in
-  `reasoning_content` and spends from the same token budget, which is why
-  `max_tokens` is generous. The answer is always `message.content`.)
+- A `200` with a `content` block of `type: "text"` naming the word: the relay
+  works. Thinking blocks are not the answer. Fable 5.1 has always-on adaptive
+  thinking, so leave room for thinking and text in `max_tokens` and omit
+  sampling parameters, thinking overrides and forced tool choice.
 - `503` with "not configured": step 4's `secrets set` has not happened (or the
   function was deployed before the secret — redeploy).
-- `401` from upstream: the Kimi key is wrong or expired — set it again.
+- `401` from upstream: the Anthropic key is wrong or expired — set it again.
 - A CORS error from the browser but `200` from curl: the function is
   enforcing JWT — redeploy with `--no-verify-jwt` as above.
 
 Then in the app: Settings → Catalogue from photos → Open the bench, and read
 one of the sample photographs. The network panel says exactly where the
 photograph goes before any button is pressed.
+
+For the event-styling alpha, deploy the updated relay **before publishing the
+new app build**. The allowlist now includes `claude-fable-5-1` and retains
+`claude-fable-5` for cached clients. An old relay will refuse the new model;
+the app explains that the relay needs updating and does not silently switch
+models. A personal endpoint remains the person's explicit choice; a saved
+legacy Anthropic key keeps its Opus 5 / Haiku 4.5 fallback and the screen
+discloses it.
+
+Event styling sends only the reviewed event brief, supplied weather and
+available garment descriptions, after an explicit request. No photograph,
+cost, brand, notes, account record or usage event is included by this feature.
+The function adds no logging or storage. The new text client has cancellation,
+a 90-second timeout and a bounded response. It validates returned garment IDs
+before the app offers to save an outfit.
+
+Offline verification: `node scripts/test-event-stylist.mjs` and
+`node scripts/test-relay.mjs`. After deployment, the explicit network probe is
+`node scripts/test-relay.mjs --live`; it now probes Fable 5.1. Test one event
+request and one photo intake in the app, including a request that fails, before
+inviting testers. Mocked client tests cannot establish production model access
+or the quality of a live styling answer.
 
 ## 5. Sync, end to end
 
@@ -125,7 +150,8 @@ synced wardrobe removes its row.
 | "Could not reach the account service" | offline, or project paused | check the dashboard; the app still works |
 | Sign-up asks for email confirmation | step 2 skipped | disable "Confirm email" |
 | Wardrobe does not appear on device two | RLS not applied, or sync set to "on this device" | rerun setup.sql; check Wardrobes → Details |
-| Relay `503` | `KIMI_KEY` unset | step 4 |
+| Relay `503` | `ANTHROPIC_KEY` unset for the default model | step 4 |
+| Relay `400` naming Fable 5.1 | deployed allowlist predates the new client | deploy the updated `ai-proxy` function |
 | Relay `401` from browser only | JWT enforced | `--no-verify-jwt` deploy |
 
 ## 6. The alpha usage record (optional, opt-in)
@@ -201,3 +227,15 @@ check (the Pages origin and localhost pass; other browser origins get 403;
 requests with no Origin — servers, the test suite — pass). A hosting move to
 any new origin must extend the Origin list first. Belt-and-braces: keep spend
 caps set in the Anthropic and Google consoles.
+
+## Operator AI workbench
+
+The public portal shell at /portal/ uses the existing ADMIN_TOKEN secret for every stats or AI test request. The browser keeps it only in memory; re-enter it after reload. Do not place it in Git, a URL or a screenshot.
+
+Deploy the new authenticated gate with:
+
+```sh
+supabase functions deploy admin-ai --no-verify-jwt
+```
+
+The function checks x-admin-token before reading a body or contacting the relay. It accepts only the five supported image-understanding/text models, embedded PNG/JPEG/WebP images, an 8 MB body and at most 16,000 output tokens. It keeps no prompts, images or responses. Provider keys stay in ai-proxy. An unauthenticated POST must return 401 (503 only when ADMIN_TOKEN has not been configured). Verify local clamps with npm run test:adminai. See [the workbench](../docs/55-admin-ai-workbench.md) for cost and privacy boundaries.

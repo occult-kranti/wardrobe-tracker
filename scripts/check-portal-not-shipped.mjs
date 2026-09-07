@@ -1,42 +1,8 @@
 #!/usr/bin/env node
-/**
- * THE PORTAL IS NOT PUBLISHED, AND THIS IS WHAT MAKES THAT TRUE RATHER THAN
- * MERELY CURRENTLY THE CASE.
- *
- * Owner's ruling, 2026-08-28: the project-lead board stays on the owner's own
- * machine. It is not deployed.
- *
- * Today that holds by omission — .github/workflows/deploy.yml runs `npm run
- * build`, which builds only index.html, and never runs `build:portal`. Omission
- * is a weak guarantee. `deploy.yml` force-pushes the WHOLE of dist/ to
- * gh-pages, so anything that lands in dist/ ships; and the board's only lock is
- * one static ADMIN_TOKEN with no rotation, behind an endpoint whose CORS is
- * open. One helpful line in a workflow file, or one `npm run build:portal`
- * before a deploy on somebody's laptop, publishes an admin dashboard to the
- * open web. Nothing in the build would have said a word.
- *
- * So this check states the rule and enforces it, and it enforces TWO things
- * that are easy to confuse:
- *
- *   1. THE BOARD IS NOT IN THE SHIPPED BUILD. dist/ carries no portal.html and
- *      no dist/portal/ directory. (dist/portal is where `build:portal` writes,
- *      and `npm run build` empties dist/ — so in the normal order it is already
- *      gone. This catches the abnormal order.)
- *
- *   2. THE CONSUMER APP CARRIES NONE OF THE OPERATOR'S TOOLING. No chunk of
- *      the shipped bundle mentions the stats endpoint, the admin token key, or
- *      the admin header. This is the stronger and more interesting half: it is
- *      how we know the split is real rather than cosmetic. If somebody ever
- *      imports the portal's stats client from a page — the obvious "reuse" —
- *      the app would start shipping the operator's plumbing to fifty testers,
- *      and this is the line that stops it.
- *
- * It is deliberately NOT a check that the portal builds. The portal has its own
- * suite (scripts/test-portal.mjs) for that.
- *
- * Usage:
- *   node scripts/check-portal-not-shipped.mjs              check dist/
- *   node scripts/check-portal-not-shipped.mjs --red-proof  prove the check bites
+/** Consumer isolation gate, retained command name for existing automation.
+ * Owner authorized a public /portal/ shell on 2026-09-07. It is built into
+ * dist-portal and copied only AFTER this gate and the consumer precache build.
+ * This check continues to reject operator modules in the consumer artifact.
  */
 import { existsSync, readFileSync, readdirSync, statSync, mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -55,6 +21,7 @@ const check = (label, ok, detail = '') => {
 /** Strings that belong to the operator's board and must never ship to a tester. */
 const OPERATOR_MARKERS = [
   'functions/v1/admin-stats',
+  'functions/v1/admin-ai',
   'almari-admin-token',
   'x-admin-token',
 ];
@@ -146,7 +113,7 @@ if (RED_PROOF) {
 console.log('');
 console.log(
   failed === 0
-    ? 'the board stays on the owner\'s machine: nothing in the build would publish it'
+    ? 'consumer artifact is isolated from the separately published operator shell'
     : `${failed} failed — a deploy from this build would ship the operator's board`,
 );
 process.exit(failed === 0 ? 0 : 1);

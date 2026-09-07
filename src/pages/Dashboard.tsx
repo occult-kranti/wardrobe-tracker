@@ -463,6 +463,10 @@ export default function Dashboard() {
   return (
     <div className="space-y-6">
       <Masthead title={greetingFor(new Date().getHours())} meta={dateMeta} />
+      <Link to="/events/style" className="flex flex-wrap items-center justify-between gap-2 border border-border bg-surface p-4 rounded-[2px] min-h-11">
+        <span className="text-[15px] text-text">What should I wear?</span>
+        <span className="text-[13px] text-accent">An outfit for your event, with AI</span>
+      </Link>
 
       {/* A matured plan asks its question before anything else on the page.
           Saying yes is the fastest log in the app — the outfit was already

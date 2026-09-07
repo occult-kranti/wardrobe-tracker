@@ -1,30 +1,12 @@
 # Handoff — Almari
 
-> **Current as of 2026-09-04.** Written at the close of the monitoring-and-consent
-> sprint. The previous handoff here was the Toile-era brief; git history keeps it.
-> Read this alongside `CLAUDE.md` (the repo law) — where they disagree, believe
-> CLAUDE.md and the newest numbered doc.
+> Updated 2026-09-07 for the Rose atelier, event stylist and operator workbench release. The owner authorized commit, GitHub merge and publication in this session. See [current links](docs/49-alpha-links.md) and the [repository guide](docs/README.md) for the active surfaces and commands. The numbered sprint details below retain useful background.
 
-Paste this into a fresh session, or read it as the human it is addressed to:
-the owner, who commits, pushes, and holds every secret.
+## 1 · Current implementation
 
----
+The web alpha defaults to warm Rose atelier (`gilt`), uses Outfits in the main navigation and Profile in More, and includes weather-aware event styling with Claude Fable 5.1. Explicit stored theme choices still win. Safe Obsidian-style corner ornaments replace overlapping nested frames across all six themes.
 
-## 1 · Where things stand
-
-**`main` is green and FOUR COMMITS AHEAD OF ORIGIN — nothing is pushed.**
-Pushing is the owner's act, and the deploy workflow fires on it:
-
-```
-c5c1e68  The two plans of record are corrected, not excused
-ff7ab72  The consent note a tester signs now counts to three
-98bc391  docs/45 catches up with the size bands and the floored clock
-9717e22  The house learns to watch itself, and says exactly what it watches
-```
-
-Green at handoff: `npm run verify` (30 suites, exit 0), `test:flows`,
-`test:features`, `test:portal` (18+ checks), `test:usagelive` (31 checks).
-Every guard suite carries a red-proof; none of them can rot into a green stamp.
+The separate portal supports operational statistics and explicit model/image comparisons. Its public shell is staged under `/portal/`; stats and AI calls require `ADMIN_TOKEN`. Token and test material stay in memory. Dated prices and returned usage produce estimates, with unknown costs shown explicitly. Publication and validation status live in docs/49 and the latest release record.
 
 ### What the sprint shipped, in one screen
 
@@ -39,13 +21,7 @@ Every guard suite carries a red-proof; none of them can rot into a green stamp.
    joined to the account-named wardrobe row. An adversarial review broke three
    of the four rules with live reproductions; every hole is closed and each
    carries the regression case that would have caught it.
-2. **The project lead's portal** — a separate Vite build (`vite.portal.config.ts`,
-   `src/portal/`), served locally, never deployed. Shows the count, the roster
-   of who arrived (email, joined, last seen, profile made, wardrobes synced),
-   the synced wardrobes, and relay probes. Nothing fires on mount; every empty
-   state names which kind of empty it is. `check-portal-not-shipped.mjs` fails
-   the build (and the deploy) if a portal artifact or any operator tooling ever
-   reaches `dist/` — the separation is enforced, not remembered.
+2. **The project lead’s portal** — separate build (`vite.portal.config.ts`, `src/portal/`). The 2026-09-07 owner direction replaces the former local-only ruling: publish the static shell, keep operational reads and test calls authenticated, and keep it outside consumer chunks/precache. Nothing fires on mount.
 3. **The demolition** — the previous agent's uncommitted admin rewrite is gone:
    four fabrication modules (hardcoded audit scores, an in-memory "telemetry"
    store) archived under `docs/attic/` and removed; the `/admin` route struck
@@ -69,7 +45,7 @@ Every guard suite carries a red-proof; none of them can rot into a green stamp.
 |---|---|
 | The app (testers) | https://occult-kranti.github.io/wardrobe-tracker/ |
 | The tester door | https://occult-kranti.github.io/wardrobe-tracker/alpha.html |
-| The portal (owner only) | `npm run dev:portal` → http://localhost:4175/ — local by ruling, not deployed |
+| Operator portal | https://occult-kranti.github.io/wardrobe-tracker/portal/ — public shell, authenticated calls |
 
 ---
 
@@ -204,8 +180,7 @@ dev-client decision first.
 
 ## 5 · Open questions only the owner can answer
 
-1. Deploy the portal later? If ever: token rotation policy + CORS narrowed
-   first (the ruling today is local-only, and the build enforces it).
+1. Portal publication is authorized as of 2026-09-07; access to its data and AI calls still requires the existing admin secret.
 2. Retention window and the delete-a-tester path — 90 days is written as
    intention; make it real in W1 or strike it.
 3. `company/index.html` still says "no accounts, no cloud" in two places —
@@ -220,8 +195,7 @@ dev-client decision first.
 
 ## 6 · Gotchas the next session should not rediscover
 
-- **Build order:** `npm run build` empties `dist/`, deleting `dist/portal`.
-  App build first, portal build second, always.
+- **Build order:** consumer build and isolation gate first; portal builds independently into `dist-portal/`; `stage:portal` copies only that public shell afterward. A later app build empties the staged `dist/portal/`, so stage again before publishing.
 - **`docs/attic/` is an archive of removed code** — excluded from
   check-promises on purpose; never "fix" it.
 - The dated records (docs/24/28/29/39) carry a superseded banner and keep

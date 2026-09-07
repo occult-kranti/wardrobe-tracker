@@ -4,6 +4,10 @@ import '../index.css';
 import './portal.css';
 import App from './App';
 
+// Remove this portal's former session-persisted credential without reading it.
+// New credentials live only in React state, including on the published origin.
+try { window.sessionStorage.removeItem('almari-admin-token'); } catch { /* storage can be refused */ }
+
 /**
  * THE BOARD'S ENTRY, AND THE THREE THINGS IT DELIBERATELY DOES NOT DO.
  *

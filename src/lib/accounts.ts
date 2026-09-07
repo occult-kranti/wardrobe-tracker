@@ -81,14 +81,14 @@ export function saveActiveId(activeId: string | null): void {
 }
 
 /**
- * The rooms, in the order the theme control walks them. The house opens in the
- * dye house and steps into the obsidian next; the rest follow.
+ * The rooms, in the order the theme control walks them. Rose atelier opens
+ * the web alpha; its existing gilt storage ID keeps saved preferences valid.
  *
  * The default is the first entry rather than a second constant, so the default
  * and the cycle order cannot drift apart — they used to, and an unknown stored
  * theme hit indexOf === -1 and wrapped the cycler to 'system'.
  */
-export const THEME_ORDER = ['dyehouse', 'obsidian', 'dark', 'salon', 'gilt', 'light', 'system'] as const;
+export const THEME_ORDER = ['gilt', 'dyehouse', 'obsidian', 'dark', 'salon', 'light', 'system'] as const;
 
 export const DEFAULT_THEME: Theme = THEME_ORDER[0];
 
@@ -98,7 +98,7 @@ export const DEFAULT_THEME: Theme = THEME_ORDER[0];
  * from dark to light mid-session.
  */
 export function loadTheme(): Theme {
-  const stored = read<{ theme?: Theme }>(THEME_KEY, {}).theme;
+  const stored = read<{ theme?: Theme } | null>(THEME_KEY, {})?.theme;
   return (THEME_ORDER as readonly string[]).includes(stored as string)
     ? (stored as Theme)
     : DEFAULT_THEME;
@@ -116,6 +116,8 @@ export function applyTheme(theme: Theme): void {
   const root = document.documentElement;
   if (theme === 'system') root.removeAttribute('data-theme');
   else root.setAttribute('data-theme', theme);
+  const background = getComputedStyle(root).getPropertyValue('--color-bg').trim();
+  if (background) document.querySelector('meta[name="theme-color"]')?.setAttribute('content', background);
 }
 
 /** The next room along, from wherever we are. */

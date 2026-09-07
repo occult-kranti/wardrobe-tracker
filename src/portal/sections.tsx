@@ -268,12 +268,14 @@ export function RelayHealth({
   services,
   probes,
   probing,
+  disabled = false,
   onProbe,
   onProbeAll,
 }: {
   services: RelayService[];
   probes: Record<string, ProbeResult | null>;
   probing: string | null;
+  disabled?: boolean;
   onProbe: (service: RelayService) => void;
   onProbeAll: () => void;
 }) {
@@ -281,7 +283,7 @@ export function RelayHealth({
     <Card>
       <div className="flex items-baseline justify-between gap-3 mb-4">
         <h2 className="type-label text-text">The relay</h2>
-        <Button compact onClick={onProbeAll}>
+        <Button compact onClick={onProbeAll} disabled={disabled || probing !== null}>
           Probe all
         </Button>
       </div>
@@ -316,12 +318,12 @@ export function RelayHealth({
                 ) : (
                   <span className="type-ledger text-[11px] text-text-2">not probed</span>
                 )}
-                <Button compact onClick={() => onProbe(service)}>
+                <Button compact onClick={() => onProbe(service)} disabled={disabled || probing !== null}>
                   Probe
                 </Button>
               </div>
               {probe ? (
-                <p className="w-full text-[13px] text-text-2 leading-relaxed">{probe.answer}</p>
+                <p className="w-full text-[13px] text-text-2 leading-relaxed">{probe.answer} {probe.costLabel ?? 'Cost unavailable for this probe.'}</p>
               ) : null}
             </div>
           );

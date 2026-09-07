@@ -1,5 +1,11 @@
 # The brand colour — the split of 2026-08-11
 
+> **Web alpha amendment, 2026-09-07 — owner direction.** Rose atelier now uses
+> a muted dark-rose interaction accent, light warm pink grounds and rose-gold
+> and silver ornament. Its palette supersedes the blue-only ruling below for
+> this theme; the other themes retain their palettes. Sealing wax remains a
+> separate token. [Measured palette and rationale](50-rose-atelier.md).
+
 *A documented judge pass, as `docs/05-brand-identity.md` requires for any amendment.*
 
 ## The ruling in one line

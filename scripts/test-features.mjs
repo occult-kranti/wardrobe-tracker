@@ -194,8 +194,8 @@ if (FEED_ENABLED) {
       && !/feed/i.test(stranded.text),
     '');
 }
-check('the door is already in the house theme, not the light room',
-  stranded.theme === 'dyehouse', `data-theme=${stranded.theme}`);
+check('the door opens in Rose atelier before a wardrobe is selected',
+  stranded.theme === 'gilt', `data-theme=${stranded.theme}`);
 
 /* THE FIRST VIEWPORT OF THE FIRST SCREEN.
 
@@ -621,8 +621,8 @@ check('the weather never asks for your location', !after.asked, '');
       warns: !!warn,
       declaredFirst: !!warn && !!send
         && !!(warn.compareDocumentPosition(send) & Node.DOCUMENT_POSITION_FOLLOWING),
-      namesRelay: /Almari.s relay/i.test(text),
-      namesModel: /Claude Fable by Anthropic/i.test(text),
+      namesRelay: /Almari(?:.s)? relay/i.test(text),
+      namesModel: /Claude Fable 5\.1 by Anthropic/i.test(text),
       serverKey: /holds the key on the server/i.test(text),
       saysLocal: /cutting, the background removal and the writing all happen on this/i.test(text),
       stillOffersPrompt: /Copy the prompt/i.test(text),
@@ -1137,14 +1137,14 @@ check('the weather never asks for your location', !after.asked, '');
   await page.goto(`${ORIGIN}/#/settings`, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(700);
   const rooms = await page.evaluate(() => {
-    const names = ['Dye house', 'Obsidian', 'Atelier', 'Salon', 'Gilding room', 'Pattern room', 'System'];
+    const names = ['Rose atelier', 'Dye house', 'Obsidian', 'Atelier', 'Salon', 'Pattern room', 'System'];
     const shown = [...document.querySelectorAll('button')]
       .map(b => (b.textContent || '').trim())
       .filter(t => names.includes(t));
     return shown;
   });
   check('the picker lists the rooms in the order the button walks them',
-    rooms.join(' · ') === 'Dye house · Obsidian · Atelier · Salon · Gilding room · Pattern room · System',
+    rooms.join(' · ') === 'Rose atelier · Dye house · Obsidian · Atelier · Salon · Pattern room · System',
     rooms.join(' · ') || 'no rooms found');
 
   // And the cycle's first step must be the same room the picker leads with.
@@ -1157,7 +1157,7 @@ check('the weather never asks for your location', !after.asked, '');
     await new Promise(r => setTimeout(r, 300));
     return { before, after: document.documentElement.getAttribute('data-theme') };
   });
-  check('and the house opens in the dye house', cycled.before === 'dyehouse', `data-theme=${cycled.before}`);
+  check('the app starts in Rose atelier and cycles to Dye house', cycled.before === 'gilt' && cycled.after === 'dyehouse', `data-theme=${cycled.before} → ${cycled.after}`);
 }
 
 /* ============ the obsidian room ============ */
@@ -1178,7 +1178,10 @@ check('the weather never asks for your location', !after.asked, '');
       artline2: s.getPropertyValue('--color-artline-2').trim(),
       silver: s.getPropertyValue('--color-silver').trim(),
       outline: ps?.outlineWidth ?? '',
-      ornament: (ps?.backgroundImage ?? '').includes('svg'),
+      ornament: Array.from(document.querySelectorAll('.card-frame > .plate-ornament')).some(svg => {
+        const bounds = svg.getBoundingClientRect();
+        return bounds.width > 0 && bounds.height > 0 && svg.querySelectorAll('path').length === 2;
+      }),
       sheen: getComputedStyle(document.documentElement).getPropertyValue('--sheen-strength').trim(),
     };
   });

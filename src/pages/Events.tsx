@@ -12,7 +12,7 @@ import {
 } from '@almari/shared/types';
 import { addDays, daysSince, todayLocal } from '@almari/shared/dates';
 import {
-  Button, Card, Chip, EmptyState, Field, Masthead, Modal, SectionTitle, inputClass,
+  Button, Card, Chip, EmptyState, Field, LinkButton, Masthead, Modal, SectionTitle, inputClass,
 } from '../components/ui';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { Basting, GarmentPlate, PlateEmptyOutfits } from '../components/art';
@@ -448,6 +448,7 @@ export default function Events() {
     return (
       <>
         <Masthead title="Events" />
+        <p className="my-4"><LinkButton to="/events/style" tone="tertiary">What should I wear? Ask AI</LinkButton></p>
         <Card>
           {/* §8.4: exactly one CTA on an empty screen — and it must exist.
               This state used to offer none, and nothing anywhere in the app
@@ -500,6 +501,7 @@ export default function Events() {
               {outfit ? (
                 <p className="type-ledger text-[11px] text-text-2 mt-1">{outfit.name}</p>
               ) : null}
+              {reservation.notes && <details className="text-[13px] text-text-2 mt-2"><summary className="min-h-11 flex items-center cursor-pointer underline">Styling notes</summary><p className="leading-relaxed whitespace-pre-wrap break-words">{reservation.notes}</p></details>}
 
               <div className="flex flex-wrap gap-2 mt-2.5">
                 {photoSrc(outfit?.imageUrl) ? (
@@ -514,6 +516,7 @@ export default function Events() {
 
               {!done ? (
                 <div className="mt-3 flex flex-wrap items-center gap-3">
+                  <LinkButton to={`/events/style?event=${encodeURIComponent(event.id)}&date=${reservation.date}`} compact>Ask AI for this day</LinkButton>
                   {gaps.length > 0 ? (
                     <p className="text-[14px] text-text-2 leading-snug">
                       Missing {listPhrase(gaps.map(g => g.label))}.
@@ -591,6 +594,7 @@ export default function Events() {
       />
       <EventComposer open={adding} onClose={() => setAdding(false)} onCreate={create} />
 
+      <LinkButton to="/events/style" tone="tertiary">What should I wear? Ask AI</LinkButton>
       {upcoming.length > 0 ? upcoming.map(e => renderEvent(e, false)) : (
         <Card>
           <p className="type-editorial text-[20px] leading-snug text-balance">

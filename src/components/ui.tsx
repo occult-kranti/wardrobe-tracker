@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ButtonHTMLAttributes, type ReactNode 
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { IconClose, IconEyelet, IconEyeletFilled } from './icons';
+import { PlateOrnament } from './PlateOrnament';
 import { tick, thock } from '../lib/sound';
 
 /**
@@ -294,19 +295,25 @@ export function Card({
   children,
   className = '',
   padded = true,
+  ornament = true,
 }: {
   children: ReactNode;
   className?: string;
   padded?: boolean;
+  /** Decorative corners need the padded card's empty top and bottom lanes. */
+  ornament?: boolean;
 }) {
   // V2: every plate is glass and carries its sheen natively — the light is
   // positioned by ONE delegated document listener (initGlassLight), so the
   // card needs no wrapper and no listener of its own. Glass doesn't bend
   // (transforming a backdrop-filter re-samples its backdrop every frame);
   // rotation is reserved for opaque tiles.
+  const framed = padded && ornament;
   return (
-    <div className={`bg-surface plate rounded-[2px] ${padded ? 'p-5' : ''} ${className}`}>
+    <div className={`bg-surface plate rounded-[2px] ${padded ? 'p-5' : ''} ${framed ? 'card-frame' : ''} ${className}`}>
+      {framed ? <PlateOrnament corner="top-right" /> : null}
       {children}
+      {framed ? <PlateOrnament corner="bottom-left" /> : null}
     </div>
   );
 }
